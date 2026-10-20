@@ -1,0 +1,27 @@
+<DvPageFrame vm="DialogPage" title="다이얼로그" subtitle="레시피 편집 · 메시지 박스 · 내장 입력/숫자/선택 박스 · 통신 알람(4초마다, 같은 번호는 하나만)">
+  <DvRow gap="lg" align="stretch">
+    <DvCard title="현재 레시피" grow="1">
+      <DvLabel class="title" text="{Recipe.Name}"/>
+      <DvLabel class="body muted" text="온도 {Recipe.Temp} ℃ · 시간 {Recipe.Minutes} 분"/>
+      <DvRow gap="sm">
+        <DvButton variant="primary" text="레시피 수정" onclick="EditRecipe"/>
+        <DvButton variant="secondary" text="초기화" onclick="AskReset"/>
+      </DvRow>
+    </DvCard>
+    <DvCard title="최근 이벤트" grow="1">
+      <DvLabel class="body" text="{LastEvent}"/>
+      <DvRow>
+        <DvButton variant="ghost" text="열린 다이얼로그 모두 닫기" onclick="CloseAll"/>
+        <DvButton variant="secondary" text="잠금 (30초 무입력 시 자동)" onclick="Lock"/>
+      </DvRow>
+    </DvCard>
+  </DvRow>
+  <DvCard title="내장 박스 (App.InputBox · InputNumber · SelectBox)">
+    <DvLabel class="body muted" text="작업자 {Operator} · 설정 온도 {Setpoint} ℃ · 운전 모드 {ModeText}"/>
+    <DvRow gap="sm">
+      <DvButton variant="secondary" text="입력 박스" onclick="AskOperator"/>
+      <DvButton variant="secondary" text="숫자 박스 (0~100)" onclick="AskSetpoint"/>
+      <DvButton variant="secondary" text="선택 박스" onclick="AskMode"/>
+    </DvRow>
+  </DvCard>
+</DvPageFrame>

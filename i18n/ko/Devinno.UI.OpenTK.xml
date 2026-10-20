@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doc>
+    <assembly>
+        <name>Devinno.UI.OpenTK</name>
+    </assembly>
+    <members>
+        <member name="T:Devinno.UI.OpenTK.ViewWindow" en-hash="265f8b58f009b3ce">
+             <summary>
+             Devinno 앱(<see cref="T:Devinno.UI.App.DvApp" />) 하나를 OpenTK(GLFW) 창으로 띄우는 호스트입니다. 앱을 넘겨 만들고 <c>Run()</c> 을 부르면 창이 열립니다.
+             패널 PC·터치 HMI 처럼 화면 전체를 Devinno 로 그리는 단독 앱에 씁니다.
+             </summary>
+             <remarks>
+             <para><b>실행</b>: <see cref="T:OpenTK.Windowing.Desktop.GameWindow" /> 를 상속하므로 <c>Run()</c> 은 창이 닫힐 때까지 돌아오지 않는 이벤트 루프입니다. GLFW 규칙상 창 생성과
+             <c>Run()</c> 은 프로그램의 메인 스레드에서 하세요. 창을 다 쓰면 <c>Dispose()</c>(보통 <c>using var</c>)로 정리합니다.</para>
+             <para><b>이벤트 구동 렌더</b>: 매 프레임 계속 그리지 않고, 입력·<see cref="M:Devinno.UI.OpenTK.ViewWindow.Invalidate" />·<see cref="M:Devinno.UI.OpenTK.ViewWindow.Repaint" />·창 크기 변경·점멸 애니메이션 시각에만 깨어나
+             바뀐 것이 있을 때만 그립니다. 그래서 화면이 멈춰 있으면 CPU 사용량이 거의 0 입니다.</para>
+             <para><b>스레드 규칙</b>: 레이아웃·그리기·입력 처리, 그리고 VM 의 <c>onclick</c> 등 핸들러 호출은 모두 <c>Run()</c> 을 부른 스레드에서 일어납니다.
+             폴링 타이머 같은 다른 스레드에서 VM 값을 바꿨다면 <see cref="M:Devinno.UI.OpenTK.ViewWindow.Invalidate" />(레이아웃부터 다시) 또는 <see cref="M:Devinno.UI.OpenTK.ViewWindow.Repaint" />(다시 그리기만)를 부르세요.
+             두 메서드는 어느 스레드에서 불러도 됩니다. 다만 화면은 렌더 스레드에서 VM 속성을 읽으므로, 다른 스레드에서 바꾸는 값은 앱이 일관되게 유지해야 합니다
+             (예: 목록은 제자리에서 고치지 말고 새 목록으로 통째로 바꿔 끼우기). <see cref="T:Devinno.UI.Trends.TrendBuffer" /> 는 자체 잠금이 있어 그대로 써도 됩니다.</para>
+             <para><b>입력</b>: 마우스 왼쪽 버튼(OS 가 터치를 마우스로 바꿔 보내는 경우 터치 포함)을 포인터로, 휠을 스크롤로 넘깁니다. 이 호스트는 네이티브 편집기가 없으므로
+             입력 상자를 누르면 라이브러리에 내장된 가상 키보드(한/영 QWERTY·숫자 키패드)가 올라옵니다. 물리 키보드를 연결하면 완성된 문자(IME 로 완성한 한글 포함)와
+             Enter·Backspace·Esc·Tab·Shift+Tab 도 그대로 전달됩니다.</para>
+             <para><b>그리기 방식</b>: 기본은 CPU 래스터(Skia 가 비트맵에 그린 뒤 텍스처로 올림)이고, <see cref="P:Devinno.UI.OpenTK.ViewWindow.Gpu" /> 를 켜면 Skia 가 OpenGL 로 창에 직접 그립니다.
+             CPU 래스터는 비트맵을 프레임 사이에 남겨 두므로, 시간으로만 바뀌는 프레임(흐름 애니메이션·점멸)은 바뀐 영역만 다시 그리고 그 영역만 텍스처에 올립니다(<see cref="P:Devinno.UI.DvSurface.PartialRender" />). GPU 모드도 화면 밖 GPU 표면에 같은 방식으로 그린 뒤 매 프레임 창으로 통째 복사합니다.</para>
+             </remarks>
+             <example>
+             <code>
+             using Devinno.UI.App;
+             using Devinno.UI.OpenTK;
+             using Devinno.UI.Styling;
+            
+             var app = new DvApp { Theme = DvTheme.Dark };
+             app.Pages.Add(new MainPage());   // DvPage 를 상속한 페이지(마크업 + 뷰모델 역할)
+             using var window = new ViewWindow(app, 1280, 800, "My HMI") { Gpu = true };
+            
+             // 다른 스레드에서 값을 바꾸고 화면 갱신 요청
+             using var poll = new System.Threading.Timer(_ =&gt; app.Invalidate(), null, 1000, 1000);
+            
+             window.Run();   // 창이 닫힐 때까지 돌아오지 않음
+             </code>
+             </example>
+        </member>
+        <member name="M:Devinno.UI.OpenTK.ViewWindow.#ctor(Devinno.UI.App.DvApp,System.Int32,System.Int32,System.String)" en-hash="ef3dbd750d2b2dd5">
+            <summary>앱(<see cref="T:Devinno.UI.App.DvApp" />) 하나를 띄우는 창을 만듭니다. 창은 <c>Run()</c> 을 불러야 보입니다.</summary>
+            <remarks>앱은 한 번에 창 하나에만 붙습니다 — 이미 다른 창·컨트롤에 붙어 있으면 예외입니다. 창이 닫히면(<c>OnUnload</c>) 앱이 떨어져 다른 어댑터에 다시 붙을 수 있습니다.
+            테마·다국어·레지스트리는 <see cref="P:Devinno.UI.App.DvApp.Theme" />·<see cref="P:Devinno.UI.App.DvApp.Strings" />·<see cref="P:Devinno.UI.App.DvApp.Registry" /> 로 지정합니다.</remarks>
+            <param name="app">보여 줄 앱.</param>
+            <param name="width">창 클라이언트 영역 너비(논리 px — 화면 배율이 150% 면 물리 px 는 1.5배).</param>
+            <param name="height">창 클라이언트 영역 높이(논리 px).</param>
+            <param name="title">창 제목.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="app" /> 이 <see langword="null" /> 일 때.</exception>
+            <exception cref="T:System.InvalidOperationException"><paramref name="app" /> 이 이미 다른 창·컨트롤에 붙어 있을 때.</exception>
+        </member>
+        <member name="E:Devinno.UI.OpenTK.ViewWindow.HandlerError" en-hash="9cbcc25aa90fc7f2">
+            <summary>
+            화면이 부른 앱(뷰모델) 코드가 예외를 던졌을 때 발생합니다(<see cref="E:Devinno.UI.App.DvApp.HandlerError" /> 를 그대로 전달, <c>sender</c> 만 이 창). 예외는 이미 잡혀 이벤트 루프 밖으로 나가지 않습니다.
+            </summary>
+            <remarks>
+            <c>onclick</c>·<c>onrowclick</c>·<c>onack</c>·<c>onbeforecommit</c> 처리기, 위젯이 값을 쓰는 속성의 setter, 페이지 전환 알림(<c>OnShown</c>·<c>OnHidden</c>)에서 난 예외가 대상입니다.
+            구독자가 없어도 Trace 오류는 남습니다. 렌더 스레드(메인 스레드)에서 발생하며 <c>sender</c> 는 이 창입니다.
+            자세한 결과 규칙은 <see cref="E:Devinno.UI.App.DvApp.HandlerError" />·<see cref="E:Devinno.UI.DvSurface.HandlerError" /> 를 보세요.
+            </remarks>
+            <example>
+            <code>
+            using var window = new ViewWindow(app, 1280, 800, "HMI");
+            window.HandlerError += (_, e) =&gt; Log.Error(e.Exception, $"{e.Kind} {e.Member} ({e.Tag})");
+            window.Run();
+            </code>
+            </example>
+        </member>
+        <member name="M:Devinno.UI.OpenTK.ViewWindow.Invalidate" en-hash="a1180f091e778ca8">
+            <summary>
+            VM 데이터가 바뀌었음을 알립니다. 다음 프레임에 바인딩·스타일·레이아웃을 처음부터 다시 계산하고 그립니다.
+            폴링 타이머 등 어느 스레드에서 불러도 됩니다. 플래그만 세우고 렌더 루프를 깨운 뒤 바로 돌아옵니다.
+            </summary>
+            <remarks>
+            화면 구조나 텍스트·목록 내용처럼 레이아웃에 영향을 주는 값이 바뀌었을 때 씁니다. 그릴 때 직접 읽는 값만 바뀌었다면 더 싼 <see cref="M:Devinno.UI.OpenTK.ViewWindow.Repaint" /> 를 쓰세요.
+            위젯 클릭으로 불린 VM 핸들러 안의 변경은 자동으로 반영되므로 부를 필요가 없습니다. 창이 아직 없거나 닫혔으면 깨우기는 생략됩니다.
+            현재 페이지와 고정 영역을 모두 다시 만듭니다(<see cref="M:Devinno.UI.App.DvApp.Invalidate" /> 로 위임).
+            </remarks>
+        </member>
+        <member name="M:Devinno.UI.OpenTK.ViewWindow.Repaint" en-hash="f3193259e4a45660">
+            <summary>
+            다시 레이아웃하지 않고 다시 그리기만 요청합니다. 데이터 그리드의 셀 값·행 수처럼 그릴 때 직접 읽는 데이터가 바뀌었을 때 씁니다
+            (<see cref="M:Devinno.UI.OpenTK.ViewWindow.Invalidate" /> 보다 쌉니다). 어느 스레드에서 불러도 됩니다.
+            </summary>
+            <remarks>
+            레이아웃할 때 복사해 두는 데이터(알람 위젯의 <c>items</c>, <c>DvTrend</c> 의 샘플 등)는 이것으로 바뀌지 않으므로 <see cref="M:Devinno.UI.OpenTK.ViewWindow.Invalidate" /> 를 쓰세요.
+            </remarks>
+        </member>
+        <member name="P:Devinno.UI.OpenTK.ViewWindow.Gpu" en-hash="89436902c432fa32">
+            <summary>
+            <see langword="true" /> 면 Skia 가 OpenGL(GPU)로 창에 직접 그립니다. 기본값 <see langword="false" />(CPU 래스터).
+            그라데이션·그림자가 많은 화면에서 프레임당 비용이 크게 줄어듭니다.
+            </summary>
+            <remarks>
+            <c>init</c> 전용이므로 생성할 때 객체 초기화자로 지정합니다(<c>new ViewWindow(...) { Gpu = true }</c>). 창이 처음 로드될 때 한 번 적용되며,
+            GPU 초기화에 실패하면 <see cref="T:System.Diagnostics.Trace" /> 경고를 남기고 CPU 래스터로 그립니다(예외 없음).
+            </remarks>
+        </member>
+        <member name="M:Devinno.UI.OpenTK.ViewWindow.OnLoad" en-hash="ead19feb930fc845">
+            <summary>창이 처음 로드될 때 그리기 방식(GPU 또는 CPU)을 준비하고 첫 프레임을 그리도록 루프를 깨웁니다.</summary>
+        </member>
+        <member name="M:Devinno.UI.OpenTK.ViewWindow.OnRenderFrame(OpenTK.Windowing.Common.FrameEventArgs)" en-hash="32431370b93d3beb">
+            <summary>렌더 루프가 깨어날 때마다 불립니다. 바뀐 것이 있거나 애니메이션 시각이 됐을 때만 화면을 그리고 버퍼를 교체합니다.</summary>
+            <param name="args">프레임 정보.</param>
+        </member>
+        <member name="F:Devinno.UI.OpenTK.ViewWindow.FrameRendered" en-hash="14af25d8118977fa">
+            <summary>화면을 바꾼 프레임마다 그 프레임 시간(ms) — 측정 도구 전용.</summary>
+        </member>
+        <member name="P:Devinno.UI.OpenTK.ViewWindow.ScaleOverride" en-hash="7ddd9988469a0cc6">
+            <summary>시험용 — 모니터 배율 대신 이 배율로 그린다(실제 고배율 모니터 없이 확인). null 이면 모니터 배율.</summary>
+        </member>
+        <member name="M:Devinno.UI.OpenTK.ViewWindow.ToPixels(System.Nullable{SkiaSharp.SKRectI},System.Single,System.Int32,System.Int32)" en-hash="29940cbe58cc283d">
+            <summary>논리 px 의 다시 그린 영역 → 물리 px(바깥으로 반올림, 비트맵 안으로 자름). null = 전체, 빈 사각형 = 없음.</summary>
+        </member>
+        <member name="M:Devinno.UI.OpenTK.ViewWindow.OnResize(OpenTK.Windowing.Common.ResizeEventArgs)" en-hash="f6c3645f42fb41b4">
+            <summary>창 크기가 바뀌면 새 크기로 바로 다시 그립니다(크기 조절 중에도 내용이 따라오도록).</summary>
+            <param name="e">새 크기 정보.</param>
+        </member>
+        <member name="M:Devinno.UI.OpenTK.ViewWindow.OnRefresh" en-hash="26f5853e5767d288">
+            <summary>OS 가 창 내용을 다시 요구할 때 불립니다. 마지막으로 그린 크기와 다를 때만 다시 그리도록 요청합니다.</summary>
+        </member>
+        <member name="M:Devinno.UI.OpenTK.ViewWindow.OnMouseMove(OpenTK.Windowing.Common.MouseMoveEventArgs)" en-hash="c3918f38d663a202">
+            <summary>마우스 이동을 화면의 포인터 이동(호버·드래그)으로 넘깁니다.</summary>
+            <param name="e">마우스 위치 정보.</param>
+        </member>
+        <member name="M:Devinno.UI.OpenTK.ViewWindow.OnMouseWheel(OpenTK.Windowing.Common.MouseWheelEventArgs)" en-hash="4d71d16bd12c39ca">
+            <summary>마우스 휠을 현재 포인터 위치의 스크롤로 넘깁니다.</summary>
+            <param name="e">휠 이동량.</param>
+        </member>
+        <member name="M:Devinno.UI.OpenTK.ViewWindow.OnMouseDown(OpenTK.Windowing.Common.MouseButtonEventArgs)" en-hash="6b34fee16d0f1c52">
+            <summary>왼쪽 버튼 누름을 화면의 포인터 누름으로 넘깁니다. 다른 버튼은 무시합니다.</summary>
+            <param name="e">버튼 정보.</param>
+        </member>
+        <member name="M:Devinno.UI.OpenTK.ViewWindow.OnMouseUp(OpenTK.Windowing.Common.MouseButtonEventArgs)" en-hash="58f88866d7ed244a">
+            <summary>왼쪽 버튼 뗌을 화면의 포인터 뗌(클릭 판정)으로 넘깁니다. 다른 버튼은 무시합니다.</summary>
+            <param name="e">버튼 정보.</param>
+        </member>
+        <member name="M:Devinno.UI.OpenTK.ViewWindow.OnTextInput(OpenTK.Windowing.Common.TextInputEventArgs)" en-hash="e9235aa733cb60d3">
+            <summary>물리 키보드로 입력된 완성 문자(IME 로 완성한 한글 포함)를 편집 중인 입력 상자로 넘깁니다.</summary>
+            <param name="e">입력된 문자.</param>
+        </member>
+        <member name="M:Devinno.UI.OpenTK.ViewWindow.OnKeyDown(OpenTK.Windowing.Common.KeyboardKeyEventArgs)" en-hash="d5f42235e97ff42e">
+            <summary>Enter(키패드 포함)·Backspace·Esc·Tab·Shift+Tab 만 편집 키로 넘깁니다. 그 밖의 키는 무시합니다.</summary>
+            <param name="e">키 정보.</param>
+        </member>
+        <member name="M:Devinno.UI.OpenTK.ViewWindow.Dispose(System.Boolean)" en-hash="fe3146ec8a4aa018">
+            <summary>창을 해제하면서 앱을 닫고 떨어집니다(<c>Run()</c> 없이 해제해도 앱을 다시 쓸 수 있도록).</summary>
+            <param name="disposing">관리되는 자원도 해제하면 <see langword="true" />.</param>
+        </member>
+        <member name="M:Devinno.UI.OpenTK.ViewWindow.OnUnload" en-hash="ec3dbdaf7777a5b2">
+            <summary>창이 닫힐 때 애니메이션 타이머와 GPU·텍스처·셰이더 등 그리기 자원을 해제합니다.</summary>
+        </member>
+    </members>
+</doc>

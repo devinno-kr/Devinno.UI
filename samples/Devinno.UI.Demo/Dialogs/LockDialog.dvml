@@ -1,0 +1,8 @@
+<DvDialogFrame vm="LockDialog" title="잠금 — 로그인 필요" subtitle="데모 비밀번호 1234" style="width:360">
+  <DvInput value="{Bind Password}" keyboard-type="password"/>
+  <DvLabel class="body" text="{Error}" visible="{Error}" style="color:token(state-fault)"/>
+  <DvRow gap="sm">
+    <DvSpacer/>
+    <DvButton variant="primary" text="확인" onclick="Login"/>
+  </DvRow>
+</DvDialogFrame>

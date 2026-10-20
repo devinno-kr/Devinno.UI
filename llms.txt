@@ -1,0 +1,9 @@
+# Devinno.UI
+
+> SkiaSharp 기반 .NET 9 UI 라이브러리(산업용 HMI 터치 패널·일반 앱). 화면 = XML 마크업 + CSS 식 인라인 style + C# 뷰모델 바인딩.
+
+이 라이브러리의 AI·사람용 문서는 세 개로 나뉘어 있습니다.
+
+- [llm-rules.md](llm-rules.md): 작성 규칙. **먼저 읽으세요.** 원칙, CSS 와 다른 점, 조용히 무시되는 것과 자홍색·예외로 드러나는 것, 자주 하는 실수, PNG 렌더로 화면 확인하는 방법, 알려진 한계.
+- [dvml-ui-markup.md](dvml-ui-markup.md): 마크업 레퍼런스. 태그·속성·스타일 키·값·기본값·바인딩 문법·핸들러 시그니처·테마 토큰 전체 목록과 예시. 여기 없는 기능은 없다고 보면 됩니다.
+- Devinno.UI.xml: C# API 문서(XML 문서 주석). IDE 의 IntelliSense 나 NuGet 패키지의 Devinno.UI.xml 로 봅니다. ViewWindow·ViewControl·DvSurface·DvRenderer·DvTheme·DvApp·DvPage·DvBar·AlarmLog·TrendBuffer·DvStrings·ComponentRegistry 의 자세한 사용법은 여기에 있습니다.

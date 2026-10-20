@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RunSettingsFilePath Condition="'$(RunSamples)' != 'true'">$(MSBuildProjectDirectory)/default.runsettings</RunSettingsFilePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="SkiaSharp" Version="3.119.4" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Devinno.UI\Devinno.UI.csproj" />
+    <ProjectReference Include="..\..\src\Devinno.UI.Generators\Devinno.UI.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+    <AdditionalFiles Include="Pages/*.dvml" />
+  </ItemGroup>
+
+  <!-- 문서(dvml-ui-markup.md 16.1)의 전체 예제 = samples/Devinno.UI.AppSample. 페이지·바를 그대로 넣어 동작을 검사한다(Program.cs 제외). -->
+  <ItemGroup>
+    <Compile Include="..\..\samples\Devinno.UI.AppSample\Pages\*.cs" Link="AppSample\%(Filename)%(Extension)" />
+    <Compile Include="..\..\tools\XmlDocI18n\XmlDocI18n.cs" Link="I18n\XmlDocI18n.cs" />
+    <AdditionalFiles Include="..\..\samples\Devinno.UI.AppSample\Pages\*.dvml" Link="AppSample\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

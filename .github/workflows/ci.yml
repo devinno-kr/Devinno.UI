@@ -1,0 +1,43 @@
+# 태그 없이 도는 검사 — build → test → pack(게시 없음) → nupkg 를 artifact 로. 태그(publish.yml) 전에 이것을 여러 번 초록으로 만든다.
+# 수동 실행만(Actions 탭 또는 gh workflow run ci.yml) — push 마다 돌리지 않는다(비공개 저장소 Windows 러너 사용 시간).
+name: CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: windows-latest   # WinForms 어댑터(net9.0-windows) 때문에 Windows
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      # XmlDocI18nTests reads the English XML of all three packages, so build them (and the tests) first
+      - name: Build
+        shell: pwsh
+        run: |
+          foreach ($p in 'src/Devinno.UI', 'src/Devinno.UI.OpenTK', 'src/Devinno.UI.WinForms', 'tests/Devinno.UI.Tests') {
+            dotnet build $p -c Release
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Test
+        run: dotnet test tests/Devinno.UI.Tests -c Release --no-build
+
+      - name: Pack
+        shell: pwsh
+        run: |
+          foreach ($p in 'src/Devinno.UI', 'src/Devinno.UI.OpenTK', 'src/Devinno.UI.WinForms') {
+            dotnet pack $p -c Release --no-build -o out
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nupkg-ci
+          path: out/*.nupkg

@@ -1,0 +1,5 @@
+<DvPageFrame vm="HomePage" title="홈" subtitle="버튼이나 상단 바로 페이지를 바꿉니다">
+  <DvRow>
+    <DvButton variant="primary" text="모니터링 열기" onclick="OpenMonitor"/>
+  </DvRow>
+</DvPageFrame>

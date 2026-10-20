@@ -1,0 +1,207 @@
+<DvScreen vm="DashboardPage" style="background:linear-gradient(160deg, #0b1020, #111827); padding:24; display:flex; flex-direction:column; gap:20; align-items:stretch">
+  <DvBox style="display:flex; flex-direction:row; align-items:center; gap:14">
+    <DvBox style="width:46; height:46; border-radius:13; background:linear-gradient(135deg, #3b82f6, #8b5cf6); box-shadow:0 6 18 #6366f155; display:flex; justify-content:center; align-items:center">
+      <DvLabel text="D" style="color:#ffffff; font-size:22; font-weight:bold"/>
+    </DvBox>
+    <DvBox style="display:flex; flex-direction:column; gap:2">
+      <DvLabel text="한강 정수장 2공정" style="color:#f1f5f9; font-size:21; font-weight:bold"/>
+      <DvLabel text="실시간 운영 대시보드" style="color:#64748b; font-size:13"/>
+    </DvBox>
+    <DvBox style="flex-grow:1"/>
+    <DvBox style="display:flex; flex-direction:row; align-items:center; gap:8; padding:8 14; border-radius:20; background:{StatusBg}; border:1 {StatusBorder}">
+      <DvLamp on="true" style="width:10; height:10; color:{LampColor}"/>
+      <DvLabel text="{StatusText}" style="color:{StatusFg}; font-size:13; font-weight:bold"/>
+    </DvBox>
+    <DvLabel text="2026.10.12  14:32" style="color:#94a3b8; font-size:13; padding:0 6"/>
+    <DvBox onclick="Start" style="padding:11 20; border-radius:11; background:linear-gradient(135deg, #2563eb, #7c3aed); box-shadow:0 6 16 #4f46e555" hover-style="background:linear-gradient(135deg, #3b82f6, #8b5cf6)" press-style="background:linear-gradient(135deg, #1d4ed8, #6d28d9)">
+      <DvLabel text="운전 시작" style="color:#ffffff; font-size:14; font-weight:bold"/>
+    </DvBox>
+    <DvBox onclick="Stop" style="padding:11 20; border-radius:11; background:#ef444414; border:1 #ef444488" hover-style="background:#ef444430" press-style="background:#ef444450">
+      <DvLabel text="비상 정지" style="color:#fca5a5; font-size:14; font-weight:bold"/>
+    </DvBox>
+  </DvBox>
+  <DvBox style="display:flex; flex-direction:row; gap:20; align-items:stretch">
+    <DvBox style="width:0; flex-grow:1; background:#131c31; border:1 #1e293b; border-radius:16; overflow:hidden; box-shadow:0 8 24 #00000040; display:flex; flex-direction:column; align-items:stretch">
+      <DvBox style="height:3; background:linear-gradient(90deg, #3b82f6, #06b6d4)"/>
+      <DvBox style="padding:16 20 18 20; display:flex; flex-direction:column; gap:10; align-items:stretch">
+        <DvBox style="display:flex; flex-direction:row; align-items:center">
+          <DvLabel text="처리 유량" style="color:#94a3b8; font-size:13"/>
+          <DvBox style="flex-grow:1"/>
+          <DvLabel text="+3.2%" style="color:#34d399; background:#10b9811f; font-size:11; font-weight:bold; padding:3 8; border-radius:9"/>
+        </DvBox>
+        <DvBox style="display:flex; flex-direction:row; align-items:end; gap:6">
+          <DvLabel text="1,284" style="color:#f8fafc; font-size:32; font-weight:bold"/>
+          <DvLabel text="m3/h" style="color:#64748b; font-size:14; padding:0 0 6 0"/>
+        </DvBox>
+      </DvBox>
+    </DvBox>
+    <DvBox style="width:0; flex-grow:1; background:#131c31; border:1 #1e293b; border-radius:16; overflow:hidden; box-shadow:0 8 24 #00000040; display:flex; flex-direction:column; align-items:stretch">
+      <DvBox style="height:3; background:linear-gradient(90deg, #10b981, #84cc16)"/>
+      <DvBox style="padding:16 20 18 20; display:flex; flex-direction:column; gap:10; align-items:stretch">
+        <DvBox style="display:flex; flex-direction:row; align-items:center">
+          <DvLabel text="출수 탁도" style="color:#94a3b8; font-size:13"/>
+          <DvBox style="flex-grow:1"/>
+          <DvLabel text="-0.04" style="color:#34d399; background:#10b9811f; font-size:11; font-weight:bold; padding:3 8; border-radius:9"/>
+        </DvBox>
+        <DvBox style="display:flex; flex-direction:row; align-items:end; gap:6">
+          <DvLabel text="0.18" style="color:#f8fafc; font-size:32; font-weight:bold"/>
+          <DvLabel text="NTU" style="color:#64748b; font-size:14; padding:0 0 6 0"/>
+        </DvBox>
+      </DvBox>
+    </DvBox>
+    <DvBox style="width:0; flex-grow:1; background:#131c31; border:1 #1e293b; border-radius:16; overflow:hidden; box-shadow:0 8 24 #00000040; display:flex; flex-direction:column; align-items:stretch">
+      <DvBox style="height:3; background:linear-gradient(90deg, #f59e0b, #ef4444)"/>
+      <DvBox style="padding:16 20 18 20; display:flex; flex-direction:column; gap:10; align-items:stretch">
+        <DvBox style="display:flex; flex-direction:row; align-items:center">
+          <DvLabel text="전력 사용" style="color:#94a3b8; font-size:13"/>
+          <DvBox style="flex-grow:1"/>
+          <DvLabel text="+8.1%" style="color:#fbbf24; background:#f59e0b1f; font-size:11; font-weight:bold; padding:3 8; border-radius:9"/>
+        </DvBox>
+        <DvBox style="display:flex; flex-direction:row; align-items:end; gap:6">
+          <DvLabel text="412" style="color:#f8fafc; font-size:32; font-weight:bold"/>
+          <DvLabel text="kW" style="color:#64748b; font-size:14; padding:0 0 6 0"/>
+        </DvBox>
+      </DvBox>
+    </DvBox>
+    <DvBox style="width:0; flex-grow:1; background:#131c31; border:1 #1e293b; border-radius:16; overflow:hidden; box-shadow:0 8 24 #00000040; display:flex; flex-direction:column; align-items:stretch">
+      <DvBox style="height:3; background:linear-gradient(90deg, #8b5cf6, #ec4899)"/>
+      <DvBox style="padding:16 20 18 20; display:flex; flex-direction:column; gap:10; align-items:stretch">
+        <DvBox style="display:flex; flex-direction:row; align-items:center">
+          <DvLabel text="설비 가동률" style="color:#94a3b8; font-size:13"/>
+          <DvBox style="flex-grow:1"/>
+          <DvLabel text="목표 달성" style="color:#93c5fd; background:#3b82f61f; font-size:11; font-weight:bold; padding:3 8; border-radius:9"/>
+        </DvBox>
+        <DvBox style="display:flex; flex-direction:row; align-items:end; gap:6">
+          <DvLabel text="98.6" style="color:#f8fafc; font-size:32; font-weight:bold"/>
+          <DvLabel text="%" style="color:#64748b; font-size:14; padding:0 0 6 0"/>
+        </DvBox>
+      </DvBox>
+    </DvBox>
+  </DvBox>
+  <DvBox style="flex-grow:1; display:flex; flex-direction:row; gap:20; align-items:stretch">
+    <DvBox style="width:0; flex-grow:1; display:flex; flex-direction:column; gap:20; align-items:stretch">
+      <DvBox style="flex-grow:1; display:flex; flex-direction:row; gap:20; align-items:stretch">
+        <DvBox style="background:#131c31; border:1 #1e293b; border-radius:16; padding:18 20; box-shadow:0 8 24 #00000040; display:flex; flex-direction:column; gap:14; align-items:stretch; width:0; flex-grow:1">
+          <DvBox style="display:flex; flex-direction:row; align-items:center; gap:8">
+            <DvLabel text="저수조 수위" style="color:#e2e8f0; font-size:15; font-weight:bold"/>
+            <DvBox style="flex-grow:1"/>
+            <DvLabel text="3기 운용" style="color:#94a3b8; background:#1e293b; font-size:11; padding:3 9; border-radius:9"/>
+          </DvBox>
+          <DvBox style="flex-grow:1; display:flex; flex-direction:row; justify-content:space-between; align-items:end; padding:0 10">
+            <DvBox style="display:flex; flex-direction:column; align-items:center; gap:10">
+              <DvTank value="64" min="0" max="100" unit="%" alarm-zones="0:70:#3b82f6 70:88:#f59e0b 88:100:#ef4444" style="width:84; height:236"/>
+              <DvLabel text="원수조" style="color:#94a3b8; font-size:13"/>
+            </DvBox>
+            <DvBox style="display:flex; flex-direction:column; align-items:center; gap:10">
+              <DvTank value="81" min="0" max="100" unit="%" alarm-zones="0:70:#3b82f6 70:88:#f59e0b 88:100:#ef4444" style="width:84; height:236"/>
+              <DvLabel text="응집조" style="color:#94a3b8; font-size:13"/>
+            </DvBox>
+            <DvBox style="display:flex; flex-direction:column; align-items:center; gap:10">
+              <DvTank value="93" min="0" max="100" unit="%" alarm-zones="0:70:#3b82f6 70:88:#f59e0b 88:100:#ef4444" style="width:84; height:236"/>
+              <DvLabel text="정수지" style="color:#94a3b8; font-size:13"/>
+            </DvBox>
+          </DvBox>
+        </DvBox>
+        <DvBox style="background:#131c31; border:1 #1e293b; border-radius:16; padding:18 20; box-shadow:0 8 24 #00000040; display:flex; flex-direction:column; gap:14; align-items:stretch; width:0; flex-grow:1">
+          <DvBox style="display:flex; flex-direction:row; align-items:center; gap:8">
+            <DvLabel text="송수 압력" style="color:#e2e8f0; font-size:15; font-weight:bold"/>
+            <DvBox style="flex-grow:1"/>
+            <DvLabel text="bar x10" style="color:#94a3b8; background:#1e293b; font-size:11; padding:3 9; border-radius:9"/>
+          </DvBox>
+          <DvBox style="flex-grow:1; display:flex; flex-direction:row; justify-content:space-between; align-items:center; padding:0 6">
+            <DvBox style="display:flex; flex-direction:column; align-items:center; gap:12">
+              <DvBox style="width:160; height:160; border-radius:80; background:linear-gradient(180deg, #f8fafc, #dbe3ee); border:4 #334155; box-shadow:0 10 28 #00000066">
+                <DvGauge value="58" min="0" max="100" alarm-zones="0:65:#10b981 65:85:#f59e0b 85:100:#ef4444" style="width:160; height:160"/>
+              </DvBox>
+              <DvLabel text="주 송수관" style="color:#94a3b8; font-size:13"/>
+            </DvBox>
+            <DvBox style="display:flex; flex-direction:column; align-items:center; gap:12">
+              <DvBox style="width:160; height:160; border-radius:80; background:linear-gradient(180deg, #f8fafc, #dbe3ee); border:4 #334155; box-shadow:0 10 28 #00000066">
+                <DvGauge value="79" min="0" max="100" alarm-zones="0:65:#10b981 65:85:#f59e0b 85:100:#ef4444" style="width:160; height:160"/>
+              </DvBox>
+              <DvLabel text="역세 라인" style="color:#94a3b8; font-size:13"/>
+            </DvBox>
+          </DvBox>
+        </DvBox>
+      </DvBox>
+      <DvBox style="background:#131c31; border:1 #1e293b; border-radius:16; padding:18 20; box-shadow:0 8 24 #00000040; display:flex; flex-direction:column; gap:14; align-items:stretch; ">
+        <DvBox style="display:flex; flex-direction:row; align-items:center; gap:8">
+          <DvLabel text="최근 알람" style="color:#e2e8f0; font-size:15; font-weight:bold"/>
+          <DvBox style="flex-grow:1"/>
+          <DvLabel text="오늘 2건" style="color:#94a3b8; background:#1e293b; font-size:11; padding:3 9; border-radius:9"/>
+        </DvBox>
+        <DvBox style="display:flex; flex-direction:column; gap:8; align-items:stretch">
+          <DvBox style="display:flex; flex-direction:row; align-items:center; gap:12; padding:9 12; background:#0f172a; border-radius:10">
+            <DvBox style="width:4; height:18; border-radius:2; background:#ef4444"/>
+            <DvLabel text="여과기 B 차압 상한 초과" style="color:#cbd5e1; font-size:13"/>
+            <DvBox style="flex-grow:1"/>
+            <DvLabel text="14:28" style="color:#64748b; font-size:12"/>
+          </DvBox>
+          <DvBox style="display:flex; flex-direction:row; align-items:center; gap:12; padding:9 12; background:#0f172a; border-radius:10">
+            <DvBox style="width:4; height:18; border-radius:2; background:#f59e0b"/>
+            <DvLabel text="응집조 수위 주의 구간 진입" style="color:#cbd5e1; font-size:13"/>
+            <DvBox style="flex-grow:1"/>
+            <DvLabel text="13:52" style="color:#64748b; font-size:12"/>
+          </DvBox>
+        </DvBox>
+      </DvBox>
+    </DvBox>
+    <DvBox style="background:#131c31; border:1 #1e293b; border-radius:16; padding:18 20; box-shadow:0 8 24 #00000040; display:flex; flex-direction:column; gap:14; align-items:stretch; width:310">
+      <DvBox style="display:flex; flex-direction:row; align-items:center; gap:8">
+        <DvLabel text="설비 상태" style="color:#e2e8f0; font-size:15; font-weight:bold"/>
+        <DvBox style="flex-grow:1"/>
+        <DvLabel text="6대" style="color:#94a3b8; background:#1e293b; font-size:11; padding:3 9; border-radius:9"/>
+      </DvBox>
+      <DvBox style="display:flex; flex-direction:column; gap:6; align-items:stretch">
+        <DvBox style="display:flex; flex-direction:row; align-items:center; gap:12; padding:8 4">
+          <DvLamp on="{Running}" blink="false" blink-interval="450" style="width:12; height:12; color:#10b981"/>
+          <DvLabel text="취수 펌프 #1" style="color:#e2e8f0; font-size:14"/>
+          <DvBox style="flex-grow:1"/>
+          <DvLabel text="{PumpState}" style="color:{PumpFg}; background:{PumpBg}; font-size:12; font-weight:bold; padding:3 10; border-radius:9"/>
+        </DvBox>
+        <DvBox style="display:flex; flex-direction:row; align-items:center; gap:12; padding:8 4">
+          <DvLamp on="{Running}" blink="false" blink-interval="450" style="width:12; height:12; color:#10b981"/>
+          <DvLabel text="취수 펌프 #2" style="color:#e2e8f0; font-size:14"/>
+          <DvBox style="flex-grow:1"/>
+          <DvLabel text="{PumpState}" style="color:{PumpFg}; background:{PumpBg}; font-size:12; font-weight:bold; padding:3 10; border-radius:9"/>
+        </DvBox>
+        <DvBox style="display:flex; flex-direction:row; align-items:center; gap:12; padding:8 4">
+          <DvLamp on="true" blink="false" blink-interval="450" style="width:12; height:12; color:#10b981"/>
+          <DvLabel text="송수 펌프 #1" style="color:#e2e8f0; font-size:14"/>
+          <DvBox style="flex-grow:1"/>
+          <DvLabel text="운전" style="color:#6ee7b7; background:#10b9811f; font-size:12; font-weight:bold; padding:3 10; border-radius:9"/>
+        </DvBox>
+        <DvBox style="display:flex; flex-direction:row; align-items:center; gap:12; padding:8 4">
+          <DvLamp on="false" blink="false" blink-interval="450" style="width:12; height:12; color:#10b981"/>
+          <DvLabel text="약품 주입기" style="color:#e2e8f0; font-size:14"/>
+          <DvBox style="flex-grow:1"/>
+          <DvLabel text="대기" style="color:#94a3b8; background:#1e293b; font-size:12; font-weight:bold; padding:3 10; border-radius:9"/>
+        </DvBox>
+        <DvBox style="display:flex; flex-direction:row; align-items:center; gap:12; padding:8 4">
+          <DvLamp on="true" blink="false" blink-interval="450" style="width:12; height:12; color:#10b981"/>
+          <DvLabel text="여과기 A" style="color:#e2e8f0; font-size:14"/>
+          <DvBox style="flex-grow:1"/>
+          <DvLabel text="운전" style="color:#6ee7b7; background:#10b9811f; font-size:12; font-weight:bold; padding:3 10; border-radius:9"/>
+        </DvBox>
+        <DvBox style="display:flex; flex-direction:row; align-items:center; gap:12; padding:8 4">
+          <DvLamp on="true" blink="true" blink-interval="450" style="width:12; height:12; color:#ef4444"/>
+          <DvLabel text="여과기 B" style="color:#e2e8f0; font-size:14"/>
+          <DvBox style="flex-grow:1"/>
+          <DvLabel text="경보" style="color:#fca5a5; background:#ef44441f; font-size:12; font-weight:bold; padding:3 10; border-radius:9"/>
+        </DvBox>
+      </DvBox>
+      <DvBox style="flex-grow:1"/>
+      <DvBox style="height:1; background:#1e293b"/>
+      <DvBox style="display:flex; flex-direction:row; align-items:center; padding:4 4">
+        <DvLabel text="자동 운전 모드" style="color:#cbd5e1; font-size:14"/>
+        <DvBox style="flex-grow:1"/>
+        <DvToggle value="{Bind Data.AutoMode}" style="width:46; height:26"/>
+      </DvBox>
+      <DvBox style="display:flex; flex-direction:row; align-items:center; padding:4 4">
+        <DvLabel text="알람음 끄기" style="color:#cbd5e1; font-size:14"/>
+        <DvBox style="flex-grow:1"/>
+        <DvToggle value="{Bind Data.Mute}" style="width:46; height:26"/>
+      </DvBox>
+    </DvBox>
+  </DvBox>
+</DvScreen>

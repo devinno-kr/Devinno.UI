@@ -1,0 +1,12 @@
+<DvPageFrame vm="MonitorPage" title="모니터링" subtitle="{ShownCount}번째 표시">
+  <DvRow>
+    <DvButton variant="ghost" text="← 이전" onclick="Back"/>
+  </DvRow>
+  <DvCard title="수온">
+    <DvLabel class="title" text="{Temperature} ℃"/>
+    <DvRow>
+      <DvLabel class="body muted" text="설정 {Setpoint} ℃"/>
+      <DvButton variant="secondary" text="설정 변경" onclick="EditSetpoint"/>
+    </DvRow>
+  </DvCard>
+</DvPageFrame>

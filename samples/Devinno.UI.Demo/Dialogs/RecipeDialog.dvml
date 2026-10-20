@@ -1,0 +1,10 @@
+<DvDialogFrame vm="RecipeDialog" title="레시피 수정" subtitle="저장하면 한 번 더 확인합니다" style="width:420">
+  <DvInput value="{Bind Name}" placeholder="이름"/>
+  <DvInput value="{Bind Temp}" keyboard-type="numeric" min="0" max="120" format="0.0" unit="℃"/>
+  <DvInput value="{Bind Minutes}" keyboard-type="numeric" min="1" max="240" unit="분"/>
+  <DvRow gap="sm">
+    <DvSpacer/>
+    <DvButton variant="secondary" text="취소" onclick="Cancel"/>
+    <DvButton variant="primary" text="저장" onclick="Save"/>
+  </DvRow>
+</DvDialogFrame>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 기본 실행 = 샘플(PNG 다시 찍기) 제외. 샘플만 돌리기: dotnet test -p:RunSamples=true, filter Category=Sample -->
+<RunSettings>
+  <RunConfiguration>
+    <TestCaseFilter>Category!=Sample</TestCaseFilter>
+  </RunConfiguration>
+</RunSettings>

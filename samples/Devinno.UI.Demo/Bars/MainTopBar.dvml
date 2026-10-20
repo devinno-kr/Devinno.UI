@@ -1,0 +1,12 @@
+<DvRow vm="MainTopBar" style="height:56; padding:0 16; gap:8; background: token(surface); border: 1 token(border)">
+  <DvStyle>
+    .tab { padding:8 18; border-radius: token(radius.md); color: token(text-muted); font-size: token(font.body) }
+    .tab:hover { background: token(surface-raised); color: token(text) }
+    .tab-active, .tab-active:hover { background: token(primary); color: token(primary-fg) }
+  </DvStyle>
+  <DvLabel class="title" text="Devinno.UI"/>
+  <DvSpacer/>
+  <DvButton class="{MonitorClass}" text="모니터링" onclick="ShowMonitor"/>
+  <DvButton class="{SettingClass}" text="설정" onclick="ShowSetting"/>
+  <DvButton class="{AlarmClass}" text="알람" onclick="ShowAlarm"/>
+</DvRow>

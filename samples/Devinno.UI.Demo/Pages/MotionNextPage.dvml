@@ -1,0 +1,11 @@
+<DvPageFrame vm="MotionNextPage" title="다음 페이지" subtitle="페이지 전환 움직임 — 돌아가기도 같은 방식">
+  <DvCard title="전환된 페이지">
+    <DvStack gap="md">
+      <DvLabel class="body" text="DvApp.Show(page, DvPageTransition.Slide) 로 들어왔습니다."/>
+      <DvRow>
+        <DvButton text="Slide 로 돌아가기" icon="fa-left-long" variant="primary" onclick="BackSlide"/>
+        <DvButton text="Fade 로 돌아가기" icon="fa-rotate-left" variant="secondary" onclick="BackFade"/>
+      </DvRow>
+    </DvStack>
+  </DvCard>
+</DvPageFrame>

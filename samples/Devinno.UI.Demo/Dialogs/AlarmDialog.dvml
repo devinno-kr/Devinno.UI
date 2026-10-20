@@ -1,0 +1,7 @@
+<DvDialogFrame vm="AlarmDialog" title="{Code}" subtitle="통신 수신" style="width:380">
+  <DvLabel class="body" text="{Text}"/>
+  <DvRow gap="sm">
+    <DvSpacer/>
+    <DvButton variant="danger" text="확인(ACK)" onclick="Ack"/>
+  </DvRow>
+</DvDialogFrame>

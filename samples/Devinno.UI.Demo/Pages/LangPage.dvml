@@ -1,0 +1,26 @@
+<DvPageFrame vm="LangPage" title="{L10n.title}" subtitle="{L10n.subtitle}"
+        font-lang-ko="Malgun Gothic" font-lang-ja="Yu Gothic UI" font-lang-en="Segoe UI">
+  <DvRow>
+    <DvBadge tone="success" text="{L10n.state.running}"/>
+    <DvLabel class="label subtle" text="{L10n.lang.current}: {Lang}"/>
+    <DvSpacer/>
+    <DvButton variant="secondary" text="한국어" onclick="Ko"/>
+    <DvButton variant="secondary" text="English" onclick="En"/>
+    <DvButton variant="secondary" text="日本語" onclick="Ja"/>
+  </DvRow>
+  <DvGrid columns="3">
+    <DvStat label="{L10n.kpi.flow}" value="1,284" unit="m3/h" delta="+3.2%" tone="success"/>
+    <DvStat label="{L10n.kpi.power}" value="412" unit="kW" delta="+8.1%" tone="warning"/>
+    <DvStat label="{L10n.kpi.uptime}" value="98.6" unit="%" tone="info"/>
+  </DvGrid>
+  <DvRow align="stretch" grow="1">
+    <DvCard title="{L10n.card.equipment}" grow="1">
+      <DvStatusItem label="{L10n.eq.pump} #1" state="run" status="{L10n.state.running}"/>
+      <DvStatusItem label="{L10n.eq.filter} B" state="fault" status="{L10n.state.fault}"/>
+      <DvSwitch label="{L10n.auto}" value="{Bind Data.Auto}"/>
+    </DvCard>
+    <DvCard title="{L10n.card.alarms}" grow="1">
+      <DvAlarmBanner items="{Alarms}" style="border-radius:10"/>
+    </DvCard>
+  </DvRow>
+</DvPageFrame>

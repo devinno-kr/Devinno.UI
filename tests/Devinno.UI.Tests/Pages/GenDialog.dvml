@@ -1,0 +1,3 @@
+<DvStack vm="GenDialogTest.GenDialog" style="width:300; height:200; padding:0; gap:0">
+  <DvButton id="btnOk" text="확인"/>
+</DvStack>

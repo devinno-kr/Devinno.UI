@@ -1,0 +1,18 @@
+<DvPageFrame vm="AlarmPage" title="알람" subtitle="ISA-18.2 MVP · 배너 클릭 = 최우선 알람 확인, 목록의 ACK = 해당 알람 확인">
+  <DvRow visible="{ShowBack}">
+    <DvButton variant="ghost" text="← 이전" onclick="Back"/>
+  </DvRow>
+  <DvAlarmBanner items="{Alarms}" comm-alarm="{CommText}" onack="Ack" style="border-radius:12"/>
+  <DvRow>
+    <DvButton variant="danger" text="긴급 발생" onclick="RaiseCritical"/>
+    <DvButton variant="secondary" text="경고 발생" onclick="RaiseMajor"/>
+    <DvButton variant="secondary" text="주의 발생" onclick="RaiseMinor"/>
+    <DvButton variant="ghost" text="통신 이상 토글" onclick="ToggleComm"/>
+    <DvSpacer/>
+    <DvBadge tone="warning" text="{UnAckedText}"/>
+    <DvButton variant="primary" text="전체 확인" onclick="AckAll"/>
+  </DvRow>
+  <DvCard title="알람 목록" badge="{CountText}" grow="1">
+    <DvAlarmList items="{Alarms}" onack="Ack" grow="1"/>
+  </DvCard>
+</DvPageFrame>

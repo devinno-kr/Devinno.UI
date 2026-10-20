@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "Navigation": { "commandName": "Project", "commandLineArgs": "nav" },
+    "Navigation (GPU)": { "commandName": "Project", "commandLineArgs": "nav gpu" },
+    "Dashboard": { "commandName": "Project" },
+    "Components": { "commandName": "Project", "commandLineArgs": "v2" },
+    "Alarm": { "commandName": "Project", "commandLineArgs": "alarm" },
+    "DataGrid": { "commandName": "Project", "commandLineArgs": "grid" },
+    "Trend": { "commandName": "Project", "commandLineArgs": "trend" },
+    "Trend (fast)": { "commandName": "Project", "commandLineArgs": "trend fast" },
+    "Knob": { "commandName": "Project", "commandLineArgs": "knob" },
+    "Neon": { "commandName": "Project", "commandLineArgs": "neon" },
+    "Localization": { "commandName": "Project", "commandLineArgs": "lang" }
+  }
+}

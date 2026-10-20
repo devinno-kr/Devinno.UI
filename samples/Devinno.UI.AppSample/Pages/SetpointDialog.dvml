@@ -1,0 +1,8 @@
+<DvDialogFrame vm="SetpointDialog" title="설정 온도" subtitle="0 ~ 60 ℃" style="width:360">
+  <DvInput value="{Bind Value}" keyboard-type="numeric" min="0" max="60" format="0.0" unit="℃"/>
+  <DvRow gap="sm">
+    <DvSpacer/>
+    <DvButton variant="secondary" text="취소" onclick="Cancel"/>
+    <DvButton variant="primary" text="확인" onclick="Ok"/>
+  </DvRow>
+</DvDialogFrame>

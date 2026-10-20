@@ -1,0 +1,38 @@
+<Project>
+  <!-- 라이브러리 공통: 공개 API 설명(XML 문서 주석)을 빌드 산출물 xml 로 내고, 빠진 설명은 빌드 오류로 막는다. -->
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591;CS1573</WarningsAsErrors>
+  </PropertyGroup>
+
+  <!-- NuGet 패키지 공통(Devinno.UI · Devinno.UI.OpenTK · Devinno.UI.WinForms 는 항상 같은 버전으로 함께 나간다).
+       각 csproj 에는 PackageId·Description·PackageTags 만 둔다. 게시 워크플로는 태그(v1.2.3)로 Version 을 덮어쓴다. -->
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Authors>Devinno</Authors>
+    <Company>Devinno</Company>
+    <Copyright>Copyright (c) 2026 Devinno</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/devinno-kr/Devinno.UI</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/devinno-kr/Devinno.UI</PackageProjectUrl>
+  </PropertyGroup>
+
+  <!-- Korean IntelliSense: the compiler XML (English, from the source comments) is the package default; i18n/ko/{Assembly}.xml
+       goes to lib/{tfm}/ko/ (Visual Studio in Korean shows it). Kept in sync by XmlDocI18nTests / tools/XmlDocI18n. -->
+  <PropertyGroup>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);_DvPackKoreanDocs</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
+  <Target Name="_DvPackKoreanDocs">
+    <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)..\i18n\ko\$(AssemblyName).xml')">
+      <BuildOutputInPackage Include="$(MSBuildThisFileDirectory)..\i18n\ko\$(AssemblyName).xml" TargetPath="ko\$(AssemblyName).xml" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup Condition="'$(IsPackable)' != 'false'">
+    <None Include="$(MSBuildThisFileDirectory)..\README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)..\icon.png" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)..\THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+</Project>

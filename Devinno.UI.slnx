@@ -1,0 +1,13 @@
+<Solution>
+  <Project Path="samples/Devinno.UI.Demo/Devinno.UI.Demo.csproj" />
+  <Folder Name="/samples/">
+    <Project Path="samples/Devinno.UI.AppSample/Devinno.UI.AppSample.csproj" />
+  </Folder>
+  <Folder Name="/src/" />
+  <Project Path="samples/Devinno.UI.Demo.WinForms/Devinno.UI.Demo.WinForms.csproj" />
+  <Project Path="src/Devinno.UI.OpenTK/Devinno.UI.OpenTK.csproj" />
+  <Project Path="tests/Devinno.UI.Tests/Devinno.UI.Tests.csproj" />
+  <Project Path="src/Devinno.UI.WinForms/Devinno.UI.WinForms.csproj" />
+  <Project Path="src/Devinno.UI/Devinno.UI.csproj" />
+  <Project Path="src/Devinno.UI.Generators/Devinno.UI.Generators.csproj" />
+</Solution>

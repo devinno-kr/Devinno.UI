@@ -1,0 +1,6 @@
+<Project>
+  <!-- Devinno.UI 패키지를 참조한 프로젝트의 *.dvml 을 소스 생성기에 자동으로 넘긴다(bin·obj 등 기본 제외 폴더는 뺀다). -->
+  <ItemGroup>
+    <AdditionalFiles Include="**/*.dvml" Exclude="$(DefaultItemExcludes)" />
+  </ItemGroup>
+</Project>

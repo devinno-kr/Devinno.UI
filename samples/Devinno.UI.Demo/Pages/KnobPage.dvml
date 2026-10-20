@@ -1,0 +1,25 @@
+<DvPageFrame vm="KnobPage" title="설정값 조정" subtitle="노브를 잡고 돌려 값을 바꾸고 놓으면 반영됩니다">
+  <DvRow visible="{ShowBack}">
+    <DvButton variant="ghost" text="← 이전" onclick="Back"/>
+  </DvRow>
+  <DvGrid columns="3">
+    <DvCard title="밸브 개도" badge="%">
+      <DvStack align="center" gap="sm">
+        <DvKnob value="{Bind Data.Valve}" unit="%" style="width:150; height:150"/>
+        <DvLabel class="caption" text="0 ~ 100"/>
+      </DvStack>
+    </DvCard>
+    <DvCard title="펌프 속도" badge="rpm">
+      <DvStack align="center" gap="sm">
+        <DvKnob value="{Bind Data.Speed}" min="0" max="3600" step="10" input-mode="both" style="width:150; height:150"/>
+        <DvLabel class="caption" text="0 ~ 3600, step 10 · 끌기 + 탭 키패드"/>
+      </DvStack>
+    </DvCard>
+    <DvCard title="온도 설정" badge="C">
+      <DvStack align="center" gap="sm">
+        <DvKnob value="{Bind Data.Temp}" min="0" max="80" step="0.5" input-mode="tap" style="width:150; height:150"/>
+        <DvLabel class="caption" text="0 ~ 80, step 0.5 · 탭 키패드"/>
+      </DvStack>
+    </DvCard>
+  </DvGrid>
+</DvPageFrame>

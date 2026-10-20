@@ -1,0 +1,85 @@
+<DvPageFrame vm="ProcessPage" title="공정도 — 장비와 연결(DvLine)만 적으면 배치·직교 배관은 라이브러리가">
+  <DvRow gap="md" align="center">
+    <DvSegment value="{Bind Look}">
+      <DvOption value="rich" text="rich"/>
+      <DvOption value="plain" text="plain"/>
+    </DvSegment>
+    <DvButton text="흐름 표시" value="{Bind FlowAnim}"/>
+    <DvLabel class="caption muted" text="{ResetText}"/>
+  </DvRow>
+  <DvTabs grow="1" style="height:0">
+    <DvTab value="basic" text="정수 공정 · 블렌더">
+      <DvRow gap="md" align="center">
+        <DvButton text="P-101 운전" value="{Bind P1Run}"/>
+        <DvButton text="P-102 운전" value="{Bind P2Run}"/>
+        <DvButton text="FCV-101 열림" value="{Bind V1Open}"/>
+        <DvButton text="RTP 1001" value="{Bind BlPump1}"/>
+        <DvButton text="RTP 1002" value="{Bind BlPump2}"/>
+      </DvRow>
+      <DvRow gap="md" grow="1" align="stretch" style="height:0">
+        <DvCard title="정수 공정 — direction=lr" grow="1">
+          <DvProcess look="{Look}" flow-animation="{FlowAnim}" grow="1" style="height:0">
+            <DvTerminal name="IN" text="RAW WATER"/>
+            <DvVessel name="T1" level="{T1Level}" label="T-101"/>
+            <DvPump name="P1" running="{P1Run}" label="P-101"/>
+            <DvPump name="P2" running="{P2Run}" label="P-102"/>
+            <DvValve name="V1" kind="control" open="{V1Open}" label="FCV-101"/>
+            <DvInline name="F1" kind="flowmeter" label="FT-101"/>
+            <DvVessel name="T2" kind="reactor" level="{T2Level}" label="R-201">
+              <DvAgitator running="{P1Run}"/>
+            </DvVessel>
+            <DvTerminal name="OUT" text="TO DRAIN"/>
+            <DvLine from="IN" to="T1.top" arrow="end"/>
+            <DvLine from="T1.bottom" to="P1.in"/>
+            <DvLine from="T1.bottom" to="P2.in"/>
+            <DvLine from="P1.out" to="V1.in"/>
+            <DvLine from="P2.out" to="V1.in"/>
+            <DvLine from="V1.out" to="F1.in"/>
+            <DvLine from="F1.out" to="T2.top" arrow="end"/>
+            <DvLine from="T2.bottom" to="OUT"/>
+            <DvInstrument name="FT1" tag="FT" number="101" on="F1"/>
+            <DvInstrument name="FIC1" tag="FIC" number="101" on="V1" panel="true" value="{FlowText}"/>
+            <DvSignal from="FT1" to="FIC1"/>
+            <DvSignal from="FIC1" to="V1"/>
+          </DvProcess>
+        </DvCard>
+        <DvCard title="블렌더 — direction=tb" style="width:460">
+          <DvProcess direction="tb" look="{Look}" flow-animation="{FlowAnim}" grow="1" style="height:0">
+            <DvTerminal name="MTO" text="MTO RMMT-1"/>
+            <DvTerminal name="UGTF" text="UGTF BL-1"/>
+            <DvVessel name="BL" level="{BlLevel}" label="BL-1">
+              <DvAgitator running="true"/>
+              <DvAttach side="right">
+                <DvLabel class="caption muted" text="TIA 1001"/>
+                <DvLabel class="title" text="{BlTemp}"/>
+              </DvAttach>
+              <DvAttach side="left">
+                <DvButton variant="secondary" size="sm" text="Reset" onclick="ResetBl"/>
+              </DvAttach>
+            </DvVessel>
+            <DvPump name="RP1" running="{BlPump1}" label="RTP 1001"/>
+            <DvPump name="RP2" running="{BlPump2}" label="RTP 1002"/>
+            <DvTerminal name="OUT" text="RESIN TANK"/>
+            <DvLine from="MTO" to="BL.top" arrow="end"/>
+            <DvLine from="UGTF" to="BL.side" arrow="end"/>
+            <DvLine from="BL.bottom" to="RP1.in"/>
+            <DvLine from="BL.bottom" to="RP2.in"/>
+            <DvLine from="RP1.out" to="OUT"/>
+            <DvLine from="RP2.out" to="OUT"/>
+          </DvProcess>
+        </DvCard>
+      </DvRow>
+    </DvTab>
+    <DvTab value="units" text="블렌더 3기 — 유닛">
+      <DvProcess direction="tb" look="{Look}" flow-animation="{FlowAnim}" grow="1" style="height:0">
+        <Blender name="BL1" U="{BL1}"/>
+        <Blender name="BL2" U="{BL2}"/>
+        <Blender name="BL3" U="{BL3}"/>
+        <DvVessel name="RMT" kind="hopper" level="{RmtLevel}" label="RMT"/>
+        <DvLine from="BL1.out" to="RMT.top" arrow="end"/>
+        <DvLine from="BL2.out" to="RMT.top" arrow="end"/>
+        <DvLine from="BL3.out" to="RMT.top" arrow="end"/>
+      </DvProcess>
+    </DvTab>
+  </DvTabs>
+</DvPageFrame>

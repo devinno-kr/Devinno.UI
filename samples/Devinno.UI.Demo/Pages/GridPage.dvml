@@ -1,0 +1,44 @@
+<DvPageFrame vm="GridPage" title="데이터 그리드" subtitle="30만 행 · 고정 열 · 다중 선택(row-key) · 헤더 탭 정렬(누적) · 그룹 헤더 · 요약 — 값은 0.5초마다 갱신(Repaint) · 편집 셀">
+  <DvRow>
+    <DvLabel class="body" text="{SelectionText}"/>
+    <DvSpacer/>
+    <DvButton variant="secondary" text="선택 해제" icon="fa-xmark" onclick="ClearSelection"/>
+  </DvRow>
+  <DvCard title="설비 태그" badge="{CountText}" grow="1">
+    <DvStyle>
+      .alarm-row { background: token(tone-danger-soft) }
+      .over      { background: token(tone-danger); color: #ffffff; font-weight: bold }
+      .under     { color: token(tone-info-fg); font-weight: bold }
+    </DvStyle>
+    <DvDataGrid items="{Rows}" grow="1" selection-mode="multi" selection="{Bind Picked}" row-key="Id"
+                onrowclick="Inspect" row-class="RowClass"
+                style="border-radius:token(radius.md); border:1 solid token(border)">
+      <DvColumn header="No" field="Id" width="90" frozen="true" sortable="true"/>
+      <DvColumn header="태그" field="Tag" width="150" frozen="true" sortable="true" filter="text"/>
+      <DvColumn header="사용" field="Use" width="64" cell-type="check"/>
+      <DvColumn header="경보" field="AlarmLamp" width="64" cell-type="lamp" blink="true"/>
+      <DvColumn header="확인" width="96" cell-type="button" text="확인" icon="fa-check" onclick="Ack" enabled="CanAck"/>
+      <DvColumn header="이름" field="Name" width="140" cell-type="input"/>
+      <DvColumn header="설정값" field="SetPoint" width="110" cell-type="input" min="0" max="120" unit="℃" format="0.0" onbeforecommit="CheckSetPoint" filter="range"/>
+      <DvColumn header="모드" field="Mode" width="110" cell-type="select" filter="auto">
+        <DvOption value="auto" text="자동" icon="fa-robot"/>
+        <DvOption value="manual" text="수동" icon="fa-hand"/>
+      </DvColumn>
+      <DvColumn header="예약" field="ReserveAt" width="140" cell-type="datetime" format="MM-dd HH:mm" filter="date"/>
+      <DvColumn header="색" field="Pen" width="130" cell-type="color"/>
+      <DvColumn header="설명" field="Desc" width="280"/>
+      <DvColumnGroup header="공정값">
+        <DvColumn header="값" field="Value" width="120" format="0.00" sortable="true" cell-class="ValueClass"/>
+        <DvColumn header="단위" field="Unit" width="80" align="center"/>
+        <DvColumn header="상태" field="State" width="100" align="center" sortable="true" filter="values"/>
+      </DvColumnGroup>
+      <DvColumn header="갱신 시각" field="Time" width="140" format="HH:mm:ss.fff" sortable="true"/>
+      <DvColumn header="설비" field="Equip.Name" width="160" sortable="true"/>
+      <DvSummaryRow title="평균" fn="avg"/>
+      <DvSummaryRow title="최대">
+        <DvSummary field="Tag" fn="count" format="#,0"/>
+        <DvSummary field="Value" fn="max" format="0.00"/>
+      </DvSummaryRow>
+    </DvDataGrid>
+  </DvCard>
+</DvPageFrame>

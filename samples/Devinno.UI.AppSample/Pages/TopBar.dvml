@@ -1,0 +1,10 @@
+<DvRow vm="TopBar" style="height:56; padding:0 16; gap:8; background: token(surface)">
+  <DvStyle>
+    .tab { padding:8 18; border-radius: token(radius.md); color: token(text-muted) }
+    .on { background: token(primary); color: token(primary-fg) }
+  </DvStyle>
+  <DvLabel class="title" text="App Sample"/>
+  <DvSpacer/>
+  <DvButton class="{HomeClass}" text="홈" onclick="ShowHome"/>
+  <DvButton class="{MonitorClass}" text="모니터링" onclick="ShowMonitor"/>
+</DvRow>

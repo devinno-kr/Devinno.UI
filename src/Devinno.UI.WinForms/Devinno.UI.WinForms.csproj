@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- WinForms 어댑터: 캔버스(SKControl) 하나 + 숨긴 TextBox 하나. 패키지가 windows10.0.19041 TFM 만 제공 -->
+  <PropertyGroup>
+    <!-- 패키지 공통 설정은 ../Directory.Build.props -->
+    <PackageId>Devinno.UI.WinForms</PackageId>
+    <Description>Devinno.UI 의 WinForms 어댑터 — ViewControl 로 DvApp 을 폼에 올립니다(한글 IME 입력, 터치 모드 선택).</Description>
+    <PackageTags>ui;hmi;skiasharp;winforms;touch;industrial</PackageTags>
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Devinno.UI\Devinno.UI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="3.119.4" />
+    <PackageReference Include="SkiaSharp.Views.WindowsForms" Version="3.119.4" />
+  </ItemGroup>
+
+</Project>

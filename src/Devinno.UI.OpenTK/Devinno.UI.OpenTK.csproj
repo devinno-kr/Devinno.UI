@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Devinno.UI\Devinno.UI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenTK" Version="4.8.2" />
+    <PackageReference Include="SkiaSharp" Version="3.119.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 장시간 스모크 도구(tools/Smoke) — 프레임 시간 고리 -->
+    <InternalsVisibleTo Include="Devinno.UI.Smoke" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- 패키지 공통 설정은 ../Directory.Build.props -->
+    <PackageId>Devinno.UI.OpenTK</PackageId>
+    <Description>Devinno.UI 의 OpenTK 창 어댑터 — ViewWindow 로 DvApp 을 창에 띄웁니다(터치 우선, 가상 키보드, CPU·OpenGL 그리기).</Description>
+    <PackageTags>ui;hmi;skiasharp;opentk;touch;industrial</PackageTags>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks> <!-- GLFW 창 포인터(배율 변경 콜백) -->
+  </PropertyGroup>
+
+</Project>

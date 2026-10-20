@@ -1,0 +1,67 @@
+# 태그(v1.2.3)를 올리면 테스트 → 패키지 3개(Devinno.UI · Devinno.UI.OpenTK · Devinno.UI.WinForms)를 그 버전으로 만들어 nuget.org 에 게시한다.
+# 게시는 nuget.org Trusted Publishing(OIDC) — 오래 가는 API 키를 저장하지 않고, 실행마다 1시간짜리 임시 키를 받는다.
+# 준비: ① nuget.org > 사용자 이름 > Trusted Publishing 에 정책 추가(Owner devinno-kr, Repository Devinno.UI, Workflow File publish.yml)
+#       ② GitHub 저장소 시크릿 NUGET_USER = nuget.org 사용자 이름(프로필 이름, 이메일 아님)
+name: Publish NuGet
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: windows-latest   # WinForms 어댑터(net9.0-windows) 때문에 Windows
+    permissions:
+      contents: read
+      id-token: write         # GitHub OIDC 토큰 — nuget.org 임시 키로 바꾼다
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Version from tag
+        shell: pwsh
+        run: |
+          $v = "${{ github.ref_name }}".TrimStart('v')
+          if ($v -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') { throw "태그 '${{ github.ref_name }}' 가 v1.2.3 형식이 아닙니다." }
+          "VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      # 태그 버전으로 한 번만 빌드하고, 테스트한 그 바이너리를 그대로 pack 한다(--no-build)
+      # XmlDocI18nTests reads the English XML of all three packages, so build them (and the tests) first
+      - name: Build
+        shell: pwsh
+        run: |
+          foreach ($p in 'src/Devinno.UI', 'src/Devinno.UI.OpenTK', 'src/Devinno.UI.WinForms', 'tests/Devinno.UI.Tests') {
+            dotnet build $p -c Release -p:Version=$env:VERSION
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Test
+        run: dotnet test tests/Devinno.UI.Tests -c Release --no-build
+
+      - name: Pack
+        shell: pwsh
+        run: |
+          foreach ($p in 'src/Devinno.UI', 'src/Devinno.UI.OpenTK', 'src/Devinno.UI.WinForms') {
+            dotnet pack $p -c Release --no-build -p:Version=$env:VERSION -o out
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      # 임시 키는 1시간짜리라 올리기 바로 전에 받는다
+      - name: NuGet login (OIDC → temp API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Push to nuget.org
+        shell: pwsh
+        run: dotnet nuget push "out/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nupkg-${{ env.VERSION }}
+          path: out/*.nupkg

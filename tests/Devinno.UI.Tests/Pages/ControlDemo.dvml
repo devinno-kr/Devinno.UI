@@ -1,0 +1,7 @@
+<DvStack vm="ControlEndToEnd.ControlDemoVm">
+  <DvLabel id="lblState" text="대기 중"/>
+  <DvRow>
+    <DvButton id="btnStart" text="시작" variant="primary" onclick="Start"/>
+    <DvButton id="btnStop" text="정지" onclick="Stop"/>
+  </DvRow>
+</DvStack>

@@ -1,0 +1,22 @@
+<DvPageFrame vm="HomePage" title="홈" subtitle="페이지 전환 데모 — 버튼이나 상단 바로 이동하고, 각 페이지의 '이전' 으로 돌아옵니다">
+  <DvRow gap="lg" align="stretch">
+    <DvCard title="모니터링" grow="1">
+      <DvStack gap="md">
+        <DvLabel class="body muted" text="운영 대시보드"/>
+        <DvButton variant="primary" text="모니터링으로" onclick="ShowMonitor"/>
+      </DvStack>
+    </DvCard>
+    <DvCard title="설정" grow="1">
+      <DvStack gap="md">
+        <DvLabel class="body muted" text="설정값 조정"/>
+        <DvButton variant="primary" text="설정으로" onclick="ShowSetting"/>
+      </DvStack>
+    </DvCard>
+    <DvCard title="알람" grow="1">
+      <DvStack gap="md">
+        <DvLabel class="body muted" text="알람 확인"/>
+        <DvButton variant="primary" text="알람으로" onclick="ShowAlarm"/>
+      </DvStack>
+    </DvCard>
+  </DvRow>
+</DvPageFrame>

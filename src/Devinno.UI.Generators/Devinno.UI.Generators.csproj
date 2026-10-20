@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- dvml 소스 생성기: *.dvml 을 읽어 vm 클래스에 id 핸들 필드·Markup 상수·IDvControlHost.Attach 를 만든다. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <!-- 따로 게시하지 않는다 — Devinno.UI 패키지의 analyzers 로 들어간다 -->
+    <IsPackable>false</IsPackable>
+    <!-- 공개 API 가 아닌 컴파일러 플러그인이라 src/Directory.Build.props 의 문서 주석 오류화를 끈다. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- 내부용 생성기라 분석기 릴리스 추적(AnalyzerReleases.*.md)은 쓰지 않는다. -->
+    <NoWarn>$(NoWarn);RS2008</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 공정도 검사의 내장 장비 표가 라이브러리와 같은지 테스트가 비교한다. -->
+    <InternalsVisibleTo Include="Devinno.UI.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,62 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- 버전·저자·라이선스·아이콘·README 등 패키지 공통 설정은 ../Directory.Build.props -->
+    <PackageId>Devinno.UI</PackageId>
+    <Description>SkiaSharp 기반 .NET UI 라이브러리 (산업용 HMI 터치 패널·일반 앱). XML 마크업 + CSS 식 인라인 style + C# 뷰모델 바인딩. 창에 띄우려면 어댑터 Devinno.UI.OpenTK 또는 Devinno.UI.WinForms 를 함께 씁니다.</Description>
+    <PackageTags>ui;hmi;skiasharp;touch;industrial;markup;mvvm</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="3.119.4" />
+  </ItemGroup>
+
+  <!-- 패키지 문서: AI·사람용 작성 규칙과 마크업 레퍼런스(C# API 설명은 Devinno.UI.xml, README·아이콘·제3자 고지는 ../Directory.Build.props) -->
+  <ItemGroup>
+    <None Include="..\..\llm-rules.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\dvml-ui-markup.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\dvml-process.md" Pack="true" PackagePath="docs\" />
+  </ItemGroup>
+
+  <!-- dvml 소스 생성기: 이 라이브러리가 참조하되(빌드 순서) 어셈블리로는 안 쓰고, 분석기로 패키지에 넣는다. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Devinno.UI.Generators\Devinno.UI.Generators.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" DvAnalyzer="true" />
+    <None Include="build\Devinno.UI.props" Pack="true" PackagePath="build\" />
+    <None Include="buildTransitive\Devinno.UI.props" Pack="true" PackagePath="buildTransitive\" />
+  </ItemGroup>
+
+  <!-- 생성기 dll 경로는 생성기 프로젝트에 직접 묻는다(GetTargetPath) — 구성·출력 폴더·TFM 이 바뀌어도 맞다. -->
+  <PropertyGroup>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_DvPackGenerator</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+  <Target Name="_DvPackGenerator">
+    <MSBuild Projects="@(ProjectReference->WithMetadataValue('DvAnalyzer', 'true'))" Targets="GetTargetPath"
+             Properties="Configuration=$(Configuration)" RemoveProperties="TargetFramework;RuntimeIdentifier">
+      <Output TaskParameter="TargetOutputs" ItemName="_DvGeneratorDll" />
+    </MSBuild>
+    <Error Condition="'@(_DvGeneratorDll)' == ''" Text="Devinno.UI: 생성기 dll 경로를 얻지 못했습니다." />
+    <Error Condition="!Exists('%(_DvGeneratorDll.Identity)')" Text="Devinno.UI: 생성기 dll 이 없습니다: %(_DvGeneratorDll.Identity)" />
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="@(_DvGeneratorDll)" PackagePath="analyzers/dotnet/cs" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Devinno.UI.Tests" />
+    <InternalsVisibleTo Include="Devinno.UI.OpenTK" />
+    <InternalsVisibleTo Include="Devinno.UI.WinForms" />
+  </ItemGroup>
+
+  <!-- 아이콘 폰트: Font Awesome 6.1.2 Free (SIL OFL 1.1, ../../THIRD-PARTY-NOTICES.md). 이름표 = tools/gen_fa_icons.py -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources/fa-solid.otf" LogicalName="Devinno.UI.Resources.fa-solid.otf" />
+    <EmbeddedResource Include="Resources/fa-regular.otf" LogicalName="Devinno.UI.Resources.fa-regular.otf" />
+    <EmbeddedResource Include="Resources/fa-brands.otf" LogicalName="Devinno.UI.Resources.fa-brands.otf" />
+    <EmbeddedResource Include="Resources/fa-icons.txt" LogicalName="Devinno.UI.Resources.fa-icons.txt" />
+  </ItemGroup>
+
+</Project>
