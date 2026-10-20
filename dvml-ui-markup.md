@@ -575,6 +575,7 @@ Most attributes are bound. The following are **not bound and are used literally*
 ### 6.4 Click (`onclick`)
 
 - `onclick="Method"` → the VM's `public void Method()`.
+- Write only the method name — there is no call form (`onclick="Method(item)"` never runs); arguments such as the `DvRepeat` item are passed automatically. A name that is not a public instance method of the VM (including base classes) is build error DVML018 (20.7). The same applies to `onbeforecommit`, `onack`, and `onrowclick`.
 - Inside a `DvRepeat` item, `Method(항목형 item)` is called if it exists, otherwise `Method()`.
 - **Bubbling:** starting from the deepest element at the pressed point and moving up, the first interactive element encountered receives the click. Interactive element = has `onclick`, or has a hover/press style (including via class), or is an input, toggle, knob, grid, or ACK-capable alarm widget. If that element has no `onclick`, nothing happens (it does not bubble further).
 - If you press inside a scroll box (including a grid) and drag 8 or more, it is treated as a scroll, not a click.
@@ -602,7 +603,7 @@ Right before writing a value to the VM, a VM method confirms it. The value is wr
 | `DvColumn cell-type="check"` | `bool M(Row row, bool value)` or `bool M(bool value)` |
 | `DvColumn` edit cell (`input` `select` `datetime` `color`) | `bool M(Row row, T value)` or `bool M(T value)` (T = the property's underlying type; `int` for `int?`) |
 
-- If the method is not on the VM or the signature differs (including a non-`bool` return such as `void M(bool)`), **no widget or cell writes** (rejected). A Trace warning is logged once per VM type and method name.
+- If the method is not on the VM (a misspelled name is build error DVML018 in a dvml with `vm`) or the signature differs (including a non-`bool` return such as `void M(bool)`), **no widget or cell writes** (rejected). A Trace warning is logged once per VM type and method name.
 - If the method throws, the write is also rejected, a Trace error is logged, and it is reported via `HandlerError` (6.7; the exception is not propagated to the app).
 - Without `onbeforecommit`, the value is written without confirmation.
 - Even after passing confirmation, **if the VM property's setter throws** (including type conversion failure), it is treated as a write failure and handled exactly like a rejection. The error text for `DvInput` (including grid input cells) is "값을 저장하지 못했습니다" ("Could not save the value", `dv.input.write-failed`); the exception message is not shown on screen.
@@ -1780,7 +1781,7 @@ Invalidate();   // 호스트의 Invalidate (6장)
 
 ### 20.6 Where it cannot be used
 
-- An `id` inside a `DvRepeat`/`DvComponent` template does not create a handle (it is cloned once per item/instance). Warning DVML004 is reported. Handle such elements with bindings and `onclick="Method(item)"`.
+- An `id` inside a `DvRepeat`/`DvComponent` template does not create a handle (it is cloned once per item/instance). Warning DVML004 is reported. Handle such elements with bindings and an `onclick` method that takes the item as its parameter (`onclick="Select"` → `public void Select(Item item)`, 6.4).
 - An `id` on a component **instance** (`<PumpCard id="p1"/>`) works. `Bounds` and overrides apply only to that instance.
 
 ### 20.7 Build diagnostics
@@ -1806,8 +1807,13 @@ Problems in each dvml are reported at compile time. The location points inside t
 | DVML015 | Warning | `DvRadio` without `option` — selects no value and never turns on |
 | DVML016 | Warning | `DvListBox` value attribute does not match the mode — `value` with multi-select (`selection-mode="multi"`), `selected-items` with single-select (ignored at runtime) |
 | DVML017 | Warning | Value not allowed for an attribute that accepts fixed values — `DvListBox selection-mode` (single, multi), `DvSlider direction` (right, left, up, down). Default used at runtime |
+| DVML018 | Error | Handler attribute (`onclick`, `onbeforecommit`, `onack`, `onrowclick`) that is not the name of a public instance method of the VM — misspelled, private or static method, binding (`{…}`), or call form (`M(item)`). At runtime the handler would silently never run |
 
 DVML012–017 are checked for all dvml, including those without `vm` (DVML016/017 are skipped when the value is a binding `{…}`). A style that is entirely a binding (`style="{S}"`) is skipped; for declarations where only the value is bound (`color:{C}`), only the name is checked. Token names built from component parameters (`token(tone-{tone}-fg)`) and bound classes (`class="{C}"`) are skipped. **Themes created in C# (`new DvTheme(토큰, 스타일시트)`) and `<DvStyle>` of components registered in code are not visible at build time** — apps that use such tokens/classes turn the check off in `.editorconfig` with `dotnet_diagnostic.DVML013.severity = none` (`DVML014` for classes).
+
+DVML018 checks dvml with `vm` only (the VM type is the target), including handlers inside `DvRepeat` and on `DvColumn`. Only the name is checked — a public instance method with that name on the VM type or its base classes; parameter rules are in 6.4 and 6.5. Skipped: inside a `<DvComponent>` definition (which screen VM it runs on is not known at build time) and `onclick` on instances of a project-dvml component that declares an `onclick` parameter. A component registered in C# that declares an `onclick` parameter is not visible at build time — if you use one, turn the check off with `dotnet_diagnostic.DVML018.severity = none` in `.editorconfig`.
+
+Messages are in English. When the compiler's UI language is Korean (Korean Visual Studio, or `dotnet build` on a Korean OS), they are shown in Korean.
 
 DVML008–011 also check dvml without `vm`, and errors do not block VM code generation. Only what is certain at build time is checked — names/values containing bindings (`{…}`) and equipment whose ports are unknown at build time (`DvSymbol` registered in code, component units) are skipped and reported via Trace at runtime (22.8).
 

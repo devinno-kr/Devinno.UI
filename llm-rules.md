@@ -61,7 +61,7 @@ Knowing how mistakes show up helps you find the cause quickly when looking at th
 | Unsupported value (`justify-content:space-around`, `align-items:baseline`, `text-align:justify`) | Treated as the default (start / left). |
 | 5 or more `padding` values | Ignored. Only 1–4 values work (3 = top, left/right, bottom — same as CSS). |
 | Property path not on the VM (`{Temprature}`) | Empty value (null). Text is blank. |
-| Handler method not on the VM (`onclick="Strat"`) | Nothing happens. (With a code handle's `Click`, a typo is a compile error.) |
+| Handler method not on the VM (`onclick="Strat"`) | Build error DVML018 in a dvml with `vm`. Where it is not checked (inside a `DvComponent` definition), nothing happens at runtime. (With a code handle's `Click`, a typo is a compile error.) |
 | `hover-style`, `content-align`, etc. on a component instance | Ignored. Only parameters and `style`, `class`, `grow`, `width`, `height`, `visible`, `onclick`, `disabled` are passed through. (See section 4) |
 | Unknown icon name | The icon is not drawn (one Trace warning). |
 | `DvImage src` file missing | Empty box. |
@@ -87,7 +87,7 @@ Conversely, **exceptions thrown by VM code do not stop the screen.** Exceptions 
 
 Some problems are reported only as `System.Diagnostics.Trace` warnings (unknown icons, unparsed `content-align`, unsupported selectors, DvDataGrid column path/type mismatches, etc.). Keep a Trace listener on during development.
 
-If the `onbeforecommit` method is missing from the VM or has a different signature (including a return type other than `bool`), **the value is not written** (rejected). A Trace warning is logged once per VM type and method name. If the method throws, the value is also rejected and a Trace error is logged (also reported via `HandlerError`). If, after passing the check, **the VM property's setter throws**, it is handled the same as a rejection (`DvInput` keeps editing + shows the message "값을 저장하지 못했습니다" (could not save the value), picker popups stay open, toggles, knobs and check cells keep their value). This is the same for all widgets (DvToggle, DvKnob, DvInput, DvSelect, pickers) and DvDataGrid cells. A misspelled name makes the value look like it "does not change", so check Trace. Signature: `dvml-ui-markup.md` section 6.
+If the `onbeforecommit` method is missing from the VM (a misspelled name is build error DVML018 in a dvml with `vm`) or has a different signature (including a return type other than `bool`), **the value is not written** (rejected). A Trace warning is logged once per VM type and method name. If the method throws, the value is also rejected and a Trace error is logged (also reported via `HandlerError`). If, after passing the check, **the VM property's setter throws**, it is handled the same as a rejection (`DvInput` keeps editing + shows the message "값을 저장하지 못했습니다" (could not save the value), picker popups stay open, toggles, knobs and check cells keep their value). This is the same for all widgets (DvToggle, DvKnob, DvInput, DvSelect, pickers) and DvDataGrid cells. A misspelled name makes the value look like it "does not change", so check Trace. Signature: `dvml-ui-markup.md` section 6.
 
 ---
 
@@ -126,11 +126,11 @@ Full usage is in `dvml-ui-markup.md` section 20. Only the principles to follow a
 - **When code writes, code is the owner.** Once you write `Enabled`, `Visible` or `Text` through a handle, that property's markup value (including bindings) is no longer used. Do not drive one property with both a binding and a handle. To revert, call `ResetOverrides()` (for text only, `Text = null`).
 - **Handle fields are `null` in the VM constructor.** Do setup such as subscribing to `Click` in `partial void OnLoaded()`, which is called after the first connection to the screen. `OnLoaded()` runs once per VM instance.
 - **Writes work from any thread, but reads reflect the last layout.** `Enabled = false` is readable immediately, but a write of `true` becomes readable after the next layout. Read `Bounds` on the UI thread.
-- **`id` inside `DvRepeat` or `DvComponent` templates has no handle** (warning DVML004). Handle such places with `onclick="Method(item)"` and bindings.
+- **`id` inside `DvRepeat` or `DvComponent` templates has no handle** (warning DVML004). Handle such places with bindings and an `onclick` handler that takes the item as its parameter (`onclick="Select"` → `public void Select(Item item)`; write only the method name — the item is passed automatically).
 - `Click` fires only on the normal click path (excluding toggle, input, select, grid and alarm widgets). Subscribing to `Click` alone makes that element take the click so it does not leak to an outer `onclick`.
 - `Bounds` is in window coordinates. `left`/`top` of `position:absolute` are relative to the parent's content box, so to use `Bounds` values as-is, place the element under a root without padding.
 - If a class deriving from `DvPage` or `DvBar` is the VM, the generator also creates the markup wiring (`dvml-ui-markup.md` section 16). Each page has its own class and its own dvml.
-- A VM is connected to only one dvml (`vm="…"`). Diagnostics DVML001–014 appear in the build output. **MUST** build after editing markup and check there are no DVML012 (unknown style property), DVML013 (unknown token) or DVML014 (unknown class) warnings — at runtime these are only silently ignored or turn magenta, without any error.
+- A VM is connected to only one dvml (`vm="…"`). Diagnostics DVML001–018 appear in the build output (DVML018 = handler attribute that is not a public method of the VM). **MUST** build after editing markup and check there are no DVML012 (unknown style property), DVML013 (unknown token) or DVML014 (unknown class) warnings — at runtime these are only silently ignored or turn magenta, without any error.
 
 ### 4.2 Dialogs (`DvDialog`, `ShowDialog`, `MessageBox`, `InputBox`, `InputNumber`, `SelectBox`)
 

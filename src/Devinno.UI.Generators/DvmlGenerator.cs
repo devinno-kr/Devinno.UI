@@ -45,6 +45,10 @@ public sealed class DvmlGenerator : IIncrementalGenerator
                 if (!defined.Contains(name))
                     spc.ReportDiagnostic(Diagnostic.Create(Diagnostics.StyleUnknownClass, at, name));
 
+        var clickParamComponents = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var f in files)
+            clickParamComponents.UnionWith(f.ClickParamComponents);
+
         foreach (var group in files.Where(f => f.Vm is not null).GroupBy(f => f.Vm!, StringComparer.Ordinal))
         {
             var list = group.ToList();
@@ -71,7 +75,36 @@ public sealed class DvmlGenerator : IIncrementalGenerator
                 continue;
             }
 
+            CheckHandlers(spc, type, file, clickParamComponents);
             spc.AddSource(group.Key + ".Dvml.g.cs", Emit(type, file));
+        }
+    }
+
+    // DVML018 — 실행 때는 핸들러 속성 값 그대로 VM(상속 포함)의 public 인스턴스 메서드를 이름으로 찾고, 없으면 조용히 아무 일도 없다.
+    // 이름만 본다(매개변수 규칙은 핸들러마다 달라 여기서 판단하지 않는다).
+    private static void CheckHandlers(SourceProductionContext spc, INamedTypeSymbol type, DvmlModel file, HashSet<string> clickParamComponents)
+    {
+        var methods = new HashSet<string>(StringComparer.Ordinal);
+        for (var t = type; t is not null; t = t.BaseType)
+            foreach (var m in t.GetMembers().OfType<IMethodSymbol>())
+                if (m.MethodKind == MethodKind.Ordinary && m.DeclaredAccessibility == Accessibility.Public && !m.IsStatic)
+                    methods.Add(m.Name);
+
+        foreach (var (attr, value, tag, at) in file.Handlers)
+        {
+            if (attr == "onclick" && clickParamComponents.Contains(tag))
+                continue; // onclick 을 매개변수로 받는 컴포넌트 — 핸들러로 전달되지 않는다
+            if (value.IndexOf('{') >= 0)
+                spc.ReportDiagnostic(Diagnostic.Create(Diagnostics.HandlerBinding, at, attr, value));
+            else if (SyntaxFacts.IsValidIdentifier(value))
+            {
+                if (!methods.Contains(value))
+                    spc.ReportDiagnostic(Diagnostic.Create(Diagnostics.HandlerNotFound, at, attr, value, type.Name));
+            }
+            else if (value.IndexOf('(') is > 0 and var paren && SyntaxFacts.IsValidIdentifier(value.Substring(0, paren).Trim()))
+                spc.ReportDiagnostic(Diagnostic.Create(Diagnostics.HandlerCallForm, at, attr, value, value.Substring(0, paren).Trim()));
+            else
+                spc.ReportDiagnostic(Diagnostic.Create(Diagnostics.HandlerNotName, at, attr, value));
         }
     }
 

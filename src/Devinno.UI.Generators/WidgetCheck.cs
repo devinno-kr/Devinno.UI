@@ -26,11 +26,11 @@ internal static class WidgetCheck
                         report(Diagnostics.WidgetUnknownValue, mode, new object[] { "DvListBox", "selection-mode", mode.Value, "single·multi", "single" });
                     var multi = mode?.Value == "multi";
                     if (multi && e.Attribute("value") is { } v)
-                        report(Diagnostics.ListBoxValueAttr, v, new object[] { "selection-mode=\"multi\" 인 DvListBox 의 value — 여럿 고르기는 selected-items 에 바인딩합니다" });
+                        report(Diagnostics.ListBoxValueAttr, v, new object[] { Diagnostics.Text("Widget_ListMultiValue") });
                     else if (!multi && mode is not null && IsBinding(mode.Value))
                         break; // 모드가 바인딩이면 어느 쪽인지 모른다
                     else if (!multi && e.Attribute("selected-items") is { } si)
-                        report(Diagnostics.ListBoxValueAttr, si, new object[] { "한 개 고르기 DvListBox 의 selected-items — 여럿 고르기면 selection-mode=\"multi\" 를 주고, 한 개면 value 에 바인딩합니다" });
+                        report(Diagnostics.ListBoxValueAttr, si, new object[] { Diagnostics.Text("Widget_ListSingleItems") });
                     break;
                 }
 

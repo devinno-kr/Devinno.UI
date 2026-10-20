@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Diagnostic texts of the dvml generator (English, the default). Korean: Resources.ko.resx (same keys). -->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="DVML001_Title" xml:space="preserve">
+    <value>dvml XML syntax error</value>
+  </data>
+  <data name="DVML001_Message" xml:space="preserve">
+    <value>Could not read the dvml as XML: {0}</value>
+  </data>
+  <data name="DVML002_Title" xml:space="preserve">
+    <value>Duplicate id</value>
+  </data>
+  <data name="DVML002_Message" xml:space="preserve">
+    <value>id '{0}' already exists in this dvml — an id can be used only once per file</value>
+  </data>
+  <data name="DVML003_Title" xml:space="preserve">
+    <value>id is not a C# identifier</value>
+  </data>
+  <data name="DVML003_Message" xml:space="preserve">
+    <value>id '{0}' cannot be used as a C# field name (start with a letter or _, no keywords)</value>
+  </data>
+  <data name="DVML004_Title" xml:space="preserve">
+    <value>id inside a repeat or component</value>
+  </data>
+  <data name="DVML004_Message" xml:space="preserve">
+    <value>id '{0}' is inside &lt;{1}&gt; and is copied per item, so no field is generated — use bindings, or an onclick handler that takes the item as its parameter</value>
+  </data>
+  <data name="DVML005_Title" xml:space="preserve">
+    <value>vm type not found</value>
+  </data>
+  <data name="DVML005_Message" xml:space="preserve">
+    <value>vm type '{0}' was not found (give a top-level, non-nested, non-generic class as 'Namespace.Class')</value>
+  </data>
+  <data name="DVML006_Title" xml:space="preserve">
+    <value>vm type is not partial</value>
+  </data>
+  <data name="DVML006_Message" xml:space="preserve">
+    <value>vm type '{0}' is not partial — declare it as 'partial class' so the generated fields can be added</value>
+  </data>
+  <data name="DVML007_Title" xml:space="preserve">
+    <value>Several dvml files name the same vm</value>
+  </data>
+  <data name="DVML007_Message" xml:space="preserve">
+    <value>More than one dvml names vm type '{0}' — one VM can be connected to only one dvml</value>
+  </data>
+  <data name="DVML008_Title" xml:space="preserve">
+    <value>Process diagram name not found</value>
+  </data>
+  <data name="DVML008_Message" xml:space="preserve">
+    <value>{0}: '{1}' is not in this process diagram{2}</value>
+  </data>
+  <data name="DVML009_Title" xml:space="preserve">
+    <value>Process diagram port error</value>
+  </data>
+  <data name="DVML009_Message" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="DVML010_Title" xml:space="preserve">
+    <value>Duplicate process diagram name</value>
+  </data>
+  <data name="DVML010_Message" xml:space="preserve">
+    <value>Name '{0}' already exists in this process diagram — equipment and instrument names are unique within a diagram (unit)</value>
+  </data>
+  <data name="DVML011_Title" xml:space="preserve">
+    <value>Unknown value in process diagram</value>
+  </data>
+  <data name="DVML011_Message" xml:space="preserve">
+    <value>{0}='{1}' is not a valid value ({2}) — the default is drawn at run time</value>
+  </data>
+  <data name="DVML012_Title" xml:space="preserve">
+    <value>Unknown style property</value>
+  </data>
+  <data name="DVML012_Message" xml:space="preserve">
+    <value>Style property '{0}' is not supported — it is silently ignored at run time{1}</value>
+  </data>
+  <data name="DVML013_Title" xml:space="preserve">
+    <value>Unknown theme token</value>
+  </data>
+  <data name="DVML013_Message" xml:space="preserve">
+    <value>Token '{0}' is not in the built-in themes (magenta #FF00FF at run time) — if it is a token of a theme built in C# (new DvTheme), turn this off in .editorconfig with dotnet_diagnostic.DVML013.severity = none</value>
+  </data>
+  <data name="DVML014_Title" xml:space="preserve">
+    <value>Unknown class</value>
+  </data>
+  <data name="DVML014_Message" xml:space="preserve">
+    <value>Class '{0}' is neither a built-in class nor defined in a &lt;DvStyle&gt; of a project dvml (silently ignored at run time) — if it comes from a style registered in C# (theme style sheet, component), turn this off in .editorconfig with dotnet_diagnostic.DVML014.severity = none</value>
+  </data>
+  <data name="DVML015_Title" xml:space="preserve">
+    <value>DvRadio without option</value>
+  </data>
+  <data name="DVML015_Message" xml:space="preserve">
+    <value>DvRadio has no option — this button selects no value and never turns on (value is the group value, option is the value this button selects)</value>
+  </data>
+  <data name="DVML016_Title" xml:space="preserve">
+    <value>DvListBox value attribute does not match its mode</value>
+  </data>
+  <data name="DVML016_Message" xml:space="preserve">
+    <value>{0} — ignored at run time</value>
+  </data>
+  <data name="DVML017_Title" xml:space="preserve">
+    <value>Unknown widget attribute value</value>
+  </data>
+  <data name="DVML017_Message" xml:space="preserve">
+    <value>{0} {1}='{2}' is not a valid value ({3}) — behaves as {4} at run time</value>
+  </data>
+  <data name="DVML018_Title" xml:space="preserve">
+    <value>Handler method not found</value>
+  </data>
+  <data name="DVML018_NotFound" xml:space="preserve">
+    <value>{0}="{1}": '{1}' is not a public instance method of '{2}' (or its base classes) — the handler would never run</value>
+  </data>
+  <data name="DVML018_Binding" xml:space="preserve">
+    <value>{0}="{1}": a handler attribute takes a method name — bindings ({{…}}) are not resolved, so the handler would never run</value>
+  </data>
+  <data name="DVML018_CallForm" xml:space="preserve">
+    <value>{0}="{1}": write only the method name ({0}="{2}") — the item or row argument is passed automatically</value>
+  </data>
+  <data name="DVML018_NotName" xml:space="preserve">
+    <value>{0}="{1}": '{1}' is not a method name — the handler would never run</value>
+  </data>
+  <data name="Proc_InstrumentOnRequired" xml:space="preserve">
+    <value> — on (the name of the equipment it is attached to) is required</value>
+  </data>
+  <data name="Proc_InstrumentOnEquipment" xml:space="preserve">
+    <value> — it must be the name of equipment in the same process diagram</value>
+  </data>
+  <data name="Proc_InstrumentNotPiped" xml:space="preserve">
+    <value> — instruments are not connected with pipes (use DvSignal)</value>
+  </data>
+  <data name="Proc_UnitInnerDirect" xml:space="preserve">
+    <value>equipment inside a unit is not connected directly from outside — put a &lt;DvPort&gt; on the unit and connect '{0}.port' (ports now: {1})</value>
+  </data>
+  <data name="Proc_ChoosePort" xml:space="preserve">
+    <value>'{0}' needs a port ({1})</value>
+  </data>
+  <data name="Proc_NoSuchPort" xml:space="preserve">
+    <value>'{0}' has no port '{1}' ({2})</value>
+  </data>
+  <data name="Proc_SignalNoPort" xml:space="preserve">
+    <value>signal lines use only instrument or equipment names, without ports</value>
+  </data>
+  <data name="Proc_SignalNoTerminal" xml:space="preserve">
+    <value>terminals (DvTerminal) and unit ports (DvPort) are not connected with signal lines</value>
+  </data>
+  <data name="Style_DidYouMean" xml:space="preserve">
+    <value> — did you mean '{0}'?</value>
+  </data>
+  <data name="Widget_ListMultiValue" xml:space="preserve">
+    <value>value on a DvListBox with selection-mode="multi" — for multiple selection, bind selected-items</value>
+  </data>
+  <data name="Widget_ListSingleItems" xml:space="preserve">
+    <value>selected-items on a single-selection DvListBox — for multiple selection set selection-mode="multi"; for a single one, bind value</value>
+  </data>
+</root>

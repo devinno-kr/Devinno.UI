@@ -58,7 +58,10 @@ public class DvmlGeneratorTests
         return new Result(sources, hints, genDiags, errors, (CSharpCompilation)output);
     }
 
-    private const string MainVm = "namespace MyApp; public partial class MainVm { }";
+    // 메시지는 기계 언어와 상관없이 기본(영어) 리소스로 비교한다 — CI 는 영어, 개발 PC 는 한국어
+    private static readonly System.Globalization.CultureInfo Invariant = System.Globalization.CultureInfo.InvariantCulture;
+
+    private const string MainVm = "namespace MyApp; public partial class MainVm { public void Start() { } }";
 
     private const string MainDvml =
         "<DvStack vm=\"MyApp.MainVm\">\n" +
@@ -200,7 +203,7 @@ public class DvmlGeneratorTests
         var r = Run(MainVm, ("Main.dvml", $"<DvStack vm=\"MyApp.MainVm\"><DvButton id=\"{id}\"/></DvStack>"));
         var d = Assert.Single(r.Ids("DVML003"));
         Assert.Equal(DiagnosticSeverity.Error, d.Severity);
-        Assert.Contains(id, d.GetMessage());
+        Assert.Contains(id, d.GetMessage(Invariant));
         Assert.Empty(r.Sources);
     }
 
@@ -295,7 +298,7 @@ public class DvmlGeneratorTests
     [Fact]
     public void Id_Clashes_With_Member_IsCompilerError()
     {
-        var r = Run("namespace MyApp; public partial class MainVm { public int btnStart; }", ("Main.dvml", MainDvml));
+        var r = Run("namespace MyApp; public partial class MainVm { public int btnStart; public void Start() { } }", ("Main.dvml", MainDvml));
         Assert.Empty(r.GeneratorDiagnostics);
         Assert.Contains(r.CompileErrors, d => d.Id == "CS0102");
     }
@@ -385,11 +388,11 @@ public class DvmlGeneratorTests
     [Theory]
     [InlineData("<DvLine from=\"NOPE\" to=\"P1.in\"/>", "DVML008", "NOPE")]
     [InlineData("<DvLine from=\"P1.out\" to=\"V1.inlet\"/>", "DVML009", "inlet")]
-    [InlineData("<DvLine from=\"T1\" to=\"P1.in\"/>", "DVML009", "포트를 골라야")]
+    [InlineData("<DvLine from=\"T1\" to=\"P1.in\"/>", "DVML009", "needs a port")]
     [InlineData("<DvLine from=\"E1.out3\" to=\"OUT\"/>", "DVML009", "in·out·in2·out2")]
     [InlineData("<DvLine from=\"FIC\" to=\"P1.in\"/>", "DVML008", "DvSignal")]
-    [InlineData("<DvSignal from=\"FIC\" to=\"V1.in\"/>", "DVML009", "포트 없이")]
-    [InlineData("<DvSignal from=\"FIC\" to=\"OUT\"/>", "DVML009", "끝점")]
+    [InlineData("<DvSignal from=\"FIC\" to=\"V1.in\"/>", "DVML009", "without ports")]
+    [InlineData("<DvSignal from=\"FIC\" to=\"OUT\"/>", "DVML009", "terminals")]
     [InlineData("<DvSignal from=\"FT\" to=\"V1\"/>", "DVML008", "FT")]
     [InlineData("<DvInstrument name=\"X\" tag=\"PI\" on=\"NOPE\"/>", "DVML008", "NOPE")]
     [InlineData("<DvInstrument name=\"X\" tag=\"PI\"/>", "DVML008", "on")]
@@ -402,7 +405,7 @@ public class DvmlGeneratorTests
     {
         var d = Assert.Single(Process(Plant + extra));
         Assert.Equal(id, d.Id);
-        Assert.Contains(text, d.GetMessage());
+        Assert.Contains(text, d.GetMessage(Invariant));
         Assert.Equal("P.dvml", d.Location.GetLineSpan().Path);
         Assert.True(d.Location.GetLineSpan().StartLinePosition.Line > 0); // 그 줄을 가리킨다
     }
@@ -430,9 +433,9 @@ public class DvmlGeneratorTests
             <DvLine from="A" to="U1.T.top"/>
             """;
         var d = Process(unit);
-        Assert.Contains(d, x => x.Id == "DVML008" && x.GetMessage().Contains("NOPE"));         // 유닛 안 이름
-        Assert.Contains(d, x => x.Id == "DVML009" && x.GetMessage().Contains("'out'"));        // 없는 유닛 포트
-        Assert.Contains(d, x => x.Id == "DVML009" && x.GetMessage().Contains("DvPort"));       // 안쪽 직접 연결
+        Assert.Contains(d, x => x.Id == "DVML008" && x.GetMessage(Invariant).Contains("NOPE"));         // 유닛 안 이름
+        Assert.Contains(d, x => x.Id == "DVML009" && x.GetMessage(Invariant).Contains("'out'"));        // 없는 유닛 포트
+        Assert.Contains(d, x => x.Id == "DVML009" && x.GetMessage(Invariant).Contains("DvPort"));       // 안쪽 직접 연결
         Assert.Equal(3, d.Length);
     }
 
@@ -504,7 +507,7 @@ public class DvmlGeneratorTests
     {
         var d = Assert.Single(Widgets(body));
         Assert.Equal(id, d.Id);
-        Assert.Contains(mentions, d.GetMessage());
+        Assert.Contains(mentions, d.GetMessage(Invariant));
         Assert.Equal(DiagnosticSeverity.Warning, d.Severity);
     }
 
@@ -542,8 +545,8 @@ public class DvmlGeneratorTests
     {
         var d = Assert.Single(Styles("<DvLabel text=\"A\" style=\"padding:8; colr:#fff\"/>"));
         Assert.Equal("DVML012", d.Id);
-        Assert.Contains("'colr'", d.GetMessage());
-        Assert.Contains("'color'", d.GetMessage());
+        Assert.Contains("'colr'", d.GetMessage(Invariant));
+        Assert.Contains("'color'", d.GetMessage(Invariant));
         var span = d.Location.GetLineSpan();
         var line = "<DvLabel text=\"A\" style=\"padding:8; colr:#fff\"/>";
         Assert.Equal(line.IndexOf("colr"), span.StartLinePosition.Character); // 'colr' 를 가리킨다
@@ -562,7 +565,7 @@ public class DvmlGeneratorTests
     {
         var d = Assert.Single(Styles(body));
         Assert.Equal(id, d.Id);
-        Assert.Contains(text, d.GetMessage());
+        Assert.Contains(text, d.GetMessage(Invariant));
         Assert.Equal(DiagnosticSeverity.Warning, d.Severity);
     }
 
@@ -612,5 +615,106 @@ public class DvmlGeneratorTests
         while (dir is not null && !Directory.Exists(Path.Combine(dir.FullName, "src", "Devinno.UI")))
             dir = dir.Parent;
         return dir?.FullName ?? throw new DirectoryNotFoundException("repo root");
+    }
+    // ── 핸들러 검사(DVML018) — 핸들러 속성이 VM 의 public 인스턴스 메서드를 가리켜야 한다(실행 때는 조용히 아무 일도 없다) ──
+
+    private const string HandlerVm = """
+        namespace MyApp;
+        public class BaseVm { public void FromBase() { } }
+        public partial class HVm : BaseVm
+        {
+            public void Go() { }
+            public void Pick(object item) { }
+            public bool Gate(bool v) => v;
+            public void Ack(long id) { }
+            private void Hidden() { }
+            public static void Shared() { }
+        }
+        """;
+
+    private static Diagnostic[] Handlers(string body) =>
+        Run(HandlerVm, ("H.dvml", $"<DvStack vm=\"MyApp.HVm\">\n{body}\n</DvStack>")).Ids("DVML018");
+
+    [Fact]
+    public void Handler_Valid_NoDiagnostics()
+    {
+        Assert.Empty(Handlers("""
+            <DvButton text="A" onclick="Go"/>
+            <DvButton text="B" onclick="FromBase"/>
+            <DvToggle value="{Bind On}" onbeforecommit="Gate"/>
+            <DvAlarmList items="{Rows}" onack="Ack"/>
+            <DvRepeat items="{Items}"><DvButton text="{Name}" onclick="Pick"/></DvRepeat>
+            <DvDataGrid items="{Rows}" onrowclick="Pick">
+              <DvColumn field="Name" cell-type="button" onclick="Pick" onbeforecommit="Gate"/>
+            </DvDataGrid>
+            <DvCard title="C" onclick="Go"/>
+            <DvButton text="empty" onclick=""/>
+            """));
+    }
+
+    [Theory]
+    [InlineData("<DvButton onclick=\"Goo\"/>", "'Goo' is not a public instance method of 'HVm'")]
+    [InlineData("<DvButton onclick=\"Hidden\"/>", "'Hidden' is not a public instance method")]
+    [InlineData("<DvButton onclick=\"Shared\"/>", "'Shared' is not a public instance method")]
+    [InlineData("<DvToggle onbeforecommit=\"Gat\"/>", "onbeforecommit=\"Gat\"")]
+    [InlineData("<DvAlarmBanner onack=\"Akc\"/>", "onack=\"Akc\"")]
+    [InlineData("<DvDataGrid onrowclick=\"Pik\"/>", "onrowclick=\"Pik\"")]
+    [InlineData("<DvRepeat items=\"{X}\"><DvButton onclick=\"Pik\"/></DvRepeat>", "'Pik'")]
+    [InlineData("<DvDataGrid><DvColumn field=\"A\" cell-type=\"button\" onclick=\"Pik\"/></DvDataGrid>", "'Pik'")]
+    [InlineData("<DvButton onclick=\"{Handler}\"/>", "bindings")]
+    [InlineData("<DvButton onclick=\"Pick(item)\"/>", "onclick=\"Pick\"")]
+    [InlineData("<DvButton onclick=\" Go\"/>", "is not a method name")]
+    public void Handler_Errors(string body, string mentions)
+    {
+        var d = Assert.Single(Handlers(body));
+        Assert.Equal(DiagnosticSeverity.Error, d.Severity);
+        Assert.Contains(mentions, d.GetMessage(Invariant));
+    }
+
+    [Fact]
+    public void Handler_Location_PointsAtValue()
+    {
+        var d = Assert.Single(Handlers("<DvButton text=\"A\" onclick=\"Goo\"/>"));
+        var span = d.Location.GetLineSpan();
+        Assert.Equal(1, span.StartLinePosition.Line);
+        Assert.Equal("<DvButton text=\"A\" onclick=\"Goo\"/>".IndexOf("Goo"), span.StartLinePosition.Character);
+        Assert.Equal(3, span.EndLinePosition.Character - span.StartLinePosition.Character);
+    }
+
+    [Fact]
+    public void Handler_Skipped_WhereTheTargetIsUnknown()
+    {
+        // DvComponent 정의 안(어느 화면 VM 인지 모른다) · onclick 을 매개변수로 받는 컴포넌트의 인스턴스
+        Assert.Empty(Handlers("""
+            <DvComponent name="MyTile">
+              <DvParam name="title"/>
+              <DvButton text="{title}" onclick="Whatever"/>
+            </DvComponent>
+            <DvComponent name="ClickParam">
+              <DvParam name="onclick"/>
+              <DvLabel text="{onclick}"/>
+            </DvComponent>
+            <ClickParam onclick="NotAMethod"/>
+            """));
+
+        // vm 이 없는 dvml — 대상 VM 이 없다
+        var r = Run(HandlerVm, ("N.dvml", "<DvStack><DvButton onclick=\"Nope\"/></DvStack>"));
+        Assert.Empty(r.Ids("DVML018"));
+    }
+
+    // ── 진단 문구 언어 — 기본 영어, 한국어 리소스(ko) ──
+
+    [Fact]
+    public void Messages_English_ByDefault_Korean_ForKo()
+    {
+        var d = Assert.Single(Handlers("<DvButton onclick=\"Goo\"/>"));
+        Assert.Contains("is not a public instance method", d.GetMessage(Invariant));
+        Assert.Contains("public 인스턴스 메서드가 아닙니다", d.GetMessage(new System.Globalization.CultureInfo("ko-KR")));
+        Assert.Equal("Handler method not found", d.Descriptor.Title.ToString(Invariant));
+
+        // 인자로 넘긴 문구 조각(공정도 포트 설명)도 같은 언어로
+        var p = Process(Plant + "<DvSignal from=\"FIC\" to=\"V1.in\"/>").Single();
+        Assert.Contains("without ports", p.GetMessage(Invariant));
+        Assert.Contains("포트 없이", p.GetMessage(new System.Globalization.CultureInfo("ko-KR")));
     }
 }

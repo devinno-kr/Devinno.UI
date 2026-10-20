@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using Microsoft.CodeAnalysis;
@@ -22,6 +23,14 @@ internal sealed class DvmlModel
     public List<(string Name, Location At)> ClassUses { get; } = new();
     public HashSet<string> ClassDefs { get; } = new(System.StringComparer.Ordinal);
     public bool HasErrors { get; private set; }
+
+    /// <summary>핸들러 속성(onclick·onbeforecommit·onack·onrowclick) — VM 메서드 검사는 형식을 안 뒤(DvmlGenerator). DvComponent 정의 안은 빼고(어느 화면 VM 인지 모른다).</summary>
+    public List<(string Attr, string Value, string Tag, Location At)> Handlers { get; } = new();
+
+    /// <summary>이 파일의 DvComponent 중 onclick 을 매개변수로 받는 것 — 그 인스턴스의 onclick 은 핸들러로 전달되지 않는다.</summary>
+    public HashSet<string> ClickParamComponents { get; } = new(System.StringComparer.Ordinal);
+
+    private static readonly string[] HandlerAttrs = { "onclick", "onbeforecommit", "onack", "onrowclick" };
 
     // 핸들 형식 = 태그 이름(실행 시 DvControlLookup.Kinds 와 같은 목록). 그 밖의 태그는 DvControl.
     private static readonly HashSet<string> HandleTags = new(System.StringComparer.Ordinal)
@@ -61,6 +70,10 @@ internal sealed class DvmlModel
         StyleCheck.Check(root, (d, at, off, len, args) => m.Reports.Add(Diagnostic.Create(d, m.At(at, off, len), args)), uses, m.ClassDefs);
         foreach (var (name, at) in uses)
             m.ClassUses.Add((name, m.At(at)));
+        foreach (var c in root.DescendantsAndSelf("DvComponent"))
+            if (c.Attribute("name")?.Value is { Length: > 0 } cname &&
+                c.Elements("DvParam").Any(p => string.Equals(p.Attribute("name")?.Value, "onclick", System.StringComparison.OrdinalIgnoreCase)))
+                m.ClickParamComponents.Add(cname);
 
         var vmAttr = root.Attribute("vm");
         var vm = vmAttr?.Value.Trim();
@@ -70,16 +83,22 @@ internal sealed class DvmlModel
         m.VmLocation = m.At(vmAttr!);
 
         var seen = new HashSet<string>(System.StringComparer.Ordinal);
-        m.Walk(root, null, seen);
+        m.Walk(root, null, false, seen);
         return m;
     }
 
     // 실행 시 조회(DvControlLookup)와 같게: DvRepeat·DvComponent 는 그 요소부터 하위 전체를 건너뜀.
-    private void Walk(XElement e, string? templateTag, HashSet<string> seen)
+    private void Walk(XElement e, string? templateTag, bool inComponent, HashSet<string> seen)
     {
         var tag = e.Name.LocalName;
         if (templateTag is null && tag is "DvRepeat" or "DvComponent")
             templateTag = tag;
+        inComponent |= tag == "DvComponent";
+
+        if (!inComponent)
+            foreach (var name in HandlerAttrs)
+                if (e.Attribute(name) is { } h && !string.IsNullOrWhiteSpace(h.Value))
+                    Handlers.Add((name, h.Value, tag, At(h, 0, h.Value.Length)));
 
         var idAttr = e.Attribute("id");
         if (idAttr is not null)
@@ -96,7 +115,7 @@ internal sealed class DvmlModel
         }
 
         foreach (var c in e.Elements())
-            Walk(c, templateTag, seen);
+            Walk(c, templateTag, inComponent, seen);
     }
 
     private void Report(DiagnosticDescriptor d, Location loc, params object[] args)

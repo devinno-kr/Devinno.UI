@@ -170,10 +170,10 @@ internal static class StyleCheck
     }
 
     // 가장 가까운 키(편집 거리 2 이내) — "colr" → "color"
-    private static string Suggest(string key)
+    private static object Suggest(string key)
     {
         var best = Keys.Select(k => (k, d: Distance(key.ToLowerInvariant(), k))).OrderBy(x => x.d).First();
-        return best.d <= 2 ? $" — '{best.k}' 를 쓰려던 것인가요?" : "";
+        return best.d <= 2 ? Diagnostics.Text("Style_DidYouMean", best.k) : (object)"";
     }
 
     private static int Distance(string a, string b)

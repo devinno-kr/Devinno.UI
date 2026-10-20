@@ -44,7 +44,11 @@
     <Error Condition="!Exists('%(_DvGeneratorDll.Identity)')" Text="Devinno.UI: 생성기 dll 이 없습니다: %(_DvGeneratorDll.Identity)" />
     <ItemGroup>
       <TfmSpecificPackageFile Include="@(_DvGeneratorDll)" PackagePath="analyzers/dotnet/cs" />
+      <!-- 진단 문구 한국어(위성 어셈블리) — 컴파일러 UI 언어가 한국어면 쓰인다 -->
+      <_DvGeneratorSatellite Include="%(_DvGeneratorDll.RootDir)%(_DvGeneratorDll.Directory)ko\%(_DvGeneratorDll.Filename).resources.dll" />
+      <TfmSpecificPackageFile Include="@(_DvGeneratorSatellite)" PackagePath="analyzers/dotnet/cs/ko" />
     </ItemGroup>
+    <Error Condition="!Exists('%(_DvGeneratorSatellite.Identity)')" Text="Devinno.UI: 생성기 한국어 리소스 dll 이 없습니다: %(_DvGeneratorSatellite.Identity)" />
   </Target>
 
   <ItemGroup>

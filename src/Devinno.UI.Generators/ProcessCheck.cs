@@ -139,9 +139,9 @@ internal static class ProcessCheck
                 {
                     var on = ch.Attribute("on");
                     if (on is null)
-                        report(Diagnostics.ProcessNameNotFound, (XObject?)ch.Attribute("name") ?? ch, ["<DvInstrument>", "on", " — on(붙을 장비 이름)은 꼭 씁니다"]);
+                        report(Diagnostics.ProcessNameNotFound, (XObject?)ch.Attribute("name") ?? ch, ["<DvInstrument>", "on", Diagnostics.Text("Proc_InstrumentOnRequired")]);
                     else if (!Dynamic(on.Value) && !dynamicNames && (!items.TryGetValue(on.Value, out var host) || host.Port || host.Instrument))
-                        report(Diagnostics.ProcessNameNotFound, on, ["<DvInstrument on>", on.Value, " — 같은 공정도 안의 장비 이름이어야 합니다"]);
+                        report(Diagnostics.ProcessNameNotFound, on, ["<DvInstrument on>", on.Value, Diagnostics.Text("Proc_InstrumentOnEquipment")]);
                     break;
                 }
             }
@@ -161,7 +161,7 @@ internal static class ProcessCheck
         if (!items.TryGetValue(name, out var item) || item.Instrument)
         {
             if (!dynamicNames)
-                report(Diagnostics.ProcessNameNotFound, a, [where, name, item?.Instrument == true ? " — 계기는 배관으로 잇지 않습니다(DvSignal)" : ""]);
+                report(Diagnostics.ProcessNameNotFound, a, [where, name, item?.Instrument == true ? Diagnostics.Text("Proc_InstrumentNotPiped") : (object)""]);
             return;
         }
 
@@ -169,19 +169,19 @@ internal static class ProcessCheck
             return; // 이름만 쓰는 끝(점을 붙이면 실행 때 경고) · 포트를 모르는 장비
         if (item.Element.Name.LocalName == "DvUnit" && port is not null && port.IndexOf('.') >= 0)
         {
-            report(Diagnostics.ProcessBadPort, a, [where, $"유닛 안 장비는 바깥에서 직접 잇지 않습니다 — 유닛에 <DvPort> 를 두고 '{name}.포트' 로 잇습니다(지금 포트: {Join(item.Ports)})"]);
+            report(Diagnostics.ProcessBadPort, a, [where, Diagnostics.Text("Proc_UnitInnerDirect", name, Join(item.Ports))]);
             return;
         }
 
         if (port is null)
         {
             if (item.Ports.Length != 1)
-                report(Diagnostics.ProcessBadPort, a, [where, $"'{name}' 은(는) 포트를 골라야 합니다({Join(item.Ports)})"]);
+                report(Diagnostics.ProcessBadPort, a, [where, Diagnostics.Text("Proc_ChoosePort", name, Join(item.Ports))]);
             return;
         }
 
         if (!item.Ports.Contains(port))
-            report(Diagnostics.ProcessBadPort, a, [where, $"'{name}' 에 포트 '{port}' 이(가) 없습니다({Join(item.Ports)})"]);
+            report(Diagnostics.ProcessBadPort, a, [where, Diagnostics.Text("Proc_NoSuchPort", name, port, Join(item.Ports))]);
     }
 
     private static void SignalEnd(XElement signal, string attr, Dictionary<string, Item> items, bool dynamicNames, Action<DiagnosticDescriptor, XObject, object[]> report)
@@ -192,7 +192,7 @@ internal static class ProcessCheck
         var where = $"DvSignal {attr}='{a.Value}'";
         if (a.Value.IndexOf('.') >= 0)
         {
-            report(Diagnostics.ProcessBadPort, a, [where, "신호선은 포트 없이 계기·장비 이름만 씁니다"]);
+            report(Diagnostics.ProcessBadPort, a, [where, Diagnostics.Text("Proc_SignalNoPort")]);
             return;
         }
 
@@ -204,8 +204,8 @@ internal static class ProcessCheck
         }
 
         if (item.Terminal || item.Port)
-            report(Diagnostics.ProcessBadPort, a, [where, "끝점(DvTerminal)·유닛 포트(DvPort)는 신호선으로 잇지 않습니다"]);
+            report(Diagnostics.ProcessBadPort, a, [where, Diagnostics.Text("Proc_SignalNoTerminal")]);
     }
 
-    private static string Join(string[] ports) => ports.Length == 0 ? "없음" : string.Join("·", ports);
+    private static string Join(string[] ports) => ports.Length == 0 ? "-" : string.Join("·", ports);
 }

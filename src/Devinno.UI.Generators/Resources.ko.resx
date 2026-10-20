@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- dvml 생성기 진단 문구(한국어). 키는 Resources.resx 와 같다. -->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="DVML001_Title" xml:space="preserve">
+    <value>dvml XML 문법 오류</value>
+  </data>
+  <data name="DVML001_Message" xml:space="preserve">
+    <value>dvml 을 XML 로 읽지 못했습니다: {0}</value>
+  </data>
+  <data name="DVML002_Title" xml:space="preserve">
+    <value>id 중복</value>
+  </data>
+  <data name="DVML002_Message" xml:space="preserve">
+    <value>id '{0}' 가 이 dvml 안에 이미 있습니다 — id 는 파일 안에서 하나만 쓸 수 있습니다</value>
+  </data>
+  <data name="DVML003_Title" xml:space="preserve">
+    <value>C# 식별자가 아닌 id</value>
+  </data>
+  <data name="DVML003_Message" xml:space="preserve">
+    <value>id '{0}' 는 C# 필드 이름으로 쓸 수 없습니다(영문자·_ 로 시작, 키워드 불가)</value>
+  </data>
+  <data name="DVML004_Title" xml:space="preserve">
+    <value>반복·컴포넌트 안의 id</value>
+  </data>
+  <data name="DVML004_Message" xml:space="preserve">
+    <value>id '{0}' 는 &lt;{1}&gt; 안에 있어 여러 번 복제되므로 필드를 만들지 않습니다 — 바인딩이나, 항목을 매개변수로 받는 onclick 핸들러로 다루세요</value>
+  </data>
+  <data name="DVML005_Title" xml:space="preserve">
+    <value>vm 형식을 찾을 수 없음</value>
+  </data>
+  <data name="DVML005_Message" xml:space="preserve">
+    <value>vm 형식 '{0}' 을 찾을 수 없습니다(중첩되지 않은 최상위 비제네릭 클래스를 '네임스페이스.클래스' 로 지정하세요)</value>
+  </data>
+  <data name="DVML006_Title" xml:space="preserve">
+    <value>vm 형식이 partial 이 아님</value>
+  </data>
+  <data name="DVML006_Message" xml:space="preserve">
+    <value>vm 형식 '{0}' 이 partial 이 아닙니다 — 생성된 필드를 붙이려면 'partial class' 로 선언하세요</value>
+  </data>
+  <data name="DVML007_Title" xml:space="preserve">
+    <value>같은 vm 을 지정한 dvml 이 여럿</value>
+  </data>
+  <data name="DVML007_Message" xml:space="preserve">
+    <value>vm 형식 '{0}' 을 지정한 dvml 이 둘 이상입니다 — VM 하나에 dvml 하나만 연결할 수 있습니다</value>
+  </data>
+  <data name="DVML008_Title" xml:space="preserve">
+    <value>공정도 이름을 찾을 수 없음</value>
+  </data>
+  <data name="DVML008_Message" xml:space="preserve">
+    <value>{0}: '{1}' 이(가) 이 공정도에 없습니다{2}</value>
+  </data>
+  <data name="DVML009_Title" xml:space="preserve">
+    <value>공정도 포트 오류</value>
+  </data>
+  <data name="DVML009_Message" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="DVML010_Title" xml:space="preserve">
+    <value>공정도 이름 중복</value>
+  </data>
+  <data name="DVML010_Message" xml:space="preserve">
+    <value>이름 '{0}' 이(가) 이 공정도에 이미 있습니다 — 장비·계기 이름은 공정도(유닛) 안에서 하나씩입니다</value>
+  </data>
+  <data name="DVML011_Title" xml:space="preserve">
+    <value>공정도에 없는 값</value>
+  </data>
+  <data name="DVML011_Message" xml:space="preserve">
+    <value>{0}='{1}' 은(는) 없는 값입니다({2}) — 실행 때 기본값으로 그립니다</value>
+  </data>
+  <data name="DVML012_Title" xml:space="preserve">
+    <value>없는 스타일 속성</value>
+  </data>
+  <data name="DVML012_Message" xml:space="preserve">
+    <value>스타일 속성 '{0}' 은(는) 지원하지 않습니다 — 실행 때 조용히 무시됩니다{1}</value>
+  </data>
+  <data name="DVML013_Title" xml:space="preserve">
+    <value>없는 테마 토큰</value>
+  </data>
+  <data name="DVML013_Message" xml:space="preserve">
+    <value>토큰 '{0}' 은(는) 내장 테마에 없습니다(실행 때 자홍색 #FF00FF) — C# 에서 만든 테마(new DvTheme)의 토큰이면 .editorconfig 에서 dotnet_diagnostic.DVML013.severity = none 으로 끕니다</value>
+  </data>
+  <data name="DVML014_Title" xml:space="preserve">
+    <value>없는 클래스</value>
+  </data>
+  <data name="DVML014_Message" xml:space="preserve">
+    <value>클래스 '{0}' 은(는) 내장 클래스·프로젝트 dvml 의 &lt;DvStyle&gt; 에 없습니다(실행 때 조용히 무시) — C# 으로 등록한 스타일(테마 스타일시트·컴포넌트)의 클래스면 .editorconfig 에서 dotnet_diagnostic.DVML014.severity = none 으로 끕니다</value>
+  </data>
+  <data name="DVML015_Title" xml:space="preserve">
+    <value>DvRadio 에 option 없음</value>
+  </data>
+  <data name="DVML015_Message" xml:space="preserve">
+    <value>DvRadio 에 option 이 없습니다 — 이 버튼은 아무 값도 고르지 않고 켜지지 않습니다(value 는 묶음 값, option 은 이 버튼이 고르는 값)</value>
+  </data>
+  <data name="DVML016_Title" xml:space="preserve">
+    <value>DvListBox 값 속성이 모드와 맞지 않음</value>
+  </data>
+  <data name="DVML016_Message" xml:space="preserve">
+    <value>{0} — 실행 때 무시됩니다</value>
+  </data>
+  <data name="DVML017_Title" xml:space="preserve">
+    <value>위젯 속성에 없는 값</value>
+  </data>
+  <data name="DVML017_Message" xml:space="preserve">
+    <value>{0} {1}='{2}' 은(는) 없는 값입니다({3}) — 실행 때 {4} 로 동작</value>
+  </data>
+  <data name="DVML018_Title" xml:space="preserve">
+    <value>핸들러 메서드를 찾을 수 없음</value>
+  </data>
+  <data name="DVML018_NotFound" xml:space="preserve">
+    <value>{0}="{1}": '{1}' 은(는) '{2}'(또는 상위 클래스)의 public 인스턴스 메서드가 아닙니다 — 핸들러가 실행되지 않습니다</value>
+  </data>
+  <data name="DVML018_Binding" xml:space="preserve">
+    <value>{0}="{1}": 핸들러 속성에는 메서드 이름을 씁니다 — 바인딩({{…}})은 풀지 않으므로 핸들러가 실행되지 않습니다</value>
+  </data>
+  <data name="DVML018_CallForm" xml:space="preserve">
+    <value>{0}="{1}": 메서드 이름만 씁니다({0}="{2}") — 항목·행 인자는 자동으로 넘어갑니다</value>
+  </data>
+  <data name="DVML018_NotName" xml:space="preserve">
+    <value>{0}="{1}": '{1}' 은(는) 메서드 이름이 아닙니다 — 핸들러가 실행되지 않습니다</value>
+  </data>
+  <data name="Proc_InstrumentOnRequired" xml:space="preserve">
+    <value> — on(붙을 장비 이름)은 꼭 씁니다</value>
+  </data>
+  <data name="Proc_InstrumentOnEquipment" xml:space="preserve">
+    <value> — 같은 공정도 안의 장비 이름이어야 합니다</value>
+  </data>
+  <data name="Proc_InstrumentNotPiped" xml:space="preserve">
+    <value> — 계기는 배관으로 잇지 않습니다(DvSignal)</value>
+  </data>
+  <data name="Proc_UnitInnerDirect" xml:space="preserve">
+    <value>유닛 안 장비는 바깥에서 직접 잇지 않습니다 — 유닛에 &lt;DvPort&gt; 를 두고 '{0}.포트' 로 잇습니다(지금 포트: {1})</value>
+  </data>
+  <data name="Proc_ChoosePort" xml:space="preserve">
+    <value>'{0}' 은(는) 포트를 골라야 합니다({1})</value>
+  </data>
+  <data name="Proc_NoSuchPort" xml:space="preserve">
+    <value>'{0}' 에 포트 '{1}' 이(가) 없습니다({2})</value>
+  </data>
+  <data name="Proc_SignalNoPort" xml:space="preserve">
+    <value>신호선은 포트 없이 계기·장비 이름만 씁니다</value>
+  </data>
+  <data name="Proc_SignalNoTerminal" xml:space="preserve">
+    <value>끝점(DvTerminal)·유닛 포트(DvPort)는 신호선으로 잇지 않습니다</value>
+  </data>
+  <data name="Style_DidYouMean" xml:space="preserve">
+    <value> — '{0}' 를 쓰려던 것인가요?</value>
+  </data>
+  <data name="Widget_ListMultiValue" xml:space="preserve">
+    <value>selection-mode="multi" 인 DvListBox 의 value — 여럿 고르기는 selected-items 에 바인딩합니다</value>
+  </data>
+  <data name="Widget_ListSingleItems" xml:space="preserve">
+    <value>한 개 고르기 DvListBox 의 selected-items — 여럿 고르기면 selection-mode="multi" 를 주고, 한 개면 value 에 바인딩합니다</value>
+  </data>
+</root>
