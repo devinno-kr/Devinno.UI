@@ -1,0 +1,6 @@
+# Devinno.UI.WinForms {{VERSION}}
+
+> WinForms host for Devinno.UI: `ViewControl` is a `UserControl` that shows a `DvApp` inside a WinForms form.
+
+1. Devinno.UI.WinForms.xml (same folder as this file): C# API reference for `ViewControl` — `App`, update requests (`MarkUpdated`/`MarkRepaint`), text input (a hidden TextBox, so the OS IME works) or `TouchMode` (built-in virtual keyboard), and DPI handling.
+2. How to write screens is documented in the core package: read `.devinno/Devinno.UI/llms.txt` (in the Devinno.UI package: `docs/llms.txt`) first.

@@ -30,6 +30,22 @@
     </ItemGroup>
   </Target>
 
+  <!-- AI entry point: each package's llms.txt (default: llms.txt in the project folder; Devinno.UI uses the repo root one) goes to docs/llms.txt,
+       with the {{VERSION}} on its first line replaced by the pack version. A copy is written to obj/ (works for pack with and without build). -->
+  <PropertyGroup>
+    <DevinnoLlmsFile>$(MSBuildProjectDirectory)\llms.txt</DevinnoLlmsFile>
+  </PropertyGroup>
+  <Target Name="_DvVersionedLlms" BeforeTargets="_GetPackageFiles" Condition="'$(IsPackable)' != 'false' and Exists('$(DevinnoLlmsFile)')">
+    <PropertyGroup>
+      <_DvLlmsOut>$(IntermediateOutputPath)llms.txt</_DvLlmsOut>
+      <_DvLlmsText>$([System.IO.File]::ReadAllText('$(DevinnoLlmsFile)').Replace('{{VERSION}}', '$(PackageVersion)').TrimEnd())</_DvLlmsText>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_DvLlmsOut)" Lines="$([MSBuild]::Escape($(_DvLlmsText)))" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <None Include="$(_DvLlmsOut)" Pack="true" PackagePath="docs\" Visible="false" />
+    </ItemGroup>
+  </Target>
+
   <ItemGroup Condition="'$(IsPackable)' != 'false'">
     <None Include="$(MSBuildThisFileDirectory)..\README.md" Pack="true" PackagePath="\" Visible="false" />
     <None Include="$(MSBuildThisFileDirectory)..\icon.png" Pack="true" PackagePath="\" Visible="false" />

@@ -9,6 +9,8 @@
     <PackageId>Devinno.UI</PackageId>
     <Description>SkiaSharp 기반 .NET UI 라이브러리 (산업용 HMI 터치 패널·일반 앱). XML 마크업 + CSS 식 인라인 style + C# 뷰모델 바인딩. 창에 띄우려면 어댑터 Devinno.UI.OpenTK 또는 Devinno.UI.WinForms 를 함께 씁니다.</Description>
     <PackageTags>ui;hmi;skiasharp;touch;industrial;markup;mvvm</PackageTags>
+    <!-- docs/llms.txt 원본은 저장소 루트의 llms.txt(../Directory.Build.props 의 _DvVersionedLlms) -->
+    <DevinnoLlmsFile>$(MSBuildProjectDirectory)\..\..\llms.txt</DevinnoLlmsFile>
   </PropertyGroup>
 
   <ItemGroup>
