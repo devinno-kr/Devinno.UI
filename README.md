@@ -1,6 +1,6 @@
 # Devinno.UI
 
-English | [한국어](README.ko.md)
+English | [한국어](https://github.com/devinno-kr/Devinno.UI/blob/master/README.ko.md)
 
 A SkiaSharp-based .NET UI library (.NET 9 or later). It targets industrial HMIs (touch panels) as well as regular app screens.
 
@@ -8,16 +8,20 @@ Screens are written in XML markup with a CSS-style inline `style` and bound to a
 
 > The first version is currently in development. The API may change.
 
-## Layout
+![Dashboard screen (light theme)](https://raw.githubusercontent.com/devinno-kr/Devinno.UI/master/assets/readme-dashboard.png)
 
-| Path | Description |
-|---|---|
-| `src/Devinno.UI` | Core library (markup parser, layout, rendering, components) |
-| `src/Devinno.UI.OpenTK` | OpenTK host (`ViewWindow`) |
-| `src/Devinno.UI.WinForms` | WinForms host (`ViewControl`) |
-| `tests/Devinno.UI.Tests` | xUnit tests |
-| `samples/Devinno.UI.Demo` | OpenTK demo app |
-| `samples/Devinno.UI.Demo.WinForms` | WinForms demo app |
+![Process diagram screen (dark theme)](https://raw.githubusercontent.com/devinno-kr/Devinno.UI/master/assets/readme-process.png)
+
+## Install
+
+An app references the core package and one host adapter that puts screens on a window.
+
+```bash
+dotnet add package Devinno.UI
+dotnet add package Devinno.UI.OpenTK      # own window (ViewWindow)
+# or
+dotnet add package Devinno.UI.WinForms    # inside a WinForms form (ViewControl)
+```
 
 ## Getting started
 
@@ -29,19 +33,44 @@ using Devinno.UI.OpenTK;
 using Devinno.UI.Styling;
 
 var app = new DvApp { Theme = DvTheme.Dark };
-app.Pages.Add(new HomePage());          // 현재 페이지가 없는 동안에는 처음 넣은 페이지가 보임(시작 페이지)
+app.Pages.Add(new HomePage());          // while no page is current, the first page added is shown (start page)
 app.Pages.Add(new AlarmPage());
-app.Top = new MainTopBar();             // 선택: 상단 바·사이드바(Left) 같은 고정 영역
+app.Top = new MainTopBar();             // optional: fixed areas such as a top bar or a sidebar (Left)
 using var window = new ViewWindow(app, 1280, 800, "My HMI");
 window.Run();
 ```
 
-Inside a page, switch with `App.Show<AlarmPage>()`. For details see [`dvml-ui-markup.md`](dvml-ui-markup.md) section 16; the demo is `samples/Devinno.UI.Demo` (`-- top`, `-- nav`).
+Inside a page, switch with `App.Show<AlarmPage>()`. For details see section 16 of `dvml-ui-markup.md` (listed below).
 
 ## Documentation
 
-- [`llm-rules.md`](llm-rules.md): authoring rules — principles, differences from CSS, common mistakes, how to verify screens (read first)
-- [`dvml-ui-markup.md`](dvml-ui-markup.md): markup reference — tags, attributes, style keys, theme tokens
-- [`dvml-process.md`](dvml-process.md): process diagram (P&ID) authoring guide — `DvProcess` equipment, connections, layout rules, user symbols
-- C# API: XML doc comments in the code (IntelliSense, `Devinno.UI.xml` in the package)
-- The three md files above are also included in `docs/` of the NuGet package.
+These documents ship in the package's `docs/` folder (after a build they are also copied to `.devinno/Devinno.UI/` in your project, see below).
+
+- `llm-rules.md`: authoring rules — principles, differences from CSS, common mistakes, how to verify screens (read first)
+- `dvml-ui-markup.md`: markup reference — tags, attributes, style keys, theme tokens
+- `dvml-process.md`: process diagram (P&ID) authoring guide — `DvProcess` equipment, connections, layout rules, user symbols
+- `llms.txt`: entry point for AI tools (reading order of the files above)
+- C# API: XML doc comments (IntelliSense, `Devinno.UI.xml` in the package)
+
+## Documentation for AI tools
+
+When a project that references Devinno.UI is built, the package documents and the English IntelliSense XML are copied to `.devinno/Devinno.UI/` in the project folder (SDK-style projects; the folder appears after the first `dotnet build`, not after `restore` alone). Each Devinno package uses its own subfolder.
+
+- Add this line to your AI instruction file (`CLAUDE.md`, `AGENTS.md`, etc.): `Devinno library docs: read .devinno/*/llms.txt first.`
+- To turn the copy off: `<DevinnoCopyDocs>false</DevinnoCopyDocs>` in the project file.
+- Adding `.devinno/` to `.gitignore` is recommended (it is recreated on every build).
+
+## Repository (repository only)
+
+| Path | Description |
+|---|---|
+| `src/Devinno.UI` | Core library (markup parser, layout, rendering, components) |
+| `src/Devinno.UI.OpenTK` | OpenTK host (`ViewWindow`) |
+| `src/Devinno.UI.WinForms` | WinForms host (`ViewControl`) |
+| `tests/Devinno.UI.Tests` | xUnit tests |
+| `samples/Devinno.UI.Demo` | OpenTK demo app (`-- top`, `-- nav` show the app model) |
+| `samples/Devinno.UI.Demo.WinForms` | WinForms demo app |
+
+## License
+
+MIT (`LICENSE`). Third-party notices (Font Awesome Free 6.1.2 icon font: fonts SIL OFL 1.1, icons CC BY 4.0): `THIRD-PARTY-NOTICES.md`, also included in the package.
