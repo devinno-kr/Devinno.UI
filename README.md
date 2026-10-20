@@ -23,6 +23,8 @@ dotnet add package Devinno.UI.OpenTK      # own window (ViewWindow)
 dotnet add package Devinno.UI.WinForms    # inside a WinForms form (ViewControl)
 ```
 
+A WinForms app must target `net9.0-windows10.0.19041.0` or later (the WinForms adapter, like SkiaSharp's WinForms views, ships only that TFM). With the default `net9.0-windows` no assembly is referenced and the build fails with "type or namespace 'Devinno' not found".
+
 ## Getting started
 
 One screen = a class deriving from `DvPage` + a `.dvml` with the same name. `DvApp` holds the pages and puts them on a window (OpenTK `ViewWindow` or WinForms `ViewControl`).

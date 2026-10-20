@@ -46,6 +46,24 @@
     </ItemGroup>
   </Target>
 
+  <!-- Docs copy for consuming projects: build/{PackageId}.targets (from Devinno.CopyDocs.targets.template, id filled in) + buildTransitive/{PackageId}.targets
+       that imports it. On build, the consuming project gets .devinno/{PackageId}/ (docs/ + English XML); off with DevinnoCopyDocs=false. -->
+  <Target Name="_DvCopyDocsTargets" BeforeTargets="_GetPackageFiles" Condition="'$(IsPackable)' != 'false' and Exists('$(DevinnoLlmsFile)')">
+    <PropertyGroup>
+      <_DvCopyDocsOut>$(IntermediateOutputPath)$(PackageId).targets</_DvCopyDocsOut>
+      <_DvCopyDocsTransitiveOut>$(IntermediateOutputPath)transitive\$(PackageId).targets</_DvCopyDocsTransitiveOut>
+      <_DvIdN>$(PackageId.Replace('.', '_'))</_DvIdN>
+      <_DvCopyDocsText>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)Devinno.CopyDocs.targets.template').Replace('__IDN__', '$(_DvIdN)').Replace('__ID__', '$(PackageId)').TrimEnd())</_DvCopyDocsText>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_DvCopyDocsOut)" Lines="$([MSBuild]::Escape($(_DvCopyDocsText)))" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <WriteLinesToFile File="$(_DvCopyDocsTransitiveOut)" Overwrite="true" WriteOnlyWhenDifferent="true"
+                      Lines="$([MSBuild]::Escape('&lt;Project&gt;&lt;Import Project=&quot;..\build\$(PackageId).targets&quot; /&gt;&lt;/Project&gt;'))" />
+    <ItemGroup>
+      <None Include="$(_DvCopyDocsOut)" Pack="true" PackagePath="build\" Visible="false" />
+      <None Include="$(_DvCopyDocsTransitiveOut)" Pack="true" PackagePath="buildTransitive\" Visible="false" />
+    </ItemGroup>
+  </Target>
+
   <ItemGroup Condition="'$(IsPackable)' != 'false'">
     <None Include="$(MSBuildThisFileDirectory)..\README.md" Pack="true" PackagePath="\" Visible="false" />
     <None Include="$(MSBuildThisFileDirectory)..\icon.png" Pack="true" PackagePath="\" Visible="false" />

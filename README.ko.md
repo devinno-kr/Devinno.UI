@@ -15,7 +15,7 @@ SkiaSharp 기반 .NET UI 라이브러리입니다(.NET 9 이상). 산업용 HMI(
 ![공정도 화면 (다크 테마)](assets/readme-process.png)
 
 ## 설치
-<!-- en-hash: d25576ef9e644f52 -->
+<!-- en-hash: 72aed81cbda6af7d -->
 
 앱은 코어 패키지와, 화면을 창에 올리는 호스트 어댑터 하나를 참조합니다.
 
@@ -25,6 +25,8 @@ dotnet add package Devinno.UI.OpenTK      # own window (ViewWindow)
 # or
 dotnet add package Devinno.UI.WinForms    # inside a WinForms form (ViewControl)
 ```
+
+WinForms 앱은 대상 프레임워크를 `net9.0-windows10.0.19041.0` 이상으로 해야 합니다(WinForms 어댑터는 SkiaSharp 의 WinForms 뷰처럼 이 TFM 만 제공). 기본값 `net9.0-windows` 로 두면 어셈블리가 참조되지 않아 "'Devinno' 형식 또는 네임스페이스를 찾을 수 없음" 오류로 빌드가 실패합니다.
 
 ## 시작하기
 <!-- en-hash: 5a2afa9cf5286a29 -->
@@ -82,5 +84,6 @@ Devinno.UI 를 참조한 프로젝트를 빌드하면 패키지 문서와 영어
 <!-- en-hash: 2b551ca10d5c3869 -->
 
 MIT ([`LICENSE`](LICENSE)). 제3자 고지(Font Awesome Free 6.1.2 아이콘 폰트: 폰트 SIL OFL 1.1, 아이콘 CC BY 4.0): [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md), 패키지에도 포함됩니다.
+
 
 

@@ -4,3 +4,5 @@
 
 1. Devinno.UI.WinForms.xml (same folder as this file): C# API reference for `ViewControl` — `App`, update requests (`MarkUpdated`/`MarkRepaint`), text input (a hidden TextBox, so the OS IME works) or `TouchMode` (built-in virtual keyboard), and DPI handling.
 2. How to write screens is documented in the core package: read `.devinno/Devinno.UI/llms.txt` (in the Devinno.UI package: `docs/llms.txt`) first.
+
+The app must target `net9.0-windows10.0.19041.0` or later; with plain `net9.0-windows` this package adds no assembly (build error: type or namespace 'Devinno' not found).

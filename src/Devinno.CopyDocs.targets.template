@@ -1,0 +1,28 @@
+<Project>
+  <!--
+    Generated at pack time from src/Devinno.CopyDocs.targets.template of the Devinno.UI repository (package id filled in).
+    On every build, copies this package's docs/ and English IntelliSense XML (lib/<tfm>/__ID__.xml, not ko/) to
+    $(MSBuildProjectDirectory)\.devinno\__ID__\ . Only changed files are copied, and old files that are no longer in the package are deleted
+    (other .devinno\ subfolders are left alone). Turn off with <DevinnoCopyDocs>false</DevinnoCopyDocs>.
+    Target and item names carry the package id so several Devinno packages can be referenced together. Does not run in design-time (IDE) builds.
+    Same shape as Devinno.Communication's targets.
+  -->
+  <Target Name="_DevinnoCopyDocs___IDN__" AfterTargets="Build"
+          Condition="'$(DevinnoCopyDocs)' != 'false' and '$(DesignTimeBuild)' != 'true'">
+    <PropertyGroup>
+      <_DevinnoDocsDest___IDN__>$(MSBuildProjectDirectory)\.devinno\__ID__\</_DevinnoDocsDest___IDN__>
+    </PropertyGroup>
+    <ItemGroup>
+      <_DevinnoDocsSrc___IDN__ Include="$(MSBuildThisFileDirectory)..\docs\**\*" />
+      <_DevinnoDocsDst___IDN__ Include="@(_DevinnoDocsSrc___IDN__->'$(_DevinnoDocsDest___IDN__)%(RecursiveDir)%(Filename)%(Extension)')" />
+      <_DevinnoDocsXml___IDN__ Include="$(MSBuildThisFileDirectory)..\lib\*\__ID__.xml" />
+      <_DevinnoDocsSrc___IDN__ Include="@(_DevinnoDocsXml___IDN__)" />
+      <_DevinnoDocsDst___IDN__ Include="@(_DevinnoDocsXml___IDN__->'$(_DevinnoDocsDest___IDN__)%(Filename)%(Extension)')" />
+      <_DevinnoDocsOld___IDN__ Include="$(_DevinnoDocsDest___IDN__)**\*" />
+      <_DevinnoDocsOld___IDN__ Remove="@(_DevinnoDocsDst___IDN__)" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_DevinnoDocsSrc___IDN__)" DestinationFiles="@(_DevinnoDocsDst___IDN__)"
+          SkipUnchangedFiles="true" ContinueOnError="WarnAndContinue" />
+    <Delete Files="@(_DevinnoDocsOld___IDN__)" ContinueOnError="WarnAndContinue" />
+  </Target>
+</Project>
