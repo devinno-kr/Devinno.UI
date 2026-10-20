@@ -80,10 +80,20 @@ Devinno.UI 를 참조한 프로젝트를 빌드하면 패키지 문서와 영어
 | `samples/Devinno.UI.Demo` | OpenTK 데모 앱 (`-- top`, `-- nav` 로 앱 모델 확인) |
 | `samples/Devinno.UI.Demo.WinForms` | WinForms 데모 앱 |
 
+## 면책
+<!-- en-hash: ce82c9a4b0fb5194 -->
+
+Devinno.UI 는 "있는 그대로(as is)" 제공되며, 어떤 종류의 보증도 하지 않습니다([`LICENSE`](LICENSE) 참고).
+
+이 라이브러리는 화면 표시와 운전자 입력을 위한 것이며, 안전 기능을 위해 설계되거나 인증받지 않았습니다. 비상정지, 인터록 등 안전 기능은 HMI 화면만으로 구현하지 말고, 반드시 별도의 안전 등급 장치(PLC, 안전 릴레이 등)로 구현해야 합니다.
+
+이 라이브러리로 만든 시스템의 시험과 검증은 사용자의 책임입니다.
+
 ## 라이선스
 <!-- en-hash: 2b551ca10d5c3869 -->
 
 MIT ([`LICENSE`](LICENSE)). 제3자 고지(Font Awesome Free 6.1.2 아이콘 폰트: 폰트 SIL OFL 1.1, 아이콘 CC BY 4.0): [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md), 패키지에도 포함됩니다.
+
 
 
 

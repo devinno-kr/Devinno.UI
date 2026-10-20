@@ -73,6 +73,14 @@ When a project that references Devinno.UI is built, the package documents and th
 | `samples/Devinno.UI.Demo` | OpenTK demo app (`-- top`, `-- nav` show the app model) |
 | `samples/Devinno.UI.Demo.WinForms` | WinForms demo app |
 
+## Disclaimer
+
+Devinno.UI is provided "as is", without warranty of any kind (see `LICENSE`).
+
+It is a library for display and operator input, and it is not designed or certified for safety functions. Emergency stops, interlocks and other safety functions must be implemented in separate safety-rated equipment (PLC, safety relays, etc.), never in the HMI screen alone.
+
+You are responsible for testing and validating any system you build with it.
+
 ## License
 
 MIT (`LICENSE`). Third-party notices (Font Awesome Free 6.1.2 icon font: fonts SIL OFL 1.1, icons CC BY 4.0): `THIRD-PARTY-NOTICES.md`, also included in the package.
