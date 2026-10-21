@@ -124,5 +124,3 @@ Devinno.UI 는 "있는 그대로(as is)" 제공되며, 어떤 종류의 보증�
 <!-- en-hash: 2b551ca10d5c3869 -->
 
 MIT ([`LICENSE`](LICENSE)). 제3자 고지(Font Awesome Free 6.1.2 아이콘 폰트: 폰트 SIL OFL 1.1, 아이콘 CC BY 4.0): [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md), 패키지에도 포함됩니다.
-
-
