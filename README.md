@@ -12,6 +12,36 @@ Screens are written in XML markup with a CSS-style inline `style` and bound to a
 
 ![Process diagram screen (dark theme)](https://raw.githubusercontent.com/devinno-kr/Devinno.UI/master/assets/readme-process.png)
 
+## Design: a UI library that works well with AI
+
+Devinno.UI is designed on the assumption that screens are built with AI (LLM) coding tools. It has two goals: help the AI make fewer mistakes, and make the mistakes it does make show up right away instead of passing silently. The same mechanisms help people writing screens by hand.
+
+**Syntax the AI already knows**
+- Screens are XML markup (`.dvml`) close to HTML, with a CSS-style `style`. Familiar patterns such as flex, grid and `box-shadow` work as expected, so what the AI has learned carries over.
+- Where it differs from CSS (defaults, unsupported properties) is collected in one document (`llm-rules.md`).
+
+**Silent failures are made visible**
+The most common failure in UI code is "it is wrong and nothing happens". This is caught in three layers.
+- **Build diagnostics (DVML001–018):** unknown style properties, theme tokens and classes, values that are not allowed, handler methods missing from the VM, process diagram connection errors and duplicate `id`s are reported at the line and column in the dvml.
+- **Compile errors:** with an `id`, the source generator adds a typed handle field to the VM, so a misspelled name in code is a compile error.
+- **On screen:** a bad color token that still slips through is drawn magenta (`#FF00FF`) at run time.
+
+**The AI can check its own work**
+- `DvRenderer` draws a screen to a PNG without a window, so an AI can look at the screen it wrote and fix it.
+
+**Documentation that stays in step with the code**
+- The rule is "a feature that is not in the docs does not exist". The markup reference is the complete list of tags, attributes and values.
+- The examples in the docs are parsed, rendered and compiled by the tests, so a wrong document fails the build.
+- The docs ship in the package and are copied into `.devinno/` in your project on build, where AI tools find them (`llms.txt` is the entry point).
+
+**Good design by default**
+- Semantic components (`DvCard`, `DvStat`, `DvBadge`, …) and theme tokens (`token(surface)`, …) give consistent screens in the dark and light themes without picking colors by hand.
+- For process diagrams (P&ID) you write only the equipment and the connections; the library does the layout and the orthogonal piping, so the AI does not compute coordinates.
+
+**Industrial HMI needs come first**
+- Data and logic belong to the VM (the app); widgets only display and take input.
+- Alarms (based on ISA-18.2), trends, a data grid, a virtual keyboard, long-press protection (`hold`) and screen lock are built in.
+
 ## Install
 
 An app references the core package and one host adapter that puts screens on a window.
