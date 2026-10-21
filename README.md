@@ -8,39 +8,39 @@ Screens are written in XML markup with a CSS-style inline `style` and bound to a
 
 > The first version is currently in development. The API may change.
 
-![Dashboard screen (light theme)](https://raw.githubusercontent.com/devinno-kr/Devinno.UI/master/assets/readme-dashboard.png)
+![Plant dashboard (dark theme)](https://raw.githubusercontent.com/devinno-kr/Devinno.UI/master/assets/readme-dashboard.webp)
 
-![Process diagram screen (dark theme)](https://raw.githubusercontent.com/devinno-kr/Devinno.UI/master/assets/readme-process.png)
+![Process diagram, P&ID (dark theme)](https://raw.githubusercontent.com/devinno-kr/Devinno.UI/master/assets/readme-process.webp)
 
 ## Design: a UI library that works well with AI
 
-Devinno.UI is designed on the assumption that screens are built with AI (LLM) coding tools. It has two goals: help the AI make fewer mistakes, and make the mistakes it does make show up right away instead of passing silently. The same mechanisms help people writing screens by hand.
+Devinno.UI assumes that screens will be written with AI (LLM) coding tools. It tries to do two things: help the AI make fewer mistakes, and make sure the mistakes it does make show up right away instead of passing silently. People writing screens by hand get the same help.
 
 **Syntax the AI already knows**
-- Screens are XML markup (`.dvml`) close to HTML, with a CSS-style `style`. Familiar patterns such as flex, grid and `box-shadow` work as expected, so what the AI has learned carries over.
-- Where it differs from CSS (defaults, unsupported properties) is collected in one document (`llm-rules.md`).
+- A screen is XML markup (`.dvml`) that looks a lot like HTML, styled with a CSS-like `style` attribute. Flex, grid, `box-shadow` and similar patterns behave the way the AI expects, so what it learned from the web carries over.
+- The places where Devinno.UI differs from CSS (defaults, unsupported properties) are listed in one document, `llm-rules.md`.
 
-**Silent failures are made visible**
-The most common failure in UI code is "it is wrong and nothing happens". This is caught in three layers.
-- **Build diagnostics (DVML001–018):** unknown style properties, theme tokens and classes, values that are not allowed, handler methods missing from the VM, process diagram connection errors and duplicate `id`s are reported at the line and column in the dvml.
-- **Compile errors:** with an `id`, the source generator adds a typed handle field to the VM, so a misspelled name in code is a compile error.
-- **On screen:** a bad color token that still slips through is drawn magenta (`#FF00FF`) at run time.
+**Mistakes you can see**
+In UI code, the usual failure is a mistake that does nothing: no error, no warning, just a screen that is slightly wrong. Devinno.UI reports these in three places.
+- The build reports diagnostics DVML001 to DVML018 at the line and column in the dvml file. They cover unknown style properties, theme tokens and classes, values that are not allowed, handler methods the VM does not have, broken process diagram connections and duplicate `id`s.
+- The compiler catches misspelled names in code. When an element has an `id`, the source generator adds a typed handle field to the VM.
+- At run time, a bad color token that got past the build is drawn in magenta (`#FF00FF`), so it is hard to miss.
 
 **The AI can check its own work**
-- `DvRenderer` draws a screen to a PNG without a window, so an AI can look at the screen it wrote and fix it.
+- `DvRenderer` draws a screen to a PNG without opening a window. An AI can look at the screen it just wrote and fix what is wrong.
 
-**Documentation that stays in step with the code**
-- The rule is "a feature that is not in the docs does not exist". The markup reference is the complete list of tags, attributes and values.
-- The examples in the docs are parsed, rendered and compiled by the tests, so a wrong document fails the build.
-- The docs ship in the package and are copied into `.devinno/` in your project on build, where AI tools find them (`llms.txt` is the entry point).
+**Docs that match the code**
+- If a feature is not in the docs, it does not exist. The markup reference lists every tag, attribute and value.
+- The tests parse, render and compile the examples in the docs, so a wrong example makes the tests fail.
+- The docs ship inside the package. On build they are copied into `.devinno/` in your project, where AI tools can find them. `llms.txt` is the place to start.
 
-**Good design by default**
-- Semantic components (`DvCard`, `DvStat`, `DvBadge`, …) and theme tokens (`token(surface)`, …) give consistent screens in the dark and light themes without picking colors by hand.
-- For process diagrams (P&ID) you write only the equipment and the connections; the library does the layout and the orthogonal piping, so the AI does not compute coordinates.
+**Good-looking screens by default**
+- Semantic components (`DvCard`, `DvStat`, `DvBadge` and others) and theme tokens (`token(surface)` and others) give consistent screens in both the dark and light themes. You do not have to pick colors by hand.
+- In a process diagram (P&ID) you list the equipment and how it connects. The library places the equipment and routes the pipes at right angles, so the AI never has to work out coordinates.
 
-**Industrial HMI needs come first**
-- Data and logic belong to the VM (the app); widgets only display and take input.
-- Alarms (based on ISA-18.2), trends, a data grid, a virtual keyboard, long-press protection (`hold`) and screen lock are built in.
+**Built for industrial HMIs**
+- Data and logic live in the VM (the app). Widgets only show values and take input.
+- Alarms (based on ISA-18.2), trends, a data grid, a virtual keyboard, long-press protection (`hold`) and screen lock come built in.
 
 ## Install
 
@@ -78,9 +78,9 @@ Inside a page, switch with `App.Show<AlarmPage>()`. For details see section 16 o
 
 These documents ship in the package's `docs/` folder (after a build they are also copied to `.devinno/Devinno.UI/` in your project, see below).
 
-- `llm-rules.md`: authoring rules — principles, differences from CSS, common mistakes, how to verify screens (read first)
-- `dvml-ui-markup.md`: markup reference — tags, attributes, style keys, theme tokens
-- `dvml-process.md`: process diagram (P&ID) authoring guide — `DvProcess` equipment, connections, layout rules, user symbols
+- `llm-rules.md`: authoring rules (principles, differences from CSS, common mistakes, how to check a screen). Read this first.
+- `dvml-ui-markup.md`: markup reference with every tag, attribute, style key and theme token.
+- `dvml-process.md`: guide to process diagrams (P&ID) with `DvProcess`: equipment, connections, layout rules and user symbols.
 - `llms.txt`: entry point for AI tools (reading order of the files above)
 - C# API: XML doc comments (IntelliSense, `Devinno.UI.xml` in the package)
 
