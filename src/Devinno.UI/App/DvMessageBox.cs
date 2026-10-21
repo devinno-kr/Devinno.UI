@@ -95,15 +95,15 @@ internal sealed class DvMessageBoxDialog : DvDialog<DvDialogResult?>
 /// <summary>Button labels of the built-in dialogs (message and input boxes): the <c>dv.dialog.*</c> keys of the app's <see cref="DvApp.Strings"/>, or the default text if absent.</summary>
 internal static class DialogTexts
 {
-    public static string Ok(DvApp app) => Str(app, "dv.dialog.ok", "확인");
+    public static string Ok(DvApp app) => Str(app, "dv.dialog.ok");
 
-    public static string Cancel(DvApp app) => Str(app, "dv.dialog.cancel", "취소");
+    public static string Cancel(DvApp app) => Str(app, "dv.dialog.cancel");
 
-    public static string Yes(DvApp app) => Str(app, "dv.dialog.yes", "예");
+    public static string Yes(DvApp app) => Str(app, "dv.dialog.yes");
 
-    public static string No(DvApp app) => Str(app, "dv.dialog.no", "아니요");
+    public static string No(DvApp app) => Str(app, "dv.dialog.no");
 
-    private static string Str(DvApp app, string key, string fallback) => DvStrings.Text(app.Strings, key, fallback);
+    private static string Str(DvApp app, string key) => DvStrings.Builtin(app.Strings, key);
 }
 
 /// <summary>Common base of the built-in input and selection dialogs that use [Cancel][OK] buttons: the button labels and cancellation (result <see langword="null"/>).</summary>

@@ -395,7 +395,7 @@ public sealed class DvApp : ISurfaceComposer
         set
         {
             if (value < TimeSpan.Zero)
-                throw new ArgumentOutOfRangeException(nameof(value), value, "무입력 시간은 0 이상이어야 합니다.");
+                throw new ArgumentOutOfRangeException(nameof(value), value, "The idle timeout must be zero or greater.");
             lock (_gate)
             {
                 _idleTimeoutMs = (long)value.TotalMilliseconds;
@@ -423,7 +423,7 @@ public sealed class DvApp : ISurfaceComposer
     /// <para><b>Result</b> — The pressed button. If closed from outside (<see cref="CloseDialogs"/>, a dialog below closing, the window closing), it is
     /// <see cref="DvDialogResult.Cancel"/> even when the button set has no cancel button. The continuation thread rules are the same as <see cref="ShowDialog{TDialog, TResult}"/>.</para>
     /// <para><b>Text</b> — Button labels can be changed with the <c>dv.dialog.ok</c>, <c>dv.dialog.cancel</c>, <c>dv.dialog.yes</c> and <c>dv.dialog.no</c>
-    /// keys in <see cref="Strings"/>; otherwise they are "확인" (OK), "취소" (Cancel), "예" (Yes) and "아니요" (No). The box width defaults to 360; long text widens it up to the window width − 32 and then wraps (font size is the theme's <c>font.body</c>). Lines are not re-wrapped if the window shrinks after the box is shown.</para>
+    /// keys in <see cref="Strings"/>; otherwise they are the built-in "OK", "Cancel", "Yes" and "No" (Korean when <see cref="Strings"/> has <c>Language = "ko"</c>). The box width defaults to 360; long text widens it up to the window width − 32 and then wraps (font size is the theme's <c>font.body</c>). Lines are not re-wrapped if the window shrinks after the box is shown.</para>
     /// </remarks>
     /// <param name="text">The body text. Use newline characters to split lines.</param>
     /// <param name="caption">The title. If <see langword="null"/>, there is no title row.</param>
@@ -450,7 +450,7 @@ public sealed class DvApp : ISurfaceComposer
     /// cancels editing, as on other screens, and that press is not handled (the box stays).</para>
     /// <para><b>Result</b> — OK = the input box's current value (may be an empty string). The Cancel button and closing from outside (<see cref="CloseDialogs"/>, a dialog below closing, the window closing) give
     /// <see langword="null"/>. Each call stacks a new box and each returns its own result. The continuation thread rules are the same as <see cref="ShowDialog{TDialog, TResult}"/>.</para>
-    /// <para><b>Text</b> — Button labels can be changed with the <c>dv.dialog.ok</c> and <c>dv.dialog.cancel</c> keys in <see cref="Strings"/>; otherwise they are "확인" (OK) and "취소" (Cancel).</para>
+    /// <para><b>Text</b> — Button labels can be changed with the <c>dv.dialog.ok</c> and <c>dv.dialog.cancel</c> keys in <see cref="Strings"/>; otherwise they are the built-in "OK" and "Cancel" (Korean when <see cref="Strings"/> has <c>Language = "ko"</c>).</para>
     /// </remarks>
     /// <param name="caption">The title.</param>
     /// <param name="value">The initial value. <see langword="null"/> means an empty string.</param>
@@ -491,11 +491,11 @@ public sealed class DvApp : ISurfaceComposer
     public Task<double?> InputNumber(string caption, double value, double? min = null, double? max = null)
     {
         if (!double.IsFinite(value))
-            throw new ArgumentOutOfRangeException(nameof(value), value, "처음 값은 유한한 숫자여야 합니다.");
+            throw new ArgumentOutOfRangeException(nameof(value), value, "The initial value must be a finite number.");
         if (min > max)
-            throw new ArgumentOutOfRangeException(nameof(min), min, $"min({min}) 이 max({max}) 보다 큽니다.");
+            throw new ArgumentOutOfRangeException(nameof(min), min, $"min({min}) is greater than max({max}).");
         if (value < min || value > max)
-            throw new ArgumentOutOfRangeException(nameof(value), value, $"처음 값이 범위({min}~{max}) 밖입니다.");
+            throw new ArgumentOutOfRangeException(nameof(value), value, $"The initial value is outside the range ({min} to {max}).");
         return ShowDialog<DvNumberBoxDialog, double?>(caption, value, min, max);
     }
 
@@ -524,7 +524,7 @@ public sealed class DvApp : ISurfaceComposer
     {
         ArgumentNullException.ThrowIfNull(items);
         if (items.Count == 0)
-            throw new ArgumentException("항목이 하나도 없습니다.", nameof(items));
+            throw new ArgumentException("There are no items.", nameof(items));
         return ShowDialog<DvSelectBoxDialog, int?>(caption, items, selected);
     }
 
@@ -551,7 +551,7 @@ public sealed class DvApp : ISurfaceComposer
         get
         {
             lock (s_lock)
-                return s_last ?? throw new InvalidOperationException("아직 창·컨트롤에 붙은 DvApp 이 없습니다. new ViewWindow(app, …) 등으로 붙인 뒤 쓰거나, 앱 인스턴스를 직접 넘기세요.");
+                return s_last ?? throw new InvalidOperationException("No DvApp is attached to a window or control yet. Attach one first (for example with new ViewWindow(app, …)), or pass the app instance directly.");
         }
     }
 
@@ -566,9 +566,9 @@ public sealed class DvApp : ISurfaceComposer
             lock (_gate)
             {
                 if (_host is not null)
-                    throw new InvalidOperationException("이 DvApp 은 이미 다른 창·컨트롤에 붙어 있습니다. 먼저 그쪽을 닫거나 App 을 바꿔 떼어 내세요.");
+                    throw new InvalidOperationException("This DvApp is already attached to another window or control. Close that one first, or detach it by changing its App.");
                 if (s_attached is not null && !ReferenceEquals(s_attached, this))
-                    throw new InvalidOperationException("한 프로세스에 DvApp 은 하나만 창·컨트롤에 붙을 수 있습니다. 다른 앱을 먼저 닫거나 떼세요.");
+                    throw new InvalidOperationException("Only one DvApp per process can be attached to a window or control. Close or detach the other app first.");
                 _host = host;
                 _closed = false;
             }
@@ -1025,12 +1025,12 @@ public sealed class DvApp : ISurfaceComposer
         lock (OwnerLock)
         {
             if (value is not null && value.AppOrNull is not null && !ReferenceEquals(value.AppOrNull, this))
-                throw new InvalidOperationException($"틀 '{value.GetType().Name}' 는 이미 다른 DvApp 에 놓여 있습니다.");
+                throw new InvalidOperationException($"Bar '{value.GetType().Name}' is already placed in another DvApp.");
             lock (_gate)
             {
                 if (value is not null && !ReferenceEquals(slot, value) &&
                     (ReferenceEquals(_top, value) || ReferenceEquals(_bottom, value) || ReferenceEquals(_left, value) || ReferenceEquals(_right, value)))
-                    throw new InvalidOperationException($"틀 '{value.GetType().Name}' 는 이미 이 앱의 다른 영역에 놓여 있습니다. 옮기려면 그 영역을 먼저 null 로 비우세요.");
+                    throw new InvalidOperationException($"Bar '{value.GetType().Name}' is already placed in another region of this app. To move it, set that region to null first.");
                 if (value is not null)
                     value.AppOrNull = this;
                 slot = value;
@@ -1049,7 +1049,7 @@ public sealed class DvApp : ISurfaceComposer
             try { ((EventHandler)d)(this, EventArgs.Empty); }
             catch (Exception ex)
             {
-                Trace.TraceError($"Devinno.UI: RenderRequested 구독자 예외(무시함): {ex.GetType().Name}: {ex.Message}");
+                Trace.TraceError($"Devinno.UI: RenderRequested subscriber threw (ignored): {ex.GetType().Name}: {ex.Message}");
             }
         }
     }
@@ -1140,7 +1140,7 @@ public sealed class DvApp : ISurfaceComposer
                 if (surface!.ReloadMarkup(text) is { } error)
                     RaiseHandlerError(new DvHandlerErrorEventArgs(error, "hotreload", path, null));
                 else
-                    Trace.TraceInformation($"Devinno.UI: 핫리로드 — {Path.GetFileName(path)}");
+                    Trace.TraceInformation($"Devinno.UI: hot reload: {Path.GetFileName(path)}");
             }
         }
     }
@@ -1355,7 +1355,7 @@ public sealed class DvApp : ISurfaceComposer
             try { ((EventHandler<DvHandlerErrorEventArgs>)d)(this, e); }
             catch (Exception ex)
             {
-                Trace.TraceError($"Devinno.UI: HandlerError 구독자 예외(무시함): {ex.GetType().Name}: {ex.Message}");
+                Trace.TraceError($"Devinno.UI: HandlerError subscriber threw (ignored): {ex.GetType().Name}: {ex.Message}");
             }
         }
     }

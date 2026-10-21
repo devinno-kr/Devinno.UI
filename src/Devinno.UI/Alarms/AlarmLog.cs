@@ -70,7 +70,7 @@ public sealed class AlarmRow
 /// (<c>ViewWindow.Invalidate()</c>; in WinForms, <c>ViewControl.MarkUpdated()</c>) for the change to show. Changes made inside an <c>onack</c> or <c>onclick</c>
 /// method called by a widget click are re-laid out by the screen automatically.</para>
 /// <para><b>Over capacity</b>: when the item count exceeds <see cref="MaxRows"/>, alarms are removed starting from the <b>oldest acknowledged alarm</b>. Unacknowledged alarms are never removed, so
-/// if unacknowledged alarms alone overflow it, the list can grow beyond <see cref="MaxRows"/>. In that case, once only, it adds a Critical alarm "알람 버퍼 포화" ("alarm buffer saturated"; <see cref="SaturationMessage"/>,
+/// if unacknowledged alarms alone overflow it, the list can grow beyond <see cref="MaxRows"/>. In that case, once only, it adds a Critical alarm "Alarm buffer saturated" (<see cref="SaturationMessage"/>; alarm widgets show it in the screen language with the <c>dv.alarm.saturated</c> text,
 /// source <c>"AlarmLog"</c>), writes a <see cref="System.Diagnostics.Trace"/> error, and raises <see cref="Saturated"/>.
 /// After the saturation alarm is acknowledged, it notifies again the next time the list saturates. Capacity is also re-trimmed at the moment of acknowledgement, so if the list was overflowing, the alarm just acknowledged may drop out of the list immediately.</para>
 /// <para><b>Threads</b>: every member uses an internal lock, so you can <see cref="Raise"/>, <see cref="Ack"/> or <see cref="AckAll"/> from any thread (including communication and polling threads) and then
@@ -99,7 +99,7 @@ public sealed class AlarmRow
 public sealed class AlarmLog
 {
     /// <summary>The text of the Critical alarm added automatically when unacknowledged alarms alone exceed <see cref="MaxRows"/>.</summary>
-    public const string SaturationMessage = "알람 버퍼 포화 — 미확인 알람을 확인(ACK)하세요";
+    public const string SaturationMessage = "Alarm buffer saturated: acknowledge (ACK) the unacknowledged alarms";
 
     private readonly object _gate = new();
     private readonly List<AlarmRow> _rows = new();

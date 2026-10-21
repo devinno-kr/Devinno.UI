@@ -150,13 +150,13 @@ public static class ImageCache
             using var encoded = SKImage.FromEncodedData(File.ReadAllBytes(path));
             if (encoded is null)
             {
-                WarnOnce(path, "디코드할 수 없는 그림 형식");
+                WarnOnce(path, "image format cannot be decoded");
                 return null;
             }
 
             var raster = encoded.ToRasterImage(true);
             if (raster is null)
-                WarnOnce(path, "디코드할 수 없는 그림 형식");
+                WarnOnce(path, "image format cannot be decoded");
             return raster;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or NotSupportedException or System.Security.SecurityException)
@@ -170,6 +170,6 @@ public static class ImageCache
     private static void WarnOnce(string path, string reason)
     {
         if (Warned.Add(path))
-            Trace.TraceWarning($"Devinno.UI: DvImage 그림을 읽지 못했습니다 '{path}': {reason}");
+            Trace.TraceWarning($"Devinno.UI: DvImage could not load image '{path}': {reason}");
     }
 }

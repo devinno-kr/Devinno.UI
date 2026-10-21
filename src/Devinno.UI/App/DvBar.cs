@@ -26,7 +26,7 @@ public abstract class DvBar
 {
     /// <summary>Gets the app this bar is placed in.</summary>
     /// <exception cref="InvalidOperationException">Read before the bar is assigned to an area (<c>app.Top</c>, etc.). Inside the bar constructor it is not yet assigned.</exception>
-    public DvApp App => _app ?? throw new InvalidOperationException($"{GetType().Name} 은(는) 아직 앱의 영역에 놓이지 않았습니다. app.Top/Left 등에 대입한 뒤(처리기·OnLoaded)에서 App 을 쓰세요.");
+    public DvApp App => _app ?? throw new InvalidOperationException($"{GetType().Name} has not been placed in an app region yet. Use App after assigning it to app.Top, app.Left, etc. (in handlers, OnLoaded).");
 
     /// <summary>Owning app (<see langword="null"/> if none). Used for ownership checks inside the library.</summary>
     internal DvApp? AppOrNull { get => _app; set => _app = value; }
@@ -37,7 +37,7 @@ public abstract class DvBar
     /// Gets the markup of this bar (dvml source text). The source generator overrides it with the dvml's <c>Markup</c> constant, so it is normally not used directly.
     /// </summary>
     /// <exception cref="InvalidOperationException">No dvml is linked to this bar (no override).</exception>
-    protected virtual string MarkupSource => throw new InvalidOperationException("dvml 이 연결되지 않았습니다");
+    protected virtual string MarkupSource => throw new InvalidOperationException("No dvml markup is attached");
 
     /// <summary>This bar's surface, kept by the app (created when first needed). volatile because <see cref="DvApp.Invalidate"/> reads it from other threads.</summary>
     internal DvSurface? Surface { get => _surface; set => _surface = value; }

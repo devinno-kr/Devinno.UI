@@ -127,9 +127,9 @@ internal static class GridFilter
     /// <summary>Display text of a values item — empty values and bools use localized strings; others use the same text as the cell (select column = option text).</summary>
     public static string ItemText(GridColumn col, object? v, Localization.DvStrings? strings) => v switch
     {
-        null => Localization.DvStrings.Text(strings, "dv.filter.empty", "(빈 값)"),
-        bool b when col.CellType != GridCellType.Select => b ? Localization.DvStrings.Text(strings, "dv.filter.true", "예")
-                                                              : Localization.DvStrings.Text(strings, "dv.filter.false", "아니오"),
+        null => Localization.DvStrings.Builtin(strings, "dv.filter.empty"),
+        bool b when col.CellType != GridCellType.Select => b ? Localization.DvStrings.Builtin(strings, "dv.filter.true")
+                                                              : Localization.DvStrings.Builtin(strings, "dv.filter.false"),
         _ => col.ValueText(v)
     };
 

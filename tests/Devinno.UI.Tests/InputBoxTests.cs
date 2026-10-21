@@ -19,7 +19,7 @@ public class InputBoxTests
 
     private static (DvApp App, DvSurface Root) Start(bool native = false)
     {
-        var app = new DvApp();
+        var app = new DvApp { Strings = new Devinno.UI.Localization.DvStrings { Language = "ko" } }; // 버튼을 한국어 글자로 찾는다
         app.Pages.Add(new Page());
         app.Surface.UseNativeEditor = native;
         app.Surface.Layout(W, H);

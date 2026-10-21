@@ -82,7 +82,7 @@ public sealed partial class Painter
 
         if (!hasData || values.Count == 0)
         {
-            var empty = T("dv.trend.empty", "데이터 없음");
+            var empty = T("dv.trend.empty");
             using var ef = TextFont.Create(empty, 13f, bold: false);
             using var ep = new SKPaint { IsAntialias = true, Color = muted };
             canvas.DrawText(empty, plot.MidX, plot.MidY, SKTextAlign.Center, ef, ep);

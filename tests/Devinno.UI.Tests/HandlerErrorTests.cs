@@ -154,7 +154,7 @@ public class HandlerErrorTests
 
         Assert.False(s.CommitEdit(id, DvEditExit.Enter));
         Assert.True(s.Edit.IsEditing);
-        Assert.Equal("값을 저장하지 못했습니다", s.Edit.Error);
+        Assert.Equal("Could not save the value", s.Edit.Error);
         Assert.Equal("펌프 A", vm.Name);
         AssertOne(errors, "setter", "Name", "DvInput", "name-set");
     }
@@ -227,7 +227,7 @@ public class HandlerErrorTests
         s.SetEditText(s.Edit.SessionId, "새 이름");
         Assert.False(s.CommitEdit(s.Edit.SessionId, DvEditExit.Enter));
         Assert.True(s.Edit.IsEditing);
-        Assert.Equal("값을 저장하지 못했습니다", s.Edit.Error);
+        Assert.Equal("Could not save the value", s.Edit.Error);
         AssertOne(errors, "setter", "Name", "DvDataGrid", "row-name-set");
     }
 

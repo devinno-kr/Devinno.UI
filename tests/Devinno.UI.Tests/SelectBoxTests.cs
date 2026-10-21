@@ -18,7 +18,7 @@ public class SelectBoxTests
 
     private static (DvApp App, DvSurface Root) Start()
     {
-        var app = new DvApp();
+        var app = new DvApp { Strings = new Devinno.UI.Localization.DvStrings { Language = "ko" } }; // 버튼을 한국어 글자로 찾는다
         app.Pages.Add(new Page());
         app.Surface.Layout(W, H);
         return (app, app.Surface);
@@ -172,7 +172,7 @@ public class SelectBoxTests
     [Fact]
     public async Task Select_ShortWindow_ButtonsStayInsideSlot()
     {
-        var app = new DvApp();
+        var app = new DvApp { Strings = new Devinno.UI.Localization.DvStrings { Language = "ko" } }; // 버튼을 한국어 글자로 찾는다
         app.Pages.Add(new Page());
         app.Surface.Layout(800, 360);
         var root = app.Surface;
@@ -270,7 +270,7 @@ public class SelectBoxTests
     [Fact]
     public void Select_LargerThemeFontsAndSpacing_ButtonsStayInside()
     {
-        var app = new DvApp();
+        var app = new DvApp { Strings = new Devinno.UI.Localization.DvStrings { Language = "ko" } }; // 버튼을 한국어 글자로 찾는다
         app.Pages.Add(new Page());
         app.Theme = DvTheme.Default.With(new Dictionary<string, string>
         {
@@ -288,7 +288,7 @@ public class SelectBoxTests
     [Fact]
     public void Select_BeforeAnyLayout_FirstLayoutFits()
     {
-        var app = new DvApp();
+        var app = new DvApp { Strings = new Devinno.UI.Localization.DvStrings { Language = "ko" } }; // 버튼을 한국어 글자로 찾는다
         app.Pages.Add(new Page());
         _ = app.SelectBox("종류", Enumerable.Range(0, 200).Select(i => "항목" + i).ToList());
 

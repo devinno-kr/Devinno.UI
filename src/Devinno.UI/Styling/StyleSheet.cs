@@ -109,7 +109,7 @@ public sealed class StyleSheet
                 var m = Selector.Match(sel);
                 if (!m.Success)
                 {
-                    Trace.TraceWarning($"Devinno.UI: 미지원 셀렉터 '{sel}' 무시");
+                    Trace.TraceWarning($"Devinno.UI: unsupported selector '{sel}' ignored");
                     continue;
                 }
 

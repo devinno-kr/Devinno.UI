@@ -163,7 +163,7 @@ internal static class GridInteraction
         var (ok, value) = Snapshot(BindingResolver.ResolvePropertyType(ctx, path), g.SelectedItems);
         if (ok)
             return HandlerErrors.TrySet(owner, box.Node.Tag, ctx, path, value);
-        Trace.TraceWarning($"Devinno.UI: DvDataGrid selection '{path}' — 지원하지 않는 속성 타입(T[]·List<T>·IList<T>·IReadOnlyList<T>·IEnumerable<T>, single 은 T)");
+        Trace.TraceWarning($"Devinno.UI: DvDataGrid selection '{path}': unsupported property type (T[], List<T>, IList<T>, IReadOnlyList<T>, IEnumerable<T>; T for single)");
         return true;
     }
 
@@ -228,7 +228,7 @@ internal static class GridInteraction
             lock (NonBoolWarned)
             {
                 if (NonBoolWarned.Add((item.GetType(), col.Reader.Path)))
-                    Trace.TraceWarning($"Devinno.UI: DvColumn cell-type=\"check\" field '{col.Reader.Path}' 가 쓸 수 있는 bool 속성이 아님 — 쓰지 않음");
+                    Trace.TraceWarning($"Devinno.UI: DvColumn cell-type=\"check\" field '{col.Reader.Path}' is not a writable bool property; not written");
             }
 
             return;
@@ -245,7 +245,7 @@ internal static class GridInteraction
             if (target is null)
             {
                 // 이름 오타·시그니처 불일치 — 확인을 건너뛰고 쓰지 않는다(확인 없이 쓰면 위험)
-                Trace.TraceWarning($"Devinno.UI: onbeforecommit '{gate}' — bool {gate}(항목, bool) 또는 bool {gate}(bool) 없음, 쓰지 않음");
+                Trace.TraceWarning($"Devinno.UI: onbeforecommit '{gate}': no bool {gate}(item, bool) or bool {gate}(bool) found; not written");
                 return;
             }
 

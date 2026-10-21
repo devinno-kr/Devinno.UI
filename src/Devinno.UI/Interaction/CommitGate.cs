@@ -34,7 +34,7 @@ internal static class CommitGate
             lock (Warned)
             {
                 if (Warned.Add((vm.GetType(), gate)))
-                    Trace.TraceWarning($"Devinno.UI: onbeforecommit '{gate}' — bool {gate}({argTypes.FirstOrDefault()?.Name}) 없음, 쓰지 않음");
+                    Trace.TraceWarning($"Devinno.UI: onbeforecommit '{gate}': no bool {gate}({argTypes.FirstOrDefault()?.Name}) found; not written");
             }
 
             return false;

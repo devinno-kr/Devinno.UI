@@ -173,7 +173,7 @@ internal sealed class GridCellSlot : IValueSlot
             lock (GateWarned)
             {
                 if (GateWarned.Add((vm.GetType(), gate)))
-                    Trace.TraceWarning($"Devinno.UI: DvColumn onbeforecommit '{gate}' — bool {gate}(항목, {t?.Name}) 또는 bool {gate}({t?.Name}) 없음, 쓰지 않음");
+                    Trace.TraceWarning($"Devinno.UI: DvColumn onbeforecommit '{gate}': no bool {gate}(item, {t?.Name}) or bool {gate}({t?.Name}) found; not written");
             }
 
             return false;

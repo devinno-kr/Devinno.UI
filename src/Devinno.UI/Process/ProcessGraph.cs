@@ -728,7 +728,7 @@ internal sealed class ProcessGraph
                 if (MathF.Abs(positions[k] - positions[k - 1]) < Pitch - 0.5f)
                 {
                     var face = group.Key.Out.ToString().ToLowerInvariant();
-                    Warnings.Add($"'{node.Name}' 의 {face} 면에 노즐 {nozzles.Count}개(들어오는 선·나가는 선)가 들어갈 자리가 모자랍니다(부속·붙은 칸이 가린 자리 제외) — 한쪽을 다른 포트(side 등)로 잇거나, 부속·붙은 칸을 옮기세요");
+                    Warnings.Add($"'{node.Name}': not enough room on the {face} face for {nozzles.Count} nozzles (incoming and outgoing lines), excluding space covered by attachments and attached cells. Connect one of them to another port (side, etc.), or move the attachments or attached cells");
                     break;
                 }
             }
@@ -1048,7 +1048,7 @@ internal sealed class ProcessGraph
                 AddPoint(s.Points, new SKPoint(s.To.StubEnd.X, s.From.StubEnd.Y));
                 AddPoint(s.Points, s.To.StubEnd);
                 AddPoint(s.Points, s.To.Point);
-                Warnings.Add($"신호선 '{s.From.Key}'→'{s.To.Key}': 빈 길이 없어 장비를 가로질러 긋습니다 — 계기를 다른 장비에 붙이거나(on) 영역을 키우세요");
+                Warnings.Add($"Signal line '{s.From.Key}'→'{s.To.Key}': no free path, so it is drawn across equipment; attach the instrument to other equipment (on) or enlarge the area");
             }
 
             for (var k = 0; k + 1 < s.Points.Count; k++)

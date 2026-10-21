@@ -45,7 +45,7 @@ public static class ThemeResolver
             if (theme.TryGet(name, out var value))
                 return value;
 
-            Trace.TraceWarning($"Devinno.UI: 토큰 미해석 '{name}'");
+            Trace.TraceWarning($"Devinno.UI: unresolved token '{name}'");
             return MissingColor;
         });
     }

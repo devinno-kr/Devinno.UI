@@ -606,9 +606,9 @@ Right before writing a value to the VM, a VM method confirms it. The value is wr
 - If the method is not on the VM (a misspelled name is build error DVML018 in a dvml with `vm`) or the signature differs (including a non-`bool` return such as `void M(bool)`), **no widget or cell writes** (rejected). A Trace warning is logged once per VM type and method name.
 - If the method throws, the write is also rejected, a Trace error is logged, and it is reported via `HandlerError` (6.7; the exception is not propagated to the app).
 - Without `onbeforecommit`, the value is written without confirmation.
-- Even after passing confirmation, **if the VM property's setter throws** (including type conversion failure), it is treated as a write failure and handled exactly like a rejection. The error text for `DvInput` (including grid input cells) is "값을 저장하지 못했습니다" ("Could not save the value", `dv.input.write-failed`); the exception message is not shown on screen.
+- Even after passing confirmation, **if the VM property's setter throws** (including type conversion failure), it is treated as a write failure and handled exactly like a rejection. The error text for `DvInput` (including grid input cells) is "Could not save the value" (`dv.input.write-failed`, chapter 17); the exception message is not shown on screen.
 
-- **The rejection text is the same for every rejection** ("허용되지 않는 값입니다", `dv.input.rejected`; change it per app with `DvStrings`, chapter 17). A confirmation method cannot return its own reason. To show a specific reason, set a VM property inside the method, bind a label to it, and call `App.Invalidate()` in the method — a rejected commit does not rebuild the screen by itself.
+- **The rejection text is the same for every rejection** ("This value is not allowed", `dv.input.rejected`; Korean or your own text with `DvStrings`, chapter 17). A confirmation method cannot return its own reason. To show a specific reason, set a VM property inside the method, bind a label to it, and call `App.Invalidate()` in the method — a rejected commit does not rebuild the screen by itself.
 
 When rejected (including the cases above): `DvInput` stays in edit mode and shows the error text, and picker popups stay open. A `DvSelect` dropdown closes and the value is unchanged (a grid `select` cell stays open). Toggles, knobs, and `check` cells keep their value, and grid row selection (`selection="{Bind …}"`) keeps the previous selection.
 
@@ -896,7 +896,7 @@ Common rules:
 - **password:** starts empty; committing it empty does not change the value.
 - **± buttons (`show-stepper="true"`, numeric only):** draws −/+ at both ends of the input box. Pressing subtracts or adds `step` (default 1) from the current value, clamps to `min`–`max`, and writes immediately (if the value is empty, from `min` or 0). Writing uses the same path as numeric input (type, range, `onbeforecommit`); pressing the middle enters a value directly with the keypad as usual. Pressing −/+ while typing applies the typed value first, then steps. When read-only, one-way, or disabled, the buttons are dimmed and do nothing. Decimal places match those of `step` (a fractional `step` is not used on an integer property).
 - While editing, even if the VM value changes (`Invalidate()` polling), the text being edited takes priority.
-- The editor depends on the host: OpenTK and `ViewControl.TouchMode` = built-in virtual keyboard (QWERTY Korean/English, Shift, symbols, 2-set Korean (Dubeolsik), numeric keypad; slides up from the bottom and pushes the screen up so the input box stays visible; pressing outside cancels; single line only). WinForms `ViewControl` = a hidden TextBox placed over the box (OS IME, multiple lines, clipboard; pressing outside commits).
+- The editor depends on the host: OpenTK and `ViewControl.TouchMode` = built-in virtual keyboard (QWERTY Korean/English, Shift, symbols, 2-set Korean (Dubeolsik), numeric keypad; text input opens in the English layout, or the Korean layout when `DvStrings.Language` is `ko`, and the Korean/English key is always there; slides up from the bottom and pushes the screen up so the input box stays visible; pressing outside cancels; single line only). WinForms `ViewControl` = a hidden TextBox placed over the box (OS IME, multiple lines, clipboard; pressing outside commits).
 
 ### 10.2 DvSelect
 
@@ -1076,7 +1076,7 @@ Tapping a check or button cell performs only that action (no selection, no `onro
 
 - Tapping a cell **edits immediately** (no selection, no `onrowclick`). input edits in place (virtual keyboard or native editor); the others open a popup below the cell.
 - Writes once to the row item's property (not written if the value is the same). Then only the grid is redrawn (including summaries, no rebuild). Other widgets bound to the same data change on the next `Invalidate()`.
-- `onbeforecommit` is in 6.5. If the method is missing, throws, or returns anything other than `true`, the value is rejected — input stays open showing the reason, and a popup stays open. The same applies if the row item property's setter throws (input message = "값을 저장하지 못했습니다", 6.7).
+- `onbeforecommit` is in 6.5. If the method is missing, throws, or returns anything other than `true`, the value is rejected — input stays open showing the reason, and a popup stays open. The same applies if the row item property's setter throws (input message = "Could not save the value", 6.7).
 - **Display-only cases** (tapping is a normal row tap): `readonly="true"`, no public setter, a struct in the path, property type not matching the cell kind (one warning).
 - Editing follows the row (`row-key`, otherwise the item reference). It survives sorting, `Invalidate()` and `Repaint()`; when scrolled fully off screen, input commits and popups close; when the row disappears, it closes without writing. Tapping a header during input editing commits first (the virtual keyboard cancels — because the keyboard is modal). A header tap while a popup is open only closes the popup.
 - Only with the native editor (`UseNativeEditor = true`): Enter = next row in the same column, Tab / Shift+Tab = next/previous input column in the row (non-editable cells are skipped, scrolls into view, ends at the last row/column, stops on a rejected value). With the virtual keyboard, committing ends editing.
@@ -1112,14 +1112,14 @@ Bindable, interpreted the same as literals. Any other value = warning, then `non
 **Filter row and popup**
 - Tapping a filter row cell opens that column's popup. A cell with a condition shows an accent-colored funnel + condition summary ("…" if long); a cell without a condition shows only a dimmed funnel. Cells of columns without `filter` are empty.
 - Buttons at the bottom of the popup: **OK** = apply the condition and close, **Clear** = remove that column's condition + close, **Cancel** = close unchanged. Tapping outside the popup is Cancel.
-- `text`: one input field. `values`: "Select all" + value list (checked = shown; if there are empty values, `(빈 값)` comes first; with more than 1000 values only the first 1000 — in that case unchecking even one item makes the condition "checked values", so values outside the list are hidden too (same as Excel)). The list is a snapshot taken when opened, built from rows with the other columns' filters applied. All checked = no condition.
+- `text`: one input field. `values`: "Select all" + value list (checked = shown; if there are empty values, `(Empty)` comes first; with more than 1000 values only the first 1000 — in that case unchecking even one item makes the condition "checked values", so values outside the list are hidden too (same as Excel)). The list is a snapshot taken when opened, built from rows with the other columns' filters applied. All checked = no condition.
 - `range`: two fields, min and max, numeric keypad rules (non-numbers are rejected with a reason line). Either side may be empty.
 - `date`: tapping the start or end field opens a **date picker overlaid on the filter popup**. Picker OK = only the field value changes (no VM write). Outside the picker = only the picker closes. An empty start field starts at 00:00:00, an end field at 23:59:59.
 
 **Filtering rules**
 - AND across columns; `values` within one column are OR.
 - `text`: case-insensitive, culture-invariant substring match on the **visible text** (including `format` and select item text).
-- `values`: any of the checked values (OR); `(빈 값)` is null or empty text. `range`·`date`: bounds inclusive, either side alone is allowed, cells with empty values fail range conditions.
+- `values`: any of the checked values (OR); `(Empty)` is null or empty text. `range`·`date`: bounds inclusive, either side alone is allowed, cells with empty values fail range conditions.
 
 **Interaction with other features**
 - Sorting is applied to the filtered rows, and summary rows compute **visible rows only**.
@@ -1160,7 +1160,7 @@ Bindable, interpreted the same as literals. Any other value = warning, then `non
 
 - Real-time: the VM provides a `TrendBuffer`, calls `TrendBuffer.Add(채널, 시각, 값)` (thread-safe), then `Invalidate()`.
 - History: bind `IEnumerable<TrendPoint>` to `points` and pin the right edge with `end="{EndTime}"`.
-- `double.NaN` breaks the line. With no data, "데이터 없음" (`dv.trend.empty`) is shown.
+- `double.NaN` breaks the line. With no data, "No data" (`dv.trend.empty`) is shown.
 - Default size 480×240. Grid line color is the `trend-grid` token.
 
 ---
@@ -1602,23 +1602,28 @@ The markup tag for a page background with a header is **`<DvPageFrame>`** (the o
 - Lookup order: current language → `FallbackLanguage` → shows `[키]` (never silently blank).
 - `@키` works only when the whole attribute value has the form `@name` (name = ASCII letters, digits, `_`, `.`).
 - `font-lang-{언어}` on the root = the default font for that language (elements that set `font-family` keep their own).
-- Built-in widget text can be replaced with the following keys (defaults are Korean; English glosses in parentheses):
+- **Built-in widget text** (alarm columns, input errors, picker and dialog buttons, filter popup, virtual keyboard "Done") ships in **English (default) and Korean**. With no `DvStrings`, or with `Language = "en"`, it is English; set `Language = "ko"` for Korean (`app.Strings = new DvStrings { Language = "ko" }`). For any other language, or to change a text, add the key to your table — your entries always win. The virtual keyboard's Korean/English switch key is always shown.
 
-| Key | Default text |
-|---|---|
-| `dv.alarm.critical` `dv.alarm.major` `dv.alarm.minor` | 긴급 / 경고 / 주의 (Critical / Warning / Caution) |
-| `dv.alarm.none` `dv.alarm.empty` | 활성 알람 없음 / 표시할 알람이 없습니다 (No active alarms / No alarms to display) |
-| `dv.alarm.unacked` `dv.alarm.acked` | 미확인 {0}건 / 확인 {0} (Unacknowledged: {0} / Acknowledged {0}) |
-| `dv.alarm.comm` | 통신 이상 (Communication fault) |
-| `dv.alarm.col.time` `dv.alarm.col.priority` `dv.alarm.col.message` `dv.alarm.col.ack` | 시간 / 등급 / 메시지 / 확인 (Time / Priority / Message / Ack) |
-| `dv.trend.empty` | 데이터 없음 (No data) |
-| `dv.input.required` `dv.input.number` `dv.input.integer` `dv.input.unsigned` | 값을 입력하세요 / 숫자 형식이 아닙니다 / 정수만 입력할 수 있습니다 / 음수는 입력할 수 없습니다 (Enter a value / Not a number / Only integers are allowed / Negative numbers are not allowed) |
-| `dv.input.range` `dv.input.overflow` `dv.input.rejected` | 허용 범위: {0} ~ {1} / 입력할 수 있는 범위를 벗어났습니다 / 허용되지 않는 값입니다 (Allowed range: {0} ~ {1} / Out of the allowed input range / Value not allowed) |
-| `dv.input.write-failed` | 값을 저장하지 못했습니다 (Failed to save the value) (VM setter exception) |
-| `dv.picker.ok` `dv.picker.cancel` | 확인 / 취소 (OK / Cancel) |
-| `dv.picker.month` `dv.picker.dow` | {0}년 {1}월 / 일,월,화,수,목,금,토 (year {0} month {1} / Sun,Mon,Tue,Wed,Thu,Fri,Sat) |
-| `dv.picker.hex` | #RRGGBB 형식이 아닙니다 (Not in #RRGGBB format) |
-| `dv.kbd.done` | 완료 (Done) |
+| Key | English (default) | Korean (`ko`) |
+|---|---|---|
+| `dv.dialog.ok` `dv.dialog.cancel` `dv.dialog.yes` `dv.dialog.no` | OK / Cancel / Yes / No | 확인 / 취소 / 예 / 아니요 |
+| `dv.alarm.critical` `dv.alarm.major` `dv.alarm.minor` | Critical / Major / Minor | 긴급 / 경고 / 주의 |
+| `dv.alarm.none` `dv.alarm.empty` | No active alarms / No alarms to show | 활성 알람 없음 / 표시할 알람이 없습니다 |
+| `dv.alarm.unacked` `dv.alarm.acked` | {0} unacknowledged / Acked {0} | 미확인 {0}건 / 확인 {0} |
+| `dv.alarm.comm` | Communication fault | 통신 이상 |
+| `dv.alarm.saturated` (the alarm `AlarmLog` adds when its buffer is full; other alarm messages are shown as the app wrote them) | Alarm buffer saturated: acknowledge (ACK) the unacknowledged alarms | 알람 버퍼 포화 — 미확인 알람을 확인(ACK)하세요 |
+| `dv.alarm.col.time` `dv.alarm.col.priority` `dv.alarm.col.message` `dv.alarm.col.ack` | Time / Priority / Message / Ack | 시간 / 등급 / 메시지 / 확인 |
+| `dv.trend.empty` | No data | 데이터 없음 |
+| `dv.input.required` `dv.input.number` `dv.input.integer` `dv.input.unsigned` | Enter a value / Not a number / Only whole numbers are allowed / Negative numbers are not allowed | 값을 입력하세요 / 숫자 형식이 아닙니다 / 정수만 입력할 수 있습니다 / 음수는 입력할 수 없습니다 |
+| `dv.input.range` `dv.input.overflow` `dv.input.rejected` | Allowed range: {0} to {1} / Out of the allowed range / This value is not allowed | 허용 범위: {0} ~ {1} / 입력할 수 있는 범위를 벗어났습니다 / 허용되지 않는 값입니다 |
+| `dv.input.write-failed` (VM setter exception) | Could not save the value | 값을 저장하지 못했습니다 |
+| `dv.picker.ok` `dv.picker.cancel` | OK / Cancel | 확인 / 취소 |
+| `dv.picker.month` `dv.picker.dow` | {0}-{1:00} / Sun,Mon,Tue,Wed,Thu,Fri,Sat | {0}년 {1}월 / 일,월,화,수,목,금,토 |
+| `dv.picker.hex` | Not in #RRGGBB format | #RRGGBB 형식이 아닙니다 |
+| `dv.kbd.done` | Done | 완료 |
+| `dv.filter.ok` `dv.filter.cancel` `dv.filter.clear` `dv.filter.all` | OK / Cancel / Clear / Select all | 확인 / 취소 / 지우기 / 전체 선택 |
+| `dv.filter.empty` `dv.filter.true` `dv.filter.false` `dv.filter.more` | (Empty) / Yes / No / Too many values; showing the first {0} | (빈 값) / 예 / 아니오 / 값이 많아 처음 {0}개만 표시 |
+| `dv.filter.min` `dv.filter.max` `dv.filter.from` `dv.filter.to` | Min / Max / From / To | 최소 / 최대 / 시작 / 끝 |
 
 ---
 
@@ -2029,7 +2034,7 @@ Signature: `Task<DvDialogResult> MessageBox(string text, string? caption = null,
 - When closed from outside, the result is `DvDialogResult.Cancel`. This also applies to `Ok`·`YesNo` boxes that have no cancel button, so when checking for "Yes", compare with `== DvDialogResult.Yes` (comparing with `!= No` mistakes a close from outside for "Yes").
 - If `caption` is `null`, there is no title row. The body can be split into lines with `\n`.
 - The width defaults to 360; long text widens it up to window width − 32 and then wraps within it (font size is the theme's `font.body`; the body is a single label — 3.8). If the window size changes while the box is shown, it re-wraps to that width. If the text is taller than the window, only the body scrolls inside the box and the button row stays in the box (short text has no scrollbar).
-- Button text can be changed through localization (chapter 17) keys `dv.dialog.ok` `dv.dialog.cancel` `dv.dialog.yes` `dv.dialog.no`; if absent, the Korean defaults for OK·Cancel·Yes·No are used.
+- Button text can be changed through localization (chapter 17) keys `dv.dialog.ok` `dv.dialog.cancel` `dv.dialog.yes` `dv.dialog.no`; if absent, the built-in English (or Korean with `Language = "ko"`) texts OK·Cancel·Yes·No are used.
 - Each call creates a new box that is stacked. Showing several in a row does not overwrite one another; each returns its own result. Callable from any thread.
 
 ### 21.5 Built-in boxes — text·number input, choosing from a list
@@ -2392,7 +2397,7 @@ A process screen that draws tanks·pumps·valves and pipes. **You do not write c
 - Without a given size, the process diagram size = the content size.
 - `flow-animation="true"` (off by default): dashes move in the flow direction over pipes the library judges to be flowing from the connections·equipment state (redrawn at 20 frames per second). Flow can be overridden per line with `<DvLine flow="{X}"/>` (lines with real flow-rate data). For the detailed judgment rules see `dvml-process.md` 12.1.
 - `align="auto|step|row"` (default `auto`): whether equipment after a line leaving a tank bottom is placed stepped below the tank (`step`) or on the same row as the tank (`row`, low and wide). `auto` uses stepped if it fits the area, otherwise the same row.
-- If the size is smaller than the content, it re-lays out by changing the row alignment (`auto`) and equipment spacing (down to 0.5×). If still short, it leaves a Trace warning ("공간이 모자랍니다" — not enough space) and draws overflowing. If there is spare space, it is centered.
+- If the size is smaller than the content, it re-lays out by changing the row alignment (`auto`) and equipment spacing (down to 0.5×). If still short, it leaves a Trace warning ("Not enough space") and draws overflowing. If there is spare space, it is centered.
 - The background is not painted. It follows the app theme or `style`'s `background` (`rich` looks best on a dark background).
 
 ### 22.2 Equipment
@@ -2550,12 +2555,12 @@ Trace warnings·errors are left based on the layout drawn on screen (the same me
 
 | Message | Meaning · what to do |
 |---|---|
-| `'A.out'→'B.in': 다른 배관과 N번 교차` | Crossing (crosses other pipes N times). Try changing the order with `row` |
-| `'A.out'→'B.in': 빈 길이 없어 다른 배관과 겹칩니다` | Path blocked, drawn overlapping. Change `row`·`rank` or enlarge the area |
-| `공간이 모자랍니다 — 필요 W×H, 영역 W×H` | Overflows even at minimum spacing. Enlarge the area or split the screen |
-| `장비 'X' 이(가) 없습니다` · `포트 'p' 이(가) 없습니다(…)` · `포트를 골라야 합니다(…)` | Wrong connection (red marking). The parentheses list the usable ports |
-| `<Tag> 은(는) 공정도 장비가 아닙니다` | A non-equipment tag inside a process diagram |
-| `<DvInstrument …> 에 on … 없습니다` · `DvSignal '…': 계기·장비 'X' 이(가) 없습니다` | Wrong name of the equipment an instrument attaches to, or of a signal line end (not drawn) |
+| `'A.out'→'B.in': crosses other piping N time(s)` | Crossing. Try changing the order with `row` |
+| `'A.out'→'B.in': no free path, so it overlaps other piping` | Path blocked, drawn overlapping. Change `row`·`rank` or enlarge the area |
+| `Not enough space: needs W×H, area is W×H` | Overflows even at minimum spacing. Enlarge the area or split the screen |
+| `no equipment named 'X'` · `'X' has no port 'p' (…)` · `'X' requires a port (…)` | Wrong connection (red marking). The parentheses list the usable ports |
+| `<Tag> is not process equipment` | A non-equipment tag inside a process diagram |
+| `<DvInstrument …> has no on …` · `on='Y': no such equipment` · `DvSignal '…': no instrument or equipment named 'X'` | Wrong name of the equipment an instrument attaches to, or of a signal line end (not drawn) |
 
 ### 22.9 Units (DvUnit · DvPort)
 

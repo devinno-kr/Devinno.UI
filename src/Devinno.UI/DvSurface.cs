@@ -1468,7 +1468,7 @@ public sealed partial class DvSurface
         {
             if (!SelectValue.TryConvert(option, radio.SelectValueType, out var value))
             {
-                System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvRadio option '{option}' 을 {radio.SelectValueType?.Name} 로 바꿀 수 없습니다 — 쓰지 않습니다");
+                System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvRadio option '{option}' cannot be converted to {radio.SelectValueType?.Name}; not written");
                 return;
             }
             if (!CommitGate.Allows(this, radio.Node.Tag, _vm, radio.OnBeforeCommit, value, value?.GetType() ?? typeof(object), typeof(object)))
@@ -1512,7 +1512,7 @@ public sealed partial class DvSurface
         var (ok, value) = GridInteraction.Snapshot(Binding.BindingResolver.ResolvePropertyType(ctx, path), picked.OfType<object>().ToList());
         if (!ok)
         {
-            System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvListBox selected-items '{path}' — 지원하지 않는 속성 형식(T[]·List<T>·IList<T>·IReadOnlyList<T>·IEnumerable<T>)");
+            System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvListBox selected-items '{path}': unsupported property type (supported: T[], List<T>, IList<T>, IReadOnlyList<T>, IEnumerable<T>)");
             return;
         }
         if (!CommitGate.Allows(this, list.Node.Tag, _vm, list.OnBeforeCommit, value, value?.GetType() ?? typeof(object), typeof(object)))
@@ -1729,7 +1729,7 @@ public sealed partial class DvSurface
     {
         if (Window.Composer is not App.DvApp app)
         {
-            System.Diagnostics.Trace.TraceWarning("Devinno.UI: DvKnob input-mode tap·both 의 키패드는 DvApp 화면(페이지·바·다이얼로그)에서만 뜹니다 — 이 탭은 무시합니다");
+            System.Diagnostics.Trace.TraceWarning("Devinno.UI: DvKnob input-mode tap/both opens its keypad only on DvApp screens (pages, bars, dialogs); this tap is ignored");
             return;
         }
 

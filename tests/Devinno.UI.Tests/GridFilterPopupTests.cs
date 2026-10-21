@@ -63,7 +63,7 @@ public class GridFilterPopupTests
     {
         var (s, g, _) = Make();
         var p = Open(s, g, 1);
-        Assert.Equal(new[] { "(빈 값)", "P0", "P1", "P2" }, p.Items.Select(i => i.Text).ToArray());
+        Assert.Equal(new[] { "(Empty)", "P0", "P1", "P2" }, p.Items.Select(i => i.Text).ToArray());
         Assert.Equal(4, p.Checked.Count); // 조건 없음 = 전부 체크
     }
 

@@ -86,7 +86,7 @@ public sealed partial class Painter
 
         if (st.Mode != PickerMode.Time)
         {
-            var title = string.Format(DvStrings.Text(strings, "dv.picker.month", "{0}년 {1}월"), st.ViewYear, st.ViewMonth);
+            var title = string.Format(DvStrings.Builtin(strings, "dv.picker.month"), st.ViewYear, st.ViewMonth);
             CenterText(canvas, title, p.TitleRect, fontSize, true, text);
             using (var ip = new SKPaint { IsAntialias = true, Color = text })
             {
@@ -96,7 +96,7 @@ public sealed partial class Painter
                     IconFont.Draw(canvas, r, new SKPoint(p.NextRect.MidX, p.NextRect.MidY), 16f, ip);
             }
 
-            var dow = DvStrings.Text(strings, "dv.picker.dow", "일,월,화,수,목,금,토").Split(',');
+            var dow = DvStrings.Builtin(strings, "dv.picker.dow").Split(',');
             for (var c = 0; c < 7 && c < dow.Length; c++)
                 CenterText(canvas, dow[c], p.DowRect(c), fontSize - 2, false, c == 0 ? fault : c == 6 ? primary : muted);
 
@@ -172,10 +172,10 @@ public sealed partial class Painter
             canvas.DrawRoundRect(cancel, 6, 6, fp);
         using (var cp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1, Color = strong })
             canvas.DrawRoundRect(cancel, 6, 6, cp);
-        CenterText(canvas, DvStrings.Text(strings, "dv.picker.cancel", "취소"), cancel, fontSize, false, text);
+        CenterText(canvas, DvStrings.Builtin(strings, "dv.picker.cancel"), cancel, fontSize, false, text);
         using (var op = new SKPaint { IsAntialias = true, Color = primary })
             canvas.DrawRoundRect(ok, 6, 6, op);
-        CenterText(canvas, DvStrings.Text(strings, "dv.picker.ok", "확인"), ok, fontSize, true, primaryFg);
+        CenterText(canvas, DvStrings.Builtin(strings, "dv.picker.ok"), ok, fontSize, true, primaryFg);
     }
 
     // ── 색 팝업 본문 — S/V 사각형, 색상 막대, 견본(원래|현재), # 칸, 취소/확인

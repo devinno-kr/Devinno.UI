@@ -56,7 +56,7 @@ internal sealed class HotReloader : IDisposable
             }
             catch (Exception ex) when (ex is IOException or ArgumentException or PlatformNotSupportedException or UnauthorizedAccessException)
             {
-                Trace.TraceWarning($"Devinno.UI: 핫리로드 — '{dir}' 를 감시하지 못했습니다: {ex.Message}");
+                Trace.TraceWarning($"Devinno.UI: hot reload: could not watch '{dir}': {ex.Message}");
             }
         }
     }
@@ -104,7 +104,7 @@ internal sealed class HotReloader : IDisposable
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                Trace.TraceWarning($"Devinno.UI: 핫리로드 — '{path}' 를 읽지 못했습니다: {ex.Message}");
+                Trace.TraceWarning($"Devinno.UI: hot reload: could not read '{path}': {ex.Message}");
                 return null;
             }
         }

@@ -180,7 +180,7 @@ public class PopupFieldEditTests
         Assert.Equal("#0000FF", s.Edit.InitialText);
         s.SetEditText(s.Edit.SessionId, "#12");
         Assert.False(s.CommitEdit(s.Edit.SessionId, DvEditExit.Enter));
-        Assert.Equal("#RRGGBB 형식이 아닙니다", s.Edit.Error);
+        Assert.Equal("Not in #RRGGBB format", s.Edit.Error);
         s.SetEditText(s.Edit.SessionId, "22c55e");
         Assert.True(s.CommitEdit(s.Edit.SessionId, DvEditExit.Enter));
         Assert.Equal(new SKColor(0x22, 0xc5, 0x5e), p.State.Rgb);

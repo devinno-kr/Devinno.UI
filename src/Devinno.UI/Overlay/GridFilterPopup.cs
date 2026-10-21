@@ -38,7 +38,7 @@ internal sealed class GridFilterPopup : IPopup
                 var vals = GridFilter.DistinctValues(grid, slot.Column, GridFilter.MaxItems, out var truncated);
                 Truncated = truncated;
                 if (truncated)
-                    MoreText = string.Format(DvStrings.Text(strings, "dv.filter.more", "값이 많아 처음 {0}개만 표시"), GridFilter.MaxItems);
+                    MoreText = string.Format(DvStrings.Builtin(strings, "dv.filter.more"), GridFilter.MaxItems);
                 Items = vals.Select(v => (v, GridFilter.ItemText(Column, v, strings)))
                     .OrderBy(x => x.v is null ? 0 : 1).ThenBy(x => x.Item2, StringComparer.OrdinalIgnoreCase).ToList();
                 Checked = cur?.Values is { } set ? new HashSet<object?>(Items.Select(i => i.Value).Where(set.Contains))

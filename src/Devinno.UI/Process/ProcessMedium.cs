@@ -99,7 +99,7 @@ internal static class ProcessMedium
                     if (l.Medium is { } other)
                     {
                         if (other != medium)
-                            ProcessBuilder.Warn($"'{l.FromRef}'→'{l.ToRef}': 매체 '{other}' 와 '{medium}' 이(가) 만납니다 — 먼저 적은 '{other}' 로 칠합니다. 합류 뒤 선에 medium 을 직접 적으세요");
+                            ProcessBuilder.Warn($"'{l.FromRef}'→'{l.ToRef}': media '{other}' and '{medium}' meet; painting with '{other}', which was written first. Set medium directly on the lines after the junction");
                         continue;
                     }
 

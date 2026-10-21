@@ -107,10 +107,10 @@ public sealed class DvRadio : DvControl
                 var type = BindingResolver.ResolvePropertyType(s.Vm, path);
                 object? v = null;
                 if (on && !SelectValue.TryConvert(Option, type, out v))
-                    throw new InvalidOperationException($"Devinno.UI: DvRadio '{Id}' option '{Option}' 을 바인딩 속성 형식으로 바꿀 수 없습니다.");
+                    throw new InvalidOperationException($"Devinno.UI: DvRadio '{Id}' option '{Option}' cannot be converted to the bound property type.");
                 // 끄기 = 묶음 값 비움. null 을 못 받는 속성(enum·int 등)은 기본값이 들어가 다른 버튼이 켜질 수 있으므로 막는다
                 if (!on && type is { IsValueType: true } && Nullable.GetUnderlyingType(type) is null)
-                    throw new InvalidOperationException($"Devinno.UI: DvRadio '{Id}' — 바인딩 속성 {type.Name} 은 null 을 받을 수 없어 끌 수 없습니다. 다른 버튼의 Checked 를 true 로 쓰세요.");
+                    throw new InvalidOperationException($"Devinno.UI: DvRadio '{Id}': the bound property type {type.Name} cannot hold null, so this radio cannot be turned off. Set Checked to true on another button instead.");
                 BindingResolver.SetValue(s.Vm, path, v);
                 s.Invalidate();
                 break;

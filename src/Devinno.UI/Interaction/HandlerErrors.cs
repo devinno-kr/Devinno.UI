@@ -17,7 +17,7 @@ internal static class HandlerErrors
     public static void Report(DvSurface? owner, Exception ex, string kind, string? member, string? tag)
     {
         var e = Unwrap(ex);
-        Trace.TraceError($"Devinno.UI: {kind} '{member}' ({tag}) 예외 — {e.GetType().Name}: {e.Message}");
+        Trace.TraceError($"Devinno.UI: {kind} '{member}' ({tag}) threw: {e.GetType().Name}: {e.Message}");
         owner?.RaiseHandlerError(new DvHandlerErrorEventArgs(e, kind, member, tag));
     }
 

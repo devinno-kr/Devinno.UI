@@ -136,9 +136,11 @@ public class L10nTests
     public void Built_in_widget_text_can_be_overridden_with_dv_keys()
     {
         var s = new DvStrings { Language = "en" };
-        s.Add("en", new Dictionary<string, string> { ["dv.alarm.none"] = "No active alarms" });
+        s.Add("en", new Dictionary<string, string> { ["dv.alarm.none"] = "All clear" });
         var p = new Painter(null, s);
-        Assert.Equal("No active alarms", p.T("dv.alarm.none", "활성 알람 없음"));
-        Assert.Equal("데이터 없음", p.T("dv.trend.empty", "데이터 없음"));
+        Assert.Equal("All clear", p.T("dv.alarm.none"));      // 앱 표가 이긴다
+        Assert.Equal("No data", p.T("dv.trend.empty"));        // 없으면 내장 영어
+        s.Language = "ko";
+        Assert.Equal("데이터 없음", p.T("dv.trend.empty"));    // ko = 내장 한국어
     }
 }

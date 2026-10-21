@@ -17,9 +17,9 @@ public class MessageBoxTests
         protected override string MarkupSource => "<DvScreen style=\"padding:0\"/>";
     }
 
-    private static (DvApp App, DvSurface Root) Start(float w = W, float h = H)
+    private static (DvApp App, DvSurface Root) Start(float w = W, float h = H, string? lang = "ko")
     {
-        var app = new DvApp();
+        var app = new DvApp { Strings = lang is null ? null : new Devinno.UI.Localization.DvStrings { Language = lang } }; // 기본은 버튼을 한국어 글자로 찾는다
         app.Pages.Add(new Page());
         app.Surface.Layout(w, h);
         return (app, app.Surface);
@@ -44,6 +44,15 @@ public class MessageBoxTests
         root.PointerDown(p);
         root.PointerUp(p);
         root.Layout(w, h);
+    }
+
+    [Fact]
+    public void Buttons_are_English_by_default()
+    {
+        var (app, root) = Start(lang: null);
+        _ = app.MessageBox("Text", "Title", DvMessageButtons.YesNoCancel);
+        root.Layout(W, H);
+        Assert.Equal(new[] { "Cancel", "No", "Yes" }, ButtonTexts(app));
     }
 
     [Theory]
@@ -315,7 +324,7 @@ public class MessageBoxTests
     [Fact]
     public void AwaitInPageHandler_ResumesInSameFrameAsClose()
     {
-        var app = new DvApp();
+        var app = new DvApp { Strings = new Devinno.UI.Localization.DvStrings { Language = "ko" } }; // 버튼을 한국어 글자로 찾는다
         var page = new AwaitPage();
         app.Pages.Add(page);
         var root = app.Surface;

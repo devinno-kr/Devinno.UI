@@ -29,7 +29,7 @@ public sealed partial class DvSurface
         {
             _kb ??= new SoftKeyboard();
             if (!_kb.IsOpen || _kb.SessionId != Edit.SessionId)
-                _kb.Open(Edit, now);
+                _kb.Open(Edit, now, string.Equals(_strings?.Language, "ko", StringComparison.OrdinalIgnoreCase));
             _kbLastTarget = Edit.Rect;
         }
         else if (_kb is { IsOpen: true })

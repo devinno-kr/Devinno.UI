@@ -80,8 +80,8 @@ public class GridEditInputTests
         Type(s, "130");
         Assert.False(Commit(s, DvEditExit.Enter));
         Assert.True(s.Edit.IsEditing);
-        Assert.Equal("허용 범위: 0 ~ 120", s.Edit.Error);
-        Assert.Equal("허용 범위: 0 ~ 120", Spec(s).EditMark!.Error);
+        Assert.Equal("Allowed range: 0 to 120", s.Edit.Error);
+        Assert.Equal("Allowed range: 0 to 120", Spec(s).EditMark!.Error);
         Assert.Equal(21, vm.Rows[1].SetPoint);
     }
 
@@ -100,7 +100,7 @@ public class GridEditInputTests
         Tap(s, Cell(1, 3));
         Type(s, "66");
         Assert.False(Commit(s, DvEditExit.Enter));
-        Assert.Equal("허용되지 않는 값입니다", s.Edit.Error);
+        Assert.Equal("This value is not allowed", s.Edit.Error);
         Assert.True(s.Edit.IsEditing);
         Assert.Equal(23, vm.Rows[3].SetPoint);
     }
@@ -296,7 +296,7 @@ public class GridEditInputTests
         Tap(s, Cell(0, 0));
         Type(s, "");
         Assert.False(Commit(s, DvEditExit.Enter));
-        Assert.Equal("값을 입력하세요", s.Edit.Error);
+        Assert.Equal("Enter a value", s.Edit.Error);
         Assert.Equal(3, vm.Rows[0].Count);
     }
 

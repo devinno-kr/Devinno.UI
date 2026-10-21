@@ -41,13 +41,13 @@ public sealed class DvControlLookup
         if (!_byId.TryGetValue(id, out var node))
         {
             Detach(control);
-            Trace.TraceWarning($"Devinno.UI: id '{id}' 요소를 마크업에서 찾지 못했습니다 — 연결되지 않은 핸들입니다.");
+            Trace.TraceWarning($"Devinno.UI: id '{id}': no element with this id in the markup; the handle is not connected.");
             return control;
         }
         if (!TagMatches(typeof(T), node.Tag))
         {
             Detach(control);
-            Trace.TraceWarning($"Devinno.UI: id '{id}' 요소 <{node.Tag}> 는 {typeof(T).Name} 핸들과 종류가 맞지 않습니다 — 연결되지 않은 핸들입니다.");
+            Trace.TraceWarning($"Devinno.UI: id '{id}': element <{node.Tag}> does not match the {typeof(T).Name} handle type; the handle is not connected.");
             return control;
         }
         control.Surface = _surface;
@@ -90,7 +90,7 @@ public sealed class DvControlLookup
     {
         DvControl c = Kinds.TryGetValue(typeof(T), out var k) ? k.New(id)
             : typeof(T) == typeof(DvControl) ? new DvControl(id)
-            : throw new NotSupportedException($"Devinno.UI: {typeof(T).Name} 핸들은 만들 수 없습니다.");
+            : throw new NotSupportedException($"Devinno.UI: cannot create a {typeof(T).Name} handle.");
         return (T)c;
     }
 }

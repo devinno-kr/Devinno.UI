@@ -39,7 +39,7 @@ public sealed class PageCollection : IEnumerable<DvPage>
             if (ReferenceEquals(page.AppOrNull, _app))
                 return;
             if (page.AppOrNull is not null)
-                throw new InvalidOperationException($"페이지 '{page.GetType().Name}' 는 이미 다른 DvApp 에 들어 있습니다.");
+                throw new InvalidOperationException($"Page '{page.GetType().Name}' is already in another DvApp.");
             page.AppOrNull = _app;
             _pages.Add(page);
         }
@@ -61,11 +61,11 @@ public sealed class PageCollection : IEnumerable<DvPage>
                     continue;
                 if (found is not null)
                     throw new InvalidOperationException(
-                        $"'{typeof(T).Name}' 형식의 페이지가 둘 이상입니다. 인스턴스로 지정하세요(App.Show(page)).");
+                        $"There is more than one page of type '{typeof(T).Name}'. Specify the instance (App.Show(page)).");
                 found = t;
             }
             return found ?? throw new InvalidOperationException(
-                $"'{typeof(T).Name}' 형식의 페이지가 없습니다. 먼저 app.Pages.Add 로 넣으세요.");
+                $"There is no page of type '{typeof(T).Name}'. Add it with app.Pages.Add first.");
         }
     }
 

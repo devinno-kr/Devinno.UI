@@ -27,7 +27,7 @@ public abstract class DvPage
 {
     /// <summary>Gets the app that contains this page.</summary>
     /// <exception cref="InvalidOperationException">Read before <c>app.Pages.Add(page)</c> (or <c>app.Show(page)</c>). Inside the page constructor the page has not been added to the app yet either.</exception>
-    public DvApp App => _app ?? throw new InvalidOperationException($"{GetType().Name} 은(는) 아직 앱에 추가되지 않았습니다. app.Pages.Add 뒤(처리기·OnLoaded·OnShown)에서 App 을 쓰세요.");
+    public DvApp App => _app ?? throw new InvalidOperationException($"{GetType().Name} has not been added to an app yet. Use App after app.Pages.Add (in handlers, OnLoaded, OnShown).");
 
     /// <summary>The owning app (<see langword="null"/> if none). Used for ownership checks inside the library.</summary>
     internal DvApp? AppOrNull { get => _app; set => _app = value; }
@@ -38,7 +38,7 @@ public abstract class DvPage
     /// Gets the markup of this page (raw dvml). The source generator overrides it with the dvml's <c>Markup</c> constant, so you normally do not write it yourself.
     /// </summary>
     /// <exception cref="InvalidOperationException">No dvml is linked to this page (no override).</exception>
-    protected virtual string MarkupSource => throw new InvalidOperationException("dvml 이 연결되지 않았습니다");
+    protected virtual string MarkupSource => throw new InvalidOperationException("No dvml markup is attached");
 
     /// <summary>Called right after this page becomes the current page (input thread). On first show, it is called after <c>OnLoaded()</c>.</summary>
     protected virtual void OnShown()

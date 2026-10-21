@@ -37,9 +37,9 @@ public class SoftKeyboardTests
         public readonly DvSurface S;
         public readonly Vm Vm = new();
 
-        public Rig(string markup = Form, bool native = false)
+        public Rig(string markup = Form, bool native = false, string lang = "ko") // 한글 자판 동작을 보는 테스트 — 화면 언어 ko
         {
-            S = new DvSurface(markup, Vm) { Clock = () => Now, UseNativeEditor = native };
+            S = new DvSurface(markup, Vm) { Clock = () => Now, UseNativeEditor = native, Strings = new Devinno.UI.Localization.DvStrings { Language = lang } };
             Frame();
         }
 
@@ -102,6 +102,14 @@ public class SoftKeyboardTests
         r.Now += 150;
         Assert.Equal(H - SoftKeyboard.PanelHeight(H), r.Kb.Panel(W, H, r.Now).Top);
         Assert.Null(r.S.NextAnimationDue(r.Now));
+    }
+
+    [Fact]
+    public void Text_opens_english_layout_unless_the_screen_language_is_ko()
+    {
+        var r = new Rig(lang: "en");
+        r.Edit(20);
+        Assert.Equal(KbMode.English, r.Kb.Mode);
     }
 
     [Fact]

@@ -119,7 +119,7 @@ AI MUST follow the order below exactly. Each step says what to decide.
 
 - If no size is given, the process diagram's size = the content size (the placement result + a 12px outer margin).
 - If a size is given or the parent determines the size, the content is placed in the **center** of that area.
-- If the area is smaller than the content, placement is retried in the following order and the **first one that fits** is used. With `align="auto"` (default): staircase with spacing scale 1 → 0.85 → 0.7 → 0.6 → 0.5, then same-row with 1 → … → 0.5. With `align="step"`·`"row"`, spacing is reduced only in that mode. If it still overflows, the placement that overflows least is used and a Trace warning ("공간이 모자랍니다", not enough space) is left. No zooming (scaling) is done. Equipment sizes themselves do not shrink, so only spacing and row alignment can be reduced.
+- If the area is smaller than the content, placement is retried in the following order and the **first one that fits** is used. With `align="auto"` (default): staircase with spacing scale 1 → 0.85 → 0.7 → 0.6 → 0.5, then same-row with 1 → … → 0.5. With `align="step"`·`"row"`, spacing is reduced only in that mode. If it still overflows, the placement that overflows least is used and a Trace warning ("Not enough space") is left. No zooming (scaling) is done. Equipment sizes themselves do not shrink, so only spacing and row alignment can be reduced.
 - **To make it fill the remaining space**, use `grow="1" style="height:0"` inside a vertical layout (same meaning as CSS `flex-basis:0` — grows from a base height of 0), and `grow="1"` inside a horizontal layout. With only `grow="1"` and no `height:0`, the process diagram does not shrink below its content height and may overflow the screen.
 
 ```xml
@@ -331,9 +331,9 @@ The heights of `a`·`b` match `in`·`out` of `DvValve` (in line with ordinary va
 
 | Mistake | Drawing | Trace |
 |---|---|---|
-| Nonexistent equipment name | Not drawn | Error "장비 'X' 이(가) 없습니다" (equipment 'X' does not exist) |
-| Nonexistent port name | Red dashed line connecting the centers of the two pieces of equipment + a red border on that equipment | Error "포트 'p' 이(가) 없습니다(쓸 수 있는 포트)" (port 'p' does not exist (available ports)) |
-| No port given on equipment with several ports (`from="P1"`) | Red dashed line + red border | Error "포트를 골라야 합니다(…)" (a port must be chosen (…)) |
+| Nonexistent equipment name | Not drawn | Error "no equipment named 'X'" |
+| Nonexistent port name | Red dashed line connecting the centers of the two pieces of equipment + a red border on that equipment | Error "'X' has no port 'p' (available ports)" |
+| No port given on equipment with several ports (`from="P1"`) | Red dashed line + red border | Error "'X' requires a port (…)" |
 
 All other lines and equipment are drawn normally. The available port names appear in the parentheses, so fix it with one of those.
 
@@ -488,7 +488,7 @@ A connection point the unit exposes to the outside. **Outer lines can connect on
 - Connecting several inner lines to one port (two pump outlets → `out`) merges them at the port (a merge). The same applies outside.
 - A `DvPort` placed outside a `DvUnit` (directly under `DvProcess`) is ignored and leaves a Trace error.
 
-**Do not connect directly from outside to equipment inside a unit.** `from="U1.T.bottom"` is an error (red marking + Trace "유닛 안 장비는 바깥에서 직접 잇지 않습니다 — 유닛에 `<DvPort>` 를 두고…"). Put a `DvPort` inside the unit, connect to that port from inside, and connect from outside with `U1.포트` (U1.port).
+**Do not connect directly from outside to equipment inside a unit.** `from="U1.T.bottom"` is an error (red marking + Trace "equipment inside a unit cannot be connected directly from outside. Add `<DvPort name="…" side="…"/>` to the unit, …"). Put a `DvPort` inside the unit, connect to that port from inside, and connect from outside with `U1.포트` (U1.port).
 
 ### 8.3 How units are placed
 
@@ -625,7 +625,7 @@ The order is written down so an AI can predict the result and choose hints. The 
 2. Routes are searched along an 8px grid (+ port coordinates). Cost = length + bend (30) + crossing another pipe (40). Following an already-drawn trunk of the same bundle costs 1/5, so branches and merges share a trunk.
 3. Routes do not enter within 10px of an equipment symbol, or within 4px of name labels and attached boxes.
 4. Pipes do not overlap pipes of other bundles, do not run closer than the pipe spacing when parallel, and do not bend on top of another pipe (it would look like they touch).
-5. If there is still no route, these constraints are turned into costs and the search is repeated (overlap allowed), leaving the Trace warning "빈 길이 없어 다른 배관과 겹칩니다" (no free route, overlaps another pipe).
+5. If there is still no route, these constraints are turned into costs and the search is repeated (overlap allowed), leaving the Trace warning "no free path, so it overlaps other piping".
 6. Bundles are drawn in declaration order (lines written first get the good routes first).
 7. At crossings with other bundles a semicircular jump is drawn: in lr the vertical line jumps, in tb the horizontal line jumps (radius plain 7, rich 13).
 8. Pipe ends tuck slightly under the equipment body (fixed ports 6px, side ports 24px) and are hidden. So they appear attached without a gap even on the top of a rounded vessel.
@@ -944,32 +944,32 @@ Process diagram problems are reported through `System.Diagnostics.Trace`. Keep a
 
 | Message (prefixed with `Devinno.UI process:`) | Kind | Meaning | Fix |
 |---|---|---|---|
-| `'A.out'→'B.in': 다른 배관과 N번 교차` | Warning | Crossings (drawn with jumps) | Change the order of equipment in the same column with `row`. Arrange declaration order in flow order |
-| `'A.out'→'B.in': 빈 길이 없어 다른 배관과 겹칩니다` | Warning | Blocked, drawn overlapping | Enlarge the area, adjust `row`·`rank`, move attached boxes |
-| `공간이 모자랍니다 — 필요 W×H, 영역 W×H` | Warning | Overflows even with minimum spacing | Enlarge the area, split the screen, or reduce equipment |
-| `DvLine '…': 장비 'X' 이(가) 없습니다` | Error | Name typo, or equipment hidden with `visible` | Check the name |
-| `DvLine '…': 'X' 에 포트 'p' 이(가) 없습니다(…)` | Error | Port name typo | Use a name from the parentheses |
-| `DvLine '…': 'X' 은(는) 포트를 골라야 합니다(…)` | Error | Port omitted, as in `from="X"` | Use `X.in`, etc. |
-| `DvLine '…': 끝점(DvTerminal)은 포트 없이 …` | Warning | `.port` appended to a terminal | Name only |
-| `<Tag> 은(는) 공정도 장비가 아닙니다(…)` | Error | Non-equipment tag directly under `DvProcess`, or unregistered symbol | Move it into `DvAttach`, or register the symbol |
-| `<X> 에 name 이 없습니다` | Error | `name` missing | Add `name` |
-| `장비 이름 'X' 이(가) 두 번 쓰였습니다` | Error | Duplicate name | Use a different name |
-| `<X> 안의 <Y> 은(는) 쓸 수 없습니다(…)` | Error | Tag other than `DvAttach`·`DvAgitator`·`DvMotor` inside equipment | Wrap it in `DvAttach` |
-| `<X kind='k'> 은(는) 없는 종류입니다(…)` | Warning | kind typo | Use a value from the parentheses |
-| `'T' 의 top 면에 노즐 N개(들어오는 선·나가는 선)가 들어갈 자리가 모자랍니다 …` | Warning | Agitator / attached boxes cover most of the side, so two nozzles are too close | Move the incoming or outgoing line to `side`, or move the attached box |
-| `DvProcess align='…' 은(는) 없는 값입니다` | Warning | align typo | `auto`·`step`·`row` |
-| `DvLine '…': 유닛 안 장비는 바깥에서 직접 잇지 않습니다 …` | Error | Connecting into a unit directly from outside, as in `U1.T.top` | Put a `DvPort` on the unit, connect to the port from inside, and from outside use `U1.포트` |
-| `DvLine '…': 'U1' 에 포트 'p' 이(가) 없습니다(…)` | Error | Port name not on the unit | Use a name in the parentheses (that unit's `DvPort` names) |
-| `DvLine '…': 유닛 포트(DvPort)는 이름만 …` | Warning | A dot appended to a port inside the unit, as in `out.x` | Name only |
-| `<DvPort> 는 <DvUnit> 안에서만 씁니다` | Error | `DvPort` directly under `DvProcess` | Move it into a unit |
-| `<DvPort name='…'> side 는 …` · `at='…' 은(는) 0~1 …` | Error | Port side / position error | Always give `side`; `at` within 0–1 |
-| `<X>: 유닛 안에 유닛을 둘 수 없습니다` | Error | Nested units | Move it outside |
-| `rotate='r' 은(는) 없는 값입니다` · `direction=…` · `look=…` | Warning | Value typo | Use a value from the tables |
-| `<DvInstrument name='X'> 에 on(붙을 장비 이름)이 없습니다` · `on='Y': 그런 장비가 없습니다` | Error | No equipment for the instrument to attach to (not drawn) | Put the name of equipment in the same process diagram in `on` |
-| `<DvInstrument> 에 name 이 없습니다` · `이름 'X' 이(가) 두 번 쓰였습니다(장비·계기 이름은 …)` | Error | Instrument name missing, or clashing with equipment or another instrument | A unique `name` |
-| `DvSignal '…': 계기·장비 'X' 이(가) 없습니다` | Error | Signal line end name typo, a terminal / unit port, or an instrument that is not drawn | Check instrument / equipment names |
-| `DvSignal '…': 신호선은 포트 없이 이름만 씁니다` | Error | Port appended, as in `to="V1.in"` | Name only |
-| `신호선 '…': 빈 길이 없어 장비를 가로질러 긋습니다` | Warning | No route for the signal line | Attach the instrument to other equipment, or enlarge the area |
+| `'A.out'→'B.in': crosses other piping N time(s)` | Warning | Crossings (drawn with jumps) | Change the order of equipment in the same column with `row`. Arrange declaration order in flow order |
+| `'A.out'→'B.in': no free path, so it overlaps other piping` | Warning | Blocked, drawn overlapping | Enlarge the area, adjust `row`·`rank`, move attached boxes |
+| `Not enough space: needs W×H, area is W×H` | Warning | Overflows even with minimum spacing | Enlarge the area, split the screen, or reduce equipment |
+| `DvLine '…': no equipment named 'X'` | Error | Name typo, or equipment hidden with `visible` | Check the name |
+| `DvLine '…': 'X' has no port 'p' (…)` | Error | Port name typo | Use a name from the parentheses |
+| `DvLine '…': 'X' requires a port (…)` | Error | Port omitted, as in `from="X"` | Use `X.in`, etc. |
+| `DvLine '…': an endpoint (DvTerminal) is written without a port, …` | Warning | `.port` appended to a terminal | Name only |
+| `<Tag> is not process equipment (…)` | Error | Non-equipment tag directly under `DvProcess`, or unregistered symbol | Move it into `DvAttach`, or register the symbol |
+| `<X> has no name` | Error | `name` missing | Add `name` |
+| `Equipment name 'X' is used twice` | Error | Duplicate name | Use a different name |
+| `<Y> is not allowed inside <X> (…)` | Error | Tag other than `DvAttach`·`DvAgitator`·`DvMotor` inside equipment | Wrap it in `DvAttach` |
+| `<X kind='k'> is not a known kind (…)` | Warning | kind typo | Use a value from the parentheses |
+| `'T': not enough room on the top face for N nozzles (incoming and outgoing lines) …` | Warning | Agitator / attached boxes cover most of the side, so two nozzles are too close | Move the incoming or outgoing line to `side`, or move the attached box |
+| `DvProcess align='…' is not a valid value` | Warning | align typo | `auto`·`step`·`row` |
+| `DvLine '…': equipment inside a unit cannot be connected directly from outside …` | Error | Connecting into a unit directly from outside, as in `U1.T.top` | Put a `DvPort` on the unit, connect to the port from inside, and from outside use `U1.포트` |
+| `DvLine '…': 'U1' has no port 'p' (…)` | Error | Port name not on the unit | Use a name in the parentheses (that unit's `DvPort` names) |
+| `DvLine '…': a unit port (DvPort) is written by name only …` | Warning | A dot appended to a port inside the unit, as in `out.x` | Name only |
+| `<DvPort> can only be used inside <DvUnit>` | Error | `DvPort` directly under `DvProcess` | Move it into a unit |
+| `<DvPort name='…'> side must be one of …` · `at='…' must be between 0 and 1 …` | Error | Port side / position error | Always give `side`; `at` within 0–1 |
+| `<X>: a unit cannot be placed inside another unit` | Error | Nested units | Move it outside |
+| `rotate='r' is not a valid value` · `direction=…` · `look=…` | Warning | Value typo | Use a value from the tables |
+| `<DvInstrument name='X'> has no on (name of the equipment to attach to)` · `on='Y': no such equipment` | Error | No equipment for the instrument to attach to (not drawn) | Put the name of equipment in the same process diagram in `on` |
+| `<DvInstrument> has no name` · `Name 'X' is used twice (equipment and instrument names must be unique …)` | Error | Instrument name missing, or clashing with equipment or another instrument | A unique `name` |
+| `DvSignal '…': no instrument or equipment named 'X'` | Error | Signal line end name typo, a terminal / unit port, or an instrument that is not drawn | Check instrument / equipment names |
+| `DvSignal '…': signal lines use names only, without ports` | Error | Port appended, as in `to="V1.in"` | Name only |
+| `Signal line '…': no free path, so it is drawn across equipment` | Warning | No route for the signal line | Attach the instrument to other equipment, or enlarge the area |
 
 On screen, invalid connections show as a **red dashed line**, and equipment with a wrong port shows a **red border**.
 

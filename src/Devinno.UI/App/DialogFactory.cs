@@ -19,7 +19,7 @@ internal static class DialogFactory
 
         var type = typeof(TDialog);
         if (type.IsAbstract)
-            throw new ArgumentException($"다이얼로그 '{type.Name}' 은(는) abstract 라 만들 수 없습니다. 상속한 구체 다이얼로그 형식을 ShowDialog 에 넘기세요.", nameof(args));
+            throw new ArgumentException($"Dialog '{type.Name}' is abstract and cannot be created. Pass a concrete derived dialog type to ShowDialog.", nameof(args));
         var ctors = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
         ConstructorInfo? found = null;
         var count = 0;
@@ -34,9 +34,9 @@ internal static class DialogFactory
         if (count != 1)
         {
             var passed = string.Join(", ", args.Select(a => a?.GetType().Name ?? "null"));
-            var list = ctors.Length == 0 ? "(없음)" : string.Join("; ", ctors.Select(c => Signature(type, c)));
-            var why = count == 0 ? "맞는 public 생성자가 없습니다" : "맞는 public 생성자가 둘 이상이라 모호합니다(null 인자는 형식을 정할 수 없습니다)";
-            throw new ArgumentException($"다이얼로그 '{type.Name}' 에 넘긴 인자 ({passed}) 와 {why}. 있는 생성자: {list}", nameof(args));
+            var list = ctors.Length == 0 ? "(none)" : string.Join("; ", ctors.Select(c => Signature(type, c)));
+            var why = count == 0 ? "no matching public constructor" : "more than one matching public constructor, so the call is ambiguous (a null argument does not determine a type)";
+            throw new ArgumentException($"Dialog '{type.Name}' has {why} for the given arguments ({passed}). Available constructors: {list}", nameof(args));
         }
 
         return (TDialog)found!.Invoke(BindingFlags.DoNotWrapExceptions, binder: null, args, culture: null);

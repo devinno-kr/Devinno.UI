@@ -69,14 +69,14 @@ internal sealed class BoxEditTarget : IEditTarget
 
         if (!Interaction.CommitGate.Allows(_s, Box.Node.Tag, vm, Box.OnBeforeCommit, gateArg, gateArg.GetType()))
         {
-            error = Localization.DvStrings.Text(_s.Strings, "dv.input.rejected", "허용되지 않는 값입니다");
+            error = Localization.DvStrings.Builtin(_s.Strings, "dv.input.rejected");
             return false;
         }
 
         if (!Interaction.HandlerErrors.TrySet(_s, Box.Node.Tag, ctx, path, value))
         {
             // setter 예외 = 쓰기 실패 — 거절과 같게(세션 유지). 예외 메시지는 화면에 내지 않는다(Trace·HandlerError).
-            error = Localization.DvStrings.Text(_s.Strings, "dv.input.write-failed", "값을 저장하지 못했습니다");
+            error = Localization.DvStrings.Builtin(_s.Strings, "dv.input.write-failed");
             return false;
         }
 

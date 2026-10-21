@@ -28,7 +28,7 @@ public sealed partial class Painter
             var comm = ToneToken("comm-alarm", new SKColor(0x7a, 0x1f, 0xa2));
             using (var p = new SKPaint { IsAntialias = true, Color = on ? comm : Mix(comm, SKColors.Black, 0.35f) })
                 canvas.DrawRect(s, p);
-            DrawBannerText(canvas, T("dv.alarm.comm", "통신 이상") + " · " + box.CommAlarm, s, s.Left + 14f, SKColors.White, 12f, bold: true);
+            DrawBannerText(canvas, T("dv.alarm.comm") + " · " + box.CommAlarm, s, s.Left + 14f, SKColors.White, 12f, bold: true);
         }
 
         var top = AlarmView.Top(box.AlarmItems);
@@ -39,7 +39,7 @@ public sealed partial class Painter
             var fg = ToneToken("tone-success-fg", new SKColor(0x15, 0x80, 0x3d));
             using (var dot = new SKPaint { IsAntialias = true, Color = ToneToken("tone-success", new SKColor(0x16, 0xa3, 0x4a)) })
                 canvas.DrawCircle(bottom.Left + 20f, bottom.MidY, 5f, dot);
-            DrawBannerText(canvas, T("dv.alarm.none", "활성 알람 없음"), bottom, bottom.Left + 34f, fg, 14f, bold: true);
+            DrawBannerText(canvas, T("dv.alarm.none"), bottom, bottom.Left + 34f, fg, 14f, bold: true);
         }
         else
         {
@@ -59,7 +59,7 @@ public sealed partial class Painter
 
             // 오른쪽: 미확인 건수 + 시각
             var unacked = box.AlarmItems.Count(a => !a.Acked);
-            var right = string.Format(T("dv.alarm.unacked", "미확인 {0}건"), unacked) + $"   {top.Time:HH:mm:ss}";
+            var right = string.Format(T("dv.alarm.unacked"), unacked) + $"   {top.Time:HH:mm:ss}";
             using var rf = TextFont.Create(right, 12f, bold: false);
             var rw = rf.MeasureText(right);
             using (var rp = new SKPaint { IsAntialias = true, Color = fg.WithAlpha(0xd0) })
@@ -67,7 +67,7 @@ public sealed partial class Painter
 
             canvas.Save();
             canvas.ClipRect(new SKRect(chip.Right + 10f, bottom.Top, bottom.Right - 24f - rw, bottom.Bottom));
-            DrawBannerText(canvas, top.Message, bottom, chip.Right + 12f, fg, 14f, bold: true);
+            DrawBannerText(canvas, AlarmText(top), bottom, chip.Right + 12f, fg, 14f, bold: true);
             canvas.Restore();
         }
 
@@ -94,15 +94,15 @@ public sealed partial class Painter
 
         // 헤더
         var h = layout.Header;
-        using (var hf = TextFont.Create(T("dv.alarm.col.message", "메시지"), 12f, bold: true))
+        using (var hf = TextFont.Create(T("dv.alarm.col.message"), 12f, bold: true))
         using (var hp = new SKPaint { IsAntialias = true, Color = muted })
         {
             var hb = Baseline(h, hf);
-            canvas.DrawText(T("dv.alarm.col.time", "시간"), colTime, hb, SKTextAlign.Left, hf, hp);
-            canvas.DrawText(T("dv.alarm.col.priority", "등급"), colPrio, hb, SKTextAlign.Left, hf, hp);
-            canvas.DrawText(T("dv.alarm.col.message", "메시지"), colMsg, hb, SKTextAlign.Left, hf, hp);
+            canvas.DrawText(T("dv.alarm.col.time"), colTime, hb, SKTextAlign.Left, hf, hp);
+            canvas.DrawText(T("dv.alarm.col.priority"), colPrio, hb, SKTextAlign.Left, hf, hp);
+            canvas.DrawText(T("dv.alarm.col.message"), colMsg, hb, SKTextAlign.Left, hf, hp);
             if (showAck)
-                canvas.DrawText(T("dv.alarm.col.ack", "확인"), h.Right - 12f - AlarmListLayout.AckButtonWidth / 2f, hb, SKTextAlign.Center, hf, hp);
+                canvas.DrawText(T("dv.alarm.col.ack"), h.Right - 12f - AlarmListLayout.AckButtonWidth / 2f, hb, SKTextAlign.Center, hf, hp);
         }
 
         using (var lp = new SKPaint { IsAntialias = true, Color = line, StrokeWidth = 1f })
@@ -110,7 +110,7 @@ public sealed partial class Painter
 
         if (layout.Rows.Count == 0)
         {
-            var emptyText = T("dv.alarm.empty", "표시할 알람이 없습니다");
+            var emptyText = T("dv.alarm.empty");
             using var ef = TextFont.Create(emptyText, 13f, bold: false);
             using var ep = new SKPaint { IsAntialias = true, Color = subtle };
             canvas.DrawText(emptyText, box.Rect.MidX, h.Bottom + 28f, SKTextAlign.Center, ef, ep);
@@ -151,9 +151,9 @@ public sealed partial class Painter
             var msgRight = showAck ? (ack?.Left ?? rect.Right - 12f - AlarmListLayout.AckButtonWidth) - 12f : rect.Right - 12f;
             canvas.Save();
             canvas.ClipRect(new SKRect(colMsg, rect.Top, msgRight, rect.Bottom));
-            using (var mf = TextFont.Create(row.Message, 13f, bold: !row.Acked))
+            using (var mf = TextFont.Create(AlarmText(row), 13f, bold: !row.Acked))
             using (var mp = new SKPaint { IsAntialias = true, Color = rowInk })
-                canvas.DrawText(row.Message, colMsg, Baseline(rect, mf), SKTextAlign.Left, mf, mp);
+                canvas.DrawText(AlarmText(row), colMsg, Baseline(rect, mf), SKTextAlign.Left, mf, mp);
             canvas.Restore();
 
             if (ack is { } b)
@@ -168,7 +168,7 @@ public sealed partial class Painter
             }
             else if (showAck && row.AckTime is { } at)
             {
-                var ackText = string.Format(T("dv.alarm.acked", "확인 {0}"), at.ToString("HH:mm", CultureInfo.InvariantCulture));
+                var ackText = string.Format(T("dv.alarm.acked"), at.ToString("HH:mm", CultureInfo.InvariantCulture));
                 using var af = TextFont.Create(ackText, 11f, bold: false);
                 using var ap = new SKPaint { IsAntialias = true, Color = subtle };
                 canvas.DrawText(ackText,
@@ -184,9 +184,9 @@ public sealed partial class Painter
 
     private string PriorityLabel(AlarmPriority p) => p switch
     {
-        AlarmPriority.Critical => T("dv.alarm.critical", "긴급"),
-        AlarmPriority.Major => T("dv.alarm.major", "경고"),
-        _ => T("dv.alarm.minor", "주의")
+        AlarmPriority.Critical => T("dv.alarm.critical"),
+        AlarmPriority.Major => T("dv.alarm.major"),
+        _ => T("dv.alarm.minor")
     };
 
     private (SKColor Color, SKColor Fg) PriorityColors(AlarmPriority p) => p switch
@@ -213,4 +213,8 @@ public sealed partial class Painter
         using var p = new SKPaint { IsAntialias = true, Color = color };
         canvas.DrawText(text, x, Baseline(area, font), SKTextAlign.Left, font, p);
     }
+
+    // AlarmLog 이 스스로 올린 포화 알람만 화면 언어로(dv.alarm.saturated) — 나머지 알람 문구는 앱 데이터라 그대로
+    internal string AlarmText(AlarmRow row) =>
+        row.Source == "AlarmLog" && row.Message == Alarms.AlarmLog.SaturationMessage ? T("dv.alarm.saturated") : row.Message;
 }

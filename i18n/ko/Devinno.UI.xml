@@ -144,7 +144,7 @@
         <member name="P:Devinno.UI.Alarms.AlarmRow.AckTime" en-hash="165cf6625aa8a607">
             <summary>확인된 시각입니다. 확인 전이면 <see langword="null" />. <see cref="M:Devinno.UI.Alarms.AlarmLog.Ack(System.Int64)" /> 는 확인할 때 이 값을 채웁니다.</summary>
         </member>
-        <member name="T:Devinno.UI.Alarms.AlarmLog" en-hash="04d841347099d91c">
+        <member name="T:Devinno.UI.Alarms.AlarmLog" en-hash="d0e34184d42e4e2b">
              <summary>
              <b>선택 사항</b> — 서버 없이 단독으로 도는 HMI·데모를 위한 메모리 안의 알람 목록입니다. 알람 발생(<see cref="M:Devinno.UI.Alarms.AlarmLog.Raise(Devinno.UI.Alarms.AlarmPriority,System.String,System.String)" />),
              확인(<see cref="M:Devinno.UI.Alarms.AlarmLog.Ack(System.Int64)" />·<see cref="M:Devinno.UI.Alarms.AlarmLog.AckAll" />), 용량 관리만 합니다.
@@ -159,7 +159,7 @@
              (<c>ViewWindow.Invalidate()</c>, WinForms 는 <c>ViewControl.MarkUpdated()</c>)를 불러야 반영됩니다. 위젯 클릭으로 불린 <c>onack</c>·<c>onclick</c>
              메서드 안에서 바꾼 것은 화면이 알아서 다시 레이아웃합니다.</para>
              <para><b>용량 초과</b>: 항목 수가 <see cref="P:Devinno.UI.Alarms.AlarmLog.MaxRows" /> 를 넘으면 <b>가장 오래된 확인된 알람</b>부터 지웁니다. 미확인 알람은 절대 지우지 않으므로
-             미확인 알람만으로 넘치면 목록은 <see cref="P:Devinno.UI.Alarms.AlarmLog.MaxRows" /> 보다 커질 수 있습니다. 이때 한 번만 "알람 버퍼 포화"(<see cref="F:Devinno.UI.Alarms.AlarmLog.SaturationMessage" />,
+             미확인 알람만으로 넘치면 목록은 <see cref="P:Devinno.UI.Alarms.AlarmLog.MaxRows" /> 보다 커질 수 있습니다. 이때 한 번만 "Alarm buffer saturated"(<see cref="F:Devinno.UI.Alarms.AlarmLog.SaturationMessage" />; 알람 위젯은 <c>dv.alarm.saturated</c> 문구로 화면 언어에 맞춰 보여 줍니다,
              발생원 <c>"AlarmLog"</c>) 긴급 알람을 추가하고, <see cref="T:System.Diagnostics.Trace" /> 오류를 남기고, <see cref="E:Devinno.UI.Alarms.AlarmLog.Saturated" /> 를 발생시킵니다.
              포화 알람을 확인하면 다음에 다시 포화될 때 또 알립니다. 확인한 순간에도 용량을 다시 맞추므로, 넘쳐 있던 상태라면 방금 확인한 알람이 바로 목록에서 빠질 수 있습니다.</para>
              <para><b>스레드</b>: 모든 멤버가 내부 잠금을 쓰므로 어느 스레드에서든(통신·폴링 스레드 포함) <see cref="M:Devinno.UI.Alarms.AlarmLog.Raise(Devinno.UI.Alarms.AlarmPriority,System.String,System.String)" />·<see cref="M:Devinno.UI.Alarms.AlarmLog.Ack(System.Int64)" />·<see cref="M:Devinno.UI.Alarms.AlarmLog.AckAll" /> 한 뒤
@@ -526,7 +526,7 @@
             처리기 예외는 <see cref="E:Devinno.UI.App.DvApp.HandlerError" />(<c>Kind</c> = <c>"idle"</c>)로 알립니다.
             </remarks>
         </member>
-        <member name="M:Devinno.UI.App.DvApp.MessageBox(System.String,System.String,Devinno.UI.App.DvMessageButtons)" en-hash="346ed4b7b407bbc7">
+        <member name="M:Devinno.UI.App.DvApp.MessageBox(System.String,System.String,Devinno.UI.App.DvMessageButtons)" en-hash="b234a3575aacd61c">
             <summary>
             글과 버튼이 있는 메시지 박스를 띄우고, 사용자가 누른 버튼을 돌려줍니다. 어느 스레드에서나 부를 수 있습니다.
             </summary>
@@ -535,7 +535,7 @@
             <para><b>결과</b> — 누른 버튼입니다. 바깥에서 닫히면(<see cref="M:Devinno.UI.App.DvApp.CloseDialogs" />·아래 다이얼로그 닫힘·창 닫힘) 취소 버튼이 없는 구성이어도
             <see cref="F:Devinno.UI.App.DvDialogResult.Cancel" /> 입니다. 이어짐 스레드 규칙은 <see cref="M:Devinno.UI.App.DvApp.ShowDialog``2(System.Object[])" /> 와 같습니다.</para>
             <para><b>글자</b> — 버튼 글자는 <see cref="P:Devinno.UI.App.DvApp.Strings" /> 의 <c>dv.dialog.ok</c>·<c>dv.dialog.cancel</c>·<c>dv.dialog.yes</c>·<c>dv.dialog.no</c>
-            키로 바꿀 수 있고, 없으면 확인·취소·예·아니요입니다. 박스 폭은 기본 360이고, 글이 길면 창 폭 − 32 안에서 넓어진 뒤 줄바꿈됩니다(글자 크기는 테마의 <c>font.body</c>). 박스가 뜬 뒤 창이 작아져도 줄을 다시 나누지는 않습니다.</para>
+            키로 바꿀 수 있고, 없으면 내장 문구 "OK"·"Cancel"·"Yes"·"No"입니다(<see cref="P:Devinno.UI.App.DvApp.Strings" /> 의 <c>Language = "ko"</c> 면 확인·취소·예·아니요). 박스 폭은 기본 360이고, 글이 길면 창 폭 − 32 안에서 넓어진 뒤 줄바꿈됩니다(글자 크기는 테마의 <c>font.body</c>). 박스가 뜬 뒤 창이 작아져도 줄을 다시 나누지는 않습니다.</para>
             </remarks>
             <param name="text">본문. 줄바꿈 문자로 줄을 나눌 수 있습니다.</param>
             <param name="caption">제목. <see langword="null" /> 이면 제목 줄이 없습니다.</param>
@@ -548,7 +548,7 @@
             </code>
             </example>
         </member>
-        <member name="M:Devinno.UI.App.DvApp.InputBox(System.String,System.String)" en-hash="5c75f725a5b242ce">
+        <member name="M:Devinno.UI.App.DvApp.InputBox(System.String,System.String)" en-hash="218a7dc78c84f706">
             <summary>
             글자 하나를 입력받는 박스를 띄우고, 확인을 누르면 입력한 글자를 돌려줍니다. 어느 스레드에서나 부를 수 있습니다.
             </summary>
@@ -560,7 +560,7 @@
             다른 화면과 같이 편집이 취소되고 그 누름은 처리되지 않습니다(박스는 남음).</para>
             <para><b>결과</b> — 확인 = 입력 상자의 현재 값(빈 문자열일 수 있음). 취소 버튼·바깥에서 닫힘(<see cref="M:Devinno.UI.App.DvApp.CloseDialogs" />·아래 다이얼로그 닫힘·창 닫힘)은
             <see langword="null" /> 입니다. 부를 때마다 새 박스가 쌓이고 각자 자기 결과를 돌려줍니다. 이어짐 스레드 규칙은 <see cref="M:Devinno.UI.App.DvApp.ShowDialog``2(System.Object[])" /> 와 같습니다.</para>
-            <para><b>글자</b> — 버튼 글자는 <see cref="P:Devinno.UI.App.DvApp.Strings" /> 의 <c>dv.dialog.ok</c>·<c>dv.dialog.cancel</c> 키로 바꿀 수 있고, 없으면 확인·취소입니다.</para>
+            <para><b>글자</b> — 버튼 글자는 <see cref="P:Devinno.UI.App.DvApp.Strings" /> 의 <c>dv.dialog.ok</c>·<c>dv.dialog.cancel</c> 키로 바꿀 수 있고, 없으면 내장 문구 "OK"·"Cancel"입니다(<see cref="P:Devinno.UI.App.DvApp.Strings" /> 의 <c>Language = "ko"</c> 면 확인·취소).</para>
             </remarks>
             <param name="caption">제목.</param>
             <param name="value">처음 값. <see langword="null" /> 이면 빈 문자열.</param>
@@ -2426,7 +2426,7 @@
         <member name="M:Devinno.UI.DvSurface.SyncEditState" en-hash="aa41463b838d6c44">
             <summary>대상의 현재 위치·스타일을 <see cref="P:Devinno.UI.DvSurface.Edit" /> 에 반영(바뀐 게 있으면 Version 증가).</summary>
         </member>
-        <member name="E:Devinno.UI.DvSurface.HandlerError" en-hash="c7d31f223349f87b">
+        <member name="E:Devinno.UI.DvSurface.HandlerError" en-hash="8305e85b6f5846a5">
             <summary>
             라이브러리가 부른 앱(뷰모델) 코드가 예외를 던졌을 때 발생합니다. 예외는 이미 잡혀 처리가 끝났으며, 포인터·키 처리·레이아웃·그리기나 호스트 루프 밖으로 나가지 않습니다.
             </summary>
@@ -2436,7 +2436,7 @@
             그리고 <see cref="M:Devinno.UI.DvSurface.Layout(System.Single,System.Single)" />·<see cref="M:Devinno.UI.DvSurface.RenderTo(SkiaSharp.SKCanvas,System.Single,System.Single,System.Int64)" /> 중 값을 읽는 코드(속성 getter, 값의 <c>ToString</c>, 목록 열거, 그리드 정렬 비교)입니다.
             무엇을 하다가 났는지는 <see cref="P:Devinno.UI.DvHandlerErrorEventArgs.Kind" /> 로 구분합니다.</para>
             <para><b>결과</b> — 값 쓰기 실패는 <c>onbeforecommit</c> 거절과 같습니다. <c>DvInput</c>(그리드 입력 셀 포함)은 편집을 유지하고 오류 줄에
-            <c>dv.input.write-failed</c> 문구("값을 저장하지 못했습니다")를 보이며, 예외 메시지는 화면에 내지 않습니다. 선택기는 팝업이 열린 채로 남고,
+            <c>dv.input.write-failed</c> 문구(기본 "Could not save the value")를 보이며, 예외 메시지는 화면에 내지 않습니다. 선택기는 팝업이 열린 채로 남고,
             토글·노브·체크 셀은 값이 바뀌지 않으며, 그리드 선택은 이전 선택을 유지합니다. 값 읽기 실패는 그 값을 빈 값으로 보고 계속 그리며,
             같은 대상(<see cref="P:Devinno.UI.DvHandlerErrorEventArgs.Kind" />·<see cref="P:Devinno.UI.DvHandlerErrorEventArgs.Member" />·<see cref="P:Devinno.UI.DvHandlerErrorEventArgs.Tag" />)은
             <see cref="M:Devinno.UI.DvSurface.Invalidate" /> 로 다시 만들 때까지 한 번만 알립니다(그리드처럼 매 프레임 읽어도 폭주하지 않음).</para>
@@ -2569,9 +2569,7 @@
             </summary>
             <remarks>호스트는 <see cref="P:Devinno.UI.DvEditState.Kind" /> 로 읽어 새 세션(<see cref="P:Devinno.UI.DvEditState.SessionId" /> 변경) 때 편집기에 적용합니다.</remarks>
         </member>
-        <member name="F:Devinno.UI.DvEditKind.Text" en-hash="10a0f867f570349b">
-            <summary>일반 텍스트입니다. 가상 키보드는 한글 배열로 열리며 한/영·기호 전환이 됩니다.</summary>
-        </member>
+        <member name="F:Devinno.UI.DvEditKind.Text" en-hash="c5855abc3b039386"><summary>일반 텍스트입니다. 가상 키보드는 영문 배열로 열리고(화면의 <see cref="P:Devinno.UI.Localization.DvStrings.Language" /> 가 <c>ko</c> 면 한글 배열), 한/영·기호 전환은 언제나 됩니다.</summary></member>
         <member name="F:Devinno.UI.DvEditKind.Numeric" en-hash="3d3d17de62bdd659">
             <summary>
             숫자입니다. 가상 키보드는 숫자 키패드로 열립니다. 정수/실수·부호 허용 여부와 범위는 <see cref="P:Devinno.UI.DvEditState.Numeric" /> 에 있습니다.
@@ -2966,11 +2964,11 @@
             범위 밖은 거절(클램프하지 않음).
             </summary>
         </member>
-        <member name="M:Devinno.UI.NumericEdit.TryParse(System.String,System.Type,Devinno.UI.DvNumericSpec,Devinno.UI.Localization.DvStrings,System.Object@,System.Double@,System.String@)" en-hash="66d0d12d1e326994">
+        <member name="M:Devinno.UI.NumericEdit.TryParse(System.String,System.Type,Devinno.UI.DvNumericSpec,Devinno.UI.Localization.DvStrings,System.Object@,System.Double@,System.String@)" en-hash="b173ed2d17b02b00">
             <param name="text">입력한 텍스트(앞뒤 공백은 무시).</param>
             <param name="bound">바인딩된 속성 타입(Nullable 이면 바탕 타입 기준).</param>
             <param name="spec">정수/부호/범위 규칙.</param>
-            <param name="strings">거절 사유 문구 번역(없으면 기본 한국어).</param>
+            <param name="strings">거절 사유 문구 번역(없으면 내장 영어·한국어 문구).</param>
             <param name="value">쓸 값(바탕 타입; 문자열 속성이면 다듬은 텍스트).</param>
             <param name="number">검증·게이트용 double.</param>
             <param name="error">거절 사유(성공이면 null).</param>
@@ -4365,7 +4363,7 @@
         <member name="M:Devinno.UI.Layout.LayoutSugar.Space(System.String)" en-hash="3d2ed10ceeb9bb9c">
             <summary>간격 단계명(xs~2xl) → 토큰, none → 0, 그 외 숫자는 그대로.</summary>
         </member>
-        <member name="T:Devinno.UI.Localization.DvStrings" en-hash="708423d0244ee343">
+        <member name="T:Devinno.UI.Localization.DvStrings" en-hash="27efe2e18074ec38">
             <summary>
             화면 문구의 다국어 문자열 테이블입니다. 언어별로 키 → 문자열을 등록해 두고, 마크업에서 <c>{L10n.key}</c> 또는 <c>@key</c> 로 참조합니다.
             </summary>
@@ -4375,7 +4373,7 @@
             <para>화면(<see cref="P:Devinno.UI.DvSurface.Strings" />, 호스트의 <c>Strings</c>)에 붙이면 <see cref="P:Devinno.UI.Localization.DvStrings.Language" /> 를 바꾸거나 현재 언어에 항목을 추가할 때
             <see cref="E:Devinno.UI.Localization.DvStrings.Changed" /> 가 발생해 화면이 자동으로 다시 레이아웃됩니다.</para>
             <para>입력 검증 메시지·선택기 버튼 같은 내장 문구도 <c>dv.</c> 로 시작하는 키(예: <c>dv.input.rejected</c>, <c>dv.picker.ok</c>, <c>dv.kbd.done</c>)로 덮어쓸 수 있습니다.
-            없으면 코드에 들어 있는 기본 한국어 문구를 씁니다.</para>
+            라이브러리는 이 문구를 영어(<c>en</c>, 기본)와 한국어(<c>ko</c>)로 내장합니다. 한국어 내장 문구를 쓰려면 <see cref="P:Devinno.UI.Localization.DvStrings.Language" /> 를 <c>ko</c> 로 두고, 바꾸려면 그 키를 직접 등록합니다.</para>
             <para>스레드 안전하지 않습니다. 테이블 등록과 언어 전환은 UI 스레드에서 하세요. <see cref="E:Devinno.UI.Localization.DvStrings.Changed" /> 는 값을 바꾼 스레드에서 동기로 발생합니다.</para>
             </remarks>
             <example>
@@ -4388,9 +4386,9 @@
             </code>
             </example>
         </member>
-        <member name="P:Devinno.UI.Localization.DvStrings.Language" en-hash="6057a10d66babccf">
+        <member name="P:Devinno.UI.Localization.DvStrings.Language" en-hash="462a40a2606b24af">
             <summary>
-            현재 언어 이름입니다(예: <c>ko</c>, <c>en</c>). 기본값은 <c>ko</c> 입니다. 대소문자만 다른 값으로 바꾸는 것은 변경으로 보지 않습니다.
+            현재 언어 이름입니다(예: <c>en</c>, <c>ko</c>). 기본값은 <c>en</c> 입니다. 대소문자만 다른 값으로 바꾸는 것은 변경으로 보지 않습니다.
             </summary>
             <remarks>값이 실제로 바뀌면 <see cref="E:Devinno.UI.Localization.DvStrings.Changed" /> 가 발생합니다. 등록되지 않은 언어로 바꿔도 예외는 없고, 조회가 <see cref="P:Devinno.UI.Localization.DvStrings.FallbackLanguage" /> 로 넘어갑니다.</remarks>
         </member>
@@ -4443,10 +4441,10 @@
             <param name="key">찾을 키(대소문자 구분).</param>
             <returns>찾은 문자열, 없으면 <c>[key]</c>.</returns>
         </member>
-        <member name="M:Devinno.UI.Localization.DvStrings.Text(Devinno.UI.Localization.DvStrings,System.String,System.String)" en-hash="7484e35d647379fa">
+        <member name="M:Devinno.UI.Localization.DvStrings.Text(Devinno.UI.Localization.DvStrings,System.String,System.String)" en-hash="da9a93b72116f56f">
             <summary>
             테이블에 키가 있으면 그 문자열을, 없으면 <paramref name="fallback" /> 을 돌려줍니다. 경고를 남기지 않습니다.
-            라이브러리 내장 문구(<c>dv.</c> 키)처럼 번역이 선택 사항인 문구에 씁니다.
+            번역이 선택 사항인 문구에 씁니다. (라이브러리 자체의 <c>dv.</c> 문구는 내장 영어·한국어 표로도 찾습니다.)
             </summary>
             <param name="strings">다국어 테이블. <see langword="null" /> 이면 항상 <paramref name="fallback" />.</param>
             <param name="key">찾을 키(대소문자 구분).</param>
@@ -4679,9 +4677,6 @@
             <summary>테마와 다국어 테이블로 페인터를 만듭니다.</summary>
             <param name="theme">색 토큰을 읽을 테마. <see langword="null" /> 이면 <see cref="P:Devinno.UI.Styling.DvTheme.Default" /> 를 씁니다.</param>
             <param name="strings">위젯이 스스로 그리는 문구(경보 목록 머리글 등)에 쓸 다국어 테이블. <c>dv.*</c> 키가 없거나 <see langword="null" /> 이면 기본 문구를 씁니다.</param>
-        </member>
-        <member name="M:Devinno.UI.Painting.Painter.T(System.String,System.String)" en-hash="9f72b65510fb57d9">
-            <summary>위젯 내장 문구 — <c>dv.*</c> 키가 있으면 그 값, 없으면 기본값.</summary>
         </member>
         <member name="M:Devinno.UI.Painting.Painter.#ctor(Devinno.UI.Styling.DvTheme)" en-hash="357b59c302c4deb6">
             <summary>테마로 페인터를 만듭니다(다국어 테이블 없음).</summary>
@@ -6769,6 +6764,15 @@
             <c>min + k × step</c> 값들(소수 9자리로 반올림). <paramref name="step" /> 이 0 이하이거나 <paramref name="max" /> 가 <paramref name="min" /> 보다 작으면 빈 목록입니다.
             너무 촘촘해도 최대 1001개까지만 만듭니다.
             </returns>
+        </member>
+        <member name="T:Devinno.UI.Localization.BuiltInStrings" en-hash="827d7806217a22ad">
+            <summary>라이브러리 내장 화면 문구(<c>dv.</c> 키)의 영어·한국어 표입니다. 찾는 순서: 앱 표의 현재 언어 → 내장 표의 현재 언어 → 앱 표의 <see cref="P:Devinno.UI.Localization.DvStrings.FallbackLanguage" /> → 내장 영어. <see cref="T:Devinno.UI.Localization.DvStrings" /> 가 없으면 내장 영어를 씁니다.</summary>
+        </member>
+        <member name="M:Devinno.UI.Localization.BuiltInStrings.Get(Devinno.UI.Localization.DvStrings,System.String)" en-hash="712bb2c7ebaa3b8e">
+            <summary><c>dv.</c> 키의 내장 문구 — <paramref name="strings" /> 로 앱마다 바꿀 수 있습니다.</summary>
+        </member>
+        <member name="M:Devinno.UI.Painting.Painter.T(System.String)" en-hash="71c3eab74b91b335">
+            <summary><c>dv.*</c> 키의 위젯 내장 문구 — 앱 표에 키가 있으면 그 값, 없으면 내장 영어(또는 한국어) 문구.</summary>
         </member>
     </members>
 </doc>

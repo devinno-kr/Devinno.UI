@@ -224,7 +224,7 @@ internal static class ProcessBuilder
             Rich = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("look")) is "rich",
         };
         if (BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("look")) is { } look && look is not ("plain" or "rich"))
-            Warn($"DvProcess look='{look}' 은(는) 없는 값입니다(plain·rich) — plain 으로 그립니다");
+            Warn($"DvProcess look='{look}' is not a valid value (plain, rich); drawing as plain");
         d.Align = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("align")) switch
         {
             null or "" or "auto" => null,
@@ -246,13 +246,13 @@ internal static class ProcessBuilder
             return null;
         if (ProcessMedium.Names.Contains(m))
             return m;
-        Warn($"DvLine medium='{m}' 은(는) 없는 매체입니다({string.Join("·", ProcessMedium.Names)}) — 기본 색으로 그립니다");
+        Warn($"DvLine medium='{m}' is not a known medium ({string.Join(", ", ProcessMedium.Names)}); drawing with the default color");
         return null;
     }
 
     private static ProcessAlign? WarnAlign(string a)
     {
-        Warn($"DvProcess align='{a}' 은(는) 없는 값입니다(auto·step·row) — auto 로 배치합니다");
+        Warn($"DvProcess align='{a}' is not a valid value (auto, step, row); laying out as auto");
         return null;
     }
 
@@ -260,7 +260,7 @@ internal static class ProcessBuilder
     {
         var dir = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("direction"));
         if (dir is not (null or "" or "lr" or "tb"))
-            Warn($"<{node.Tag}> direction='{dir}' 은(는) 없는 값입니다(lr·tb) — lr 로 그립니다");
+            Warn($"<{node.Tag}> direction='{dir}' is not a valid value (lr, tb); drawing as lr");
         return dir is "tb";
     }
 
@@ -319,18 +319,18 @@ internal static class ProcessBuilder
             {
                 if (!d.IsUnit)
                 {
-                    Warn("<DvPort> 는 <DvUnit> 안에서만 씁니다(유닛 바깥 포트) — 무시합니다", true);
+                    Warn("<DvPort> can only be used inside <DvUnit> (port outside a unit); ignored", true);
                     continue;
                 }
 
                 var side = SymbolDef.ParseSide(BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("side")));
                 if (side is null)
-                    Warn($"<DvPort name='{ch.Attributes.GetValueOrDefault("name")}'> side 는 left·top·right·bottom 중 하나입니다 — right 로 둡니다", true);
+                    Warn($"<DvPort name='{ch.Attributes.GetValueOrDefault("name")}'> side must be one of left, top, right, bottom; using right", true);
                 var atText = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("at"));
                 var at = 0.5f;
                 if (atText is { Length: > 0 } && (!float.TryParse(atText, NumberStyles.Float, CultureInfo.InvariantCulture, out at) || at < 0 || at > 1))
                 {
-                    Warn($"<DvPort name='{ch.Attributes.GetValueOrDefault("name")}'> at='{atText}' 은(는) 0~1 이어야 합니다 — 0.5 로 둡니다", true);
+                    Warn($"<DvPort name='{ch.Attributes.GetValueOrDefault("name")}'> at='{atText}' must be between 0 and 1; using 0.5", true);
                     at = 0.5f;
                 }
 
@@ -347,7 +347,7 @@ internal static class ProcessBuilder
             {
                 if (d.IsUnit)
                 {
-                    Warn($"<{ch.Tag}>: 유닛 안에 유닛을 둘 수 없습니다 — 그리지 않습니다", true);
+                    Warn($"<{ch.Tag}>: a unit cannot be placed inside another unit; not drawn", true);
                     continue;
                 }
 
@@ -358,7 +358,7 @@ internal static class ProcessBuilder
             var def = ResolveDef(ch, vm, registry, out var known);
             if (!known)
             {
-                Warn($"<{ch.Tag}> 은(는) 공정도 장비가 아닙니다(DvVessel·DvPump·DvValve·DvInline·DvTerminal·DvUnit·DvInstrument·등록한 DvSymbol·DvUnit 컴포넌트) — 그리지 않습니다", true);
+                Warn($"<{ch.Tag}> is not process equipment (DvVessel, DvPump, DvValve, DvInline, DvTerminal, DvUnit, DvInstrument, a registered DvSymbol, or a DvUnit component); not drawn", true);
                 continue;
             }
 
@@ -409,7 +409,7 @@ internal static class ProcessBuilder
                 }
                 else
                 {
-                    Warn($"<{ch.Tag}> 안의 <{sub.Tag}> 은(는) 쓸 수 없습니다(DvAttach·DvAgitator·DvMotor)", true);
+                    Warn($"<{sub.Tag}> is not allowed inside <{ch.Tag}> (allowed: DvAttach, DvAgitator, DvMotor)", true);
                 }
             }
 
@@ -429,12 +429,12 @@ internal static class ProcessBuilder
         {
             if (inst.Name.Length == 0)
             {
-                Warn("<DvInstrument> 에 name 이 없습니다 — 신호선으로 이을 수 없습니다", true);
+                Warn("<DvInstrument> has no name; it cannot be connected by signal lines", true);
                 inst.Name = $"#i{d.Instruments.Count}";
             }
             else if (d.Nodes.Any(n => n.Name == inst.Name) || d.Instruments.Any(x => x.Name == inst.Name))
             {
-                Warn($"이름 '{inst.Name}' 이(가) 두 번 쓰였습니다(장비·계기 이름은 공정도 안에서 하나씩) — 이 계기는 신호선으로 이을 수 없습니다", true);
+                Warn($"Name '{inst.Name}' is used twice (equipment and instrument names must be unique within a diagram); this instrument cannot be connected by signal lines", true);
                 inst.Name = $"{inst.Name}#i{d.Instruments.Count}";
             }
 
@@ -442,8 +442,8 @@ internal static class ProcessBuilder
             if (host is null)
             {
                 Warn(string.IsNullOrEmpty(inst.OnRef)
-                    ? $"<DvInstrument name='{inst.Name}'> 에 on(붙을 장비 이름)이 없습니다 — 그리지 않습니다"
-                    : $"<DvInstrument name='{inst.Name}'> on='{inst.OnRef}': 그런 장비가 없습니다 — 그리지 않습니다", true);
+                    ? $"<DvInstrument name='{inst.Name}'> has no on (name of the equipment to attach to); not drawn"
+                    : $"<DvInstrument name='{inst.Name}'> on='{inst.OnRef}': no such equipment; not drawn", true);
                 d.Instruments.Add(inst);
                 continue;
             }
@@ -467,8 +467,8 @@ internal static class ProcessBuilder
                 if (SignalTarget(d, raw) is not null)
                     continue;
                 Warn(raw.Contains('.')
-                    ? $"DvSignal '{s.FromRef}'→'{s.ToRef}': 신호선은 포트 없이 이름만 씁니다('{raw[..raw.IndexOf('.')]}')"
-                    : $"DvSignal '{s.FromRef}'→'{s.ToRef}': 계기·장비 '{raw}' 이(가) 없습니다", true);
+                    ? $"DvSignal '{s.FromRef}'→'{s.ToRef}': signal lines use names only, without ports ('{raw[..raw.IndexOf('.')]}')"
+                    : $"DvSignal '{s.FromRef}'→'{s.ToRef}': no instrument or equipment named '{raw}'", true);
                 s.Error = true;
             }
         }
@@ -517,13 +517,13 @@ internal static class ProcessBuilder
         var name = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("name"));
         if (string.IsNullOrEmpty(name))
         {
-            Warn($"<{ch.Tag}> 에 name 이 없습니다 — 선으로 이을 수 없습니다", true);
+            Warn($"<{ch.Tag}> has no name; it cannot be connected by lines", true);
             return $"#{d.Nodes.Count}";
         }
 
         if (d.Nodes.Any(n => n.Name == name))
         {
-            Warn($"장비 이름 '{name}' 이(가) 두 번 쓰였습니다 — 나중 것은 선으로 이을 수 없습니다", true);
+            Warn($"Equipment name '{name}' is used twice; the later one cannot be connected by lines", true);
             return $"{name}#{d.Nodes.Count}";
         }
 
@@ -548,7 +548,7 @@ internal static class ProcessBuilder
             var kind = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("kind"));
             if (BuiltInSymbols.Get(ch.Tag, kind) is { } def)
                 return def;
-            Warn($"<{ch.Tag} kind='{kind}'> 은(는) 없는 종류입니다({string.Join("·", kinds)}) — {kinds[0]} 로 그립니다");
+            Warn($"<{ch.Tag} kind='{kind}'> is not a known kind ({string.Join(", ", kinds)}); drawing as {kinds[0]}");
             return BuiltInSymbols.Get(ch.Tag, null);
         }
 
@@ -569,7 +569,7 @@ internal static class ProcessBuilder
 
     private static int WarnRotate(string s)
     {
-        Warn($"rotate='{s}' 은(는) 없는 값입니다(0·90·180·270) — 0 으로 그립니다");
+        Warn($"rotate='{s}' is not a valid value (0, 90, 180, 270); drawing as 0");
         return 0;
     }
 
@@ -596,7 +596,7 @@ internal static class ProcessBuilder
         var idx = d.Nodes.FindIndex(n => n.Name == name);
         if (idx < 0)
         {
-            Warn($"DvLine '{line.FromRef}'→'{line.ToRef}': 장비 '{name}' 이(가) 없습니다", true);
+            Warn($"DvLine '{line.FromRef}'→'{line.ToRef}': no equipment named '{name}'", true);
             line.Error = true;
             return (-1, null);
         }
@@ -606,14 +606,14 @@ internal static class ProcessBuilder
         {
             if (port is not null)
                 Warn(n.IsPort
-                    ? $"DvLine '{raw}': 유닛 포트(DvPort)는 이름만 '{name}' 으로 씁니다"
-                    : $"DvLine '{raw}': 끝점(DvTerminal)은 포트 없이 '{name}' 으로 씁니다");
+                    ? $"DvLine '{raw}': a unit port (DvPort) is written by name only, as '{name}'"
+                    : $"DvLine '{raw}': an endpoint (DvTerminal) is written without a port, as '{name}'");
             return (idx, "end");
         }
 
         if (n.Unit is not null && port is not null && port.Contains('.'))
         {
-            Warn($"DvLine '{raw}': 유닛 안 장비는 바깥에서 직접 잇지 않습니다 — 유닛에 <DvPort name=\"…\" side=\"…\"/> 를 두고 안에서 그 포트로 이은 뒤 바깥은 '{name}.포트' 로 이으세요(지금 포트: {string.Join("·", n.Ports.Select(p => p.Name))})", true);
+            Warn($"DvLine '{raw}': equipment inside a unit cannot be connected directly from outside. Add <DvPort name=\"…\" side=\"…\"/> to the unit, connect to that port inside, then connect from outside as '{name}.<port>' (current ports: {string.Join(", ", n.Ports.Select(p => p.Name))})", true);
             line.Error = true;
             n.Error = true;
             return (idx, null);
@@ -624,7 +624,7 @@ internal static class ProcessBuilder
         {
             if (ports.Count == 1)
                 return (idx, ports[0].Name);
-            Warn($"DvLine '{raw}': '{name}' 은(는) 포트를 골라야 합니다({string.Join("·", ports.Select(p => p.Name))})", true);
+            Warn($"DvLine '{raw}': '{name}' requires a port ({string.Join(", ", ports.Select(p => p.Name))})", true);
             line.Error = true;
             n.Error = true;
             return (idx, null);
@@ -632,7 +632,7 @@ internal static class ProcessBuilder
 
         if (ports.All(p => p.Name != port))
         {
-            Warn($"DvLine '{raw}': '{name}' 에 포트 '{port}' 이(가) 없습니다({string.Join("·", ports.Select(p => p.Name))})", true);
+            Warn($"DvLine '{raw}': '{name}' has no port '{port}' ({string.Join(", ", ports.Select(p => p.Name))})", true);
             line.Error = true;
             n.Error = true;
             return (idx, null);
@@ -1238,9 +1238,9 @@ internal static class ProcessBuilder
             if (l.G is not { } gl)
                 continue;
             if (gl.Forced)
-                Warn($"'{l.FromRef}'→'{l.ToRef}': 빈 길이 없어 다른 배관과 겹칩니다 — row·rank 힌트로 장비 자리를 바꾸거나 영역을 키우세요");
+                Warn($"'{l.FromRef}'→'{l.ToRef}': no free path, so it overlaps other piping; move equipment with row/rank hints or enlarge the area");
             else if (gl.Crossings > 0)
-                Warn($"'{l.FromRef}'→'{l.ToRef}': 다른 배관과 {gl.Crossings}번 교차 — row 힌트로 줄일 수 있습니다");
+                Warn($"'{l.FromRef}'→'{l.ToRef}': crosses other piping {gl.Crossings} time(s); a row hint can reduce this");
         }
     }
 
@@ -1285,7 +1285,7 @@ internal static class ProcessBuilder
         var g = Layout(d, family, useSpacing, useAlign); // 고른 후보로 다시(캐시) — 장비·선에 그 결과를 붙인다
 
         d.Shortage = g.Size.Width > inner.Width + 0.5f || g.Size.Height > inner.Height + 0.5f
-            ? $"공간이 모자랍니다 — 필요 {g.Size.Width:0}×{g.Size.Height:0}, 영역 {inner.Width:0}×{inner.Height:0}(간격을 최소로 줄여도 넘침). 영역을 키우거나 장비를 나누세요"
+            ? $"Not enough space: needs {g.Size.Width:0}×{g.Size.Height:0}, area is {inner.Width:0}×{inner.Height:0} (overflows even at minimum spacing). Enlarge the area or split up the equipment"
             : null;
         d.Graph = g;
         d.Origin = new SKPoint(inner.Left + MathF.Max(0, (inner.Width - g.Size.Width) / 2),

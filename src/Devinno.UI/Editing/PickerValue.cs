@@ -25,7 +25,7 @@ internal static class PickerValue
         // DateTime(또는 타입 모름) 만 모드를 고를 수 있다. DateOnly·TimeOnly 는 자기 모드만.
         if (want is { } m && (def == PickerMode.DateTime || m == def))
             return m;
-        Warn($"Devinno.UI: DvDateTimeInput mode='{attr}' 가 값 타입({Base(valueType)?.Name ?? "?"})과 맞지 않음 — {def} 로 동작");
+        Warn($"Devinno.UI: DvDateTimeInput mode='{attr}' does not match the value type ({Base(valueType)?.Name ?? "?"}); using {def}");
         return def;
     }
 
@@ -72,7 +72,7 @@ internal static class PickerValue
             }
             catch (FormatException)
             {
-                Warn($"Devinno.UI: DvDateTimeInput format='{format}' 가 올바른 날짜 형식이 아님 — 기본 형식으로 표시");
+                Warn($"Devinno.UI: DvDateTimeInput format='{format}' is not a valid date format; using the default format");
             }
         }
 

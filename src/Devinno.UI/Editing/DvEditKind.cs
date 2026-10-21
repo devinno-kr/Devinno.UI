@@ -7,7 +7,7 @@ namespace Devinno.UI;
 /// <remarks>Hosts read it from <see cref="DvEditState.Kind"/> and apply it to the editor on a new session (when <see cref="DvEditState.SessionId"/> changes).</remarks>
 public enum DvEditKind
 {
-    /// <summary>Plain text. The virtual keyboard opens in the Korean layout and can switch Korean/English and symbols.</summary>
+    /// <summary>Plain text. The virtual keyboard opens in the English layout (the Korean layout when the screen's <see cref="Localization.DvStrings.Language"/> is <c>ko</c>) and can always switch Korean/English and symbols.</summary>
     Text,
     /// <summary>
     /// Number. The virtual keyboard opens as a numeric keypad. Whether integer/real and sign are allowed, and the range, are in <see cref="DvEditState.Numeric"/>.

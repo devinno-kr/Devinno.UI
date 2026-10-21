@@ -23,7 +23,7 @@ internal sealed class DvSyncContext(DvApp app) : SynchronizationContext
     {
         ArgumentNullException.ThrowIfNull(d);
         if (!ReferenceEquals(Current, this))
-            throw new NotSupportedException("Devinno.UI 동기화 컨텍스트의 Send 는 입력 스레드에서만 쓸 수 있습니다. 다른 스레드에서는 Post 를 쓰세요.");
+            throw new NotSupportedException("Send on the Devinno.UI synchronization context can only be called on the input thread. Use Post from other threads.");
         d(state);
     }
 

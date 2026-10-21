@@ -81,7 +81,7 @@ internal static class IconFont
 
     private static Stream Resource(string file)
         => typeof(IconFont).Assembly.GetManifestResourceStream("Devinno.UI.Resources." + file)
-           ?? throw new InvalidOperationException($"Devinno.UI: 아이콘 리소스 {file} 없음");
+           ?? throw new InvalidOperationException($"Devinno.UI: icon resource {file} not found");
 
     private static SKTypeface LoadFace(string file)
     {

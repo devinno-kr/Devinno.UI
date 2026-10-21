@@ -153,7 +153,7 @@ public static class StyleParser
                 if (TryContentAlign(v.Trim(), out var cv, out var ch))
                     (s.ContentVertical, s.TextAlign) = (cv, ch);
                 else
-                    WarnOnce($"Devinno.UI: content-align '{v}' 무시 — top|middle|bottom-left|center|right (예: middle-center)");
+                    WarnOnce($"Devinno.UI: content-align '{v}' ignored; expected top|middle|bottom-left|center|right (e.g. middle-center)");
                 break;
             case "gap":
                 s.Gap = F(v);
@@ -285,14 +285,14 @@ public static class StyleParser
                 if (Transform2D.Parse(v) is { } xf)
                     s.Transform = xf;
                 else
-                    WarnOnce($"Devinno.UI: transform '{v}' 를 읽지 못했습니다(translate·translateX·translateY·scale·scaleX·scaleY 만) — 무시");
+                    WarnOnce($"Devinno.UI: could not parse transform '{v}' (only translate, translateX, translateY, scale, scaleX, scaleY); ignored");
                 break;
             case "transition":
             {
                 var bad = new List<string>();
                 s.Transitions = TransitionSpec.Parse(v, bad);
                 foreach (var x in bad)
-                    WarnOnce($"Devinno.UI: transition '{x}' 를 읽지 못했습니다(속성 시간 [곡선] [지연]) — 건너뜀");
+                    WarnOnce($"Devinno.UI: could not parse transition '{x}' (expected: property duration [easing] [delay]); skipped");
                 break;
             }
         }

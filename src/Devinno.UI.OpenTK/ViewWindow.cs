@@ -115,7 +115,7 @@ public sealed class ViewWindow : GameWindow
     {
         ArgumentNullException.ThrowIfNull(app);
         if (app.IsAttached)
-            throw new InvalidOperationException("이 DvApp 은 이미 다른 창·컨트롤에 붙어 있습니다. 먼저 그쪽을 닫거나 App 을 바꿔 떼어 내세요.");
+            throw new InvalidOperationException("This DvApp is already attached to another window or control. Close that one first, or detach it by changing its App.");
         return settings;
     }
 
@@ -251,7 +251,7 @@ public sealed class ViewWindow : GameWindow
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.TraceWarning($"Devinno.UI: GPU 렌더 초기화 실패 → CPU 로 대체. {ex.Message}");
+            System.Diagnostics.Trace.TraceWarning($"Devinno.UI: GPU render initialization failed; falling back to CPU. {ex.Message}");
             DisposeGpu();
             return false;
         }

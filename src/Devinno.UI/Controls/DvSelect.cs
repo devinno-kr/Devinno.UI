@@ -114,7 +114,7 @@ internal sealed class SelectionCore
     public void SetIndex(int index)
     {
         if (index < -1)
-            throw new ArgumentOutOfRangeException(nameof(index), index, "Devinno.UI: SelectedIndex 는 -1 이상이어야 합니다.");
+            throw new ArgumentOutOfRangeException(nameof(index), index, "Devinno.UI: SelectedIndex must be -1 or greater.");
         if (!_tryBox(out var box))
         {
             _pending = index; // 배치 전 — 선택지를 아직 모른다
@@ -123,7 +123,7 @@ internal sealed class SelectionCore
         }
 
         if (index >= box.SelectOptions.Count)
-            throw new ArgumentOutOfRangeException(nameof(index), index, $"Devinno.UI: 선택지가 {box.SelectOptions.Count}개입니다.");
+            throw new ArgumentOutOfRangeException(nameof(index), index, $"Devinno.UI: there are only {box.SelectOptions.Count} options.");
         _set(index < 0 ? null : Typed(box, box.SelectOptions[index].Value));
     }
 
@@ -138,6 +138,6 @@ internal sealed class SelectionCore
         if (i < box.SelectOptions.Count)
             _set(i < 0 ? null : Typed(box, box.SelectOptions[i].Value));
         else
-            System.Diagnostics.Trace.TraceWarning($"Devinno.UI: id '{_owner.Id}' SelectedIndex {i} — 선택지가 {box.SelectOptions.Count}개라 적용하지 않습니다.");
+            System.Diagnostics.Trace.TraceWarning($"Devinno.UI: id '{_owner.Id}' SelectedIndex {i}: there are only {box.SelectOptions.Count} options; not applied.");
     }
 }

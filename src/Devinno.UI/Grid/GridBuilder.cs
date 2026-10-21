@@ -28,7 +28,7 @@ internal static class GridBuilder
         lock (FilterWarned)
         {
             if (FilterWarned.Add(raw!))
-                Trace.TraceWarning($"Devinno.UI: DvColumn field '{field}' filter=\"{raw}\" — none·auto·text·values·range·date 중 하나가 아님, 필터 없음");
+                Trace.TraceWarning($"Devinno.UI: DvColumn field '{field}' filter=\"{raw}\": not one of none, auto, text, values, range, date; no filter");
         }
 
         return GridFilterSetting.None;
@@ -85,7 +85,7 @@ internal static class GridBuilder
                 lock (NumWarned)
                 {
                     if (NumWarned.Add((name, text)))
-                        Trace.TraceWarning($"Devinno.UI: DvColumn field '{CA("field")}' {name}=\"{text}\" — 숫자로 해석 못 함, 무시");
+                        Trace.TraceWarning($"Devinno.UI: DvColumn field '{CA("field")}' {name}=\"{text}\": not a number; ignored");
                 }
 
                 return null;
@@ -157,7 +157,7 @@ internal static class GridBuilder
             if (resolved is not null && !resolved.Contains(ThemeResolver.MissingColor, StringComparison.OrdinalIgnoreCase) &&
                 DvColor.TryParse(resolved, out var c))
                 return c;
-            Trace.TraceWarning($"Devinno.UI: DvColumn on-color=\"{text}\" — 색으로 해석 못 함, 기본 색 사용");
+            Trace.TraceWarning($"Devinno.UI: DvColumn on-color=\"{text}\": not a valid color; using the default color");
             return null;
         }
 
@@ -165,7 +165,7 @@ internal static class GridBuilder
         while (frozen < cols.Count && cols[frozen].Frozen)
             frozen++;
         if (cols.Skip(frozen).Any(c => c.Frozen))
-            Trace.TraceWarning("Devinno.UI: DvDataGrid frozen 은 앞쪽부터 연속인 열만 적용 — 중간 열의 frozen 무시");
+            Trace.TraceWarning("Devinno.UI: DvDataGrid frozen applies only to a contiguous run of columns from the start; frozen on a middle column is ignored");
 
         // 고정 열과 스크롤 열에 걸친 그룹은 경계에서 둘로(각 영역에서 따로 그려진다)
         var header = GridHeader.Single;
@@ -176,7 +176,7 @@ internal static class GridBuilder
             {
                 if (gr.First < frozen && gr.Last >= frozen)
                 {
-                    Trace.TraceWarning($"Devinno.UI: DvColumnGroup '{gr.Header}' 가 고정 열 경계에 걸침 — 둘로 나뉘어 그려짐");
+                    Trace.TraceWarning($"Devinno.UI: DvColumnGroup '{gr.Header}' spans the frozen column boundary; it is drawn split in two");
                     split.Add(gr with { Last = frozen - 1 });
                     split.Add(gr with { First = frozen });
                 }
@@ -202,7 +202,7 @@ internal static class GridBuilder
                 var ci = cols.FindIndex(c => c.Reader.Path == field);
                 if (ci < 0)
                 {
-                    Trace.TraceWarning($"Devinno.UI: DvSummary field '{field}' 에 해당하는 열 없음 — 무시");
+                    Trace.TraceWarning($"Devinno.UI: DvSummary field '{field}': no matching column; ignored");
                     continue;
                 }
 
@@ -268,7 +268,7 @@ internal static class GridBuilder
             case IList list:
                 return list;
             case IEnumerable seq:
-                Trace.TraceWarning("Devinno.UI: DvDataGrid items 가 IList 가 아님 — 레이아웃마다 목록으로 복사(IList 권장)");
+                Trace.TraceWarning("Devinno.UI: DvDataGrid items is not an IList; it is copied to a list on every layout (IList recommended)");
                 return HandlerErrors.Snapshot(seq.Cast<object?>(), Member(raw), "DvDataGrid"); // 열거 중 VM 예외 = 빈 목록
             default:
                 return null;

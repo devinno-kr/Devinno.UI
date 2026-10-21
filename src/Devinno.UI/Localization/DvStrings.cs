@@ -12,7 +12,7 @@ namespace Devinno.UI.Localization;
 /// <para>When attached to a screen (<see cref="DvSurface.Strings"/>, or the host's <c>Strings</c>), changing <see cref="Language"/> or adding entries to the current language
 /// raises <see cref="Changed"/>, and the screen is laid out again automatically.</para>
 /// <para>Built-in text such as input validation messages and picker buttons can also be overridden with keys starting with <c>dv.</c> (for example <c>dv.input.rejected</c>, <c>dv.picker.ok</c>, <c>dv.kbd.done</c>).
-/// If absent, the default Korean text built into the code is used.</para>
+/// The library ships these texts in English (<c>en</c>, the default) and Korean (<c>ko</c>): set <see cref="Language"/> to <c>ko</c> for Korean built-in text, or add your own entries for a key to override it.</para>
 /// <para>Not thread-safe. Register tables and switch languages on the UI thread. <see cref="Changed"/> is raised synchronously on the thread that changed the value.</para>
 /// </remarks>
 /// <example>
@@ -28,10 +28,10 @@ public sealed class DvStrings
 {
     private readonly Dictionary<string, Dictionary<string, string>> _tables = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _warned = new(StringComparer.Ordinal);
-    private string _language = "ko";
+    private string _language = "en";
 
     /// <summary>
-    /// Gets or sets the current language name (for example <c>ko</c>, <c>en</c>). The default is <c>ko</c>. Setting a value that differs only in case is not treated as a change.
+    /// Gets or sets the current language name (for example <c>en</c>, <c>ko</c>). The default is <c>en</c>. Setting a value that differs only in case is not treated as a change.
     /// </summary>
     /// <remarks>Raises <see cref="Changed"/> when the value actually changes. Switching to an unregistered language does not throw; lookups fall through to <see cref="FallbackLanguage"/>.</remarks>
     public string Language
@@ -98,9 +98,9 @@ public sealed class DvStrings
     /// <returns><see langword="true"/> if found.</returns>
     public bool TryGet(string key, out string value)
     {
-        if (Lookup(_language, key, out value))
+        if (LookupIn(_language, key, out value))
             return true;
-        return FallbackLanguage is { } fb && Lookup(fb, key, out value);
+        return FallbackLanguage is { } fb && LookupIn(fb, key, out value);
     }
 
     /// <summary>
@@ -120,7 +120,7 @@ public sealed class DvStrings
         lock (_warned)
         {
             if (_warned.Add(_language + "|" + key))
-                Trace.TraceWarning($"Devinno.UI: 다국어 키 '{key}' 없음 (language={_language})");
+                Trace.TraceWarning($"Devinno.UI: string key '{key}' not found (language={_language})");
         }
 
         return "[" + key + "]";
@@ -128,7 +128,7 @@ public sealed class DvStrings
 
     /// <summary>
     /// Returns the string for the key if the table has it; otherwise returns <paramref name="fallback"/>. Writes no warning.
-    /// Used for text whose translation is optional, such as the library's built-in text (<c>dv.</c> keys).
+    /// Used for text whose translation is optional. (The library's own <c>dv.</c> texts also fall back to its built-in English/Korean tables.)
     /// </summary>
     /// <param name="strings">The multilingual table. If <see langword="null"/>, <paramref name="fallback"/> is always returned.</param>
     /// <param name="key">The key to look up (case-sensitive).</param>
@@ -137,7 +137,10 @@ public sealed class DvStrings
     public static string Text(DvStrings? strings, string key, string fallback)
         => strings is not null && strings.TryGet(key, out var v) ? v : fallback;
 
-    private bool Lookup(string language, string key, out string value)
+    // 라이브러리 기본 글자(dv. 키) — 앱 표 → 내장 영어/한국어 표 (BuiltInStrings)
+    internal static string Builtin(DvStrings? strings, string key) => BuiltInStrings.Get(strings, key);
+
+    internal bool LookupIn(string language, string key, out string value)
     {
         value = "";
         return _tables.TryGetValue(language, out var t) && t.TryGetValue(key, out value!);

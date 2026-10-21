@@ -24,7 +24,7 @@ internal static class NumericEdit
     /// <param name="text">The entered text (leading and trailing whitespace is ignored).</param>
     /// <param name="bound">The bound property type (for Nullable, the underlying type is used).</param>
     /// <param name="spec">Integer/sign/range rules.</param>
-    /// <param name="strings">Translations of the rejection messages (default Korean if none).</param>
+    /// <param name="strings">Translations of the rejection messages (built-in English or Korean text if none).</param>
     /// <param name="value">The value to write (underlying type; trimmed text for a string property).</param>
     /// <param name="number">A double for validation and the commit gate.</param>
     /// <param name="error">The rejection reason (null on success).</param>
@@ -38,14 +38,14 @@ internal static class NumericEdit
         var t = bound is null ? null : Nullable.GetUnderlyingType(bound) ?? bound;
 
         if (s.Length == 0)
-            return Fail(DvStrings.Text(strings, "dv.input.required", "값을 입력하세요"), out error);
+            return Fail(DvStrings.Builtin(strings, "dv.input.required"), out error);
 
         if (spec.IsInteger)
         {
             if (!spec.IsSigned && s.StartsWith('-'))
-                return Fail(DvStrings.Text(strings, "dv.input.unsigned", "음수는 입력할 수 없습니다"), out error);
+                return Fail(DvStrings.Builtin(strings, "dv.input.unsigned"), out error);
             if (!decimal.TryParse(s, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var whole))
-                return Fail(DvStrings.Text(strings, "dv.input.integer", "정수만 입력할 수 있습니다"), out error);
+                return Fail(DvStrings.Builtin(strings, "dv.input.integer"), out error);
             try
             {
                 value = Convert.ChangeType(whole, t!, CultureInfo.InvariantCulture);
@@ -60,14 +60,14 @@ internal static class NumericEdit
         else if (t == typeof(decimal))
         {
             if (!decimal.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var dec))
-                return Fail(DvStrings.Text(strings, "dv.input.number", "숫자 형식이 아닙니다"), out error);
+                return Fail(DvStrings.Builtin(strings, "dv.input.number"), out error);
             value = dec;
             number = (double)dec;
         }
         else
         {
             if (!double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) || !double.IsFinite(d))
-                return Fail(DvStrings.Text(strings, "dv.input.number", "숫자 형식이 아닙니다"), out error);
+                return Fail(DvStrings.Builtin(strings, "dv.input.number"), out error);
             number = d;
             value = t == typeof(float) ? (float)d : t == typeof(double) ? d : (object)s; // 그 외(문자열 등) = 텍스트 그대로
         }
@@ -96,8 +96,8 @@ internal static class NumericEdit
         var lo = spec.Min?.ToString(CultureInfo.InvariantCulture) ?? "";
         var hi = spec.Max?.ToString(CultureInfo.InvariantCulture) ?? "";
         if (lo.Length == 0 && hi.Length == 0)
-            return DvStrings.Text(strings, "dv.input.overflow", "입력할 수 있는 범위를 벗어났습니다");
-        return string.Format(DvStrings.Text(strings, "dv.input.range", "허용 범위: {0} ~ {1}"), lo, hi);
+            return DvStrings.Builtin(strings, "dv.input.overflow");
+        return string.Format(DvStrings.Builtin(strings, "dv.input.range"), lo, hi);
     }
 
     private static bool Fail(string message, out string? error)

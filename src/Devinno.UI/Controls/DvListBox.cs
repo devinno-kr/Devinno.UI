@@ -43,7 +43,7 @@ public sealed class DvListBox : DvControl
         set
         {
             if (value < -1)
-                throw new ArgumentOutOfRangeException(nameof(value), value, "Devinno.UI: SelectedIndex 는 -1 이상이어야 합니다.");
+                throw new ArgumentOutOfRangeException(nameof(value), value, "Devinno.UI: SelectedIndex must be -1 or greater.");
             if (!TryGetLaidOutBox(out var box))
             {
                 _pendingIndex = value;
@@ -51,7 +51,7 @@ public sealed class DvListBox : DvControl
                 return;
             }
             if (value >= box.SelectOptions.Count)
-                throw new ArgumentOutOfRangeException(nameof(value), value, $"Devinno.UI: 선택지가 {box.SelectOptions.Count}개입니다.");
+                throw new ArgumentOutOfRangeException(nameof(value), value, $"Devinno.UI: there are only {box.SelectOptions.Count} options.");
             Pick(value < 0 ? Array.Empty<object?>() : new[] { box.SelectOptions[value].Value });
         }
     }
@@ -93,7 +93,7 @@ public sealed class DvListBox : DvControl
         if (i < box.SelectOptions.Count)
             Pick(i < 0 ? Array.Empty<object?>() : new[] { box.SelectOptions[i].Value });
         else
-            System.Diagnostics.Trace.TraceWarning($"Devinno.UI: id '{Id}' SelectedIndex {i} — 선택지가 {box.SelectOptions.Count}개라 적용하지 않습니다.");
+            System.Diagnostics.Trace.TraceWarning($"Devinno.UI: id '{Id}' SelectedIndex {i}: there are only {box.SelectOptions.Count} options; not applied.");
     }
 
     private List<object?> Picked()
@@ -124,7 +124,7 @@ public sealed class DvListBox : DvControl
             var items = values.Select(v => SelectValue.TryConvert(v, elem == typeof(object) ? null : elem, out var c) ? c : v).OfType<object>().ToList();
             var (ok, list) = Interaction.GridInteraction.Snapshot(type, items);
             if (!ok)
-                throw new InvalidOperationException($"Devinno.UI: DvListBox '{Id}' selected-items 속성 형식({type?.Name})에 목록을 쓸 수 없습니다(T[]·List<T>·IList<T>·IReadOnlyList<T>·IEnumerable<T>).");
+                throw new InvalidOperationException($"Devinno.UI: DvListBox '{Id}': cannot write the list to the selected-items property type ({type?.Name}) (supported: T[], List<T>, IList<T>, IReadOnlyList<T>, IEnumerable<T>).");
             SetCurrent(list);
             return;
         }

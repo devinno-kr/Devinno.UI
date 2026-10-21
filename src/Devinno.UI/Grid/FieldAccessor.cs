@@ -28,7 +28,7 @@ internal static class FieldAccessor
                 return;
         }
 
-        Trace.TraceWarning($"Devinno.UI: DvDataGrid field '{path}' — {type.Name} 에 없는 속성, 빈 셀로 표시");
+        Trace.TraceWarning($"Devinno.UI: DvDataGrid field '{path}': {type.Name} has no such property; shown as an empty cell");
     }
 
     private static readonly Entry Missing = new(_ => null, null);

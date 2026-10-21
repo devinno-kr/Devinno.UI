@@ -1421,7 +1421,7 @@ public sealed class LayoutEngine
         lock (WarnedIcons)
         {
             if (WarnedIcons.Add(spec))
-                System.Diagnostics.Trace.TraceWarning($"Devinno.UI: 알 수 없는 아이콘 '{spec}' — 그리지 않음(fa-이름 / far fa-이름 / fab fa-이름)");
+                System.Diagnostics.Trace.TraceWarning($"Devinno.UI: unknown icon '{spec}'; not drawn (fa-name / far fa-name / fab fa-name)");
         }
     }
 
@@ -1441,14 +1441,14 @@ public sealed class LayoutEngine
     // 모르는 input-mode = 경고 후 drag
     private static KnobInputMode WarnKnobMode(string mode)
     {
-        System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvKnob input-mode='{mode}' 은(는) 없는 값입니다(drag·tap·both) — drag 로 동작");
+        System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvKnob input-mode='{mode}' is not a valid value (drag, tap, both); using drag");
         return KnobInputMode.Drag;
     }
 
     private static string WarnSliderDirection(string? dir)
     {
         if (!string.IsNullOrEmpty(dir))
-            System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvSlider direction='{dir}' 은(는) 없는 값입니다(right·left·up·down) — right 로 동작");
+            System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvSlider direction='{dir}' is not a valid value (right, left, up, down); using right");
         return "right";
     }
 

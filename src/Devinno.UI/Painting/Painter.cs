@@ -56,8 +56,8 @@ public sealed partial class Painter
         _strings = strings;
     }
 
-    /// <summary>Built-in widget text: the value of the <c>dv.*</c> key if present, otherwise the default.</summary>
-    internal string T(string key, string fallback) => Localization.DvStrings.Text(_strings, key, fallback);
+    /// <summary>Built-in widget text for a <c>dv.*</c> key: the app's table if it has the key, otherwise the built-in English (or Korean) text.</summary>
+    internal string T(string key) => Localization.DvStrings.Builtin(_strings, key);
 
     /// <summary>Creates a painter with a theme (no localization table).</summary>
     /// <param name="theme">The theme to read color tokens from. If <see langword="null"/>, <see cref="DvTheme.Default"/> is used.</param>

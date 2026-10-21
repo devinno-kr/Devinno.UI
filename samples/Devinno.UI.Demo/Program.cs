@@ -12,7 +12,8 @@ internal static class Program
     private static void Main(string[] args)
     {
         var theme = args.Contains("light") ? DvTheme.Light : DvTheme.Dark;
-        var strings = args.Contains("lang") ? LangPage.CreateStrings() : null; // 다국어는 lang 일 때만(다른 페이지의 알람 문구가 바뀌지 않게)
+        // 라이브러리 기본 글자는 영어가 기본 — 데모 화면은 한국어라 ko 로. lang 페이지는 자기 표(언어 전환)를 쓴다
+        var strings = args.Contains("lang") ? LangPage.CreateStrings() : new DvStrings { Language = "ko" };
 
         var dashboard = new DashboardPage();
         var components = new ComponentDashboardPage();

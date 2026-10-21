@@ -14,7 +14,7 @@ public sealed partial class DvSurface
     /// and value-reading code during <see cref="Layout(float, float)"/>/<see cref="RenderTo(SkiaSharp.SKCanvas, float, float, long)"/> (property getters, <c>ToString</c> of values, list enumeration, grid sort comparisons).
     /// What was being done when it failed is given by <see cref="DvHandlerErrorEventArgs.Kind"/>.</para>
     /// <para><b>Outcome</b>: a failed value write is treated like an <c>onbeforecommit</c> rejection. <c>DvInput</c> (including grid input cells) stays in edit mode and shows the
-    /// <c>dv.input.write-failed</c> text ("값을 저장하지 못했습니다", "the value could not be saved") on the error line; the exception message is not shown on screen. A picker stays open with its popup,
+    /// <c>dv.input.write-failed</c> text ("Could not save the value" by default) on the error line; the exception message is not shown on screen. A picker stays open with its popup,
     /// toggles, knobs and check cells keep their value, and grid selection keeps the previous selection. A failed value read treats the value as empty and keeps painting,
     /// and the same target (<see cref="DvHandlerErrorEventArgs.Kind"/>/<see cref="DvHandlerErrorEventArgs.Member"/>/<see cref="DvHandlerErrorEventArgs.Tag"/>)
     /// is reported only once until it is rebuilt by <see cref="Invalidate"/> (so reading every frame, as a grid does, does not flood).</para>
@@ -49,7 +49,7 @@ public sealed partial class DvSurface
                 }
                 catch (Exception ex)
                 {
-                    Trace.TraceError($"Devinno.UI: HandlerError 구독자 예외(무시함): {ex.GetType().Name}: {ex.Message}");
+                    Trace.TraceError($"Devinno.UI: HandlerError subscriber threw (ignored): {ex.GetType().Name}: {ex.Message}");
                 }
             }
         }

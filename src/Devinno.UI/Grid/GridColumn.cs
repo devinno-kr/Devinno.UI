@@ -163,7 +163,7 @@ internal sealed class GridColumn
         lock (MismatchWarned)
         {
             if (MismatchWarned.Add((item.GetType(), Reader.Path, CellType)))
-                Trace.TraceWarning($"Devinno.UI: DvColumn cell-type=\"{CellType.ToString().ToLowerInvariant()}\" field '{Reader.Path}' — {t.Name} 은 맞지 않는 타입, 표시만");
+                Trace.TraceWarning($"Devinno.UI: DvColumn cell-type=\"{CellType.ToString().ToLowerInvariant()}\" field '{Reader.Path}': type {t.Name} does not match; display only");
         }
 
         return false;

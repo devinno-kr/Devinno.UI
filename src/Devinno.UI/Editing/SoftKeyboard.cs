@@ -61,7 +61,8 @@ internal sealed class SoftKeyboard
     public bool ShiftOn => _shift;
     public string Text => Mode == KbMode.Numeric ? _num : _composer.Text;
 
-    public void Open(DvEditState e, long now)
+    // koreanFirst = 화면 언어가 ko — 텍스트 입력을 한글 자판으로 연다(그 밖에는 영문 자판, 한/영 키는 항상 있다)
+    public void Open(DvEditState e, long now, bool koreanFirst)
     {
         if (!_open)
             _openedAt = now;
@@ -77,7 +78,7 @@ internal sealed class SoftKeyboard
         }
         else
         {
-            _textMode = e.Kind == DvEditKind.Password ? KbMode.English : KbMode.Hangul;
+            _textMode = e.Kind == DvEditKind.Password || !koreanFirst ? KbMode.English : KbMode.Hangul;
             Mode = _textMode;
             _composer.Reset(e.InitialText);
         }
@@ -382,7 +383,7 @@ internal sealed class SoftKeyboard
                 continue;
             }
 
-            var label = isDone ? DvStrings.Text(strings, "dv.kbd.done", "완료") : k.Label;
+            var label = isDone ? DvStrings.Builtin(strings, "dv.kbd.done") : k.Label;
             if (label.Length == 0)
                 continue;
             // 호환 자모(ㄱ~ㅣ)는 한글 폰트에서 음절보다 작게 디자인돼 있어 키우고, 아이콘 키(⇧ ⌫ ±)도 키운다

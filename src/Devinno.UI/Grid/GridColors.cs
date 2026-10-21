@@ -29,7 +29,7 @@ internal sealed record GridColors(
                                !raw.Contains(ThemeResolver.MissingColor, StringComparison.OrdinalIgnoreCase);
             if (!missingToken && DvColor.TryParse(resolved, out var c))
                 return c;
-            Trace.TraceWarning($"Devinno.UI: DvDataGrid {name}=\"{raw}\" — 색으로 해석 못 함, 테마 색 사용");
+            Trace.TraceWarning($"Devinno.UI: DvDataGrid {name}=\"{raw}\": not a valid color; using the theme color");
             return null;
         }
 

@@ -92,7 +92,7 @@ internal sealed class PopupFieldTarget : IEditTarget
             case ColorPopup c:
                 if (c.State.TrySetHex(text))
                     return true;
-                error = DvStrings.Text(_w.Strings, "dv.picker.hex", "#RRGGBB 형식이 아닙니다");
+                error = DvStrings.Builtin(_w.Strings, "dv.picker.hex");
                 return false;
             case GridFilterPopup f:
                 if (Field == 0)

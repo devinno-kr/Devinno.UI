@@ -23,7 +23,7 @@ public abstract class DvDialog
 
     /// <summary>The app that showed this dialog.</summary>
     /// <exception cref="InvalidOperationException">When read inside the dialog constructor (the app is connected right after construction).</exception>
-    public DvApp App => _app ?? throw new InvalidOperationException($"{GetType().Name} 은(는) 아직 앱에 등록되지 않았습니다. 생성자가 아닌 처리기·OnLoaded 에서 App 을 쓰세요.");
+    public DvApp App => _app ?? throw new InvalidOperationException($"{GetType().Name} is not registered with an app yet. Use App in handlers or OnLoaded, not in the constructor.");
 
     /// <summary>
     /// <see langword="true"/> while open — from the moment it is registered with <c>ShowDialog</c> until closing is requested (including while the screen has not been built yet). Can be read from any thread.
@@ -46,7 +46,7 @@ public abstract class DvDialog
     /// The markup (dvml source) of this dialog. The source generator overrides it with the dvml's <c>Markup</c> constant, so you normally do not write it yourself.
     /// </summary>
     /// <exception cref="InvalidOperationException">When no dvml is connected to this dialog (no override).</exception>
-    protected virtual string MarkupSource => throw new InvalidOperationException("dvml 이 연결되지 않았습니다");
+    protected virtual string MarkupSource => throw new InvalidOperationException("No dvml markup is attached");
 
     /// <summary>The owning app (null before registration).</summary>
     internal DvApp? AppOrNull { get => _app; set => _app = value; }
