@@ -214,6 +214,19 @@ public class ProcessFlowTests
     }
 
     [Fact]
+    public void Animation_DashesMoveEveryFrame_LongAfterBoot()
+    {
+        // 시각은 부팅 후 ms — 30일 켜 두면 약 26억. float 로 계산하면 256ms 동안 점선이 같은 자리에 머물렀다
+        const long t = 2_667_631_779;
+        var s = new DvSurface($"<DvScreen><DvProcess flow-animation=\"true\" look=\"plain\">{Plant}</DvProcess></DvScreen>", new Vm(), DvTheme.Light);
+        using var a = new SKBitmap(1200, 800);
+        using var b = new SKBitmap(1200, 800);
+        using (var c = new SKCanvas(a)) { c.Clear(SKColors.White); s.RenderTo(c, 1200, 800, t); }
+        using (var c = new SKCanvas(b)) { c.Clear(SKColors.White); s.RenderTo(c, 1200, 800, t + 16); } // 한 프레임(16ms) 뒤
+        Assert.False(a.GetPixelSpan().SequenceEqual(b.GetPixelSpan()), "dashes did not move in 16ms");
+    }
+
+    [Fact]
     public void ValueChange_RecomputesFlow_ButReusesLayout()
     {
         var vm = new Vm();

@@ -118,7 +118,8 @@ public sealed partial class Painter
         var rich = look.Rich;
         var (dash, gap, width) = rich ? (14f, 10f, 5f) : (10f, 8f, 4f);
         var period = dash + gap;
-        var offset = timestampMs * FlowSpeed / 1000f % period;
+        // double 로 계산 — 시각(부팅 후 ms, 수십억)을 float 로 바꾸면 수백 ms 단위로 뭉개져 점선이 몇 프레임씩 멈췄다 툭 뛴다(30일이면 256ms)
+        var offset = (float)(timestampMs * (double)FlowSpeed / 1000d % period);
         using var under = new SKPaint
         {
             IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = width,
