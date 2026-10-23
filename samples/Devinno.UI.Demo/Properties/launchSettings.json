@@ -1,8 +1,10 @@
 {
   "profiles": {
+    "Showcase": { "commandName": "Project" },
+    "Showcase (GPU)": { "commandName": "Project", "commandLineArgs": "gpu" },
     "Navigation": { "commandName": "Project", "commandLineArgs": "nav" },
     "Navigation (GPU)": { "commandName": "Project", "commandLineArgs": "nav gpu" },
-    "Dashboard": { "commandName": "Project" },
+    "Dashboard": { "commandName": "Project", "commandLineArgs": "dashboard" },
     "Components": { "commandName": "Project", "commandLineArgs": "v2" },
     "Alarm": { "commandName": "Project", "commandLineArgs": "alarm" },
     "DataGrid": { "commandName": "Project", "commandLineArgs": "grid" },

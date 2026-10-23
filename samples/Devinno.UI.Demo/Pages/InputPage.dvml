@@ -1,47 +1,49 @@
 <DvPageFrame vm="InputPage" title="Recipe Editor" subtitle="Tap an input to edit — the value is applied once, on done (Enter)">
-  <DvGrid columns="2">
-    <DvCard title="Recipe" badge="text">
-      <DvStack gap="sm">
-        <DvLabel class="label" text="Name"/>
-        <DvInput value="{Bind Data.Name}" placeholder="Recipe name"/>
-        <DvLabel class="label" text="Base recipe (items)"/>
-        <DvSelect value="{Bind Data.BaseRecipe}" items="{Data.Recipes}" item-value="Id" item-text="Name"
-                  placeholder="No base"/>
-        <DvLabel class="label" text="Password"/>
-        <DvInput value="{Bind Data.Password}" keyboard-type="password" placeholder="Type to change"/>
-        <DvLabel class="label" text="Notes (multiline — native editor only)"/>
-        <DvInput value="{Bind Data.Memo}" multiline="true"/>
-      </DvStack>
-    </DvCard>
-    <DvCard title="Setpoints" badge="numeric">
-      <DvStack gap="sm">
-        <DvLabel class="label" text="Temperature (0 ~ 120 ℃, real · ± 0.5)"/>
-        <DvInput value="{Bind Data.Temp}" keyboard-type="numeric" min="0" max="120" step="0.5" format="0.0" unit="℃" show-stepper="true"/>
-        <DvLabel class="label" text="Repeat count (1 ~ 99, integer · ± 1)"/>
-        <DvInput value="{Bind Data.Repeat}" keyboard-type="numeric" min="1" max="99" unit="times" show-stepper="true"/>
-        <DvLabel class="label" text="Offset (signed integer)"/>
-        <DvInput value="{Bind Data.Offset}" keyboard-type="numeric"/>
-        <DvLabel class="label" text="Run mode (DvOption)"/>
-        <DvSelect value="{Bind Data.Mode}">
-          <DvOption value="auto" text="Auto" icon="fa-robot"/>
-          <DvOption value="manual" text="Manual" icon="fa-hand"/>
-          <DvOption value="stop" text="Stop" icon="fa-stop"/>
-        </DvSelect>
-        <DvLabel class="label" text="Rotation (enum)"/>
-        <DvSelect value="{Bind Data.Direction}"/>
-        <DvLabel class="label" text="Equipment ID (read-only)"/>
-        <DvInput value="{Data.Machine}"/>
-        <DvLabel class="label" text="Scheduled at (datetime)"/>
-        <DvDateTimeInput value="{Bind Data.ReserveAt}"/>
-        <DvLabel class="label" text="Query date (date)"/>
-        <DvDateTimeInput value="{Bind Data.Day}"/>
-        <DvLabel class="label" text="Start time (time, seconds)"/>
-        <DvDateTimeInput value="{Bind Data.Start}" show-seconds="true"/>
-        <DvLabel class="label" text="Pen color"/>
-        <DvColorInput value="{Bind Data.Pen}"/>
-      </DvStack>
-    </DvCard>
-  </DvGrid>
+  <DvStack grow="1" style="height:0; overflow:scroll"> <!-- 창이 낮으면 입력 칸만 스크롤, 저장 줄은 늘 보인다 -->
+    <DvGrid columns="2">
+      <DvCard title="Recipe" badge="text">
+        <DvStack gap="sm">
+          <DvLabel class="label" text="Name"/>
+          <DvInput value="{Bind Data.Name}" placeholder="Recipe name"/>
+          <DvLabel class="label" text="Base recipe (items)"/>
+          <DvSelect value="{Bind Data.BaseRecipe}" items="{Data.Recipes}" item-value="Id" item-text="Name"
+                    placeholder="No base"/>
+          <DvLabel class="label" text="Password"/>
+          <DvInput value="{Bind Data.Password}" keyboard-type="password" placeholder="Type to change"/>
+          <DvLabel class="label" text="Notes (multiline — native editor only)"/>
+          <DvInput value="{Bind Data.Memo}" multiline="true"/>
+        </DvStack>
+      </DvCard>
+      <DvCard title="Setpoints" badge="numeric">
+        <DvStack gap="sm">
+          <DvLabel class="label" text="Temperature (0 ~ 120 ℃, real · ± 0.5)"/>
+          <DvInput value="{Bind Data.Temp}" keyboard-type="numeric" min="0" max="120" step="0.5" format="0.0" unit="℃" show-stepper="true"/>
+          <DvLabel class="label" text="Repeat count (1 ~ 99, integer · ± 1)"/>
+          <DvInput value="{Bind Data.Repeat}" keyboard-type="numeric" min="1" max="99" unit="times" show-stepper="true"/>
+          <DvLabel class="label" text="Offset (signed integer)"/>
+          <DvInput value="{Bind Data.Offset}" keyboard-type="numeric"/>
+          <DvLabel class="label" text="Run mode (DvOption)"/>
+          <DvSelect value="{Bind Data.Mode}">
+            <DvOption value="auto" text="Auto" icon="fa-robot"/>
+            <DvOption value="manual" text="Manual" icon="fa-hand"/>
+            <DvOption value="stop" text="Stop" icon="fa-stop"/>
+          </DvSelect>
+          <DvLabel class="label" text="Rotation (enum)"/>
+          <DvSelect value="{Bind Data.Direction}"/>
+          <DvLabel class="label" text="Equipment ID (read-only)"/>
+          <DvInput value="{Data.Machine}"/>
+          <DvLabel class="label" text="Scheduled at (datetime)"/>
+          <DvDateTimeInput value="{Bind Data.ReserveAt}"/>
+          <DvLabel class="label" text="Query date (date)"/>
+          <DvDateTimeInput value="{Bind Data.Day}"/>
+          <DvLabel class="label" text="Start time (time, seconds)"/>
+          <DvDateTimeInput value="{Bind Data.Start}" show-seconds="true"/>
+          <DvLabel class="label" text="Pen color"/>
+          <DvColorInput value="{Bind Data.Pen}"/>
+        </DvStack>
+      </DvCard>
+    </DvGrid>
+  </DvStack>
   <DvRow>
     <DvButton text="Save" icon="fa-floppy-disk" variant="primary" onclick="Save"/>
     <DvLabel class="caption muted" text="{Saved}"/>

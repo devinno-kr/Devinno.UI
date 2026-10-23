@@ -6,7 +6,7 @@ using Devinno.UI.Styling;
 // 데모 — DvApp 하나에 페이지를 전부 넣고, 실행 인자로 시작 페이지를 고른다.
 //   인자 없음 = 쇼케이스(영어): 상단 바 + Overview(운영 대시보드)·Process(P&ID)·Widgets(아래 페이지 목록), PlantSim 이 값을 움직인다.
 //   -- shot <폴더> = 쇼케이스 화면을 창 없이 PNG 로(README 이미지)
-//   dotnet run --project samples/Devinno.UI.Demo [-- dashboard|lang|control|equipment|grid|trend [fast]|alarm|input|knob|neon|process|basic|v2] [-- light]
+//   dotnet run --project samples/Devinno.UI.Demo [-- gpu] [-- dashboard|lang|control|equipment|grid|trend [fast]|alarm|input|knob|neon|process|basic|v2] [-- light]
 //   시나리오: -- top = 상단 바(모니터링·설정·알람) + 홈 + 각 페이지의 "이전",  -- nav = 왼쪽 사이드바,
 //            -- dialog = 레시피 편집 다이얼로그 + 그 위 메시지 박스 + 통신 시뮬레이션 알람(DvApp.Current, 키 중복 방지)
 internal static class Program
@@ -121,7 +121,7 @@ internal static class Program
             return;
         }
 
-        using var window = new ViewWindow(app, width, height, title);
+        using var window = new ViewWindow(app, width, height, title) { Gpu = args.Contains("gpu") }; // -- gpu = OpenGL 로 그리기
 
         // 타이머가 필요한 페이지: 그리드는 행 값을 바꾸고 Repaint(그릴 때 값을 읽으므로 재빌드 불필요),
         // 트렌드는 폴링 타이머가 샘플을 넣고 Invalidate, 고속 트렌드는 별도 스레드가 1 ms 샘플을 밀린 만큼 채운다.
