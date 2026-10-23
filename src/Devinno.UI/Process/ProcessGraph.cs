@@ -728,7 +728,7 @@ internal sealed class ProcessGraph
                 if (MathF.Abs(positions[k] - positions[k - 1]) < Pitch - 0.5f)
                 {
                     var face = group.Key.Out.ToString().ToLowerInvariant();
-                    Warnings.Add($"'{node.Name}': not enough room on the {face} face for {nozzles.Count} nozzles (incoming and outgoing lines), excluding space covered by attachments and attached cells. Connect one of them to another port (side, etc.), or move the attachments or attached cells");
+                    Warnings.Add($"'{node.Name}': not enough room on the {face} face for {nozzles.Count} nozzles (incoming and outgoing lines), excluding space covered by accessories (such as an agitator) and DvAttach boxes. Connect one of them to another port (side, etc.), or move the DvAttach box to another side");
                     break;
                 }
             }

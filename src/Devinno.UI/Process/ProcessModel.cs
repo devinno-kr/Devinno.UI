@@ -1285,7 +1285,7 @@ internal static class ProcessBuilder
         var g = Layout(d, family, useSpacing, useAlign); // 고른 후보로 다시(캐시) — 장비·선에 그 결과를 붙인다
 
         d.Shortage = g.Size.Width > inner.Width + 0.5f || g.Size.Height > inner.Height + 0.5f
-            ? $"Not enough space: needs {g.Size.Width:0}×{g.Size.Height:0}, area is {inner.Width:0}×{inner.Height:0} (overflows even at minimum spacing). Enlarge the area or split up the equipment"
+            ? $"Not enough space: needs {g.Size.Width:0}×{g.Size.Height:0}, area is {inner.Width:0}×{inner.Height:0} (overflows even at minimum spacing). Enlarge the area, split the diagram over several screens, or use less equipment"
             : null;
         d.Graph = g;
         d.Origin = new SKPoint(inner.Left + MathF.Max(0, (inner.Width - g.Size.Width) / 2),
