@@ -1995,14 +1995,17 @@
             <exception cref="T:System.Xml.XmlException">마크업의 XML 문법이 잘못되었을 때.</exception>
             <exception cref="T:System.IO.IOException">파일을 쓸 수 없을 때.</exception>
         </member>
-        <member name="M:Devinno.UI.DvRenderer.RenderToFile(Devinno.UI.DvSurface,System.Int32,System.Int32,System.String)" en-hash="37c4a10535c57450">
+        <member name="M:Devinno.UI.DvRenderer.RenderToFile(Devinno.UI.DvSurface,System.Int32,System.Int32,System.String)" en-hash="f7dcd394119e29b4">
             <summary>
             이미 만든 <see cref="T:Devinno.UI.DvSurface" /> 를 현재 상태 그대로(스크롤·편집·팝업·가상 키보드, <see cref="P:Devinno.UI.App.DvApp.Surface" /> 면 영역·페이지 칸 포함) 그려 PNG 파일로 저장합니다.
             같은 경로의 파일은 덮어씁니다.
             </summary>
             <remarks>
-            내부에서 <see cref="M:Devinno.UI.DvSurface.RenderTo(SkiaSharp.SKCanvas,System.Single,System.Single)" />(시각 0)를 부르므로 그 화면의 레이아웃 크기가 <paramref name="width" />×<paramref name="height" /> 로 바뀌고
-            <see cref="P:Devinno.UI.DvSurface.NeedsRender" /> 가 초기화됩니다. 화면을 다루는 스레드(UI 스레드)에서 부르세요.
+            <para>진행 중인 움직임은 끝난 모습으로 그립니다. CSS <c>transition</c>, 페이지 전환(<see cref="T:Devinno.UI.App.DvPageTransition" />), <c>DvExpander</c> 높이 변화가 끝 상태로 건너뛰므로
+            그림에는 마지막 변경의 결과가 나옵니다(예: 페이지를 바꾼 뒤의 새 탭 강조). 깜박임은 시각 0 으로 그립니다.
+            창에서 그리는 것(<see cref="M:Devinno.UI.DvSurface.RenderTo(SkiaSharp.SKCanvas,System.Single,System.Single,System.Int64)" />)은 그대로 움직입니다.</para>
+            <para>내부에서 <see cref="M:Devinno.UI.DvSurface.RenderTo(SkiaSharp.SKCanvas,System.Single,System.Single)" />(시각 0)를 부르므로 그 화면의 레이아웃 크기가 <paramref name="width" />×<paramref name="height" /> 로 바뀌고
+            <see cref="P:Devinno.UI.DvSurface.NeedsRender" /> 가 초기화됩니다. 화면을 다루는 스레드(UI 스레드)에서 부르세요.</para>
             </remarks>
             <param name="surface">그릴 화면.</param>
             <param name="width">이미지 너비(px).</param>
@@ -4624,6 +4627,9 @@
         </member>
         <member name="P:Devinno.UI.Painting.MotionStore.Active" en-hash="0993f390a22e3a1b">
             <summary>지난 프레임에 아직 진행 중인 전환이 있었는지 — 화면이 다음 프레임을 요청한다.</summary>
+        </member>
+        <member name="P:Devinno.UI.Painting.MotionStore.Settle" en-hash="e1307e534f39846e">
+            <summary><see langword="true" /> 면 이번 프레임에 모든 값이 목표로 건너뛴다(진행 중인 전환이 끝남) — 현재 상태를 보여 주는 화면 밖 렌더용.</summary>
         </member>
         <member name="M:Devinno.UI.Painting.MotionStore.EndFrame" en-hash="ed24e969ed509f95">
             <summary>이번 프레임에 보이지 않은 상자의 기억을 버린다(페이지가 바뀌어도 쌓이지 않게).</summary>

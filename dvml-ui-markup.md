@@ -496,6 +496,7 @@ Changes values gradually when the state changes (same as CSS). This works both w
 - Which one is used: the `transition` in the style of the state **after** the change. If written in the base `style`, hover/press styles inherit it too (state styles are layered over the base).
 - If it changes again mid-transition, it restarts from the currently visible value (no jump). Nothing is animated on the very first draw.
 - Frames are drawn only while animating (about 60fps) and stop when done. Malformed entries are skipped (Trace warning).
+- `DvRenderer.RenderToFile(surface, …)` (PNG of an existing screen) draws transitions finished — the image shows the end state, not the start of the animation.
 
 ---
 ## 5. Theme tokens

@@ -225,7 +225,7 @@ DvRenderer.RenderToFile(markup, vm, 1280, 800, "screen.png", DvTheme.Dark, regis
 - Check: is text visible (color), is there no magenta (token typo), has no element disappeared (size 0), did what should stretch stretch (`grow`/stretch), does text not overflow its box.
 - If one image is not enough, change VM values (alarm state, empty list, long text, etc.) and render several images to compare.
 
-To verify interaction too (clicks, input), send `PointerDown`/`PointerUp` to the `DvSurface` and then draw with `DvRenderer.RenderToFile(surface, w, h, path)`.
+To verify interaction too (clicks, input), send `PointerDown`/`PointerUp` to the `DvSurface` and then draw with `DvRenderer.RenderToFile(surface, w, h, path)`. It draws the state after the change: transitions (`transition`, page transitions, `DvExpander` height) are drawn finished, so one call is enough.
 
 ---
 

@@ -168,6 +168,9 @@ public sealed partial class DvSurface
     }
 
     internal const int PageMotionMs = 200;
+
+    // 화면 밖 렌더(DvRenderer.RenderToFile(DvSurface)) — 이번 그리기에서 움직임(CSS 전환·페이지 전환·접는 패널 높이)을 끝난 모습으로. 칸 화면에도 전한다
+    internal bool SettleMotion { get; set; }
     private PageMotion? _pageMotion;
     private DvSurface? _lastPage;
 
@@ -844,14 +847,18 @@ public sealed partial class DvSurface
         if (_box is not null)
         {
             _motion.BeginFrame();
+            _motion.Settle = SettleMotion;
             new Painter(_theme, _strings) { MotionState = _motion }.Paint(canvas, _box, _vm, _state, timestampMs);
             _motion.EndFrame();
         }
 
+        if (SettleMotion)
+            _pageMotion = null; // 페이지 전환도 끝난 모습 — 새 페이지만
         var slots = _slots;
         for (var i = 0; i < slots.Length; i++)
         {
             var s = slots[i];
+            s.Child.SettleMotion = SettleMotion;
             if (s.Modal && i == slots.Length - 1)
                 PaintScrim(canvas, w, h + pan); // 맨 위 다이얼로그 바로 아래 창 전체 막 한 장(아래 다이얼로그도 어두워진다). pan 만큼 올라가도 아래까지 덮게
             if (s.Rect.IsEmpty)
@@ -1610,7 +1617,7 @@ public sealed partial class DvSurface
         foreach (var m in _expAnims.Values)
         {
             m.Start ??= now;
-            var t = Math.Clamp((now - m.Start.Value) / (float)ExpanderMotionMs, 0f, 1f);
+            var t = SettleMotion ? 1f : Math.Clamp((now - m.Start.Value) / (float)ExpanderMotionMs, 0f, 1f);
             var target = m.Opening ? 1f : 0f;
             m.Now = m.From + (target - m.From) * EasingMath.Apply(Easing.EaseOut, t);
             finished |= t >= 1f;

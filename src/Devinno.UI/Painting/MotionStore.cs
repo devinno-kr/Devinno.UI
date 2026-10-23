@@ -23,9 +23,15 @@ internal sealed class MotionStore
             Moving = false;
         }
 
-        // 목표가 바뀌면 지금 보이는 값에서 새로 시작(전환이 없으면 바로)
-        public T Step(T target, TransitionSpec? spec, long now)
+        // 목표가 바뀌면 지금 보이는 값에서 새로 시작(전환이 없으면 바로). settle = 진행 중인 것까지 끝난 값으로
+        public T Step(T target, TransitionSpec? spec, long now, bool settle)
         {
+            if (settle)
+            {
+                Init(target);
+                return Shown;
+            }
+
             if (!EqualityComparer<T>.Default.Equals(target, To))
             {
                 From = Shown;
@@ -76,6 +82,9 @@ internal sealed class MotionStore
     /// <summary>Whether a transition was still in progress in the last frame — the surface then requests the next frame.</summary>
     public bool Active { get; private set; }
 
+    /// <summary>When <see langword="true"/>, every value jumps to its target this frame (transitions in progress finish) — for offscreen renders that show the current state.</summary>
+    public bool Settle { get; set; }
+
     public void BeginFrame()
     {
         _frame++;
@@ -122,11 +131,11 @@ internal sealed class MotionStore
         TransitionSpec? Spec(string prop)
             => st.Transitions.LastOrDefault(t => t.Property == prop || t.Property == "all");
 
-        var bg = b.Bg.Step(Color4.Of(st.Gradient is null ? st.Background : null), st.Gradient is null ? Spec("background-color") : null, now);
-        var fg = b.Fg.Step(Color4.Of(st.Color), Spec("color"), now);
-        var bc = b.Border.Step(Color4.Of(st.BorderColor), Spec("border-color"), now);
-        var op = b.Opacity.Step(st.Opacity, Spec("opacity"), now);
-        var xf = b.Xf.Step(st.Transform, Spec("transform"), now);
+        var bg = b.Bg.Step(Color4.Of(st.Gradient is null ? st.Background : null), st.Gradient is null ? Spec("background-color") : null, now, Settle);
+        var fg = b.Fg.Step(Color4.Of(st.Color), Spec("color"), now, Settle);
+        var bc = b.Border.Step(Color4.Of(st.BorderColor), Spec("border-color"), now, Settle);
+        var op = b.Opacity.Step(st.Opacity, Spec("opacity"), now, Settle);
+        var xf = b.Xf.Step(st.Transform, Spec("transform"), now, Settle);
         if (b.Bg.Moving || b.Fg.Moving || b.Border.Moving || b.Opacity.Moving || b.Xf.Moving)
             Active = true;
 

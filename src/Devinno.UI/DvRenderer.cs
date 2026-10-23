@@ -182,8 +182,11 @@ public static class DvRenderer
     /// An existing file at the same path is overwritten.
     /// </summary>
     /// <remarks>
-    /// Internally calls <see cref="DvSurface.RenderTo(SKCanvas, float, float)"/> (time 0), so that screen's layout size changes to <paramref name="width"/>×<paramref name="height"/>
-    /// and <see cref="DvSurface.NeedsRender"/> is reset. Call on the thread that owns the screen (the UI thread).
+    /// <para>Motion in progress is drawn finished: CSS <c>transition</c>s, page transitions (<see cref="App.DvPageTransition"/>) and <c>DvExpander</c> height changes jump to their end state,
+    /// so the image shows the result of the last change (for example the new tab highlight after a page switch). Blinking is drawn at time 0.
+    /// Rendering in a window (<see cref="DvSurface.RenderTo(SKCanvas, float, float, long)"/>) still animates.</para>
+    /// <para>Internally calls <see cref="DvSurface.RenderTo(SKCanvas, float, float)"/> (time 0), so that screen's layout size changes to <paramref name="width"/>×<paramref name="height"/>
+    /// and <see cref="DvSurface.NeedsRender"/> is reset. Call on the thread that owns the screen (the UI thread).</para>
     /// </remarks>
     /// <param name="surface">The screen to render.</param>
     /// <param name="width">Image width (px).</param>
@@ -194,7 +197,15 @@ public static class DvRenderer
     {
         var info = new SKImageInfo(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
         using var sk = SKSurface.Create(info);
-        surface.RenderTo(sk.Canvas, width, height);
+        surface.SettleMotion = true; // 시각 0 으로만 그리므로 — 움직임을 끝내지 않으면 시작점(바뀌기 전 모습)에 멈춘 그림이 된다
+        try
+        {
+            surface.RenderTo(sk.Canvas, width, height);
+        }
+        finally
+        {
+            surface.SettleMotion = false;
+        }
         sk.Canvas.Flush();
 
         using var image = sk.Snapshot();
