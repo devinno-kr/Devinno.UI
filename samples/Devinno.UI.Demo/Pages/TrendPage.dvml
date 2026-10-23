@@ -1,19 +1,19 @@
-<DvPageFrame vm="TrendPage" title="실시간 트렌드" subtitle="폴링 스레드 → TrendBuffer → Invalidate · 최근 2분">
-  <DvCard title="공정 값" badge="2 min" grow="1">
+<DvPageFrame vm="TrendPage" title="Live trend" subtitle="Polling thread → TrendBuffer → Invalidate · last 2 min">
+  <DvCard title="Process values" badge="2 min" grow="1">
     <DvTrend source="{Trend}" window="120" area="true" grow="1">
-      <DvTrendChannel name="temp" label="온도" unit="C" color="#22d3ee"/>
-      <DvTrendChannel name="press" label="압력" unit="bar" color="#a78bfa"/>
+      <DvTrendChannel name="temp" label="Temperature" unit="C" color="#22d3ee"/>
+      <DvTrendChannel name="press" label="Pressure" unit="bar" color="#a78bfa"/>
     </DvTrend>
   </DvCard>
   <DvGrid columns="2">
-    <DvCard title="유량" badge="m3/h">
+    <DvCard title="Flow" badge="m3/h">
       <DvTrend source="{Trend}" window="120" y-min="0" y-max="200" style="height:150">
-        <DvTrendChannel name="flow" label="유량" unit="m3/h" color="#10b981"/>
+        <DvTrendChannel name="flow" label="Flow" unit="m3/h" color="#10b981"/>
       </DvTrend>
     </DvCard>
-    <DvCard title="전력" badge="kW">
+    <DvCard title="Power" badge="kW">
       <DvTrend source="{Trend}" window="120" area="true" smooth="false" style="height:150">
-        <DvTrendChannel name="power" label="전력" unit="kW" color="#f59e0b"/>
+        <DvTrendChannel name="power" label="Power" unit="kW" color="#f59e0b"/>
       </DvTrend>
     </DvCard>
   </DvGrid>

@@ -1,0 +1,16 @@
+<DvPageFrame vm="WidgetsPage" title="Widgets" subtitle="One page per feature. Tap a card to open it; use Widgets in the top bar to come back.">
+  <DvStyle>
+    .entry { padding:16; gap:10 }
+    .entry:hover { background: token(surface-raised) }
+    .entry-icon { width:44; height:44; border-radius: token(radius.md); background: token(tone-info-soft); display:flex; justify-content:center; align-items:center }
+  </DvStyle>
+  <DvRepeat items="{Entries}" grow="1" style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:14; overflow:scroll; height:0">
+    <DvCard class="entry" onclick="Open">
+      <DvRow gap="md">
+        <DvBox class="entry-icon"><DvIcon icon="{Item.Icon}" style="font-size:20; color: token(tone-info)"/></DvBox>
+        <DvLabel class="title" text="{Item.Title}"/>
+      </DvRow>
+      <DvLabel class="label muted" text="{Item.Description}"/>
+    </DvCard>
+  </DvRepeat>
+</DvPageFrame>

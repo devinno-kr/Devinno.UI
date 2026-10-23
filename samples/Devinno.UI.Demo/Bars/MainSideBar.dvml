@@ -5,15 +5,15 @@
     .nav-active, .nav-active:hover { background: token(primary); color: token(primary-fg) }
   </DvStyle>
   <DvLabel class="title" text="Devinno.UI"/>
-  <DvLabel class="caption muted" text="페이지 전환 데모"/>
+  <DvLabel class="caption muted" text="Page nav demo"/>
   <DvBox style="height:12"/>
-  <DvButton class="{OverviewClass}" text="개요" onclick="ShowOverview"/>
-  <DvButton class="{AlarmClass}" text="알람" onclick="ShowAlarm"/>
-  <DvButton class="{TrendClass}" text="트렌드" onclick="ShowTrend"/>
-  <DvButton class="{KnobClass}" text="설정값" onclick="ShowKnob"/>
-  <DvButton class="{EquipmentClass}" text="설비 목록" onclick="ShowEquipment"/>
-  <DvButton class="{InputClass}" text="입력" onclick="ShowInput"/>
-  <DvButton class="{ProcessClass}" text="공정도" onclick="ShowProcess"/>
+  <DvButton class="{OverviewClass}" text="Overview" onclick="ShowOverview"/>
+  <DvButton class="{AlarmClass}" text="Alarms" onclick="ShowAlarm"/>
+  <DvButton class="{TrendClass}" text="Trend" onclick="ShowTrend"/>
+  <DvButton class="{KnobClass}" text="Setpoints" onclick="ShowKnob"/>
+  <DvButton class="{EquipmentClass}" text="Equipment" onclick="ShowEquipment"/>
+  <DvButton class="{InputClass}" text="Input" onclick="ShowInput"/>
+  <DvButton class="{ProcessClass}" text="Process" onclick="ShowProcess"/>
   <DvSpacer/>
   <DvLabel class="caption muted" text="{CurrentText}"/>
 </DvStack>

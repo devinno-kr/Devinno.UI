@@ -4,7 +4,9 @@ using Devinno.UI.OpenTK;
 using Devinno.UI.Styling;
 
 // 데모 — DvApp 하나에 페이지를 전부 넣고, 실행 인자로 시작 페이지를 고른다.
-//   dotnet run --project samples/Devinno.UI.Demo [-- lang|control|equipment|grid|trend [fast]|alarm|input|knob|neon|process|basic|v2] [-- light]
+//   인자 없음 = 쇼케이스(영어): 상단 바 + Overview(운영 대시보드)·Process(P&ID)·Widgets(아래 페이지 목록), PlantSim 이 값을 움직인다.
+//   -- shot <폴더> = 쇼케이스 화면을 창 없이 PNG 로(README 이미지)
+//   dotnet run --project samples/Devinno.UI.Demo [-- dashboard|lang|control|equipment|grid|trend [fast]|alarm|input|knob|neon|process|basic|v2] [-- light]
 //   시나리오: -- top = 상단 바(모니터링·설정·알람) + 홈 + 각 페이지의 "이전",  -- nav = 왼쪽 사이드바,
 //            -- dialog = 레시피 편집 다이얼로그 + 그 위 메시지 박스 + 통신 시뮬레이션 알람(DvApp.Current, 키 중복 방지)
 internal static class Program
@@ -12,13 +14,15 @@ internal static class Program
     private static void Main(string[] args)
     {
         var theme = args.Contains("light") ? DvTheme.Light : DvTheme.Dark;
-        // 라이브러리 기본 글자는 영어가 기본 — 데모 화면은 한국어라 ko 로. lang 페이지는 자기 표(언어 전환)를 쓴다
-        var strings = args.Contains("lang") ? LangPage.CreateStrings() : new DvStrings { Language = "ko" };
+        string[] scenarios = ["top", "nav", "dialog", "lang", "control", "equipment", "grid", "trend", "alarm", "input", "knob", "basic", "process", "neon", "v2", "dashboard"];
+        var showcase = !args.Any(scenarios.Contains);
+        // 데모 화면은 모두 영어 — 언어 전환 페이지(lang)가 ko·en·ja 를 바꿀 수 있게 그 페이지의 표를 앱 전체에 쓰고, 영어로 시작한다
+        var strings = WithLanguage(LangPage.CreateStrings(), "en");
 
         var dashboard = new DashboardPage();
         var components = new ComponentDashboardPage();
         var control = new ControlPage();
-        var lang = new LangPage(strings ?? LangPage.CreateStrings());
+        var lang = new LangPage(strings);
         var equipment = new EquipmentPage();
         var grid = new GridPage();
         var trend = new TrendPage();
@@ -33,13 +37,34 @@ internal static class Program
         var basic = new BasicPage();
         var motionNext = new MotionNextPage();
 
+        var sim = new PlantSim();
+        var overview = new OverviewPage(sim);
+        var plantProcess = new PlantProcessPage(sim);
+        var widgets = new WidgetsPage(
+        [
+            new("fa-toggle-on", "Basic controls", "Buttons, check boxes, radios, sliders, tabs, expanders, tree and charts", basic),
+            new("fa-keyboard", "Input", "Text and number input, virtual keyboard, select, date and color pickers", input),
+            new("fa-table", "Data grid", "Sorting, filters, edit cells, lamps and buttons in cells, summary rows", grid),
+            new("fa-chart-line", "Trend", "Real-time trend from a TrendBuffer, two minutes of history", trend),
+            new("fa-wave-square", "Fast trend", "1 ms samples drawn as they arrive", fastTrend),
+            new("fa-bell", "Alarms", "ISA-18.2 style banner and list with acknowledge", alarm),
+            new("fa-sliders", "Knobs and gauges", "Knob with drag or keypad input, instruments", knob),
+            new("fa-window-restore", "Dialogs", "Your own dialogs, message box, built-in input boxes", dialog),
+            new("fa-diagram-project", "Process diagrams", "Equipment and connections only; layout and piping by the library", process),
+            new("fa-list", "Scrolling list", "DvRepeat over a VM collection with inertial scrolling", equipment),
+            new("fa-language", "Localization", "Switch the string table at run time", lang),
+            new("fa-code", "Controls from code", "Typed handles generated from id", control),
+            new("fa-table-columns", "Semantic components", "Cards, stats, badges and status items from the theme", components),
+            new("fa-palette", "Custom styling", "Gradients, glow shadows and absolute layout", neon),
+        ]);
+
         var registry = new Devinno.UI.Components.ComponentRegistry();
         ProcessPage.Register(registry); // 공정도 유닛 컴포넌트(Blender)
         var app = new DvApp { Strings = strings, Registry = registry };
 #if DEBUG
         app.HotReload = true; // 개발 중 — dvml 을 저장하면 실행 중인 화면에 바로 반영(배포 빌드에서는 꺼짐)
 #endif
-        foreach (var page in new DvPage[] { home, dashboard, components, control, lang, equipment, grid, trend, fastTrend, alarm, input, knob, neon, dialog, process, basic, motionNext })
+        foreach (var page in new DvPage[] { overview, plantProcess, widgets, home, dashboard, components, control, lang, equipment, grid, trend, fastTrend, alarm, input, knob, neon, dialog, process, basic, motionNext })
             app.Pages.Add(page);
 
         // 시작 페이지 · 창 크기 · 제목 · 테마(null = 기본 테마)
@@ -61,7 +86,8 @@ internal static class Program
             : args.Contains("process") ? (process, ProcessPage.Width, ProcessPage.Height, "Devinno.UI Demo — Process", theme)
             : args.Contains("neon") ? (neon, NeonPage.Width, NeonPage.Height, "Devinno.UI Demo — Neon", null)
             : args.Contains("v2") ? (components, ComponentDashboardPage.Width, ComponentDashboardPage.Height, "Devinno.UI Demo — Components", theme)
-            : (dashboard, DashboardPage.Width, DashboardPage.Height, "Devinno.UI Demo (OpenTK)", null);
+            : args.Contains("dashboard") ? (dashboard, DashboardPage.Width, DashboardPage.Height, "Devinno.UI Demo — Dashboard", null)
+            : (overview, 1440, 900, "Devinno.UI Demo", theme);
 
         if (args.Contains("top"))
         {
@@ -70,9 +96,31 @@ internal static class Program
         }
         else if (args.Contains("nav"))
             app.Left = new MainSideBar();
+        else if (showcase)
+        {
+            app.Top = new ShowcaseBar(sim);
+            trend.Seed(DateTime.Now.AddSeconds(-120), 120);
+        }
 
         app.Theme = appTheme;
         app.Show(start);
+
+        if (args.Contains("shot")) // 창 없이 쇼케이스 화면과 Widgets 의 각 페이지를 PNG 로
+        {
+            var dir = args.SkipWhile(a => a != "shot").Skip(1).FirstOrDefault() ?? ".";
+            Directory.CreateDirectory(dir);
+            var shots = new (DvPage, string)[] { (overview, "showcase-overview"), (plantProcess, "showcase-process"), (widgets, "showcase-widgets") }
+                .Concat(widgets.Entries.Select(e => (e.Page, "widget-" + e.Title.ToLowerInvariant().Replace(' ', '-'))));
+            foreach (var (page, name) in shots)
+            {
+                app.Show(page);
+                Shot(app, width, height, null); // 페이지 전환은 다음 프레임에 적용
+                Shot(app, width, height, Path.Combine(dir, name + ".png"));
+            }
+
+            return;
+        }
+
         using var window = new ViewWindow(app, width, height, title);
 
         // 타이머가 필요한 페이지: 그리드는 행 값을 바꾸고 Repaint(그릴 때 값을 읽으므로 재빌드 불필요),
@@ -81,7 +129,33 @@ internal static class Program
         Thread? producer = null;
         SimulatedPlc? plc = null;
         var running = true;
-        if (start == grid)
+        if (showcase) // 쇼케이스 — 공장 값과, Widgets 에서 열 수 있는 페이지들(그리드·트렌드·공정도)을 같이 움직인다
+        {
+            timer = new System.Threading.Timer(_ =>
+            {
+                var now = DateTime.Now;
+                sim.Tick(now);
+                grid.Tick();
+                trend.Sample(now);
+                process.Tick();
+                app.Invalidate();
+            }, null, 500, 500);
+            var origin = DateTime.Now;
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            producer = new Thread(() => // 고속 트렌드 — 샘플은 늘 채우고, 다시 그리기는 그 페이지가 보일 때만
+            {
+                while (Volatile.Read(ref running))
+                {
+                    fastTrend.CatchUp(origin, clock.ElapsedMilliseconds);
+                    var shown = app.CurrentPage == fastTrend;
+                    if (shown)
+                        app.Invalidate();
+                    Thread.Sleep(shown ? 1 : 50);
+                }
+            }) { IsBackground = true };
+            producer.Start();
+        }
+        else if (start == grid)
         {
             timer = new System.Threading.Timer(_ => { grid.Tick(); window.Repaint(); }, null, 500, 500);
         }
@@ -120,5 +194,23 @@ internal static class Program
         Volatile.Write(ref running, false);
         timer?.Dispose();
         plc?.Dispose();
+    }
+
+    private static DvStrings WithLanguage(DvStrings strings, string language)
+    {
+        strings.Language = language;
+        return strings;
+    }
+
+    // 창 없이 앱 화면(바 + 현재 페이지) 한 프레임 — path 가 null 이면 그리기만(대기 중인 페이지 전환 적용)
+    private static void Shot(DvApp app, int width, int height, string? path)
+    {
+        using var bitmap = new SkiaSharp.SKBitmap(width, height);
+        using (var canvas = new SkiaSharp.SKCanvas(bitmap))
+            app.Surface.RenderTo(canvas, width, height);
+        if (path is null)
+            return;
+        using var file = File.Create(path);
+        bitmap.Encode(file, SkiaSharp.SKEncodedImageFormat.Png, 100);
     }
 }

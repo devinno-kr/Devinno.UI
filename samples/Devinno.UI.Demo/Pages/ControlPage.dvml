@@ -1,16 +1,16 @@
 <DvStack vm="ControlPage" style="background: token(background)">
   <DvStack style="padding:24; gap:16">
-    <DvLabel class="title" text="컨트롤 핸들 데모"/>
-    <DvLabel id="lblState" class="body" text="대기 중"/>
+    <DvLabel class="title" text="Control handle demo"/>
+    <DvLabel id="lblState" class="body" text="Standby"/>
     <DvLabel id="lblClick" class="caption" text=" "/>
     <DvRow>
-      <DvButton id="btnStart" text="시작" variant="primary" icon="fa-play" onclick="Start"/>
-      <DvButton id="btnStop" text="정지" variant="danger" icon="fa-stop" onclick="Stop"/>
-      <DvSwitch label="잠금" value="{Bind Locked}"/>
+      <DvButton id="btnStart" text="Start" variant="primary" icon="fa-play" onclick="Start"/>
+      <DvButton id="btnStop" text="Stop" variant="danger" icon="fa-stop" onclick="Stop"/>
+      <DvSwitch label="Lock" value="{Bind Locked}"/>
     </DvRow>
   </DvStack>
   <!-- 버튼 Bounds(창 좌표) 바로 아래. 루트가 창 원점이라 그대로 left/top 에 쓸 수 있다. -->
   <DvBox visible="{ShowHint}" style="position:absolute; left:{PopX}; top:{PopY}; padding:10; background: token(surface-raised); border:1 solid token(border-strong); border-radius:8">
-    <DvLabel class="caption" text="시작 버튼 바로 아래에 띄운 안내 상자 (Bounds 활용)"/>
+    <DvLabel class="caption" text="Hint box shown right below the Start button (uses Bounds)"/>
   </DvBox>
 </DvStack>

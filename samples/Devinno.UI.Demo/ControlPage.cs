@@ -16,14 +16,14 @@ public partial class ControlPage : DvPage
     {
         btnStop.Enabled = false;
         // Click 은 onclick(Stop) 다음에 불린다 — 상태 라벨은 Stop 만 쓰고, 클릭 좌표는 따로 보여 준다
-        btnStop.Click += (_, e) => lblClick.Text = $"정지 클릭 위치 ({e.Position.X:0}, {e.Position.Y:0})";
+        btnStop.Click += (_, e) => lblClick.Text = $"Stop clicked at ({e.Position.X:0}, {e.Position.Y:0})";
     }
 
     public void Start()
     {
         btnStart.Enabled = false;
         btnStop.Enabled = true;
-        lblState.Text = "가동 중";
+        lblState.Text = "Running";
 
         var r = btnStart.Bounds; // 직전 레이아웃의 창 좌표
         PopX = r.Left;
@@ -35,7 +35,7 @@ public partial class ControlPage : DvPage
     {
         btnStart.Enabled = true;
         btnStop.Enabled = false;
-        lblState.Text = "정지됨";
+        lblState.Text = "Stopped";
         ShowHint = false;
     }
 }

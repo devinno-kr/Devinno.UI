@@ -22,7 +22,7 @@ public sealed partial class GridPage : DvPage
         public string Desc { get; init; } = "";
         public double Value { get; set; }
         public string Unit { get; init; } = "";
-        public string State { get; set; } = "정상";
+        public string State { get; set; } = "Normal";
         public DateTime Time { get; set; }
         public Equipment? Equip { get; init; }
 
@@ -37,17 +37,17 @@ public sealed partial class GridPage : DvPage
         public string Pen { get; set; } = "#3B82F6";
 
         // 즉시 셀 — 경보 램프(상한 fault·하한 warn, 점멸), 미확인 경보만 확인 버튼 활성
-        public string? AlarmLamp => Acked ? null : State == "상한" ? "fault" : State == "하한" ? "warn" : null;
-        public bool CanAck => !Acked && State != "정상";
+        public string? AlarmLamp => Acked ? null : State == "High" ? "fault" : State == "Low" ? "warn" : null;
+        public bool CanAck => !Acked && State != "Normal";
 
         // 조건부 색 — 조건은 앱 코드(그리드는 그릴 때 읽는다)
-        public string? RowClass => State == "상한" ? "alarm-row" : null;
+        public string? RowClass => State == "High" ? "alarm-row" : null;
         public string? ValueClass => Value > 90 ? "over" : Value < 5 ? "under" : null;
     }
 
-    private static readonly string[] Kinds = { "온도", "압력", "유량", "수위", "전류" };
+    private static readonly string[] Kinds = { "Temperature", "Pressure", "Flow", "Level", "Current" };
     private static readonly string[] Units = { "℃", "bar", "m³/h", "%", "A" };
-    private static readonly Equipment[] Equips = Enumerable.Range(1, 40).Select(i => new Equipment { Name = $"정수동 {i:00}호기" }).ToArray();
+    private static readonly Equipment[] Equips = Enumerable.Range(1, 40).Select(i => new Equipment { Name = $"Treatment Unit {i:00}" }).ToArray();
     private static readonly string[] PenColors = { "#3B82F6", "#22C55E", "#F59E0B", "#EF4444", "#A855F7" };
     private readonly Random _rnd = new(7);
 
@@ -62,11 +62,11 @@ public sealed partial class GridPage : DvPage
             {
                 Id = i + 1,
                 Tag = $"{"TPFLI"[k]}T-{i / Kinds.Length + 1:00000}",
-                Desc = $"{Equips[i % Equips.Length].Name} {Kinds[k]} 센서 #{i % 12 + 1}",
+                Desc = $"{Equips[i % Equips.Length].Name} {Kinds[k]} sensor #{i % 12 + 1}",
                 Value = Math.Round(_rnd.NextDouble() * 100, 2),
                 Unit = Units[k],
                 Time = now,
-                Name = $"{Kinds[k]} 루프 {i % 12 + 1}",
+                Name = $"{Kinds[k]} loop {i % 12 + 1}",
                 SetPoint = Math.Round(_rnd.NextDouble() * 100, 1),
                 Mode = i % 3 == 0 ? "manual" : "auto",
                 ReserveAt = now.Date.AddHours(8 + i % 10),
@@ -80,14 +80,14 @@ public sealed partial class GridPage : DvPage
 
     public List<Row> Rows { get; }
 
-    private static string StateOf(double v) => v > 90 ? "상한" : v < 5 ? "하한" : "정상";
+    private static string StateOf(double v) => v > 90 ? "High" : v < 5 ? "Low" : "Normal";
     public List<Row> Picked { get; set; } = new();
     public Row? Last { get; private set; }
 
-    public string CountText => $"{Rows.Count:N0}행";
+    public string CountText => $"{Rows.Count:N0} rows";
     public string SelectionText => Last is null
-        ? $"선택 {Picked.Count}건 — 행을 누르면 선택/해제"
-        : $"선택 {Picked.Count}건 · 마지막: {Last.Tag} ({Last.Desc})";
+        ? $"Selected {Picked.Count} — tap a row to select/clear"
+        : $"Selected {Picked.Count} · last: {Last.Tag} ({Last.Desc})";
 
     public void Inspect(Row r) => Last = r;
 

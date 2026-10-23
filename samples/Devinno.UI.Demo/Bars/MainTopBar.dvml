@@ -6,7 +6,7 @@
   </DvStyle>
   <DvLabel class="title" text="Devinno.UI"/>
   <DvSpacer/>
-  <DvButton class="{MonitorClass}" text="모니터링" onclick="ShowMonitor"/>
-  <DvButton class="{SettingClass}" text="설정" onclick="ShowSetting"/>
-  <DvButton class="{AlarmClass}" text="알람" onclick="ShowAlarm"/>
+  <DvButton class="{MonitorClass}" text="Monitoring" onclick="ShowMonitor"/>
+  <DvButton class="{SettingClass}" text="Settings" onclick="ShowSetting"/>
+  <DvButton class="{AlarmClass}" text="Alarms" onclick="ShowAlarm"/>
 </DvRow>

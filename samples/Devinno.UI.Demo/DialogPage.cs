@@ -8,76 +8,76 @@ public sealed partial class DialogPage : DvPage
     public const int Width = 960;
     public const int Height = 600;
 
-    public DemoRecipe Recipe { get; private set; } = new("기본 세척", 65.0, 12);
-    public string LastEvent { get; private set; } = "(아직 없음)";
+    public DemoRecipe Recipe { get; private set; } = new("Basic wash", 65.0, 12);
+    public string LastEvent { get; private set; } = "(none yet)";
 
     public async void EditRecipe()
     {
         DemoRecipe? edited = await App.ShowDialog<RecipeDialog, DemoRecipe>(Recipe);
         if (edited is null)
         {
-            Report("레시피 수정 취소");
+            Report("Recipe edit canceled");
             return;
         }
         Recipe = edited;           // 원본 반영은 띄운 쪽이(다이얼로그는 복사본을 고쳤다)
-        Report($"레시피 저장: {edited.Name}");
+        Report($"Recipe saved: {edited.Name}");
     }
 
     // 잠금 — 비밀번호 1234 로 풀린다. 이미 잠겨 있으면 같은 잠금을 기다린다.
     public async void Lock()
     {
-        Report("잠금");
+        Report("Locked");
         await App.Lock<LockDialog>("1234");
-        Report("잠금 해제");
+        Report("Unlocked");
     }
 
     public async void AskReset()
     {
-        if (await App.MessageBox("레시피를 기본값으로 되돌릴까요?", "초기화", DvMessageButtons.YesNo) != DvDialogResult.Yes)
+        if (await App.MessageBox("Reset the recipe to defaults?", "Reset", DvMessageButtons.YesNo) != DvDialogResult.Yes)
             return;
-        Recipe = new DemoRecipe("기본 세척", 65.0, 12);
-        Report("레시피 초기화");
+        Recipe = new DemoRecipe("Basic wash", 65.0, 12);
+        Report("Recipe reset");
     }
 
     // ── 내장 박스 ──
 
-    public static readonly string[] Modes = ["자동", "수동", "정지", "세척", "건조", "예열", "냉각", "대기", "점검", "보정", "시운전", "비상 정지"];
-    public string Operator { get; private set; } = "(없음)";
+    public static readonly string[] Modes = ["Auto", "Manual", "Stop", "Wash", "Dry", "Preheat", "Cool", "Standby", "Inspect", "Calibrate", "Test run", "E-stop"];
+    public string Operator { get; private set; } = "(none)";
     public double Setpoint { get; private set; } = 25.0;
     public int Mode { get; private set; }
     public string ModeText => Modes[Mode];
 
     public async void AskOperator()
     {
-        if (await App.InputBox("작업자 이름", Operator == "(없음)" ? null : Operator) is { } name)
+        if (await App.InputBox("Operator name", Operator == "(none)" ? null : Operator) is { } name)
         {
             Operator = name;
-            Report($"입력 박스: \"{name}\"");
+            Report($"Input box: \"{name}\"");
         }
         else
-            Report("입력 박스 취소(null)");
+            Report("Input box canceled (null)");
     }
 
     public async void AskSetpoint()
     {
-        if (await App.InputNumber("설정 온도(℃)", Setpoint, 0, 100) is { } v)
+        if (await App.InputNumber("Setpoint (℃)", Setpoint, 0, 100) is { } v)
         {
             Setpoint = v;
-            Report($"숫자 박스: {v}");
+            Report($"Number box: {v}");
         }
         else
-            Report("숫자 박스 취소(null)");
+            Report("Number box canceled (null)");
     }
 
     public async void AskMode()
     {
-        if (await App.SelectBox("운전 모드", Modes, Mode) is { } i)
+        if (await App.SelectBox("Run mode", Modes, Mode) is { } i)
         {
             Mode = i;
-            Report($"선택 박스: {i} ({Modes[i]})");
+            Report($"Select box: {i} ({Modes[i]})");
         }
         else
-            Report("선택 박스 취소(null)");
+            Report("Select box canceled (null)");
     }
 
     public void CloseAll() => App.CloseDialogs();

@@ -131,6 +131,16 @@ window.Run();
 
 Inside a page, switch with `App.Show<AlarmPage>()`. For details see section 16 of `dvml-ui-markup.md` (listed below).
 
+## Demo
+
+Clone the repository and run the demo app:
+
+```bash
+dotnet run --project samples/Devinno.UI.Demo
+```
+
+It opens a water treatment plant showcase driven by a small simulation: an operations dashboard, a P&ID with flow animation, and a Widgets page with one page per feature (grid, trend, alarms, dialogs, input, process diagrams and more). Add `-- shot <folder>` to save every screen as a PNG without opening a window.
+
 ## Documentation
 
 These documents ship in the package's `docs/` folder (after a build they are also copied to `.devinno/Devinno.UI/` in your project, see below).
@@ -157,7 +167,7 @@ When a project that references Devinno.UI is built, the package documents and th
 | `src/Devinno.UI.OpenTK` | OpenTK host (`ViewWindow`) |
 | `src/Devinno.UI.WinForms` | WinForms host (`ViewControl`) |
 | `tests/Devinno.UI.Tests` | xUnit tests |
-| `samples/Devinno.UI.Demo` | OpenTK demo app (`-- top`, `-- nav` show the app model) |
+| `samples/Devinno.UI.Demo` | OpenTK demo app (no arguments = showcase; `-- top`, `-- nav` show the app model) |
 | `samples/Devinno.UI.Demo.WinForms` | WinForms demo app |
 
 ## Disclaimer

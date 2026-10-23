@@ -18,7 +18,7 @@ public sealed partial class LockDialog : DvDialog<bool>
             Close(true);
             return;
         }
-        Error = "비밀번호가 틀렸습니다";
+        Error = "Wrong password";
         Password = "";
     }
 }

@@ -19,7 +19,7 @@ public sealed partial class RecipeDialog : DvDialog<DemoRecipe>
     // 다이얼로그 위 다이얼로그 — 메시지 박스가 이 다이얼로그 위에 뜬다
     public async void Save()
     {
-        if (await App.MessageBox($"'{Name}' 레시피를 저장할까요?", "저장", DvMessageButtons.YesNo) == DvDialogResult.Yes)
+        if (await App.MessageBox($"Save recipe '{Name}'?", "Save", DvMessageButtons.YesNo) == DvDialogResult.Yes)
             Close(new DemoRecipe(Name, Temp, Minutes));
     }
 

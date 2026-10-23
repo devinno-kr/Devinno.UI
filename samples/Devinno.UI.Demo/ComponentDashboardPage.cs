@@ -18,10 +18,10 @@ public sealed partial class ComponentDashboardPage : DvPage
     public bool Light { get; set; } = true;   // 래칭 버튼
     public bool Fan { get; set; }
 
-    public string StatusText => Running ? "정상 운전" : "운전 정지";
+    public string StatusText => Running ? "Running" : "Stopped";
     public string StatusTone => Running ? "success" : "danger";
     public string PumpState => Running ? "run" : "stop";
-    public string PumpText => Running ? "운전" : "정지";
+    public string PumpText => Running ? "Running" : "Stopped";
 
     public void Start() => Running = true;
 

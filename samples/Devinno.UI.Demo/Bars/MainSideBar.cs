@@ -11,7 +11,7 @@ public sealed partial class MainSideBar : DvBar
     public string InputClass => NavClass<InputPage>();
     public string ProcessClass => NavClass<ProcessPage>();
 
-    public string CurrentText => $"현재: {App.CurrentPage?.GetType().Name}";
+    public string CurrentText => $"Current: {App.CurrentPage?.GetType().Name}";
 
     public void ShowOverview() => App.Show<ComponentDashboardPage>();
 

@@ -1,27 +1,27 @@
-<DvPageFrame vm="DialogPage" title="다이얼로그" subtitle="레시피 편집 · 메시지 박스 · 내장 입력/숫자/선택 박스 · 통신 알람(4초마다, 같은 번호는 하나만)">
+<DvPageFrame vm="DialogPage" title="Dialogs" subtitle="Recipe editor · message box · built-in input/number/select boxes · comm alarms (every 4 s, one per ID)">
   <DvRow gap="lg" align="stretch">
-    <DvCard title="현재 레시피" grow="1">
+    <DvCard title="Current recipe" grow="1">
       <DvLabel class="title" text="{Recipe.Name}"/>
-      <DvLabel class="body muted" text="온도 {Recipe.Temp} ℃ · 시간 {Recipe.Minutes} 분"/>
+      <DvLabel class="body muted" text="Temperature {Recipe.Temp} ℃ · Time {Recipe.Minutes} min"/>
       <DvRow gap="sm">
-        <DvButton variant="primary" text="레시피 수정" onclick="EditRecipe"/>
-        <DvButton variant="secondary" text="초기화" onclick="AskReset"/>
+        <DvButton variant="primary" text="Edit recipe" onclick="EditRecipe"/>
+        <DvButton variant="secondary" text="Reset" onclick="AskReset"/>
       </DvRow>
     </DvCard>
-    <DvCard title="최근 이벤트" grow="1">
+    <DvCard title="Last event" grow="1">
       <DvLabel class="body" text="{LastEvent}"/>
       <DvRow>
-        <DvButton variant="ghost" text="열린 다이얼로그 모두 닫기" onclick="CloseAll"/>
-        <DvButton variant="secondary" text="잠금 (30초 무입력 시 자동)" onclick="Lock"/>
+        <DvButton variant="ghost" text="Close all dialogs" onclick="CloseAll"/>
+        <DvButton variant="secondary" text="Lock (auto after 30 s idle)" onclick="Lock"/>
       </DvRow>
     </DvCard>
   </DvRow>
-  <DvCard title="내장 박스 (App.InputBox · InputNumber · SelectBox)">
-    <DvLabel class="body muted" text="작업자 {Operator} · 설정 온도 {Setpoint} ℃ · 운전 모드 {ModeText}"/>
+  <DvCard title="Built-in boxes (App.InputBox · InputNumber · SelectBox)">
+    <DvLabel class="body muted" text="Operator {Operator} · Setpoint {Setpoint} ℃ · Run mode {ModeText}"/>
     <DvRow gap="sm">
-      <DvButton variant="secondary" text="입력 박스" onclick="AskOperator"/>
-      <DvButton variant="secondary" text="숫자 박스 (0~100)" onclick="AskSetpoint"/>
-      <DvButton variant="secondary" text="선택 박스" onclick="AskMode"/>
+      <DvButton variant="secondary" text="Input box" onclick="AskOperator"/>
+      <DvButton variant="secondary" text="Number box (0~100)" onclick="AskSetpoint"/>
+      <DvButton variant="secondary" text="Select box" onclick="AskMode"/>
     </DvRow>
   </DvCard>
 </DvPageFrame>

@@ -13,7 +13,7 @@ internal static class Program
         ApplicationConfiguration.Initialize();
 
         var theme = args.Contains("light") ? DvTheme.Light : DvTheme.Dark;
-        var app = new DvApp { Theme = theme, Strings = new DvStrings { Language = "ko" } }; // 데모 화면이 한국어 — 라이브러리 기본 글자도 ko
+        var app = new DvApp { Theme = theme, Strings = new DvStrings { Language = "en" } }; // 데모 화면이 영어 — 라이브러리 기본 글자도 en
         app.Pages.Add(new InputPage());
         var view = new ViewControl
         {

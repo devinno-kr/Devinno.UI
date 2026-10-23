@@ -27,7 +27,7 @@ public sealed partial class ProcessPage : DvPage
     public string FlowText => $"{(V1Open ? (P1Run ? 12.5 : 0) + (P2Run ? 11.0 : 0) : 0):0.0} m³/h";
 
     private int _resets;
-    public string ResetText => $"Reset {_resets}회{(_lastReset is null ? "" : $" (마지막: {_lastReset})")}";
+    public string ResetText => $"Reset ×{_resets}{(_lastReset is null ? "" : $" (last: {_lastReset})")}";
     private string? _lastReset;
 
     public void ResetBl()

@@ -1,20 +1,20 @@
-<DvPageFrame vm="EquipmentPage" title="설비 목록" subtitle="DvRepeat + overflow:scroll — 휠 · 끌어서 놓기(관성) · 오른쪽 손잡이. 끌어서 스크롤하면 버튼은 눌리지 않습니다">
+<DvPageFrame vm="EquipmentPage" title="Equipment list" subtitle="DvRepeat + overflow:scroll — wheel · drag and release (inertia) · right thumb. Dragging to scroll does not press buttons">
   <DvRow>
     <DvBadge tone="info" text="{SelectedText}"/>
     <DvBadge tone="neutral" text="{AutoText}"/>
   </DvRow>
-  <DvCard title="펌프·밸브" badge="{CountText}" grow="1">
+  <DvCard title="Pumps · Valves" badge="{CountText}" grow="1">
     <DvRepeat items="{Items}" gap="xs" grow="1" style="overflow:scroll">
       <DvRow style="padding:4 8">
         <DvLabel class="caption muted" text="{Index}" style="width:28"/>
         <DvStatusItem grow="1" label="{Item.Name}" state="{Item.State}" status="{Item.StatusText}"/>
-        <DvLabel class="caption muted" text="자동"/>
+        <DvLabel class="caption muted" text="Auto"/>
         <DvToggle value="{Bind Item.Auto}"/>
-        <DvButton variant="secondary" size="sm" text="확인" onclick="Inspect"/>
+        <DvButton variant="secondary" size="sm" text="OK" onclick="Inspect"/>
       </DvRow>
     </DvRepeat>
   </DvCard>
-  <DvCard title="압력 계기" badge="가로 스크롤">
+  <DvCard title="Pressure gauges" badge="Horizontal scroll">
     <DvRepeat items="{Pressures}" style="display:flex; flex-direction:row; gap:16; overflow:scroll; height:164">
       <DvGauge value="{Item}" alarm-zones="0:65:#10b981 65:85:#f59e0b 85:100:#ef4444" style="width:140; height:140"/>
     </DvRepeat>

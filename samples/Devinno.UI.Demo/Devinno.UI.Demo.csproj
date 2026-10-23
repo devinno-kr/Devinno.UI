@@ -10,6 +10,7 @@
     <AdditionalFiles Include="Pages/*.dvml" />
     <AdditionalFiles Include="Bars/*.dvml" />
     <AdditionalFiles Include="Dialogs/*.dvml" />
+    <AdditionalFiles Include="Showcase/*.dvml" />
   </ItemGroup>
 
   <PropertyGroup>

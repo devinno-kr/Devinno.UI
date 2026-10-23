@@ -12,9 +12,9 @@ public sealed partial class EquipmentPage : DvPage
         public bool Auto { get; set; }
     }
 
-    private static readonly string[] Kinds = { "취수 펌프", "송수 펌프", "약품 주입기", "여과기", "역세 밸브", "배수 밸브", "교반기", "송풍기" };
+    private static readonly string[] Kinds = { "Intake pump", "Supply pump", "Dosing unit", "Filter", "Backwash valve", "Drain valve", "Mixer", "Blower" };
     private static readonly (string State, string Text)[] States =
-        { ("run", "운전"), ("run", "운전"), ("run", "운전"), ("stop", "정지"), ("warn", "주의"), ("run", "운전"), ("fault", "경보"), ("off", "대기") };
+        { ("run", "Running"), ("run", "Running"), ("run", "Running"), ("stop", "Stopped"), ("warn", "Warning"), ("run", "Running"), ("fault", "Alarm"), ("off", "Standby") };
 
     public List<Equipment> Items { get; } = Enumerable.Range(0, 40).Select(i => new Equipment
     {
@@ -27,9 +27,9 @@ public sealed partial class EquipmentPage : DvPage
     public List<double> Pressures { get; } = Enumerable.Range(0, 10).Select(i => 20.0 + i * 7 % 70).ToList();
 
     public Equipment? Selected { get; private set; }
-    public string SelectedText => Selected is null ? "선택: 없음" : $"선택: {Selected.Name}";
-    public string AutoText => $"자동 {Items.Count(e => e.Auto)}대";
-    public string CountText => $"{Items.Count}대";
+    public string SelectedText => Selected is null ? "Selected: none" : $"Selected: {Selected.Name}";
+    public string AutoText => $"Auto {Items.Count(e => e.Auto)}";
+    public string CountText => $"{Items.Count} units";
 
     public void Inspect(Equipment e) => Selected = e;
 }

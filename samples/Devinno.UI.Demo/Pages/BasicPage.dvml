@@ -1,153 +1,153 @@
-<DvPageFrame vm="BasicPage" title="기본 컨트롤" subtitle="값 핸들 — 바인딩 없이 코드에서 읽고 쓰기 (id 만 주면 핸들이 값의 주인)">
+<DvPageFrame vm="BasicPage" title="Basic Controls" subtitle="Value handles — read and write from code without binding (give an id and the handle owns the value)">
   <DvRow gap="lg" align="stretch" grow="1">
     <DvTabs grow="1">
-      <DvTab value="handle" text="값 핸들">
+      <DvTab value="handle" text="Value handles">
         <DvGrid columns="2">
-        <DvCard title="바인딩 없음 (핸들이 주인)" badge="id">
+        <DvCard title="No binding (handle owns it)" badge="id">
           <DvStack gap="sm">
             <DvRow>
-              <DvLabel class="label" text="펌프 운전"/>
+              <DvLabel class="label" text="Pump run"/>
               <DvSpacer/>
               <DvToggle id="tgPump" style="width:46; height:26"/>
             </DvRow>
-            <DvSwitch id="swHeater" label="히터 (DvSwitch)"/>
-            <DvLabel class="label" text="속도"/>
+            <DvSwitch id="swHeater" label="Heater (DvSwitch)"/>
+            <DvLabel class="label" text="Speed"/>
             <DvRow>
               <DvKnob id="knSpeed" min="0" max="100" step="5" unit="%" style="width:110; height:110"/>
               <DvStack gap="sm" grow="1">
-                <DvLabel class="label" text="운전 모드"/>
+                <DvLabel class="label" text="Run mode"/>
                 <DvSegment id="segMode">
-                  <DvOption value="auto" text="자동"/>
-                  <DvOption value="manual" text="수동"/>
-                  <DvOption value="stop" text="정지"/>
+                  <DvOption value="auto" text="Auto"/>
+                  <DvOption value="manual" text="Manual"/>
+                  <DvOption value="stop" text="Stop"/>
                 </DvSegment>
-                <DvLabel class="label" text="레시피"/>
-                <DvSelect id="selRecipe" placeholder="선택">
-                  <DvOption value="A" text="세척 A"/>
-                  <DvOption value="B" text="세척 B"/>
-                  <DvOption value="C" text="세척 C"/>
+                <DvLabel class="label" text="Recipe"/>
+                <DvSelect id="selRecipe" placeholder="Select">
+                  <DvOption value="A" text="Wash A"/>
+                  <DvOption value="B" text="Wash B"/>
+                  <DvOption value="C" text="Wash C"/>
                 </DvSelect>
               </DvStack>
             </DvRow>
-            <DvLabel class="label" text="작업자"/>
-            <DvInput id="inOperator" placeholder="이름"/>
-            <DvLabel class="label" text="목표 온도 (℃)"/>
+            <DvLabel class="label" text="Operator"/>
+            <DvInput id="inOperator" placeholder="Name"/>
+            <DvLabel class="label" text="Target temp (℃)"/>
             <DvInput id="inTemp" keyboard-type="numeric" min="0" max="120" unit="℃" show-stepper="true"/>
           </DvStack>
         </DvCard>
         </DvGrid>
       </DvTab>
-      <DvTab value="choice" text="체크 · 라디오 · 슬라이더">
+      <DvTab value="choice" text="Check · Radio · Slider">
         <DvGrid columns="2">
-          <DvCard title="체크박스 · 라디오" badge="new">
+          <DvCard title="Checkbox · Radio" badge="new">
             <DvStack gap="xs">
-              <DvCheckBox text="알람 소리 (바인딩)" value="{Bind AlarmSound}"/>
-              <DvCheckBox id="chkLog" text="기록 남기기 (핸들)"/>
-              <DvCheckBox text="잠긴 항목 (비활성)" value="true" disabled="true"/>
-              <DvLabel class="label" text="운전 방식 (enum 바인딩)"/>
-              <DvRadio text="자동" value="{Bind Run}" option="Auto"/>
-              <DvRadio text="수동" value="{Bind Run}" option="Manual"/>
-              <DvRadio id="rdStop" text="정지" value="{Bind Run}" option="Stop"/>
-              <DvLabel class="label" text="속도 (group — 바인딩 없음)"/>
+              <DvCheckBox text="Alarm sound (binding)" value="{Bind AlarmSound}"/>
+              <DvCheckBox id="chkLog" text="Keep log (handle)"/>
+              <DvCheckBox text="Locked item (disabled)" value="true" disabled="true"/>
+              <DvLabel class="label" text="Run mode (enum binding)"/>
+              <DvRadio text="Auto" value="{Bind Run}" option="Auto"/>
+              <DvRadio text="Manual" value="{Bind Run}" option="Manual"/>
+              <DvRadio id="rdStop" text="Stop" value="{Bind Run}" option="Stop"/>
+              <DvLabel class="label" text="Speed (group — no binding)"/>
               <DvRow gap="lg">
-                <DvRadio text="저속" group="speed" option="low"/>
-                <DvRadio text="중속" group="speed" option="mid"/>
-                <DvRadio text="고속" group="speed" option="high"/>
+                <DvRadio text="Low" group="speed" option="low"/>
+                <DvRadio text="Mid" group="speed" option="mid"/>
+                <DvRadio text="High" group="speed" option="high"/>
               </DvRow>
-              <DvLabel class="caption muted" text="VM 알람 소리 = {AlarmSound} · 운전 = {Run}"/>
+              <DvLabel class="caption muted" text="VM alarm sound = {AlarmSound} · run = {Run}"/>
             </DvStack>
           </DvCard>
-          <DvCard title="슬라이더" badge="new">
+          <DvCard title="Slider" badge="new">
             <DvRow gap="lg">
               <DvStack gap="sm" grow="1">
-                <DvLabel class="label" text="밸브 개도 (바인딩, step 5)"/>
+                <DvLabel class="label" text="Valve opening (binding, step 5)"/>
                 <DvSlider value="{Bind Valve}" step="5" unit="%" show-value="true"/>
-                <DvLabel class="label" text="조명 (핸들, 0 ~ 1, step 0.1)"/>
+                <DvLabel class="label" text="Light (handle, 0 ~ 1, step 0.1)"/>
                 <DvSlider id="slLight" max="1" step="0.1" show-value="true"/>
-                <DvLabel class="label" text="역방향 (direction=left) · 비활성"/>
+                <DvLabel class="label" text="Reversed (direction=left) · disabled"/>
                 <DvSlider value="{Bind Valve}" step="5" direction="left"/>
                 <DvSlider value="{Bind Valve}" disabled="true"/>
-                <DvLabel class="caption muted" text="VM 밸브 = {Valve}% · 수위 = {Level} m"/>
+                <DvLabel class="caption muted" text="VM valve = {Valve}% · level = {Level} m"/>
               </DvStack>
               <DvSlider value="{Bind Level}" direction="up" max="10" step="0.5" unit="m" show-value="true" style="height:260"/>
             </DvRow>
           </DvCard>
         </DvGrid>
       </DvTab>
-      <DvTab value="list" text="목록">
+      <DvTab value="list" text="List">
         <DvGrid columns="3">
-          <DvCard title="한 개 고르기" badge="value">
+          <DvCard title="Pick one" badge="value">
             <DvStack gap="sm">
-              <DvLabel class="label" text="레시피 (items · 바인딩)"/>
+              <DvLabel class="label" text="Recipe (items · binding)"/>
               <DvListBox value="{Bind RecipeId}" items="{Recipes}" item-value="Id" item-text="Name"/>
-              <DvLabel class="caption muted" text="VM 레시피 번호 = {RecipeId}"/>
+              <DvLabel class="caption muted" text="VM recipe no. = {RecipeId}"/>
             </DvStack>
           </DvCard>
-          <DvCard title="여럿 고르기" badge="multi">
+          <DvCard title="Pick many" badge="multi">
             <DvStack gap="sm">
-              <DvLabel class="label" text="알람 받을 구역 (selected-items)"/>
+              <DvLabel class="label" text="Alarm zones (selected-items)"/>
               <DvListBox selection-mode="multi" selected-items="{Bind Zones}">
-                <DvOption value="A" text="A 구역 — 원료" icon="fa-boxes-stacked"/>
-                <DvOption value="B" text="B 구역 — 혼합" icon="fa-blender"/>
-                <DvOption value="C" text="C 구역 — 충전" icon="fa-fill-drip"/>
-                <DvOption value="D" text="D 구역 — 포장" icon="fa-box"/>
+                <DvOption value="A" text="Zone A — Raw material" icon="fa-boxes-stacked"/>
+                <DvOption value="B" text="Zone B — Mixing" icon="fa-blender"/>
+                <DvOption value="C" text="Zone C — Filling" icon="fa-fill-drip"/>
+                <DvOption value="D" text="Zone D — Packing" icon="fa-box"/>
               </DvListBox>
-              <DvLabel class="caption muted" text="VM 구역 = {ZonesText}"/>
+              <DvLabel class="caption muted" text="VM zones = {ZonesText}"/>
             </DvStack>
           </DvCard>
-          <DvCard title="핸들 (바인딩 없음)" badge="id">
+          <DvCard title="Handle (no binding)" badge="id">
             <DvStack gap="sm">
-              <DvLabel class="label" text="작업 교대"/>
+              <DvLabel class="label" text="Work shift"/>
               <DvListBox id="lstShift">
-                <DvOption value="day" text="주간"/>
-                <DvOption value="swing" text="오후"/>
-                <DvOption value="night" text="야간"/>
+                <DvOption value="day" text="Day"/>
+                <DvOption value="swing" text="Swing"/>
+                <DvOption value="night" text="Night"/>
               </DvListBox>
-              <DvLabel class="label" text="비활성"/>
+              <DvLabel class="label" text="Disabled"/>
               <DvListBox value="{Bind RecipeId}" items="{Recipes}" item-value="Id" item-text="Name" disabled="true" style="height:96"/>
             </DvStack>
           </DvCard>
         </DvGrid>
       </DvTab>
-      <DvTab value="tree" text="트리">
+      <DvTab value="tree" text="Tree">
         <DvGrid columns="2">
-          <DvCard title="설비 트리 (바인딩)" badge="new">
+          <DvCard title="Equipment tree (binding)" badge="new">
             <DvStack gap="sm">
-              <DvLabel class="caption muted" text="▶/▼ 를 누르면 펼치기·접기, 이름을 누르면 고르기"/>
+              <DvLabel class="caption muted" text="Tap ▶/▼ to expand or collapse, tap a name to pick it"/>
               <DvTreeView items="{Plant}" item-children="Kids" item-text="Name" value="{Bind PickedEquip}" style="height:360"/>
-              <DvLabel class="caption muted" text="VM 고른 설비 = {PickedEquipText}"/>
+              <DvLabel class="caption muted" text="VM picked equipment = {PickedEquipText}"/>
             </DvStack>
           </DvCard>
-          <DvCard title="핸들 (item-value)" badge="id">
+          <DvCard title="Handle (item-value)" badge="id">
             <DvStack gap="sm">
-              <DvButton text="펌프 2 고르기 (코드)" icon="fa-crosshairs" variant="secondary" onclick="PickPump2"/>
+              <DvButton text="Pick Pump 2 (code)" icon="fa-crosshairs" variant="secondary" onclick="PickPump2"/>
               <DvTreeView id="tvPlant" items="{Plant}" item-children="Kids" item-text="Name" item-value="Tag" style="height:300"/>
             </DvStack>
           </DvCard>
         </DvGrid>
       </DvTab>
-      <DvTab value="expander" text="접는 패널">
+      <DvTab value="expander" text="Expanders">
         <DvGrid columns="2">
           <DvStack gap="sm">
-            <DvLabel class="label" text="하나씩 따로 (바인딩 · 핸들 · 화면 기억)"/>
-            <DvExpander header="운전 조건 (expanded 바인딩)" expanded="{Bind ShowRun}">
-              <DvRow><DvLabel class="body" text="목표 온도"/><DvSpacer/><DvLabel class="body" text="65 ℃"/></DvRow>
-              <DvRow><DvLabel class="body" text="세척 시간"/><DvSpacer/><DvLabel class="body" text="12 분"/></DvRow>
+            <DvLabel class="label" text="Independent (binding · handle · screen remembers)"/>
+            <DvExpander header="Run conditions (expanded binding)" expanded="{Bind ShowRun}">
+              <DvRow><DvLabel class="body" text="Target temp"/><DvSpacer/><DvLabel class="body" text="65 ℃"/></DvRow>
+              <DvRow><DvLabel class="body" text="Wash time"/><DvSpacer/><DvLabel class="body" text="12 min"/></DvRow>
             </DvExpander>
-            <DvExpander id="expMore" header="고급 설정 (핸들)">
-              <DvCheckBox text="자동 재시작" value="{Bind AlarmSound}"/>
+            <DvExpander id="expMore" header="Advanced settings (handle)">
+              <DvCheckBox text="Auto restart" value="{Bind AlarmSound}"/>
               <DvSlider value="{Bind Valve}" step="5" unit="%" show-value="true"/>
             </DvExpander>
-            <DvExpander header="메모 (바인딩 없음 — 화면이 기억)">
-              <DvLabel class="body" text="바인딩도 id 도 없으면 화면이 펼침을 기억합니다."/>
+            <DvExpander header="Notes (no binding — the screen remembers)">
+              <DvLabel class="body" text="With no binding and no id, the screen remembers whether it is open."/>
             </DvExpander>
-            <DvExpander header="잠긴 항목 (비활성)" disabled="true">
-              <DvLabel class="body" text="보이지 않음"/>
+            <DvExpander header="Locked item (disabled)" disabled="true">
+              <DvLabel class="body" text="Not shown"/>
             </DvExpander>
-            <DvLabel class="caption muted" text="VM 운전 조건 펼침 = {ShowRun}"/>
+            <DvLabel class="caption muted" text="VM run conditions open = {ShowRun}"/>
           </DvStack>
           <DvStack gap="sm">
-            <DvLabel class="label" text="아코디언 (DvRepeat + 항목 setter 가 나머지를 닫음)"/>
+            <DvLabel class="label" text="Accordion (DvRepeat + item setter closes the others)"/>
             <DvRepeat items="{Sections}" gap="sm">
               <DvExpander header="{Item.Title}" expanded="{Bind Item.Open}">
                 <DvLabel class="body" text="{Item.Body}"/>
@@ -156,72 +156,72 @@
           </DvStack>
         </DvGrid>
       </DvTab>
-      <DvTab value="motion" text="모션">
+      <DvTab value="motion" text="Motion">
         <DvGrid columns="2">
-          <DvCard title="상태 전환 (transition)" badge="new">
+          <DvCard title="State transitions (transition)" badge="new">
             <DvStack gap="md">
-              <DvLabel class="caption muted" text="hover·누름 때 배경이 서서히 바뀌고 누르면 살짝 작아짐"/>
+              <DvLabel class="caption muted" text="Background fades on hover and press; shrinks slightly when pressed"/>
               <DvRow>
-                <DvButton text="부드러운 버튼" variant="primary" style="transition: background-color 180ms, transform 120ms ease-out" press-style="transform: scale(0.94)"/>
-                <DvButton text="보조 버튼" variant="secondary" style="transition: all 200ms" hover-style="background: token(tone-info-soft)"/>
+                <DvButton text="Smooth button" variant="primary" style="transition: background-color 180ms, transform 120ms ease-out" press-style="transform: scale(0.94)"/>
+                <DvButton text="Secondary button" variant="secondary" style="transition: all 200ms" hover-style="background: token(tone-info-soft)"/>
               </DvRow>
-              <DvLabel class="caption muted" text="opacity 0.3초 (바인딩 값을 바꾸면 서서히)"/>
+              <DvLabel class="caption muted" text="opacity 0.3 s (fades when the bound value changes)"/>
               <DvRow>
-                <DvButton text="보이기 / 숨기기" icon="fa-eye" variant="secondary" onclick="TogglePanel"/>
+                <DvButton text="Show / Hide" icon="fa-eye" variant="secondary" onclick="TogglePanel"/>
                 <DvBox style="padding:10 16; border-radius:8; background: token(tone-success-soft); opacity:{PanelOpacity}; transition: opacity 300ms">
-                  <DvLabel class="body" text="운전 준비 완료"/>
+                  <DvLabel class="body" text="Ready to run"/>
                 </DvBox>
               </DvRow>
-              <DvLabel class="caption muted" text="transform 옮기기 0.4초 ease-in-out"/>
+              <DvLabel class="caption muted" text="transform move 0.4 s ease-in-out"/>
               <DvBox style="height:44; border-radius:8; background: token(surface-raised)">
                 <DvBox style="width:44; height:44; border-radius:22; background: token(primary); transform: translateX({BallX}); transition: transform 400ms ease-in-out"/>
               </DvBox>
               <DvRow>
-                <DvButton text="왼쪽" icon="fa-arrow-left" variant="secondary" onclick="BallLeft"/>
-                <DvButton text="오른쪽" icon="fa-arrow-right" variant="secondary" onclick="BallRight"/>
+                <DvButton text="Left" icon="fa-arrow-left" variant="secondary" onclick="BallLeft"/>
+                <DvButton text="Right" icon="fa-arrow-right" variant="secondary" onclick="BallRight"/>
               </DvRow>
             </DvStack>
           </DvCard>
-          <DvCard title="페이지 전환" badge="new">
+          <DvCard title="Page transitions" badge="new">
             <DvStack gap="md">
               <DvLabel class="caption muted" text="App.Show(page, DvPageTransition.Fade / Slide)"/>
               <DvRow>
-                <DvButton text="Fade 로 다음 페이지" icon="fa-wand-magic-sparkles" variant="primary" onclick="GoFade"/>
-                <DvButton text="Slide 로 다음 페이지" icon="fa-right-long" variant="primary" onclick="GoSlide"/>
+                <DvButton text="Next page with Fade" icon="fa-wand-magic-sparkles" variant="primary" onclick="GoFade"/>
+                <DvButton text="Next page with Slide" icon="fa-right-long" variant="primary" onclick="GoSlide"/>
               </DvRow>
             </DvStack>
           </DvCard>
         </DvGrid>
       </DvTab>
-      <DvTab value="display" text="표시">
+      <DvTab value="display" text="Display">
         <DvStack gap="md">
-          <DvCard title="단계 표시 (DvStepBar)" badge="new">
+          <DvCard title="Step bar (DvStepBar)" badge="new">
             <DvStack gap="md">
               <DvStepBar steps="{BatchSteps}" current="{BatchStep}" style="width:560"/>
               <DvRow>
-                <DvButton text="이전 단계" icon="fa-backward-step" variant="secondary" onclick="PrevStep"/>
-                <DvButton text="다음 단계" icon="fa-forward-step" variant="primary" onclick="NextStep"/>
-                <DvLabel class="caption muted" text="current = {BatchStep} (0 = 시작 전, 6 = 모두 끝)"/>
+                <DvButton text="Prev step" icon="fa-backward-step" variant="secondary" onclick="PrevStep"/>
+                <DvButton text="Next step" icon="fa-forward-step" variant="primary" onclick="NextStep"/>
+                <DvLabel class="caption muted" text="current = {BatchStep} (0 = not started, 6 = all done)"/>
               </DvRow>
-              <DvStepBar steps="세척, 헹굼, 건조" current="2"/>
+              <DvStepBar steps="Wash, Rinse, Dry" current="2"/>
             </DvStack>
           </DvCard>
-          <DvCard title="그래프 (스파크라인 · 막대 · 원형)" badge="new">
+          <DvCard title="Charts (sparkline · bar · pie)" badge="new">
             <DvStack gap="md">
               <DvRow gap="lg">
                 <DvStack gap="xs">
-                  <DvLabel class="caption muted" text="유량 (최근 20개)"/>
+                  <DvLabel class="caption muted" text="Flow (last 20)"/>
                   <DvRow gap="sm">
                     <DvSparkline values="{Flow}" area="true"/>
                     <DvLabel class="title" text="{FlowNow} m³/h"/>
                   </DvRow>
                 </DvStack>
                 <DvStack gap="xs">
-                  <DvLabel class="caption muted" text="압력"/>
+                  <DvLabel class="caption muted" text="Pressure"/>
                   <DvSparkline values="{Pressure}" tone="warning" style="width:160"/>
                 </DvStack>
                 <DvSpacer/>
-                <DvButton text="데이터 바꾸기" icon="fa-shuffle" variant="secondary" onclick="Shuffle"/>
+                <DvButton text="Shuffle data" icon="fa-shuffle" variant="secondary" onclick="Shuffle"/>
               </DvRow>
               <DvRow gap="lg">
                 <DvBarChart items="{Lines}" item-value="Count" item-text="Name" show-value="true" style="width:320; height:180"/>
@@ -232,21 +232,21 @@
         </DvStack>
       </DvTab>
     </DvTabs>
-    <DvCard title="코드에서" badge="handle" style="width:380">
+    <DvCard title="From code" badge="handle" style="width:380">
       <DvStack gap="sm">
         <DvRow>
-          <DvButton id="btnCode" text="코드로 켜기" icon="fa-code" variant="primary" onclick="CodeOn"/>
-          <DvButton id="btnReset" text="초기화" icon="fa-rotate-left" variant="secondary" onclick="Reset"/>
+          <DvButton id="btnCode" text="Turn on by code" icon="fa-code" variant="primary" onclick="CodeOn"/>
+          <DvButton id="btnReset" text="Reset" icon="fa-rotate-left" variant="secondary" onclick="Reset"/>
         </DvRow>
         <DvRow>
-          <DvLabel class="label" text="바인딩 + 핸들 (자동 운전)"/>
+          <DvLabel class="label" text="Binding + handle (auto run)"/>
           <DvSpacer/>
           <DvToggle id="tgAuto" value="{Bind Auto}" style="width:46; height:26"/>
         </DvRow>
         <DvLabel class="caption muted" text="VM Auto = {Auto}"/>
-        <DvLabel class="label" text="지금 값 (핸들에서 읽음)"/>
+        <DvLabel class="label" text="Current values (read from handles)"/>
         <DvLabel id="lblNow" class="body" text=" "/>
-        <DvLabel class="label" text="바뀜 이벤트 (최근 8개)"/>
+        <DvLabel class="label" text="Change events (last 8)"/>
         <DvLabel id="lblLog" class="caption" text=" "/>
       </DvStack>
     </DvCard>

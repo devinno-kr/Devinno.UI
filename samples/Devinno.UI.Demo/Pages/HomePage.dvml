@@ -1,21 +1,21 @@
-<DvPageFrame vm="HomePage" title="홈" subtitle="페이지 전환 데모 — 버튼이나 상단 바로 이동하고, 각 페이지의 '이전' 으로 돌아옵니다">
+<DvPageFrame vm="HomePage" title="Home" subtitle="Page navigation demo — move with the buttons or the top bar, and return with 'Back' on each page">
   <DvRow gap="lg" align="stretch">
-    <DvCard title="모니터링" grow="1">
+    <DvCard title="Monitoring" grow="1">
       <DvStack gap="md">
-        <DvLabel class="body muted" text="운영 대시보드"/>
-        <DvButton variant="primary" text="모니터링으로" onclick="ShowMonitor"/>
+        <DvLabel class="body muted" text="Operations dashboard"/>
+        <DvButton variant="primary" text="Go to Monitoring" onclick="ShowMonitor"/>
       </DvStack>
     </DvCard>
-    <DvCard title="설정" grow="1">
+    <DvCard title="Settings" grow="1">
       <DvStack gap="md">
-        <DvLabel class="body muted" text="설정값 조정"/>
-        <DvButton variant="primary" text="설정으로" onclick="ShowSetting"/>
+        <DvLabel class="body muted" text="Adjust setpoints"/>
+        <DvButton variant="primary" text="Go to Settings" onclick="ShowSetting"/>
       </DvStack>
     </DvCard>
-    <DvCard title="알람" grow="1">
+    <DvCard title="Alarms" grow="1">
       <DvStack gap="md">
-        <DvLabel class="body muted" text="알람 확인"/>
-        <DvButton variant="primary" text="알람으로" onclick="ShowAlarm"/>
+        <DvLabel class="body muted" text="Check alarms"/>
+        <DvButton variant="primary" text="Go to Alarms" onclick="ShowAlarm"/>
       </DvStack>
     </DvCard>
   </DvRow>

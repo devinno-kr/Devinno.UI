@@ -1,0 +1,69 @@
+<DvPageFrame vm="PlantProcessPage" style="padding:12 16; gap:12">
+  <DvCard title="Treatment &amp; disinfection" badge="P&amp;ID · raw water intake to clear well" grow="1" style="height:0; padding:14 12 8 12">
+    <DvProcess look="rich" flow-animation="{FlowAnimation}" grow="1" style="height:0">
+      <DvVessel name="T401" level="{DosingLevel}" label="T-401"/>
+      <DvPump name="P401" kind="gear" running="{P401Run}" label="P-401" onclick="ToggleP401"/>
+      <DvTerminal name="STEAM" text="LP STEAM"/>
+      <DvValve name="TCV" kind="control" open="{TcvOpen}" label="TCV-201" onclick="ToggleTcv"/>
+      <DvTerminal name="RAW" text="RAW WATER"/>
+      <DvVessel name="T101" level="{RawLevel}" label="T-101"/>
+      <DvPump name="P101" running="{P101Run}" label="P-101" onclick="ToggleP101"/>
+      <DvPump name="P102" running="{P102Run}" label="P-102" onclick="ToggleP102"/>
+      <DvValve name="FCV" kind="control" open="{FcvOpen}" label="FCV-101" onclick="ToggleFcv"/>
+      <DvExchanger name="E201" label="E-201"/>
+      <DvVessel name="R301" kind="reactor" level="{ReactorLevel}" label="R-301">
+        <DvAgitator running="{AgitatorRun}"/>
+        </DvVessel>
+      <DvPump name="P301" running="{P301Run}" label="P-301" onclick="ToggleP301"/>
+      <DvTerminal name="CW" text="CLEAR WELL"/>
+      <DvTerminal name="COND" text="CONDENSATE"/>
+
+      <DvLine from="T401.bottom" to="P401.in" medium="acid"/>
+      <DvLine from="P401.out" to="R301.top" arrow="end"/>
+      <DvLine from="STEAM" to="TCV.in" medium="steam"/>
+      <DvLine from="TCV.out" to="E201.in2"/>
+      <DvLine from="E201.out2" to="COND" medium="water"/>
+      <DvLine from="RAW" to="T101.top" medium="water" arrow="end"/>
+      <DvLine from="T101.bottom" to="P101.in" medium="water"/>
+      <DvLine from="T101.bottom" to="P102.in"/>
+      <DvLine from="P101.out" to="FCV.in"/>
+      <DvLine from="P102.out" to="FCV.in"/>
+      <DvLine from="FCV.out" to="E201.in"/>
+      <DvLine from="E201.out" to="R301.side" arrow="end"/>
+      <DvLine from="R301.bottom" to="P301.in" medium="water"/>
+      <DvLine from="P301.out" to="CW"/>
+
+      <DvInstrument name="LT101" tag="LT" number="101" on="T101"/>
+      <DvInstrument name="FIC101" tag="FIC" number="101" on="FCV" panel="true"/>
+      <DvInstrument name="TT201" tag="TT" number="201" on="E201"/>
+      <DvInstrument name="TIC201" tag="TIC" number="201" on="TCV" panel="true"/>
+      <DvInstrument name="AIT301" tag="AIT" number="301" on="R301"/>
+      <DvSignal from="LT101" to="FIC101"/>
+      <DvSignal from="FIC101" to="FCV"/>
+      <DvSignal from="TT201" to="TIC201"/>
+      <DvSignal from="TIC201" to="TCV"/>
+      </DvProcess>
+  </DvCard>
+
+  <DvCard style="padding:12 20">
+    <DvRow gap="xl">
+      <DvStack gap="xs">
+      <DvLabel class="caption" text="OPERATION · tap equipment or a button"/>
+      <DvRow gap="sm">
+          <DvButton size="sm" text="P-101" value="{Bind P101Run}" disabled="{EStop}"/>
+          <DvButton size="sm" text="P-102" value="{Bind P102Run}" disabled="{EStop}"/>
+          <DvButton size="sm" text="FCV-101" value="{Bind FcvOpen}"/>
+          <DvButton size="sm" text="TCV-201" value="{Bind TcvOpen}"/>
+          <DvButton size="sm" text="P-301" value="{Bind P301Run}" disabled="{EStop}"/>
+          <DvButton size="sm" text="P-401" value="{Bind P401Run}" disabled="{EStop}"/>
+        </DvRow>
+      </DvStack>
+      <DvSwitch label="Flow animation" value="{Bind FlowAnimation}" style="width:190"/>
+      <DvSpacer/>
+      <DvStack gap="none"><DvLabel class="caption" text="FIC-101"/><DvLabel class="title" text="{FlowText}"/></DvStack>
+      <DvStack gap="none"><DvLabel class="caption" text="TT-201"/><DvLabel class="title" text="{TempText}"/></DvStack>
+      <DvStack gap="none"><DvLabel class="caption" text="AIT-301"/><DvLabel class="title" text="{PhText}"/></DvStack>
+      <DvStack gap="none"><DvLabel class="caption" text="R-301 level"/><DvLabel class="title" text="{ReactorLevelText}"/></DvStack>
+    </DvRow>
+  </DvCard>
+</DvPageFrame>

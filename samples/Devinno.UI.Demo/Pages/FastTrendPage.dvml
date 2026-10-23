@@ -1,8 +1,8 @@
-<DvPageFrame vm="FastTrendPage" title="고속 트렌드" subtitle="1초 = 전체 폭 · 1 kHz 샘플 · 생성 스레드가 밀린 샘플을 몰아서 넣고 Invalidate">
-  <DvCard title="파형" badge="window 1 s" grow="1">
+<DvPageFrame vm="FastTrendPage" title="Fast trend" subtitle="1 s = full width · 1 kHz samples · generator thread pushes queued samples in batches, then Invalidate">
+  <DvCard title="Waveform" badge="window 1 s" grow="1">
     <DvTrend source="{Trend}" window="1" y-min="-120" y-max="120" area="true" grow="1">
       <DvTrendChannel name="a" label="25 Hz" color="#22d3ee"/>
-      <DvTrendChannel name="b" label="7 Hz + 노이즈" color="#a78bfa"/>
+      <DvTrendChannel name="b" label="7 Hz + noise" color="#a78bfa"/>
     </DvTrend>
   </DvCard>
 </DvPageFrame>

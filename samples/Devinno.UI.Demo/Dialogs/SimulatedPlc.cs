@@ -4,7 +4,7 @@ using Devinno.UI.App;
 // 페이지가 아니므로 DvApp.Current 로 앱에 닿고, 같은 번호의 알람 창이 이미 떠 있으면 다시 띄우지 않는다.
 internal sealed class SimulatedPlc : IDisposable
 {
-    private static readonly string[] Texts = ["1번 펌프 과부하", "탱크 수위 높음", "PLC 응답 지연"];
+    private static readonly string[] Texts = ["Pump 1 overload", "Tank level high", "PLC response delay"];
 
     private readonly object _gate = new();
     private readonly Action<string> _report;
@@ -28,7 +28,7 @@ internal sealed class SimulatedPlc : IDisposable
         {
             if (app.Dialogs.OfType<AlarmDialog>().Any(d => d.AlarmId == alarmId))
             {
-                _report($"알람 #{alarmId} 다시 수신 — 이미 떠 있어 건너뜀");
+                _report($"Alarm #{alarmId} received again — already open, skipped");
                 return;
             }
             _ = WaitAckAsync(app, alarmId, Texts[alarmId - 1]);
@@ -41,11 +41,11 @@ internal sealed class SimulatedPlc : IDisposable
         {
             bool? acked = await app.ShowDialog<AlarmDialog, bool?>(alarmId, text);
             // 이어짐은 입력 스레드 — PLC 쓰기 같은 무거운 일이면 Task.Run 으로 넘긴다
-            _report(acked == true ? $"알람 #{alarmId} ACK" : $"알람 #{alarmId} 닫힘(ACK 없음)");
+            _report(acked == true ? $"Alarm #{alarmId} ACK" : $"Alarm #{alarmId} closed (no ACK)");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.TraceError($"알람 #{alarmId}: {ex.Message}");
+            System.Diagnostics.Trace.TraceError($"Alarm #{alarmId}: {ex.Message}");
         }
     }
 }

@@ -3,7 +3,7 @@
     <DvBox style="width:10; height:34; border-radius:5; background:linear-gradient(180deg, #22d3ee, #2563eb); box-shadow:0 0 14 #22d3ee99"/>
     <DvBox style="display:flex; flex-direction:column; gap:2">
       <DvLabel text="NEXUS CONTROL" style="color:#f1f5f9; font-size:22; font-weight:bold"/>
-      <DvLabel text="스마트 설비 모니터링" style="color:#64748b; font-size:12"/>
+      <DvLabel text="Smart equipment monitoring" style="color:#64748b; font-size:12"/>
     </DvBox>
     <DvBox style="flex-grow:1"/>
     <DvBox style="width:300; height:44; border-radius:22; background:#222a42; display:flex; flex-direction:row; align-items:center; gap:14; padding:0 6 0 6">
@@ -49,7 +49,7 @@
         <DvBox style="width:0; flex-grow:1; background:#1b2238; border-radius:18; border:1 #2a3352; box-shadow:0 12 30 #00000055; padding:20; display:flex; flex-direction:column; align-items:stretch; gap:8">
           <DvLabel text="LINE 1" style="color:#7c88a8; font-size:11; font-weight:bold"/>
           <DvLabel text="75%" style="color:#ffffff; font-size:34; font-weight:bold"/>
-          <DvLabel text="목표 대비" style="color:#64748b; font-size:11"/>
+          <DvLabel text="vs target" style="color:#64748b; font-size:11"/>
           <DvBox style="height:6; border-radius:3; background:#262e48; position:relative">
             <DvBox style="position:absolute; left:0; top:0; width:88; height:6; border-radius:3; background:linear-gradient(90deg, #2563eb, #22d3ee); box-shadow:0 0 8 #22d3ee88"/>
           </DvBox>
@@ -57,7 +57,7 @@
         <DvBox style="width:0; flex-grow:1; background:#1b2238; border-radius:18; border:1 #2a3352; box-shadow:0 12 30 #00000055; padding:20; display:flex; flex-direction:column; align-items:stretch; gap:8">
           <DvLabel text="LINE 2" style="color:#7c88a8; font-size:11; font-weight:bold"/>
           <DvLabel text="50%" style="color:#ffffff; font-size:34; font-weight:bold"/>
-          <DvLabel text="목표 대비" style="color:#64748b; font-size:11"/>
+          <DvLabel text="vs target" style="color:#64748b; font-size:11"/>
           <DvBox style="height:6; border-radius:3; background:#262e48; position:relative">
             <DvBox style="position:absolute; left:0; top:0; width:59; height:6; border-radius:3; background:linear-gradient(90deg, #2563eb, #22d3ee); box-shadow:0 0 8 #22d3ee88"/>
           </DvBox>
@@ -65,13 +65,13 @@
       </DvBox>
       <DvBox style="flex-grow:1; background:#1b2238; border-radius:18; border:1 #2a3352; box-shadow:0 12 30 #00000055; padding:20; display:flex; flex-direction:column; align-items:stretch; gap:16">
         <DvBox style="display:flex; flex-direction:row; align-items:center">
-          <DvLabel text="생산 진행률" style="color:#e2e8f0; font-size:14; font-weight:bold"/>
+          <DvLabel text="Production progress" style="color:#e2e8f0; font-size:14; font-weight:bold"/>
           <DvBox style="flex-grow:1"/>
           <DvLabel text="3 / 5" style="color:#a5f3fc; font-size:14; font-weight:bold"/>
         </DvBox>
         <DvBox style="display:flex; flex-direction:column; gap:8">
           <DvBox style="width:318; display:flex; flex-direction:row">
-            <DvLabel text="원료 투입" style="color:#94a3b8; font-size:12"/>
+            <DvLabel text="Material feed" style="color:#94a3b8; font-size:12"/>
             <DvBox style="flex-grow:1"/>
             <DvLabel text="42%" style="color:#a5f3fc; font-size:12; font-weight:bold"/>
           </DvBox>
@@ -83,7 +83,7 @@
         </DvBox>
         <DvBox style="display:flex; flex-direction:column; gap:8">
           <DvBox style="width:318; display:flex; flex-direction:row">
-            <DvLabel text="혼합 공정" style="color:#94a3b8; font-size:12"/>
+            <DvLabel text="Mixing" style="color:#94a3b8; font-size:12"/>
             <DvBox style="flex-grow:1"/>
             <DvLabel text="68%" style="color:#a5f3fc; font-size:12; font-weight:bold"/>
           </DvBox>
@@ -95,7 +95,7 @@
         </DvBox>
         <DvBox style="display:flex; flex-direction:column; gap:8">
           <DvBox style="width:318; display:flex; flex-direction:row">
-            <DvLabel text="성형" style="color:#94a3b8; font-size:12"/>
+            <DvLabel text="Forming" style="color:#94a3b8; font-size:12"/>
             <DvBox style="flex-grow:1"/>
             <DvLabel text="86%" style="color:#a5f3fc; font-size:12; font-weight:bold"/>
           </DvBox>
@@ -107,7 +107,7 @@
         </DvBox>
         <DvBox style="display:flex; flex-direction:column; gap:8">
           <DvBox style="width:318; display:flex; flex-direction:row">
-            <DvLabel text="건조" style="color:#94a3b8; font-size:12"/>
+            <DvLabel text="Drying" style="color:#94a3b8; font-size:12"/>
             <DvBox style="flex-grow:1"/>
             <DvLabel text="57%" style="color:#a5f3fc; font-size:12; font-weight:bold"/>
           </DvBox>
@@ -119,7 +119,7 @@
         </DvBox>
         <DvBox style="display:flex; flex-direction:column; gap:8">
           <DvBox style="width:318; display:flex; flex-direction:row">
-            <DvLabel text="포장" style="color:#94a3b8; font-size:12"/>
+            <DvLabel text="Packing" style="color:#94a3b8; font-size:12"/>
             <DvBox style="flex-grow:1"/>
             <DvLabel text="24%" style="color:#a5f3fc; font-size:12; font-weight:bold"/>
           </DvBox>
@@ -133,7 +133,7 @@
     </DvBox>
     <DvBox style="width:0; flex-grow:1; background:#1b2238; border-radius:18; border:1 #2a3352; box-shadow:0 12 30 #00000055; padding:20; display:flex; flex-direction:column; align-items:stretch; gap:14">
       <DvBox style="display:flex; flex-direction:row; align-items:center; gap:10">
-        <DvLabel text="시간대별 부하" style="color:#e2e8f0; font-size:14; font-weight:bold"/>
+        <DvLabel text="Hourly load" style="color:#e2e8f0; font-size:14; font-weight:bold"/>
         <DvBox style="flex-grow:1"/>
         <DvBox style="display:flex; flex-direction:row; align-items:center; gap:6">
           <DvBox style="width:8; height:8; border-radius:4; background:#22d3ee"/>
@@ -419,12 +419,12 @@
         <DvBox style="flex-grow:1"/>
         <DvLabel text="+3.0%" style="color:#f87171; background:#ef44441f; font-size:13; font-weight:bold; padding:4 10; border-radius:10"/>
       </DvBox>
-      <DvLabel text="오늘 누적 전력" style="color:#7c88a8; font-size:12"/>
+      <DvLabel text="Energy used today" style="color:#7c88a8; font-size:12"/>
       <DvLabel text="2,516.31" style="color:#a5f3fc; font-size:38; font-weight:bold"/>
       <DvBox style="height:1; background:#2a3352"/>
       <DvBox style="display:flex; flex-direction:column; gap:6; align-items:stretch">
         <DvBox style="display:flex; flex-direction:row">
-          <DvLabel text="압축기" style="color:#cbd5e1; font-size:13"/>
+          <DvLabel text="Compressor" style="color:#cbd5e1; font-size:13"/>
           <DvBox style="flex-grow:1"/>
           <DvLabel text="82%" style="color:#7c88a8; font-size:12"/>
         </DvBox>
@@ -434,7 +434,7 @@
       </DvBox>
       <DvBox style="display:flex; flex-direction:column; gap:6; align-items:stretch">
         <DvBox style="display:flex; flex-direction:row">
-          <DvLabel text="냉각탑" style="color:#cbd5e1; font-size:13"/>
+          <DvLabel text="Cooling tower" style="color:#cbd5e1; font-size:13"/>
           <DvBox style="flex-grow:1"/>
           <DvLabel text="61%" style="color:#7c88a8; font-size:12"/>
         </DvBox>
@@ -444,7 +444,7 @@
       </DvBox>
       <DvBox style="display:flex; flex-direction:column; gap:6; align-items:stretch">
         <DvBox style="display:flex; flex-direction:row">
-          <DvLabel text="조명" style="color:#cbd5e1; font-size:13"/>
+          <DvLabel text="Lighting" style="color:#cbd5e1; font-size:13"/>
           <DvBox style="flex-grow:1"/>
           <DvLabel text="34%" style="color:#7c88a8; font-size:12"/>
         </DvBox>
@@ -454,7 +454,7 @@
       </DvBox>
       <DvBox style="display:flex; flex-direction:column; gap:6; align-items:stretch">
         <DvBox style="display:flex; flex-direction:row">
-          <DvLabel text="공조" style="color:#cbd5e1; font-size:13"/>
+          <DvLabel text="HVAC" style="color:#cbd5e1; font-size:13"/>
           <DvBox style="flex-grow:1"/>
           <DvLabel text="47%" style="color:#7c88a8; font-size:12"/>
         </DvBox>

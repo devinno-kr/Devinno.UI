@@ -11,7 +11,7 @@ public sealed partial class AlarmDialog : DvDialog<bool?>
 
     public int AlarmId { get; }
     public string Text { get; }
-    public string Code => $"알람 #{AlarmId}";
+    public string Code => $"Alarm #{AlarmId}";
 
     public void Ack() => Close(true);
 }

@@ -1,6 +1,6 @@
-<DvPageFrame vm="ComponentDashboardPage" title="한강 정수장 2공정" subtitle="실시간 운영 대시보드">
+<DvPageFrame vm="ComponentDashboardPage" title="Han River WTP Line 2" subtitle="Live operations dashboard">
   <DvRow visible="{ShowBack}">
-    <DvButton variant="ghost" text="← 이전" onclick="Back"/>
+    <DvButton variant="ghost" text="← Back" onclick="Back"/>
   </DvRow>
   <DvStyle>
     .dial { aspect-ratio:1; border-radius:999; border:4 token(border-strong); padding:6;
@@ -12,85 +12,85 @@
     <DvBadge tone="{StatusTone}" text="{StatusText}"/>
     <DvLabel class="label subtle" text="2026.10.12  14:32"/>
     <DvSpacer/>
-    <DvButton variant="primary" text="운전 시작 (1.5초 누름)" onclick="Start" hold="1500"/>
-    <DvButton variant="danger" text="비상 정지" onclick="Stop"/>
+    <DvButton variant="primary" text="Start (hold 1.5 s)" onclick="Start" hold="1500"/>
+    <DvButton variant="danger" text="E-Stop" onclick="Stop"/>
   </DvRow>
 
   <DvGrid columns="4">
-    <DvStat label="처리 유량" value="1,284" unit="m3/h" delta="+3.2%" tone="success"/>
-    <DvStat label="출수 탁도" value="0.18" unit="NTU" delta="-0.04" tone="success"/>
-    <DvStat label="전력 사용" value="412" unit="kW" delta="+8.1%" tone="warning"/>
-    <DvStat label="설비 가동률" value="98.6" unit="%" delta="목표 달성" tone="info"/>
+    <DvStat label="Treated flow" value="1,284" unit="m3/h" delta="+3.2%" tone="success"/>
+    <DvStat label="Outlet turbidity" value="0.18" unit="NTU" delta="-0.04" tone="success"/>
+    <DvStat label="Power use" value="412" unit="kW" delta="+8.1%" tone="warning"/>
+    <DvStat label="Equipment uptime" value="98.6" unit="%" delta="On target" tone="info"/>
   </DvGrid>
 
   <DvRow align="stretch" grow="1" gap="lg">
     <DvStack grow="1" gap="lg">
       <DvRow align="stretch" grow="1" gap="lg">
-        <DvCard title="저수조 수위" badge="3기 운용" grow="1">
+        <DvCard title="Tank levels" badge="3 units" grow="1">
           <DvRow align="stretch" grow="1" gap="lg" padding="none sm">
             <DvStack align="stretch" gap="sm" grow="1">
               <DvTank value="64" unit="%" alarm-zones="0:70:#3b82f6 70:88:#f59e0b 88:100:#ef4444" grow="1"/>
-              <DvLabel class="label muted" style="text-align:center" text="원수조"/>
+              <DvLabel class="label muted" style="text-align:center" text="Raw water"/>
             </DvStack>
             <DvStack align="stretch" gap="sm" grow="1">
               <DvTank value="81" unit="%" alarm-zones="0:70:#3b82f6 70:88:#f59e0b 88:100:#ef4444" grow="1"/>
-              <DvLabel class="label muted" style="text-align:center" text="응집조"/>
+              <DvLabel class="label muted" style="text-align:center" text="Flocculation"/>
             </DvStack>
             <DvStack align="stretch" gap="sm" grow="1">
               <DvTank value="93" unit="%" alarm-zones="0:70:#3b82f6 70:88:#f59e0b 88:100:#ef4444" grow="1"/>
-              <DvLabel class="label muted" style="text-align:center" text="정수지"/>
+              <DvLabel class="label muted" style="text-align:center" text="Clear well"/>
             </DvStack>
           </DvRow>
         </DvCard>
-        <DvCard title="송수 압력" badge="bar x10" grow="1">
+        <DvCard title="Transfer pressure" badge="bar x10" grow="1">
           <DvRow align="stretch" grow="1" gap="lg" padding="none xs">
             <DvStack align="stretch" gap="sm" grow="1">
               <DvBox class="dial" grow="1"><DvGauge value="58" alarm-zones="0:65:#10b981 65:85:#f59e0b 85:100:#ef4444" ticks="20" minor-ticks="5" grow="1"/></DvBox>
-              <DvLabel class="label muted" style="text-align:center" text="주 송수관"/>
+              <DvLabel class="label muted" style="text-align:center" text="Main line"/>
             </DvStack>
             <DvStack align="stretch" gap="sm" grow="1">
               <DvBox class="dial" grow="1"><DvGauge value="79" alarm-zones="0:65:#10b981 65:85:#f59e0b 85:100:#ef4444" ticks="20" minor-ticks="5" grow="1"/></DvBox>
-              <DvLabel class="label muted" style="text-align:center" text="역세 라인"/>
+              <DvLabel class="label muted" style="text-align:center" text="Backwash line"/>
             </DvStack>
           </DvRow>
         </DvCard>
       </DvRow>
-      <DvCard title="최근 기록" badge="오늘">
+      <DvCard title="Recent log" badge="Today">
         <DvTabs>
-          <DvTab text="알람">
-            <DvStatusItem label="여과기 B 차압 상한 초과" state="fault" status="14:28"/>
-            <DvStatusItem label="응집조 수위 주의 구간 진입" state="warn" status="13:52"/>
+          <DvTab text="Alarms">
+            <DvStatusItem label="Filter B diff. pressure over limit" state="fault" status="14:28"/>
+            <DvStatusItem label="Flocculation level in caution zone" state="warn" status="13:52"/>
           </DvTab>
-          <DvTab text="운전 기록">
-            <DvStatusItem label="2호 펌프 기동" state="run" status="12:10"/>
-            <DvStatusItem label="자동 운전 모드 전환" state="off" status="09:00"/>
+          <DvTab text="Run log">
+            <DvStatusItem label="Pump 2 started" state="run" status="12:10"/>
+            <DvStatusItem label="Switched to auto mode" state="off" status="09:00"/>
           </DvTab>
-          <DvTab text="운전 설정">
+          <DvTab text="Run settings">
             <DvRow gap="md">
               <DvSegment value="{Bind Data.PumpSpeed}">
-                <DvOption value="1" text="저속"/>
-                <DvOption value="2" text="중속"/>
-                <DvOption value="3" text="고속"/>
+                <DvOption value="1" text="Low"/>
+                <DvOption value="2" text="Mid"/>
+                <DvOption value="3" text="High"/>
               </DvSegment>
-              <DvButton text="조명" value="{Bind Data.Light}"/>
-              <DvButton text="환기" value="{Bind Data.Fan}"/>
+              <DvButton text="Light" value="{Bind Data.Light}"/>
+              <DvButton text="Fan" value="{Bind Data.Fan}"/>
             </DvRow>
           </DvTab>
         </DvTabs>
       </DvCard>
     </DvStack>
 
-    <DvCard title="설비 상태" badge="6대" width="310">
-      <DvStatusItem label="취수 펌프 #1" state="{PumpState}" status="{PumpText}"/>
-      <DvStatusItem label="취수 펌프 #2" state="{PumpState}" status="{PumpText}"/>
-      <DvStatusItem label="송수 펌프 #1" state="run" status="운전"/>
-      <DvStatusItem label="약품 주입기" state="off" status="대기"/>
-      <DvStatusItem label="여과기 A" state="run" status="운전"/>
-      <DvStatusItem label="여과기 B" state="fault" status="경보" blink="true"/>
+    <DvCard title="Equipment status" badge="6 units" width="310">
+      <DvStatusItem label="Intake pump #1" state="{PumpState}" status="{PumpText}"/>
+      <DvStatusItem label="Intake pump #2" state="{PumpState}" status="{PumpText}"/>
+      <DvStatusItem label="Transfer pump #1" state="run" status="Running"/>
+      <DvStatusItem label="Chemical feeder" state="off" status="Standby"/>
+      <DvStatusItem label="Filter A" state="run" status="Running"/>
+      <DvStatusItem label="Filter B" state="fault" status="Alarm" blink="true"/>
       <DvSpacer/>
       <DvBox style="height:1; background:token(border)"/>
-      <DvSwitch label="자동 운전 모드" value="{Bind Data.AutoMode}"/>
-      <DvSwitch label="알람음 끄기" value="{Bind Data.Mute}"/>
+      <DvSwitch label="Auto mode" value="{Bind Data.AutoMode}"/>
+      <DvSwitch label="Mute alarm" value="{Bind Data.Mute}"/>
     </DvCard>
   </DvRow>
 </DvPageFrame>

@@ -1,0 +1,28 @@
+<DvRow vm="ShowcaseBar" gap="sm" padding="none lg" style="height:64; background: token(surface)">
+  <DvStyle>
+    .brand { width:40; height:40; border-radius: token(radius.md); background: linear-gradient(135deg, #06b6d4, #3b82f6); display:flex; justify-content:center; align-items:center }
+    .nav { padding:8 16; border-radius: token(radius.md); color: token(text-muted); font-size: token(font.body) }
+    .nav:hover { background: token(surface-raised); color: token(text) }
+    .nav-on, .nav-on:hover { background: token(primary); color: token(primary-fg) }
+    .clock { font-size: token(font.title); font-weight: bold; color: token(text); white-space: nowrap }
+  </DvStyle>
+  <DvBox class="brand"><DvIcon icon="fa-droplet" style="font-size:20; color:#ffffff"/></DvBox>
+  <DvStack gap="none">
+    <DvLabel class="title" text="Riverside Water Treatment · Line 2" style="white-space:nowrap"/>
+    <DvLabel class="caption" text="Shift B · Operator J. Kim" style="white-space:nowrap"/>
+  </DvStack>
+  <DvBox style="width:16"/>
+  <DvButton class="{OverviewClass}" icon="fa-gauge-high" text="Overview" onclick="ShowOverview"/>
+  <DvButton class="{ProcessClass}" icon="fa-diagram-project" text="Process" onclick="ShowProcess"/>
+  <DvButton class="{WidgetsClass}" icon="fa-table-cells-large" text="Widgets" onclick="ShowWidgets"/>
+  <DvSpacer/>
+  <DvBadge tone="success" text="PLC ONLINE"/>
+  <DvBadge tone="{ModeTone}" text="{ModeText}"/>
+  <DvBadge tone="{UnackedTone}" text="{UnackedText}"/>
+  <DvIcon icon="fa-clock" style="font-size:15; color: token(text-muted)"/>
+  <DvLabel class="clock" text="{Clock}"/>
+  <DvBox style="width:4"/>
+  <DvButton variant="secondary" icon="fa-check-double" text="Ack all" onclick="AckAll"/>
+  <DvButton variant="danger" icon="fa-power-off" text="E-STOP" hold="1000" onclick="EmergencyStop" visible="{Running}"/>
+  <DvButton variant="primary" icon="fa-rotate-left" text="Reset" hold="1000" onclick="ResetPlant" visible="{Stopped}"/>
+</DvRow>

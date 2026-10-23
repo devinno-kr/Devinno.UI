@@ -9,12 +9,12 @@ public sealed partial class DashboardPage : DvPage
     public bool AutoMode { get; set; } = true;
     public bool Mute { get; set; }
 
-    public string StatusText => Running ? "정상 운전" : "운전 정지";
+    public string StatusText => Running ? "Running" : "Stopped";
     public string StatusFg => Running ? "#6ee7b7" : "#fca5a5";
     public string StatusBg => Running ? "#10b9811f" : "#ef44441f";
     public string StatusBorder => Running ? "#10b98155" : "#ef444455";
     public string LampColor => Running ? "#10b981" : "#ef4444";
-    public string PumpState => Running ? "운전" : "정지";
+    public string PumpState => Running ? "Running" : "Stopped";
     public string PumpFg => Running ? "#6ee7b7" : "#94a3b8";
     public string PumpBg => Running ? "#10b9811f" : "#1e293b";
 

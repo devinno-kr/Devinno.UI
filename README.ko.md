@@ -137,6 +137,17 @@ window.Run();
 
 페이지 안에서는 `App.Show<AlarmPage>()` 로 전환합니다. 자세한 내용은 [`dvml-ui-markup.md`](dvml-ui-markup.md) 16장을 보세요.
 
+## 데모
+<!-- en-hash: 1c350b6070a339c0 -->
+
+저장소를 받아 데모 앱을 실행합니다.
+
+```bash
+dotnet run --project samples/Devinno.UI.Demo
+```
+
+작은 시뮬레이션이 값을 움직이는 정수장 쇼케이스가 뜹니다. 운영 대시보드, 흐름 표시가 켜진 P&ID, 기능별 페이지를 모은 Widgets 페이지(그리드, 트렌드, 알람, 다이얼로그, 입력, 공정도 등)로 이루어져 있습니다. `-- shot <폴더>` 를 붙이면 창 없이 모든 화면을 PNG 로 저장합니다.
+
 ## 문서
 <!-- en-hash: b72cfb2c203b9adc -->
 
@@ -158,7 +169,7 @@ Devinno.UI 를 참조한 프로젝트를 빌드하면 패키지 문서와 영어
 - `.gitignore` 에 `.devinno/` 를 넣는 것을 권장합니다(빌드할 때마다 다시 만들어짐).
 
 ## 저장소 구성
-<!-- en-hash: 772a5a2096738648 -->
+<!-- en-hash: 0b7b9606f300059b -->
 
 | 경로 | 설명 |
 |---|---|
@@ -166,7 +177,7 @@ Devinno.UI 를 참조한 프로젝트를 빌드하면 패키지 문서와 영어
 | `src/Devinno.UI.OpenTK` | OpenTK 호스트 (`ViewWindow`) |
 | `src/Devinno.UI.WinForms` | WinForms 호스트 (`ViewControl`) |
 | `tests/Devinno.UI.Tests` | xUnit 테스트 |
-| `samples/Devinno.UI.Demo` | OpenTK 데모 앱 (`-- top`, `-- nav` 로 앱 모델 확인) |
+| `samples/Devinno.UI.Demo` | OpenTK 데모 앱 (인자 없음 = 쇼케이스, `-- top`, `-- nav` 로 앱 모델 확인) |
 | `samples/Devinno.UI.Demo.WinForms` | WinForms 데모 앱 |
 
 ## 면책

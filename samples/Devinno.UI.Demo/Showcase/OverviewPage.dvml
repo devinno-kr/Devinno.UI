@@ -1,0 +1,106 @@
+<DvPageFrame vm="OverviewPage" style="padding:16; gap:14">
+  <DvStyle>
+    .kpi { padding:14 16; gap:6 }
+    .cap { text-align:center; white-space:nowrap }
+  </DvStyle>
+
+  <DvAlarmBanner items="{Alarms}" onack="Ack"/>
+
+  <DvRepeat items="{Kpis}" style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:14">
+    <DvCard class="kpi">
+      <DvRow gap="sm">
+        <DvLabel class="label muted" text="{Item.Label}"/>
+        <DvSpacer/>
+        <DvBadge tone="{Item.Tone}" text="{Item.Delta}"/>
+      </DvRow>
+      <DvRow gap="xs" align="end">
+        <DvLabel class="display" text="{Item.Value}"/>
+        <DvLabel class="label muted" text="{Item.Unit}" style="padding-bottom:6"/>
+      </DvRow>
+      <DvSparkline values="{Item.History}" area="true" tone="{Item.Tone}" style="height:30"/>
+    </DvCard>
+  </DvRepeat>
+
+  <DvRow align="stretch" gap="md" grow="1" style="height:0">
+    <DvCard title="Plant flow" badge="last 2 min" grow="3" style="width:0">
+      <DvTrend source="{Trend}" window="120" area="true" grow="1" style="height:0">
+        <DvTrendChannel name="intake" label="Intake" unit="m³/h" color="#22d3ee"/>
+        <DvTrendChannel name="treated" label="Treated" unit="m³/h" color="#34d399"/>
+        <DvTrendChannel name="demand" label="Demand" unit="m³/h" color="#a78bfa"/>
+      </DvTrend>
+    </DvCard>
+
+    <DvCard title="Pumping &amp; filtration" badge="{DutyText}" grow="3" style="width:0">
+      <DvRow align="stretch" gap="md" grow="1" style="height:0">
+        <DvStack gap="xs" grow="1" style="width:0">
+          <DvGauge value="{DischargePressure}" min="0" max="10" ticks="2" minor-ticks="0.5" format="0.0"
+                   alarm-zones="0:7:token(tone-success) 7:8.5:token(tone-warning) 8.5:10:token(tone-danger)" grow="1"/>
+          <DvLabel class="caption cap" text="Discharge · bar"/>
+        </DvStack>
+        <DvStack gap="xs" grow="1" style="width:0">
+          <DvGauge value="{FilterDp}" min="0" max="150" ticks="30" minor-ticks="10" format="0"
+                   alarm-zones="0:110:token(tone-success) 110:130:token(tone-warning) 130:150:token(tone-danger)" grow="1"/>
+          <DvLabel class="caption cap" text="Filter ΔP · kPa"/>
+        </DvStack>
+        <DvStack gap="xs" grow="1" style="width:0">
+          <DvRing value="{PumpSpeed}" unit="%" label="speed" format="0" grow="1"/>
+          <DvLabel class="caption cap" text="P-101 VFD"/>
+        </DvStack>
+      </DvRow>
+      <DvStepBar steps="{BackwashSteps}" current="{BackwashStep}"/>
+    </DvCard>
+
+    <DvCard title="Reservoirs" badge="3 in service" grow="2" style="width:0">
+      <DvRow align="stretch" gap="md" grow="1" style="height:0">
+        <DvStack gap="xs" grow="1" style="width:0">
+          <DvTank value="{RawLevel}" unit="%" format="0" alarm-zones="0:75:#3b82f6 75:90:#f59e0b 90:100:#ef4444" grow="1"/>
+          <DvLabel class="caption cap" text="Raw water"/>
+        </DvStack>
+        <DvStack gap="xs" grow="1" style="width:0">
+          <DvTank value="{FlocLevel}" unit="%" format="0" alarm-zones="0:75:#3b82f6 75:90:#f59e0b 90:100:#ef4444" grow="1"/>
+          <DvLabel class="caption cap" text="Flocculation"/>
+        </DvStack>
+        <DvStack gap="xs" grow="1" style="width:0">
+          <DvTank value="{ClearLevel}" unit="%" format="0" alarm-zones="0:75:#3b82f6 75:90:#f59e0b 90:100:#ef4444" grow="1"/>
+          <DvLabel class="caption cap" text="Clear well"/>
+        </DvStack>
+      </DvRow>
+    </DvCard>
+  </DvRow>
+
+  <DvRow align="stretch" gap="md" grow="1" style="height:0">
+    <DvCard title="Alarms" badge="{AlarmCount}" grow="3" style="width:0">
+      <DvAlarmList items="{Alarms}" onack="Ack" grow="1" style="height:0"/>
+    </DvCard>
+
+    <DvCard title="Equipment" badge="{EquipmentCount}" grow="3" style="width:0">
+      <DvDataGrid items="{Equipment}" row-height="38" header-height="34" grow="1" style="height:0; border-radius: token(radius.md)">
+        <DvColumn header="" field="State" cell-type="lamp" width="44" align="center"/>
+        <DvColumn header="Tag" field="Tag" width="72"/>
+        <DvColumn header="Description" field="Description"/>
+        <DvColumn header="Load" field="Load" width="70" format="0' %'"/>
+        <DvColumn header="Auto" field="Auto" cell-type="check" width="60" align="center"/>
+        <DvColumn header="" cell-type="button" text="Reset" variant="secondary" enabled="CanReset" onclick="ResetEquipment" width="84"/>
+      </DvDataGrid>
+    </DvCard>
+
+    <DvCard title="Chlorine dosing" badge="CL-1" grow="2" style="width:0">
+      <DvSegment value="{Bind DoseMode}">
+        <DvOption value="auto" text="Auto"/>
+        <DvOption value="manual" text="Manual"/>
+        <DvOption value="off" text="Off"/>
+      </DvSegment>
+      <DvRow gap="md" grow="1" align="center">
+        <DvStack gap="xs" align="center">
+          <DvKnob value="{Bind DoseSetpoint}" min="0" max="2" step="0.05" unit="mg/L" input-mode="both" style="width:100; height:100"/>
+          <DvLabel class="caption cap" text="Setpoint"/>
+        </DvStack>
+        <DvStack gap="sm" grow="1">
+          <DvSwitch label="Dosing pump" value="{Bind DosingPump}"/>
+          <DvSwitch label="Pre-chlorination" value="{Bind PreChlorination}"/>
+        </DvStack>
+      </DvRow>
+      <DvSlider value="{Bind DoseRate}" min="0" max="100" step="1" unit="%" show-value="true" disabled="{RateLocked}"/>
+    </DvCard>
+  </DvRow>
+</DvPageFrame>

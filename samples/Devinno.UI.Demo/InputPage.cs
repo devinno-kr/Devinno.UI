@@ -6,14 +6,14 @@ public sealed partial class InputPage : DvPage
     public const int Width = 1000;
     public const int Height = 760;
 
-    public string Name { get; set; } = "세척 공정 B";
+    public string Name { get; set; } = "Wash process B";
     public string Password { get; set; } = "";
-    public string Memo { get; set; } = "1단계 예열 후 세척액 투입.\n온도가 60℃ 를 넘으면 펌프 속도를 낮춘다.";
+    public string Memo { get; set; } = "Step 1: preheat, then add cleaning fluid.\nAbove 60℃, lower the pump speed.";
     public double Temp { get; set; } = 62.5;
     public int Repeat { get; set; } = 3;
     public int Offset { get; set; } = -5;
     public string Machine { get; set; } = "WASH-02";
-    public string Saved { get; set; } = "아직 저장 안 함";
+    public string Saved { get; set; } = "Not saved yet";
     public string Mode { get; set; } = "auto";
     public Rotation Direction { get; set; } = Rotation.Forward;
     public int? BaseRecipe { get; set; }
@@ -22,11 +22,11 @@ public sealed partial class InputPage : DvPage
     public TimeOnly Start { get; set; } = new(6, 15, 30);
     public string Pen { get; set; } = "#3B82F6";
     public List<RecipeItem> Recipes { get; } = Enumerable.Range(1, 12)
-        .Select(i => new RecipeItem(i, $"표준 세척 {i:00}")).ToList();
+        .Select(i => new RecipeItem(i, $"Standard wash {i:00}")).ToList();
 
     public void Save()
-        => Saved = $"저장됨 {DateTime.Now:HH:mm:ss} — {Name} / {Temp:0.0}℃ / {Repeat}회 / 오프셋 {Offset} / {Mode} / {Direction}" +
-                   (Password.Length > 0 ? " / 비밀번호 변경" : "");
+        => Saved = $"Saved {DateTime.Now:HH:mm:ss} — {Name} / {Temp:0.0}℃ / {Repeat} times / offset {Offset} / {Mode} / {Direction}" +
+                   (Password.Length > 0 ? " / password changed" : "");
 }
 
 public enum Rotation { Forward, Reverse }

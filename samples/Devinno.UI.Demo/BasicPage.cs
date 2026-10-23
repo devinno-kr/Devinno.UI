@@ -13,12 +13,12 @@ public sealed partial class BasicPage : DvPage
     public RunMode Run { get; set; } = RunMode.Auto;
     public int Valve { get; set; } = 35;
     public double Level { get; set; } = 6.5;
-    public List<RecipeItem> Recipes { get; } = Enumerable.Range(1, 9).Select(i => new RecipeItem(i, $"세척 레시피 {i:00}")).ToList();
+    public List<RecipeItem> Recipes { get; } = Enumerable.Range(1, 9).Select(i => new RecipeItem(i, $"Wash recipe {i:00}")).ToList();
     public int? RecipeId { get; set; } = 3;
     public List<string> Zones { get; set; } = new() { "B" };
-    public string ZonesText => Zones.Count == 0 ? "(없음)" : string.Join(", ", Zones);
+    public string ZonesText => Zones.Count == 0 ? "(none)" : string.Join(", ", Zones);
     public bool ShowRun { get; set; } = true;
-    public string[] BatchSteps { get; } = { "원료 투입", "혼합", "가열", "숙성", "배출" };
+    public string[] BatchSteps { get; } = { "Charge", "Mix", "Heat", "Age", "Discharge" };
     public int BatchStep { get; set; } = 2;
 
     private readonly Random _rng = new(7);
@@ -31,18 +31,18 @@ public sealed partial class BasicPage : DvPage
     {
         Flow = Enumerable.Range(0, 20).Select(i => Math.Round(40 + 12 * Math.Sin(i / 3.0 + _rng.NextDouble()) + _rng.NextDouble() * 4, 1)).ToList();
         Pressure = Enumerable.Range(0, 30).Select(_ => Math.Round(2 + _rng.NextDouble(), 2)).ToList();
-        Lines = new[] { "1라인", "2라인", "3라인", "4라인" }.Select(n => new LineCount(n, _rng.Next(20, 140))).ToList();
+        Lines = new[] { "Line 1", "Line 2", "Line 3", "Line 4" }.Select(n => new LineCount(n, _rng.Next(20, 140))).ToList();
     }
 
     public List<Equip> Plant { get; } = new()
     {
-        new("1공장", "F1",
-            new Equip("A라인", "F1-A", new Equip("원료 펌프", "P-101"), new Equip("펌프 2", "P-102"), new Equip("혼합기", "MX-1")),
-            new Equip("B라인", "F1-B", new Equip("충전기", "FL-1"))),
-        new("2공장", "F2", new Equip("C라인", "F2-C", new Equip("포장기", "PK-1")), new Equip("유틸리티", "F2-U")),
+        new("Plant 1", "F1",
+            new Equip("Line A", "F1-A", new Equip("Feed pump", "P-101"), new Equip("Pump 2", "P-102"), new Equip("Mixer", "MX-1")),
+            new Equip("Line B", "F1-B", new Equip("Filler", "FL-1"))),
+        new("Plant 2", "F2", new Equip("Line C", "F2-C", new Equip("Packer", "PK-1")), new Equip("Utility", "F2-U")),
     };
     public Equip? PickedEquip { get; set; }
-    public string PickedEquipText => PickedEquip is { } e ? $"{e.Name} ({e.Tag})" : "(없음)";
+    public string PickedEquipText => PickedEquip is { } e ? $"{e.Name} ({e.Tag})" : "(none)";
 
     // 핸들 — 항목 객체를 쓰면 조상 가지가 펼쳐지고 값(item-value = Tag)이 고른 값이 된다
     public void PickPump2() => tvPlant.SelectedNode = Plant[0].Kids[0].Kids[1];
@@ -63,25 +63,25 @@ public sealed partial class BasicPage : DvPage
 
     partial void OnLoaded()
     {
-        tgPump.CheckedChanged += (_, e) => Log("펌프", tgPump.Checked ? "켜짐" : "꺼짐", e);
-        swHeater.CheckedChanged += (_, e) => Log("히터", swHeater.Checked ? "켜짐" : "꺼짐", e);
-        knSpeed.ValueChanged += (_, e) => Log("속도", $"{knSpeed.Value:0}%", e);
-        segMode.SelectionChanged += (_, e) => Log("모드", $"{segMode.SelectedValue} (#{segMode.SelectedIndex})", e);
-        selRecipe.SelectionChanged += (_, e) => Log("레시피", $"{selRecipe.SelectedValue}", e);
-        inOperator.TextChanged += (_, e) => Log("작업자", inOperator.Text ?? "(없음)", e);
-        inTemp.ValueChanged += (_, e) => Log("온도", $"{inTemp.Value}℃", e);
-        tgAuto.CheckedChanged += (_, e) => Log("자동", tgAuto.Checked ? "켜짐" : "꺼짐", e);
-        chkLog.CheckedChanged += (_, e) => Log("기록", chkLog.Checked ? "켬" : "끔", e);
-        rdStop.CheckedChanged += (_, e) => Log("정지 라디오", rdStop.Checked ? "켜짐" : "꺼짐", e);
-        slLight.ValueChanged += (_, e) => Log("조명", $"{slLight.Value:0.0}", e);
-        lstShift.SelectionChanged += (_, e) => Log("교대", $"{lstShift.SelectedValue ?? "-"}", e);
-        tvPlant.SelectionChanged += (_, e) => Log("트리", $"{(tvPlant.SelectedNode as Equip)?.Name ?? "-"}", e);
-        expMore.ExpandedChanged += (_, e) => Log("고급 설정", expMore.IsExpanded ? "펼침" : "접힘", e);
+        tgPump.CheckedChanged += (_, e) => Log("Pump", tgPump.Checked ? "on" : "off", e);
+        swHeater.CheckedChanged += (_, e) => Log("Heater", swHeater.Checked ? "on" : "off", e);
+        knSpeed.ValueChanged += (_, e) => Log("Speed", $"{knSpeed.Value:0}%", e);
+        segMode.SelectionChanged += (_, e) => Log("Mode", $"{segMode.SelectedValue} (#{segMode.SelectedIndex})", e);
+        selRecipe.SelectionChanged += (_, e) => Log("Recipe", $"{selRecipe.SelectedValue}", e);
+        inOperator.TextChanged += (_, e) => Log("Operator", inOperator.Text ?? "(none)", e);
+        inTemp.ValueChanged += (_, e) => Log("Temp", $"{inTemp.Value}℃", e);
+        tgAuto.CheckedChanged += (_, e) => Log("Auto", tgAuto.Checked ? "on" : "off", e);
+        chkLog.CheckedChanged += (_, e) => Log("Log", chkLog.Checked ? "on" : "off", e);
+        rdStop.CheckedChanged += (_, e) => Log("Stop radio", rdStop.Checked ? "on" : "off", e);
+        slLight.ValueChanged += (_, e) => Log("Light", $"{slLight.Value:0.0}", e);
+        lstShift.SelectionChanged += (_, e) => Log("Shift", $"{lstShift.SelectedValue ?? "-"}", e);
+        tvPlant.SelectionChanged += (_, e) => Log("Tree", $"{(tvPlant.SelectedNode as Equip)?.Name ?? "-"}", e);
+        expMore.ExpandedChanged += (_, e) => Log("Advanced", expMore.IsExpanded ? "expanded" : "collapsed", e);
 
         segMode.SelectedIndex = 0; // 배치 전 — 첫 레이아웃 때 적용
         knSpeed.Value = 40;
         lstShift.SelectedIndex = 2; // 처음엔 안 보이는 탭 — 그 탭이 처음 배치될 때 적용
-        foreach (var (t, b) in new[] { ("1호 펌프", "운전 중 · 45 Hz · 12.4 A"), ("2호 펌프", "정지 · 점검 예정"), ("3호 펌프", "고장 · 과전류 트립") })
+        foreach (var (t, b) in new[] { ("Pump 1", "Running · 45 Hz · 12.4 A"), ("Pump 2", "Stopped · service due"), ("Pump 3", "Fault · overcurrent trip") })
             Sections.Add(new Section(t, b, Sections));
         ShowNow();
         Shuffle();
@@ -94,7 +94,7 @@ public sealed partial class BasicPage : DvPage
         knSpeed.Value = 75;
         segMode.SelectedIndex = 1;
         selRecipe.SelectedValue = "B";
-        inOperator.Text = "홍길동";
+        inOperator.Text = "Alex Kim";
         inTemp.Value = 65;
         tgAuto.Checked = true; // 바인딩 — VM Auto 에 씀
         expMore.IsExpanded = true;
@@ -119,7 +119,7 @@ public sealed partial class BasicPage : DvPage
 
     private void Log(string what, string value, DvValueChangedEventArgs e)
     {
-        _log.Insert(0, $"{what} = {value}  ({(e.ByUser ? "화면" : "코드")})");
+        _log.Insert(0, $"{what} = {value}  ({(e.ByUser ? "screen" : "code")})");
         if (_log.Count > 8)
             _log.RemoveAt(_log.Count - 1);
         lblLog.Text = string.Join("\n", _log);
@@ -127,8 +127,8 @@ public sealed partial class BasicPage : DvPage
     }
 
     private void ShowNow()
-        => lblNow.Text = $"펌프 {(tgPump.Checked ? "ON" : "OFF")} · 속도 {knSpeed.Value:0}% · 모드 {segMode.SelectedValue ?? "-"} · " +
-                         $"레시피 {selRecipe.SelectedValue ?? "-"} · 작업자 {inOperator.Text ?? "-"} · 온도 {inTemp.Value?.ToString() ?? "-"}";
+        => lblNow.Text = $"Pump {(tgPump.Checked ? "ON" : "OFF")} · Speed {knSpeed.Value:0}% · Mode {segMode.SelectedValue ?? "-"} · " +
+                         $"Recipe {selRecipe.SelectedValue ?? "-"} · Operator {inOperator.Text ?? "-"} · Temp {inTemp.Value?.ToString() ?? "-"}";
 }
 
 public enum RunMode { Auto, Manual, Stop }
