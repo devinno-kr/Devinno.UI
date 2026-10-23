@@ -3,7 +3,7 @@ using Devinno.UI.Alarms;
 using Devinno.UI.Localization;
 
 // 다국어 데모 — 버튼으로 언어 전환(문자열 테이블 Language 변경 → 화면 자동 재레이아웃)
-public sealed partial class LangPage : DvPage
+public sealed partial class LangPage : DemoPage
 {
     public const int Width = 1100;
     public const int Height = 560;

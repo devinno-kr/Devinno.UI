@@ -5,7 +5,7 @@ using Devinno.UI.Components;
 // 정수 공정에는 계기 버블(FT·FIC)과 신호선(FT → FIC → 조절 밸브)을 붙였다.
 // 래칭 버튼으로 펌프·밸브 상태를 바꾸고(값만 바뀌므로 배치는 그대로), 타이머가 수위를 움직인다. 모양(plain·rich)은 세그먼트로.
 // 두 번째 탭: 같은 블렌더 유닛 3기 — 템플릿 루트가 DvUnit 인 컴포넌트(Blender)를 반복, 유닛 안 Reset 은 Reset(BlenderVm) 로 자기 유닛을 받는다.
-public sealed partial class ProcessPage : DvPage
+public sealed partial class ProcessPage : DemoPage
 {
     public const int Width = 1600, Height = 1080;
 

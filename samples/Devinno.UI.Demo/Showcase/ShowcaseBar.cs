@@ -1,15 +1,12 @@
 using Devinno.UI.App;
 
 // 쇼케이스 상단 바 — 페이지 전환(Overview·Process·Widgets) + 공장 상태 칩·시계·전체 확인·비상 정지.
-// 비상 정지·복귀는 1초 누름(hold) — 잘못 누름 방지. Widgets 에서 연 기능 페이지에서는 "← Back" 과 그 페이지 이름을 보인다.
-public sealed partial class ShowcaseBar(PlantSim sim, WidgetsPage widgets) : DvBar
+// 비상 정지·복귀는 1초 누름(hold) — 잘못 누름 방지.
+public sealed partial class ShowcaseBar(PlantSim sim) : DvBar
 {
     public string OverviewClass => Nav<OverviewPage>();
     public string ProcessClass => Nav<PlantProcessPage>();
     public string WidgetsClass => App.CurrentPage is OverviewPage or PlantProcessPage ? "nav" : "nav nav-on";
-    public bool InWidget => App.CurrentPage is not (OverviewPage or PlantProcessPage or WidgetsPage);
-    public bool OnMain => !InWidget;   // 기능 페이지에서는 뒤로 버튼 자리를 위해 상태 칩 둘을 숨긴다(미확인 알람 칩은 늘)
-    public string WidgetTitle => widgets.Entries.FirstOrDefault(e => e.Page == App.CurrentPage)?.Title ?? "";
 
     public void ShowOverview() => App.Show<OverviewPage>();
     public void ShowProcess() => App.Show<PlantProcessPage>();

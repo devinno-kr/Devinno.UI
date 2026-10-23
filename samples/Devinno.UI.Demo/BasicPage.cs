@@ -3,7 +3,7 @@ using Devinno.UI.Controls;
 
 // 기본 컨트롤 데모 — 값 핸들: id 만 준 입력 위젯은 핸들이 값을 들고 화면에서도 눌린다.
 // 바뀜 이벤트(화면·코드·바인딩)를 아래 기록에 쌓고, 핸들에서 읽은 지금 값을 보여 준다.
-public sealed partial class BasicPage : DvPage
+public sealed partial class BasicPage : DemoPage
 {
     public const int Width = 1360;
     public const int Height = 760;

@@ -1,4 +1,11 @@
-<DvPageFrame vm="TrendPage" title="Live trend" subtitle="Polling thread → TrendBuffer → Invalidate · last 2 min">
+<DvPageFrame vm="TrendPage">
+  <DvRow align="start">
+    <DvStack gap="none" grow="1" style="width:0">
+      <DvLabel class="heading" text="Live trend"/>
+      <DvLabel class="label muted" text="Polling thread → TrendBuffer → Invalidate · last 2 min"/>
+    </DvStack>
+    <DvButton variant="secondary" icon="fa-arrow-left" text="Back" onclick="Back" visible="{ShowBack}"/>
+  </DvRow>
   <DvCard title="Process values" badge="2 min" grow="1">
     <DvTrend source="{Trend}" window="120" area="true" grow="1">
       <DvTrendChannel name="temp" label="Temperature" unit="C" color="#22d3ee"/>

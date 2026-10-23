@@ -4,7 +4,7 @@
 // 조건부 색(row-class: 상한 행, cell-class: 값 셀 상한·하한), 즉시 셀(사용 체크·경보 램프 점멸·확인 버튼),
 // 편집 셀(이름·설정값 input, 모드 select, 예약 datetime, 색 color — 셀 탭 = 바로 편집, 네이티브 편집기는 Enter/Tab 연속 입력).
 // 값은 타이머가 0.5초마다 일부 행을 바꾸고 Repaint() 만 요청한다(재빌드 없음).
-public sealed partial class GridPage : DvPage
+public sealed partial class GridPage : DemoPage
 {
     public const int Width = 1100;
     public const int Height = 680;

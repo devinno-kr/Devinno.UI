@@ -2,7 +2,7 @@
 // 스크롤 + 반복 데모 — VM 컬렉션을 DvRepeat 로 그린 세로 목록(휠·드래그·관성·손잡이)과 가로 계기 줄.
 // 행 버튼은 그 행의 설비를 VM 메서드로 받고(Inspect(Equipment)), 토글은 그 설비의 Auto 에 커밋된다.
 // 끌어서 스크롤하면 버튼은 눌리지 않는다.
-public sealed partial class EquipmentPage : DvPage
+public sealed partial class EquipmentPage : DemoPage
 {
     public sealed class Equipment
     {

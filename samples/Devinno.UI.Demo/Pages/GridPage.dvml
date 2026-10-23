@@ -1,4 +1,11 @@
-<DvPageFrame vm="GridPage" title="Data Grid" subtitle="300k rows · frozen columns · multi-select (row-key) · tap-header sort (stacked) · group headers · summary — values refresh every 0.5 s (Repaint) · edit cells">
+<DvPageFrame vm="GridPage">
+  <DvRow align="start">
+    <DvStack gap="none" grow="1" style="width:0">
+      <DvLabel class="heading" text="Data Grid"/>
+      <DvLabel class="label muted" text="300k rows · frozen columns · multi-select (row-key) · tap-header sort (stacked) · group headers · summary — values refresh every 0.5 s (Repaint) · edit cells"/>
+    </DvStack>
+    <DvButton variant="secondary" icon="fa-arrow-left" text="Back" onclick="Back" visible="{ShowBack}"/>
+  </DvRow>
   <DvRow>
     <DvLabel class="body" text="{SelectionText}"/>
     <DvSpacer/>

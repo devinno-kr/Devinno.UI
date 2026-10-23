@@ -1,4 +1,11 @@
-<DvPageFrame vm="InputPage" title="Recipe Editor" subtitle="Tap an input to edit — the value is applied once, on done (Enter)">
+<DvPageFrame vm="InputPage">
+  <DvRow align="start">
+    <DvStack gap="none" grow="1" style="width:0">
+      <DvLabel class="heading" text="Recipe Editor"/>
+      <DvLabel class="label muted" text="Tap an input to edit — the value is applied once, on done (Enter)"/>
+    </DvStack>
+    <DvButton variant="secondary" icon="fa-arrow-left" text="Back" onclick="Back" visible="{ShowBack}"/>
+  </DvRow>
   <DvStack grow="1" style="height:0; overflow:scroll"> <!-- 창이 낮으면 입력 칸만 스크롤, 저장 줄은 늘 보인다 -->
     <DvGrid columns="2">
       <DvCard title="Recipe" badge="text">

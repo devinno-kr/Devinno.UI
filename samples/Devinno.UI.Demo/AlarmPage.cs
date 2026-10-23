@@ -2,15 +2,11 @@
 using Devinno.UI.Alarms;
 
 // 알람 데모 — 버튼으로 알람 발생/통신 이상 토글, 배너 클릭·ACK 버튼으로 확인(긴급·전체 확인은 확인 창).
-public sealed partial class AlarmPage : DvPage
+public sealed partial class AlarmPage : DemoPage
 {
     public const int Width = 1100;
     public const int Height = 680;
 
-    /// <summary>시나리오 데모(<c>-- top</c>)에서 "이전" 버튼을 보일지(기본 숨김 — 숨기면 화면에 요소가 없다).</summary>
-    public bool ShowBack { get; set; }
-
-    public void Back() => App.Show<HomePage>();
 
     private static readonly string[] Critical = { "Filter B diff. pressure over limit", "Intake pump #2 overcurrent trip", "Clear well level high-high" };
     private static readonly string[] Major = { "Flocculation level in caution zone", "Chemical tank below 20%", "Transfer pressure fluctuating" };

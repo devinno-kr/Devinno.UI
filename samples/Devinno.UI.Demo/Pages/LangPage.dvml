@@ -1,5 +1,12 @@
-<DvPageFrame vm="LangPage" title="{L10n.title}" subtitle="{L10n.subtitle}"
+<DvPageFrame vm="LangPage"
         font-lang-ko="Malgun Gothic" font-lang-ja="Yu Gothic UI" font-lang-en="Segoe UI">
+  <DvRow align="start">
+    <DvStack gap="none" grow="1" style="width:0">
+      <DvLabel class="heading" text="{L10n.title}"/>
+      <DvLabel class="label muted" text="{L10n.subtitle}"/>
+    </DvStack>
+    <DvButton variant="secondary" icon="fa-arrow-left" text="Back" onclick="Back" visible="{ShowBack}"/>
+  </DvRow>
   <DvRow>
     <DvBadge tone="success" text="{L10n.state.running}"/>
     <DvLabel class="label subtle" text="{L10n.lang.current}: {Lang}"/>

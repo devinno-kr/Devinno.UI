@@ -1,4 +1,11 @@
-<DvPageFrame vm="DialogPage" title="Dialogs" subtitle="Recipe editor · message box · built-in input/number/select boxes · comm alarms (every 4 s, one per ID)">
+<DvPageFrame vm="DialogPage">
+  <DvRow align="start">
+    <DvStack gap="none" grow="1" style="width:0">
+      <DvLabel class="heading" text="Dialogs"/>
+      <DvLabel class="label muted" text="Recipe editor · message box · built-in input/number/select boxes · comm alarms (every 4 s, one per ID)"/>
+    </DvStack>
+    <DvButton variant="secondary" icon="fa-arrow-left" text="Back" onclick="Back" visible="{ShowBack}"/>
+  </DvRow>
   <DvRow gap="lg" align="stretch">
     <DvCard title="Current recipe" grow="1">
       <DvLabel class="title" text="{Recipe.Name}"/>

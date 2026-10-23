@@ -1,4 +1,11 @@
-<DvPageFrame vm="BasicPage" title="Basic Controls" subtitle="Value handles — read and write from code without binding (give an id and the handle owns the value)">
+<DvPageFrame vm="BasicPage">
+  <DvRow align="start">
+    <DvStack gap="none" grow="1" style="width:0">
+      <DvLabel class="heading" text="Basic Controls"/>
+      <DvLabel class="label muted" text="Value handles — read and write from code without binding (give an id and the handle owns the value)"/>
+    </DvStack>
+    <DvButton variant="secondary" icon="fa-arrow-left" text="Back" onclick="Back" visible="{ShowBack}"/>
+  </DvRow>
   <DvRow gap="lg" align="stretch" grow="1">
     <DvTabs grow="1">
       <DvTab value="handle" text="Value handles">

@@ -2,7 +2,7 @@
 using Devinno.UI.Trends;
 
 // 실시간 트렌드 데모 — 타이머(폴링 스레드)가 TrendBuffer 에 샘플을 넣고 화면 갱신을 요청한다.
-public sealed partial class TrendPage : DvPage
+public sealed partial class TrendPage : DemoPage
 {
     public const int Width = 1100;
     public const int Height = 640;

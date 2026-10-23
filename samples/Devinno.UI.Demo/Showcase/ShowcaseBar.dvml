@@ -15,14 +15,9 @@
   <DvButton class="{OverviewClass}" icon="fa-gauge-high" text="Overview" onclick="ShowOverview"/>
   <DvButton class="{ProcessClass}" icon="fa-diagram-project" text="Process" onclick="ShowProcess"/>
   <DvButton class="{WidgetsClass}" icon="fa-table-cells-large" text="Widgets" onclick="ShowWidgets"/>
-  <DvRow gap="xs" visible="{InWidget}">
-    <DvBox style="width:1; height:28; background: token(border)"/>
-    <DvButton class="nav" icon="fa-arrow-left" text="Back" onclick="ShowWidgets"/>
-    <DvLabel class="title" text="{WidgetTitle}" style="white-space:nowrap"/>
-  </DvRow>
   <DvSpacer/>
-  <DvBadge tone="success" text="PLC ONLINE" visible="{OnMain}"/>
-  <DvBadge tone="{ModeTone}" text="{ModeText}" visible="{OnMain}"/>
+  <DvBadge tone="success" text="PLC ONLINE"/>
+  <DvBadge tone="{ModeTone}" text="{ModeText}"/>
   <DvBadge tone="{UnackedTone}" text="{UnackedText}"/>
   <DvIcon icon="fa-clock" style="font-size:15; color: token(text-muted)"/>
   <DvLabel class="clock" text="{Clock}"/>

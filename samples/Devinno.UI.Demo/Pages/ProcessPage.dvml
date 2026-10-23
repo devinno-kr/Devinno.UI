@@ -12,6 +12,7 @@
     <DvButton size="sm" text="RTP 1002" value="{Bind BlPump2}"/>
     <DvSpacer/>
     <DvLabel class="caption muted" text="{ResetText}"/>
+    <DvButton variant="secondary" icon="fa-arrow-left" text="Back" onclick="Back" visible="{ShowBack}"/>
   </DvRow>
   <DvTabs grow="1" style="height:0">
     <DvTab value="basic" text="Water treatment">

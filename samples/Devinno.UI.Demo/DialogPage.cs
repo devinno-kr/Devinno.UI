@@ -3,7 +3,7 @@ using Devinno.UI.App;
 // 다이얼로그 데모(-- dialog) — "레시피 수정" 은 레시피 편집 다이얼로그를 띄우고(그 안의 "저장" 은 위에 메시지 박스를 한 번 더 띄운다),
 // "내장 박스" 카드는 App.InputBox·InputNumber·SelectBox 를 띄우고 결과(취소 = null)를 보여 준다.
 // 통신 시뮬레이션(SimulatedPlc)은 몇 초마다 DvApp.Current 로 알람 다이얼로그를 띄운다(같은 알람 번호는 하나만).
-public sealed partial class DialogPage : DvPage
+public sealed partial class DialogPage : DemoPage
 {
     public const int Width = 960;
     public const int Height = 600;

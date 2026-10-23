@@ -2,7 +2,7 @@
 using Devinno.UI.Trends;
 
 // 고속 트렌드 데모 — 1초 = 그래프 전체 폭, 1 kHz 샘플. 생성 스레드가 밀린 샘플을 몰아서 넣고 Invalidate 한다.
-public sealed partial class FastTrendPage : DvPage
+public sealed partial class FastTrendPage : DemoPage
 {
     public const int Width = 1100;
     public const int Height = 640;

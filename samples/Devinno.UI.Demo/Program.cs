@@ -92,13 +92,16 @@ internal static class Program
         if (args.Contains("top"))
         {
             app.Top = new MainTopBar();
-            components.ShowBack = knob.ShowBack = alarm.ShowBack = true; // 각 페이지의 "이전" → 홈
+            components.BackTo = knob.BackTo = alarm.BackTo = home; // 각 페이지의 "Back" → 홈
         }
         else if (args.Contains("nav"))
             app.Left = new MainSideBar();
         else if (showcase)
         {
-            app.Top = new ShowcaseBar(sim, widgets);
+            app.Top = new ShowcaseBar(sim);
+            foreach (var e in widgets.Entries) // 기능 페이지 제목 줄의 "Back" → Widgets 목록
+                if (e.Page is DemoPage page)
+                    page.BackTo = widgets;
             trend.Seed(DateTime.Now.AddSeconds(-120), 120);
         }
 

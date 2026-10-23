@@ -1,7 +1,7 @@
 ﻿using Devinno.UI.App;
 // 컨트롤 핸들 데모 — dvml 의 id 가 같은 이름의 필드(btnStart·btnStop·lblState)로 생긴다.
 // "시작" 을 누르면 버튼을 잠그고 라벨을 바꾸며, 버튼 Bounds 바로 아래에 안내 상자를 띄운다.
-public partial class ControlPage : DvPage
+public partial class ControlPage : DemoPage
 {
     public const int Width = 640;
     public const int Height = 300;

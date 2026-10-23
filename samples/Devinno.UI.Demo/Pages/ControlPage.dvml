@@ -1,6 +1,10 @@
 <DvStack vm="ControlPage" style="background: token(background)">
   <DvStack style="padding:24; gap:16">
-    <DvLabel class="title" text="Control handle demo"/>
+    <DvRow>
+      <DvLabel class="title" text="Control handle demo"/>
+      <DvSpacer/>
+      <DvButton variant="secondary" icon="fa-arrow-left" text="Back" onclick="Back" visible="{ShowBack}"/>
+    </DvRow>
     <DvLabel id="lblState" class="body" text="Standby"/>
     <DvLabel id="lblClick" class="caption" text=" "/>
     <DvRow>

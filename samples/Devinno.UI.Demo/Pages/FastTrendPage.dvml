@@ -1,4 +1,11 @@
-<DvPageFrame vm="FastTrendPage" title="Fast trend" subtitle="1 s = full width · 1 kHz samples · generator thread pushes queued samples in batches, then Invalidate">
+<DvPageFrame vm="FastTrendPage">
+  <DvRow align="start">
+    <DvStack gap="none" grow="1" style="width:0">
+      <DvLabel class="heading" text="Fast trend"/>
+      <DvLabel class="label muted" text="1 s = full width · 1 kHz samples · generator thread pushes queued samples in batches, then Invalidate"/>
+    </DvStack>
+    <DvButton variant="secondary" icon="fa-arrow-left" text="Back" onclick="Back" visible="{ShowBack}"/>
+  </DvRow>
   <DvCard title="Waveform" badge="window 1 s" grow="1">
     <DvTrend source="{Trend}" window="1" y-min="-120" y-max="120" area="true" grow="1">
       <DvTrendChannel name="a" label="25 Hz" color="#22d3ee"/>

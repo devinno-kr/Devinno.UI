@@ -1,6 +1,10 @@
-<DvPageFrame vm="ComponentDashboardPage" title="Han River WTP Line 2" subtitle="Live operations dashboard">
-  <DvRow visible="{ShowBack}">
-    <DvButton variant="ghost" text="← Back" onclick="Back"/>
+<DvPageFrame vm="ComponentDashboardPage">
+  <DvRow align="start">
+    <DvStack gap="none" grow="1" style="width:0">
+      <DvLabel class="heading" text="Han River WTP Line 2"/>
+      <DvLabel class="label muted" text="Live operations dashboard"/>
+    </DvStack>
+    <DvButton variant="secondary" icon="fa-arrow-left" text="Back" onclick="Back" visible="{ShowBack}"/>
   </DvRow>
   <DvStyle>
     .dial { aspect-ratio:1; border-radius:999; border:4 token(border-strong); padding:6;

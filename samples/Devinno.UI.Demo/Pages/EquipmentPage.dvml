@@ -1,4 +1,11 @@
-<DvPageFrame vm="EquipmentPage" title="Equipment list" subtitle="DvRepeat + overflow:scroll — wheel · drag and release (inertia) · right thumb. Dragging to scroll does not press buttons">
+<DvPageFrame vm="EquipmentPage">
+  <DvRow align="start">
+    <DvStack gap="none" grow="1" style="width:0">
+      <DvLabel class="heading" text="Equipment list"/>
+      <DvLabel class="label muted" text="DvRepeat + overflow:scroll — wheel · drag and release (inertia) · right thumb. Dragging to scroll does not press buttons"/>
+    </DvStack>
+    <DvButton variant="secondary" icon="fa-arrow-left" text="Back" onclick="Back" visible="{ShowBack}"/>
+  </DvRow>
   <DvRow>
     <DvBadge tone="info" text="{SelectedText}"/>
     <DvBadge tone="neutral" text="{AutoText}"/>

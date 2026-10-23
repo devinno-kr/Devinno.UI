@@ -1,6 +1,10 @@
-<DvPageFrame vm="AlarmPage" title="Alarms" subtitle="ISA-18.2 MVP · tap the banner = ack the top-priority alarm, ACK in the list = ack that alarm">
-  <DvRow visible="{ShowBack}">
-    <DvButton variant="ghost" text="← Back" onclick="Back"/>
+<DvPageFrame vm="AlarmPage">
+  <DvRow align="start">
+    <DvStack gap="none" grow="1" style="width:0">
+      <DvLabel class="heading" text="Alarms"/>
+      <DvLabel class="label muted" text="ISA-18.2 MVP · tap the banner = ack the top-priority alarm, ACK in the list = ack that alarm"/>
+    </DvStack>
+    <DvButton variant="secondary" icon="fa-arrow-left" text="Back" onclick="Back" visible="{ShowBack}"/>
   </DvRow>
   <DvAlarmBanner items="{Alarms}" comm-alarm="{CommText}" onack="Ack" style="border-radius:12"/>
   <DvRow>

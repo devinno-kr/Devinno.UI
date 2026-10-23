@@ -1,6 +1,10 @@
-<DvPageFrame vm="KnobPage" title="Setpoint adjust" subtitle="Grab and turn a knob to change the value; it commits on release">
-  <DvRow visible="{ShowBack}">
-    <DvButton variant="ghost" text="← Back" onclick="Back"/>
+<DvPageFrame vm="KnobPage">
+  <DvRow align="start">
+    <DvStack gap="none" grow="1" style="width:0">
+      <DvLabel class="heading" text="Setpoint adjust"/>
+      <DvLabel class="label muted" text="Grab and turn a knob to change the value; it commits on release"/>
+    </DvStack>
+    <DvButton variant="secondary" icon="fa-arrow-left" text="Back" onclick="Back" visible="{ShowBack}"/>
   </DvRow>
   <DvGrid columns="3">
     <DvCard title="Valve opening" badge="%">

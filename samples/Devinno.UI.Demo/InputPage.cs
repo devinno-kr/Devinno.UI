@@ -1,7 +1,7 @@
 ﻿using Devinno.UI.App;
 // 입력(DvInput) 데모 — OpenTK 는 가상 키보드, WinForms 는 숨긴 TextBox 로 같은 화면을 편집한다.
 // WinForms 데모(Devinno.UI.Demo.WinForms)가 이 파일을 링크해 같은 마크업·VM 을 쓴다.
-public sealed partial class InputPage : DvPage
+public sealed partial class InputPage : DemoPage
 {
     public const int Width = 1000;
     public const int Height = 760;
