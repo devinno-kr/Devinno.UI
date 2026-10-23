@@ -741,6 +741,7 @@ public sealed class LayoutEngine
             box.Direction = Attr("direction") is { Length: > 0 } dir ? dir : "right";
             box.ShowValue = ToBool(Attr("show-value"));
             box.Unit = Attr("unit");
+            box.ValueFormat = Attr("format");
             box.Label = Attr("label");
             var sweep = ToFloat(Attr("sweep"), 270f);
             box.RingSweep = Math.Clamp(sweep, 1f, 360f);
@@ -931,6 +932,7 @@ public sealed class LayoutEngine
             box.TankMin = ToFloat(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("min")), 0f);
             box.TankMax = ToFloat(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("max")), 100f);
             box.TankUnit = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("unit"));
+            box.ValueFormat = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("format"));
             box.TankZones = ParseZones(node, vm);
             // show-zone-marks="false" → 구간 색은 유지하고 경계 눈금·숫자만 숨김 (기본 true)
             if (node.Attributes.TryGetValue("show-zone-marks", out var zm))

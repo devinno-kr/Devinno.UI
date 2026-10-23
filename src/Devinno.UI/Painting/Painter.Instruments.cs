@@ -53,7 +53,7 @@ public sealed partial class Painter
             return;
 
         // 값 텍스트: 채움 위는 흰색, 빈 트랙 위는 본문색 — 경계를 넘어가도 항상 읽힘
-        var text = FormatValue(box.GaugeValue) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
+        var text = FormatValue(box.GaugeValue, box.ValueFormat) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
         using var font = TextFont.Create(text, MathF.Min(14f, rect.Height * 0.62f), bold: true);
         var baseline = rect.MidY - (font.Metrics.Ascent + font.Metrics.Descent) / 2f;
 
@@ -127,7 +127,7 @@ public sealed partial class Painter
             canvas.DrawArc(oval, start, valueSweep, false, p);
         }
 
-        var text = FormatValue(box.GaugeValue) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
+        var text = FormatValue(box.GaugeValue, box.ValueFormat) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
         var hasLabel = !string.IsNullOrEmpty(box.Label);
         using var font = TextFont.Create(text, MathF.Max(10f, r * 0.42f), bold: true);
         using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text", new SKColor(0x0f, 0x17, 0x2a)) };
@@ -159,8 +159,22 @@ public sealed partial class Painter
             : new SKColor(0x25, 0x63, 0xeb);
     }
 
-    private static string FormatValue(float v)
-        => MathF.Abs(v - MathF.Round(v)) < 0.005f
+    // format(.NET 형식, InvariantCulture)이 있으면 그대로, 없거나 쓸 수 없으면 정수는 정수·아니면 소수 한 자리
+    internal static string FormatValue(float v, string? format = null)
+    {
+        if (!string.IsNullOrEmpty(format))
+        {
+            try
+            {
+                return v.ToString(format, CultureInfo.InvariantCulture);
+            }
+            catch (FormatException)
+            {
+            }
+        }
+
+        return MathF.Abs(v - MathF.Round(v)) < 0.005f
             ? MathF.Round(v).ToString(CultureInfo.InvariantCulture)
             : v.ToString("0.#", CultureInfo.InvariantCulture);
+    }
 }

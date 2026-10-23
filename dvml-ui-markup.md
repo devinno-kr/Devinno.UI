@@ -827,17 +827,17 @@ public sealed class Section(string title, List<Section> all)
 
 | Tag | Attributes (default) | Default size |
 |---|---|---|
-| `DvGauge` | `value` `min`(0) `max`(100) `alarm-zones` `ticks` `minor-ticks` `show-tick-labels`(true) | 120×120 |
-| `DvRing` | `value` `min`(0) `max`(100) `tone`(info) `alarm-zones` `unit` `label` `sweep`(270) `thickness` | 120×120 |
-| `DvProgress` | `value` `min`(0) `max`(100) `direction`(right) `tone`(info) `alarm-zones` `show-value`(false) `unit` | 200×12 (vertical 12×120) |
-| `DvTank` | `value` `min`(0) `max`(100) `unit` `alarm-zones` `show-zone-marks`(true) | 80×160 |
+| `DvGauge` | `value` `min`(0) `max`(100) `alarm-zones` `ticks` `minor-ticks` `show-tick-labels`(true) `format` | 120×120 |
+| `DvRing` | `value` `min`(0) `max`(100) `tone`(info) `alarm-zones` `unit` `label` `sweep`(270) `thickness` `format` | 120×120 |
+| `DvProgress` | `value` `min`(0) `max`(100) `direction`(right) `tone`(info) `alarm-zones` `show-value`(false) `unit` `format` | 200×12 (vertical 12×120) |
+| `DvTank` | `value` `min`(0) `max`(100) `unit` `alarm-zones` `show-zone-marks`(true) `format` | 80×160 |
 | `DvKnob` | `value`(two-way) `min`(0) `max`(100) `step`(1) `unit` `disabled` `onbeforecommit` `input-mode`(drag) | 96×96 |
 | `DvSlider` | `value`(two-way) `min`(0) `max`(100) `step`(1) `direction`(right) `show-value`(false) `unit` `disabled` `onbeforecommit` | 200×40 (vertical 40×200), +24 with `show-value` (vertical +56) |
 | `DvSparkline` | `values` `y-min` `y-max` `area`(false) `tone`(info) | 120×32 |
 | `DvBarChart` | `items` `item-value` `item-text` `y-min` `y-max` `show-value`(false) `tone`(info) | 320×200 |
 | `DvPieChart` | `items` `item-value` `item-text` `inner-radius`(0) `show-value`(false) | 320×180 |
 
-- **Value text:** integers as integers, otherwise one decimal place (gauge, ring, progress bar, tank).
+- **Value text:** integers as integers, otherwise one decimal place (gauge, ring, progress bar, tank). With a live value this switches between "6" and "6.2" and the text changes width; `format` fixes the digits: a .NET format string (InvariantCulture) such as `format="0.0"` → "6.0". A format that cannot be used for a number falls back to the default rule.
 - **Size scaling:** the internals of gauges, rings, knobs, and tanks (arc thickness, needle, value text, chip, zone marks) scale with the widget size (default size = 1×; gauges, rings, and knobs use the shorter side, tanks use the smaller of width/80 and height/160). Proportions stay correct even when filling a cell with `grow="1"` or `align="stretch"`.
 - **DvGauge:** 270° needle instrument. `ticks` = major tick **interval** (in value units, e.g. `20` gives 0·20·40…), `minor-ticks` = minor tick interval (drawn only when `ticks` is set). `show-tick-labels="false"` hides tick numbers. The value text and needle tip use the current zone color. `unit`·`tone` are not used.
 - **DvRing:** thick arc fill. `sweep` = arc angle (1–360; 360 = a full circle starting at 12 o'clock), `thickness` = arc thickness (omitted = 11% of size), value + `unit` in the center, `label` below. Fill color = current zone color, otherwise `tone-{tone}`.

@@ -254,6 +254,8 @@ public sealed class LayoutBox
     public string? ImageSrc { get; set; }
     /// <summary>Fit mode of a <c>DvImage</c> (<c>fit</c>, default <see cref="Widgets.ImageFit.Contain"/>).</summary>
     public ImageFit ImageFit { get; set; } = ImageFit.Contain;
+    // DvGauge·DvRing·DvProgress·DvTank 값 글자의 format 속성(.NET 형식). null = 기본 규칙
+    internal string? ValueFormat { get; set; }
     /// <summary>Current value of a <c>DvTank</c> (<c>value</c>, default 0).</summary>
     public float TankValue { get; set; }
     /// <summary>Minimum of a <c>DvTank</c> (<c>min</c>, default 0).</summary>

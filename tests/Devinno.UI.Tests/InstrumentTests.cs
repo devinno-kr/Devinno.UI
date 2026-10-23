@@ -160,4 +160,27 @@ public class InstrumentTests
         float Lum(SKColor c) => c.Red * 0.299f + c.Green * 0.587f + c.Blue * 0.114f;
         Assert.True(Lum(edge) < Lum(center) - 6, $"edge={edge} center={center}");
     }
+
+    // ── 값 글자 format — 자릿수를 고정해 실시간 값에서 폭이 흔들리지 않게
+    [Theory]
+    [InlineData(6f, null, "6")]
+    [InlineData(6.2f, null, "6.2")]
+    [InlineData(6f, "0.0", "6.0")]
+    [InlineData(6.25f, "0.0", "6.3")]
+    [InlineData(58f, "0.00", "58.00")]
+    [InlineData(6.2f, "", "6.2")]
+    [InlineData(6.2f, "X", "6.2")]      // 실수에 쓸 수 없는 형식 = 기본 규칙
+    public void Value_text_uses_format_when_given(float v, string? format, string expected)
+        => Assert.Equal(expected, Painter.FormatValue(v, format));
+
+    [Theory]
+    [InlineData("DvGauge")]
+    [InlineData("DvRing")]
+    [InlineData("DvProgress")]
+    [InlineData("DvTank")]
+    public void Instruments_read_format_attribute(string tag)
+    {
+        var b = Lay($"<DvScreen style=\"align-items:start\"><{tag} value=\"6\" format=\"0.0\"/></DvScreen>").Children[0];
+        Assert.Equal("0.0", b.ValueFormat);
+    }
 }

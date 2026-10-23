@@ -301,7 +301,7 @@ public sealed partial class Painter
                 DrawGaugeScale(canvas, box, cx, cy, gm, startAngle, sweep);
             DrawGaugeNeedle(canvas, box, cx, cy, radius * 0.9f, startAngle + t * sweep, needleColor, gm);
 
-            var label = FormatValue(box.GaugeValue);
+            var label = FormatValue(box.GaugeValue, box.ValueFormat);
             using var font = TextFont.Create(label, gm.ValueFont, bold: true);
             var valColor = ZoneColorAt(box) ?? needleColor;
             using var tp = new SKPaint { IsAntialias = true, Color = valColor };
@@ -516,7 +516,7 @@ public sealed partial class Painter
             }
 
             // 값 칩 — 반투명 배경 + 대비 텍스트(채움색과 무관하게 항상 가독, 색은 테마 토큰)
-            var label = FormatValue(box.TankValue);
+            var label = FormatValue(box.TankValue, box.ValueFormat);
             if (!string.IsNullOrEmpty(box.TankUnit))
                 label += " " + box.TankUnit;
 
