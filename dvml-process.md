@@ -731,7 +731,7 @@ Caveats:
 
 **Look and cost**
 
-- Look: a base stripe (plain = light sky blue, rich = dark teal) is laid on flowing pipes, and a thick dashed line (plain = blue 4px, rich = teal 5px) moves on top — the high light/dark contrast between dashes and gaps keeps it from blending with the tube color. Speed 40px/s.
+- Look: a base stripe (plain = light sky blue, rich = dark teal) is laid on flowing pipes, and a thick dashed line (plain = blue 4px, rich = teal 5px) moves on top — the high light/dark contrast between dashes and gaps keeps it from blending with the tube color. On a pipe with `medium` (12.2) the stripe and the dashes use tones of that medium's color instead, so the medium stays visible while it flows. Speed 40px/s.
 - If at least one pipe is flowing, it **redraws at 20 frames per second** (only during that time). With no flow, or `flow-animation` off, it does not redraw.
 - Adapters (OpenTK CPU raster and GPU, WinForms) then redraw **only the area containing the process diagram** (`DvSurface.PartialRender`) — cost scales with the area of the flowing process diagram, not the whole screen. Measured (1600×1080 window, CPU raster): a small process diagram at about 7% of the screen goes from 27% → 7% of one core; a demo page that is mostly process diagram stays about 50% (almost unchanged — large area to redraw). `ViewWindow.Gpu` mode on the same small process diagram: 8.7% → 3.8% (CPU time).
 - With animation off, flow does not appear in the drawing (only the decision result exists).
@@ -765,7 +765,7 @@ Colors follow the KS A 0503 pipe identification color family, and the library ch
 - Unit ports connect inside and outside.
 - When different media meet on one line (mixing), it is colored with the medium written first and a Trace warning is left. Set it by writing `medium` directly on the line after the merge.
 - No legend is drawn automatically. If needed, put one on the screen with `DvAttach` or regular text.
-- Only the color changes. Layout, flow decision and flow animation (12.1) are unaffected (the animated dashes are drawn as-is on top of the medium color).
+- Only the color changes. Layout and flow decision are unaffected. With flow animation (12.1) on, a flowing pipe with a medium draws its base stripe and moving dashes in tones of the medium color (darker and lighter), so the medium stays readable.
 
 ## 13. View model (C#) and updates
 

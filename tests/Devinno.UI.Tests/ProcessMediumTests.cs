@@ -148,4 +148,38 @@ public class ProcessMediumTests
         var px = bmp.GetPixel((int)(d.Origin.X + (a.X + b.X) / 2), (int)MathF.Round(d.Origin.Y + a.Y));
         Assert.Equal(new SKColor(expected), px);
     }
+
+    // 흐름 표시를 켜도 매체 색이 보인다 — 바탕 줄·점선이 매체 색의 톤(고정 파랑이 덮지 않음). 매체 없는 관은 그대로 파랑
+    [Theory]
+    [InlineData("plain", "steam")]
+    [InlineData("rich", "steam")]
+    [InlineData("plain", null)]
+    [InlineData("rich", null)]
+    public void FlowAnimation_KeepsMediumColor(string look, string? medium)
+    {
+        var attr = medium is null ? "" : $"medium=\"{medium}\"";
+        var (s, d) = ProcessTests.Start($"""
+            <DvTerminal name="A" text="A"/><DvTerminal name="B" text="B"/>
+            <DvLine from="A" to="B" {attr}/>
+            """, attrs: $"look=\"{look}\" flow-animation=\"true\"", w: 600, h: 200);
+        using var bmp = new SKBitmap(600, 200);
+        using (var c = new SKCanvas(bmp))
+            s.RenderTo(c, 600, 200);
+        var pts = d.Lines.Single().G!.Points;
+        var (a, b) = Enumerable.Range(0, pts.Count - 1).Select(k => (pts[k], pts[k + 1]))
+            .Where(x => MathF.Abs(x.Item1.Y - x.Item2.Y) < 0.01f).OrderByDescending(x => MathF.Abs(x.Item1.X - x.Item2.X)).First();
+        var y = (int)MathF.Round(d.Origin.Y + a.Y);
+        var x0 = (int)(d.Origin.X + MathF.Min(a.X, b.X)) + 12;
+        var x1 = (int)(d.Origin.X + MathF.Max(a.X, b.X)) - 12;
+        var line = Enumerable.Range(x0, x1 - x0).Select(x => bmp.GetPixel(x, y)).ToList();
+        bool Red(SKColor c) => c.Red > c.Blue + 40;
+        bool Blue(SKColor c) => c.Blue > c.Red + 60;
+        if (medium is null)
+            Assert.Contains(line, Blue);
+        else
+        {
+            Assert.Contains(line, Red);
+            Assert.DoesNotContain(line, Blue);
+        }
+    }
 }

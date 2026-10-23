@@ -112,8 +112,9 @@ public sealed partial class Painter
     private const float FlowSpeed = 40f;
 
     // 흐르는 배관 위 표시 — 바탕 줄(rich 어둡게·plain 밝게) 위에 굵은 점선이 흐름 방향(from → to)으로 움직인다.
+    // 매체가 있는 관은 바탕 줄·점선을 그 매체 색의 톤으로(고정색이면 매체 색이 가려진다).
     // 점선과 간격의 명암 대비가 커서 금속 관(rich)·회색 관(plain) 위에서도 또렷하다. 위상은 시각에서 계산(같은 시각 = 같은 그림)
-    private static void PaintFlow(SKCanvas canvas, IReadOnlyList<(SKPath Path, bool Flowing)> pipes, ProcessLook look, long timestampMs)
+    private static void PaintFlow(SKCanvas canvas, IReadOnlyList<(SKPath Path, bool Flowing, string? Medium)> pipes, ProcessLook look, long timestampMs)
     {
         var rich = look.Rich;
         var (dash, gap, width) = rich ? (14f, 10f, 5f) : (10f, 8f, 4f);
@@ -131,12 +132,26 @@ public sealed partial class Painter
             IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeCap = SKStrokeCap.Round, PathEffect = effect, StrokeWidth = width,
             Color = rich ? new SKColor(0xFF22D3EE) : new SKColor(0xFF2563EB),
         };
-        foreach (var (path, flowing) in pipes)
+        var flowColor = paint.Color;
+        foreach (var (path, flowing, medium) in pipes)
         {
             if (!flowing)
                 continue;
-            canvas.DrawPath(path, under);
-            canvas.DrawPath(path, paint);
+            if (medium is null)
+            {
+                under.Color = rich ? new SKColor(0xFF0B3A4A) : new SKColor(0xFFDCE8FF);
+                paint.Color = flowColor;
+                canvas.DrawPath(path, under);
+                canvas.DrawPath(path, paint);
+            }
+            else
+            {
+                var m = look.PipeColor(medium);
+                under.Color = rich ? Mix(m, SKColors.Black, 0.55f) : Mix(m, SKColors.White, 0.72f);
+                paint.Color = rich ? Mix(m, SKColors.White, 0.35f) : m;
+                canvas.DrawPath(path, under);
+                canvas.DrawPath(path, paint);
+            }
         }
     }
 
@@ -148,7 +163,7 @@ public sealed partial class Painter
         var paths = new List<SKPath>();
         try
         {
-            var flowing = new List<(SKPath, bool)>();
+            var flowing = new List<(SKPath, bool, string?)>();
             var pipes = new List<(SKPath, string?)>();
             foreach (var l in d.Lines)
             {
@@ -156,7 +171,7 @@ public sealed partial class Painter
                 {
                     var path = PipePath(g, look, !d.Vertical);
                     paths.Add(path);
-                    flowing.Add((path, l.Flowing));
+                    flowing.Add((path, l.Flowing, l.Medium));
                     pipes.Add((path, l.Medium));
                 }
             }
