@@ -1,4 +1,4 @@
-<DvPageFrame vm="WidgetsPage" title="Widgets" subtitle="One page per feature. Tap a card to open it; use Widgets in the top bar to come back.">
+<DvPageFrame vm="WidgetsPage" title="Widgets" subtitle="One page per feature. Tap a card to open it; Back in the top bar returns here.">
   <DvStyle>
     .entry { padding:16; gap:10 }
     .entry:hover { background: token(surface-raised) }

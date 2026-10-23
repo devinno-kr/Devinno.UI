@@ -98,7 +98,7 @@ internal static class Program
             app.Left = new MainSideBar();
         else if (showcase)
         {
-            app.Top = new ShowcaseBar(sim);
+            app.Top = new ShowcaseBar(sim, widgets);
             trend.Seed(DateTime.Now.AddSeconds(-120), 120);
         }
 
