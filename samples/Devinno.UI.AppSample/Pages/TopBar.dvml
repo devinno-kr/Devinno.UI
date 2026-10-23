@@ -5,6 +5,6 @@
   </DvStyle>
   <DvLabel class="title" text="App Sample"/>
   <DvSpacer/>
-  <DvButton class="{HomeClass}" text="홈" onclick="ShowHome"/>
-  <DvButton class="{MonitorClass}" text="모니터링" onclick="ShowMonitor"/>
+  <DvButton class="{HomeClass}" text="Home" onclick="ShowHome"/>
+  <DvButton class="{MonitorClass}" text="Monitoring" onclick="ShowMonitor"/>
 </DvRow>

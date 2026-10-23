@@ -17,8 +17,8 @@
   <PropertyGroup>
     <!-- 패키지 공통 설정은 ../Directory.Build.props -->
     <PackageId>Devinno.UI.OpenTK</PackageId>
-    <Description>Devinno.UI 의 OpenTK 창 어댑터 — ViewWindow 로 DvApp 을 창에 띄웁니다(터치 우선, 가상 키보드, CPU·OpenGL 그리기).</Description>
-    <PackageTags>ui;hmi;skiasharp;opentk;touch;industrial</PackageTags>
+    <Description>OpenTK window adapter for Devinno.UI: ViewWindow shows a DvApp in its own window (touch first, virtual keyboard, CPU or OpenGL drawing).</Description>
+    <PackageTags>ui;hmi;skiasharp;opentk;touch;industrial;dvml;llm;ai</PackageTags>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>

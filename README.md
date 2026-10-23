@@ -12,6 +12,52 @@ Screens are written in XML markup with a CSS-style inline `style` and bound to a
 
 ![Process diagram, P&ID (dark theme)](https://raw.githubusercontent.com/devinno-kr/Devinno.UI/master/assets/readme-process.webp)
 
+## A screen in markup
+
+A screen is a `.dvml` file and a C# class with the same name. The class is the view model: `{Temperature}` shows its property, and `onclick="EditSetpoint"` calls its method. This page comes from `samples/Devinno.UI.AppSample` (a test checks that the README and the sample match).
+
+`MonitorPage.dvml`
+
+```xml
+<DvPageFrame vm="MonitorPage" title="Monitoring" subtitle="Shown: {ShownCount}">
+  <DvRow>
+    <DvButton variant="ghost" text="← Back" onclick="Back"/>
+  </DvRow>
+  <DvCard title="Water temperature">
+    <DvLabel class="title" text="{Temperature} ℃"/>
+    <DvRow>
+      <DvLabel class="body muted" text="Setpoint {Setpoint} ℃"/>
+      <DvButton variant="secondary" text="Change setpoint" onclick="EditSetpoint"/>
+    </DvRow>
+  </DvCard>
+</DvPageFrame>
+```
+
+`MonitorPage.cs`
+
+```csharp
+using Devinno.UI.App;
+
+public sealed partial class MonitorPage : DvPage
+{
+    public double Temperature { get; set; } = 24.5;
+    public double Setpoint { get; private set; } = 25.0;
+    public int ShownCount { get; private set; }
+
+    public void Back() => App.Show<HomePage>();
+
+    public async void EditSetpoint()
+    {
+        double? value = await App.ShowDialog<SetpointDialog, double?>(Setpoint);
+        if (value is null)
+            return;                 // Cancel button, or closed from outside
+        Setpoint = value.Value;     // continues on the input thread: set the VM directly and the screen re-reads it in the same frame
+    }
+
+    protected override void OnShown() => ShownCount++;   // every time it is shown
+}
+```
+
 ## Design: a UI library that works well with AI
 
 Devinno.UI assumes that screens will be written with AI (LLM) coding tools. It tries to do two things: help the AI make fewer mistakes, and make sure the mistakes it does make show up right away instead of passing silently. People writing screens by hand get the same help.
@@ -28,6 +74,7 @@ In UI code, the usual failure is a mistake that does nothing: no error, no warni
 
 **The AI can check its own work**
 - `DvRenderer` draws a screen to a PNG without opening a window. An AI can look at the screen it just wrote and fix what is wrong.
+- Together this gives the AI a short loop: (1) write or change a `.dvml` file and its VM, (2) build and fix the DVML diagnostics, which point at a file, line and column, (3) render the screen to a PNG, look at it, and fix what looks wrong.
 
 **Docs that match the code**
 - If a feature is not in the docs, it does not exist. The markup reference lists every tag, attribute and value.
@@ -53,7 +100,17 @@ dotnet add package Devinno.UI.OpenTK      # own window (ViewWindow)
 dotnet add package Devinno.UI.WinForms    # inside a WinForms form (ViewControl)
 ```
 
-A WinForms app must target `net9.0-windows10.0.19041.0` or later (the WinForms adapter, like SkiaSharp's WinForms views, ships only that TFM). With the default `net9.0-windows` no assembly is referenced and the build fails with "type or namespace 'Devinno' not found".
+A WinForms app must target `net9.0-windows10.0.19041.0` or later (the WinForms adapter, like SkiaSharp's WinForms views, ships only that TFM). With the default `net9.0-windows` no assembly is referenced and the build fails with "type or namespace 'Devinno' not found". The project file of a WinForms app looks like this:
+
+```xml
+<PropertyGroup>
+  <OutputType>WinExe</OutputType>
+  <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+  <UseWindowsForms>true</UseWindowsForms>
+</PropertyGroup>
+```
+
+**Platforms.** Tested on Windows 11 (x64) with both adapters. The WinForms adapter runs on Windows only. The core library and the OpenTK adapter do not call Windows-specific APIs, but they have not been tested on Linux (including Raspberry Pi touch panels) yet. On Linux, SkiaSharp also needs the `SkiaSharp.NativeAssets.Linux` package in the app.
 
 ## Getting started
 

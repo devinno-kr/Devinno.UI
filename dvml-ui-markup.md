@@ -1284,8 +1284,8 @@ using Devinno.UI.OpenTK;
 using Devinno.UI.Styling;
 
 var app = new DvApp { Theme = DvTheme.Dark };
-app.Top = new TopBar();                 // 상단 고정 영역(선택)
-app.Pages.Add(new HomePage());          // 처음 넣은 페이지 = 시작 페이지
+app.Top = new TopBar();                 // fixed area at the top (optional)
+app.Pages.Add(new HomePage());          // the first page added = start page
 app.Pages.Add(new MonitorPage());
 
 using var window = new ViewWindow(app, 1024, 640, "App Sample");
@@ -1319,8 +1319,8 @@ public sealed partial class TopBar : DvBar
   </DvStyle>
   <DvLabel class="title" text="App Sample"/>
   <DvSpacer/>
-  <DvButton class="{HomeClass}" text="홈" onclick="ShowHome"/>
-  <DvButton class="{MonitorClass}" text="모니터링" onclick="ShowMonitor"/>
+  <DvButton class="{HomeClass}" text="Home" onclick="ShowHome"/>
+  <DvButton class="{MonitorClass}" text="Monitoring" onclick="ShowMonitor"/>
 </DvRow>
 ```
 
@@ -1338,9 +1338,9 @@ public sealed partial class HomePage : DvPage
 `Pages/HomePage.dvml`
 
 ```xml
-<DvPageFrame vm="HomePage" title="홈" subtitle="버튼이나 상단 바로 페이지를 바꿉니다">
+<DvPageFrame vm="HomePage" title="Home" subtitle="Switch pages with the button or the top bar">
   <DvRow>
-    <DvButton variant="primary" text="모니터링 열기" onclick="OpenMonitor"/>
+    <DvButton variant="primary" text="Open monitoring" onclick="OpenMonitor"/>
   </DvRow>
 </DvPageFrame>
 ```
@@ -1362,63 +1362,63 @@ public sealed partial class MonitorPage : DvPage
     {
         double? value = await App.ShowDialog<SetpointDialog, double?>(Setpoint);
         if (value is null)
-            return;                 // 취소 버튼, 또는 바깥에서 닫힘
-        Setpoint = value.Value;     // 이어짐은 입력 스레드 — VM 을 바로 쓰면 화면도 같은 프레임에 다시 읽는다
+            return;                 // Cancel button, or closed from outside
+        Setpoint = value.Value;     // continues on the input thread: set the VM directly and the screen re-reads it in the same frame
     }
 
-    protected override void OnShown() => ShownCount++;   // 보일 때마다
+    protected override void OnShown() => ShownCount++;   // every time it is shown
 }
 ```
 
 `Pages/MonitorPage.dvml`
 
 ```xml
-<DvPageFrame vm="MonitorPage" title="모니터링" subtitle="{ShownCount}번째 표시">
+<DvPageFrame vm="MonitorPage" title="Monitoring" subtitle="Shown: {ShownCount}">
   <DvRow>
-    <DvButton variant="ghost" text="← 이전" onclick="Back"/>
+    <DvButton variant="ghost" text="← Back" onclick="Back"/>
   </DvRow>
-  <DvCard title="수온">
+  <DvCard title="Water temperature">
     <DvLabel class="title" text="{Temperature} ℃"/>
     <DvRow>
-      <DvLabel class="body muted" text="설정 {Setpoint} ℃"/>
-      <DvButton variant="secondary" text="설정 변경" onclick="EditSetpoint"/>
+      <DvLabel class="body muted" text="Setpoint {Setpoint} ℃"/>
+      <DvButton variant="secondary" text="Change setpoint" onclick="EditSetpoint"/>
     </DvRow>
   </DvCard>
 </DvPageFrame>
 ```
 
-`Pages/SetpointDialog.cs` — the dialog opened by "설정 변경" (chapter 21). It is here to show the pattern for building your own dialog; in a real app a single number like this should use the built-in `App.InputNumber` (21.5).
+`Pages/SetpointDialog.cs` — the dialog opened by "Change setpoint" (chapter 21). It is here to show the pattern for building your own dialog; in a real app a single number like this should use the built-in `App.InputNumber` (21.5).
 
 ```csharp
 using Devinno.UI.App;
 
 public sealed partial class SetpointDialog : DvDialog<double?>
 {
-    public SetpointDialog(double current) => Value = current;   // 원본이 아니라 값을 복사해 편집
+    public SetpointDialog(double current) => Value = current;   // edit a copy of the value, not the original
 
     public double Value { get; set; }
 
     public void Ok() => Close(Value);
-    public void Cancel() => Close();                            // 결과 = null(취소)
+    public void Cancel() => Close();                            // result = null (cancel)
 }
 ```
 
 `Pages/SetpointDialog.dvml`
 
 ```xml
-<DvDialogFrame vm="SetpointDialog" title="설정 온도" subtitle="0 ~ 60 ℃" style="width:360">
+<DvDialogFrame vm="SetpointDialog" title="Setpoint" subtitle="0 ~ 60 ℃" style="width:360">
   <DvInput value="{Bind Value}" keyboard-type="numeric" min="0" max="60" format="0.0" unit="℃"/>
   <DvRow gap="sm">
     <DvSpacer/>
-    <DvButton variant="secondary" text="취소" onclick="Cancel"/>
-    <DvButton variant="primary" text="확인" onclick="Ok"/>
+    <DvButton variant="secondary" text="Cancel" onclick="Cancel"/>
+    <DvButton variant="primary" text="OK" onclick="Ok"/>
   </DvRow>
 </DvDialogFrame>
 ```
 
 - The bar button highlight binds a computed property (`HomeClass`) that reads `App.CurrentPage` to `class`. When the page changes, the app re-reads the bar (16.6).
 - `MonitorPage` is retained, so when shown again `ShownCount` increases and the screen re-reads it (16.3).
-- "설정 변경" opens `SetpointDialog` and waits for the result with `await`. OK returns the new value (`double`), Cancel returns `null`. `Setpoint` changed after `await` is reflected immediately in the screen's "설정 … ℃" without any notification (21.3).
+- "Change setpoint" opens `SetpointDialog` and waits for the result with `await`. OK returns the new value (`double`), Cancel returns `null`. `Setpoint` changed after `await` is reflected immediately in the screen's "Setpoint … ℃" without any notification (21.3).
 
 ### 16.2 Creating the app
 

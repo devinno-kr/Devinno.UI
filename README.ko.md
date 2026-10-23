@@ -14,8 +14,55 @@ SkiaSharp 기반 .NET UI 라이브러리입니다(.NET 9 이상). 산업용 HMI(
 
 ![공정도 P&ID (다크 테마)](assets/readme-process.webp)
 
+## 마크업으로 쓴 화면
+<!-- en-hash: 9c19b1a9c0eeb1a3 -->
+
+화면 하나는 `.dvml` 파일과 이름이 같은 C# 클래스입니다. 클래스가 뷰모델이라 `{Temperature}` 는 그 속성을 보여 주고 `onclick="EditSetpoint"` 는 그 메서드를 부릅니다. 이 페이지는 `samples/Devinno.UI.AppSample` 에서 가져왔습니다(README 와 샘플이 같은지 테스트가 확인합니다).
+
+`MonitorPage.dvml`
+
+```xml
+<DvPageFrame vm="MonitorPage" title="Monitoring" subtitle="Shown: {ShownCount}">
+  <DvRow>
+    <DvButton variant="ghost" text="← Back" onclick="Back"/>
+  </DvRow>
+  <DvCard title="Water temperature">
+    <DvLabel class="title" text="{Temperature} ℃"/>
+    <DvRow>
+      <DvLabel class="body muted" text="Setpoint {Setpoint} ℃"/>
+      <DvButton variant="secondary" text="Change setpoint" onclick="EditSetpoint"/>
+    </DvRow>
+  </DvCard>
+</DvPageFrame>
+```
+
+`MonitorPage.cs`
+
+```csharp
+using Devinno.UI.App;
+
+public sealed partial class MonitorPage : DvPage
+{
+    public double Temperature { get; set; } = 24.5;
+    public double Setpoint { get; private set; } = 25.0;
+    public int ShownCount { get; private set; }
+
+    public void Back() => App.Show<HomePage>();
+
+    public async void EditSetpoint()
+    {
+        double? value = await App.ShowDialog<SetpointDialog, double?>(Setpoint);
+        if (value is null)
+            return;                 // Cancel button, or closed from outside
+        Setpoint = value.Value;     // continues on the input thread: set the VM directly and the screen re-reads it in the same frame
+    }
+
+    protected override void OnShown() => ShownCount++;   // every time it is shown
+}
+```
+
 ## 설계 방향: AI와 함께 쓰기 좋은 UI 라이브러리
-<!-- en-hash: 19518596c2faa304 -->
+<!-- en-hash: 4bd456dd744d70c2 -->
 
 Devinno.UI는 AI(LLM) 코딩 도구로 화면을 만드는 것을 전제로 설계했습니다. 목표는 두 가지입니다. AI가 실수를 덜 하게 하고, 실수하면 조용히 넘어가지 않고 바로 드러나게 하는 것입니다. 같은 장치가 사람이 쓸 때도 그대로 도움이 됩니다.
 
@@ -31,6 +78,7 @@ UI 코드에서 가장 흔한 실패는 "틀렸는데 아무 일도 안 일어�
 
 **스스로 확인할 수 있다**
 - `DvRenderer`로 창 없이 화면을 PNG로 그릴 수 있습니다. AI가 자기가 쓴 화면을 직접 보고 고칠 수 있습니다.
+- 이 셋이 모이면 AI가 짧은 고리로 일합니다. (1) `.dvml` 과 VM 을 쓰거나 고치고, (2) 빌드해서 파일·줄·칸을 가리키는 DVML 진단을 고치고, (3) 화면을 PNG로 그려 보고 이상한 곳을 고칩니다.
 
 **문서와 코드가 어긋나지 않는다**
 - 원칙은 "문서에 없는 기능은 없는 것"입니다. 마크업 레퍼런스가 태그·속성·값의 전체 목록입니다.
@@ -46,7 +94,7 @@ UI 코드에서 가장 흔한 실패는 "틀렸는데 아무 일도 안 일어�
 - 알람(ISA-18.2 기반), 트렌드, 데이터 그리드, 가상 키보드, 롱프레스 보호(`hold`), 화면 잠금 같은 현장 요구를 내장했습니다.
 
 ## 설치
-<!-- en-hash: 72aed81cbda6af7d -->
+<!-- en-hash: a3d0deefb7f0dbad -->
 
 앱은 코어 패키지와, 화면을 창에 올리는 호스트 어댑터 하나를 참조합니다.
 
@@ -57,7 +105,17 @@ dotnet add package Devinno.UI.OpenTK      # own window (ViewWindow)
 dotnet add package Devinno.UI.WinForms    # inside a WinForms form (ViewControl)
 ```
 
-WinForms 앱은 대상 프레임워크를 `net9.0-windows10.0.19041.0` 이상으로 해야 합니다(WinForms 어댑터는 SkiaSharp 의 WinForms 뷰처럼 이 TFM 만 제공). 기본값 `net9.0-windows` 로 두면 어셈블리가 참조되지 않아 "'Devinno' 형식 또는 네임스페이스를 찾을 수 없음" 오류로 빌드가 실패합니다.
+WinForms 앱은 대상 프레임워크를 `net9.0-windows10.0.19041.0` 이상으로 해야 합니다(WinForms 어댑터는 SkiaSharp 의 WinForms 뷰처럼 이 TFM 만 제공). 기본값 `net9.0-windows` 로 두면 어셈블리가 참조되지 않아 "'Devinno' 형식 또는 네임스페이스를 찾을 수 없음" 오류로 빌드가 실패합니다. WinForms 앱의 프로젝트 파일은 다음과 같습니다.
+
+```xml
+<PropertyGroup>
+  <OutputType>WinExe</OutputType>
+  <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+  <UseWindowsForms>true</UseWindowsForms>
+</PropertyGroup>
+```
+
+**지원 OS.** Windows 11(x64)에서 두 어댑터 모두 테스트했습니다. WinForms 어댑터는 Windows 에서만 돌아갑니다. 코어 라이브러리와 OpenTK 어댑터는 Windows 전용 API 를 쓰지 않지만, Linux(라즈베리파이 터치 패널 포함)에서는 아직 테스트하지 않았습니다. Linux 에서는 앱에 `SkiaSharp.NativeAssets.Linux` 패키지도 넣어야 합니다.
 
 ## 시작하기
 <!-- en-hash: 5a2afa9cf5286a29 -->
