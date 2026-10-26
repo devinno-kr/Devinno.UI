@@ -132,7 +132,7 @@ public sealed class LayoutEngine
             var cs = c.Style;
             c.WidthOverridden = cs.Position == Position.Absolute
                 ? cs.Left is not null && cs.Right is not null
-                : grid || (row ? cs.FlexGrow > 0 : Stretches(cs, st, col: true));
+                : grid || (row ? cs.FlexGrow > 0 : Stretches(c, st, col: true));
             MarkWidthOverridden(c);
         }
 
@@ -1891,14 +1891,14 @@ public sealed class LayoutEngine
             var childAlign = box.Children[i].Style.AlignSelf ?? st.Align;
             if (col)
             {
-                cwUse = Stretches(box.Children[i].Style, st, col: true) ? StretchTo(box.Children[i].Style, innerW, col: true) : cw;
+                cwUse = Stretches(box.Children[i], st, col: true) ? StretchTo(box.Children[i].Style, innerW, col: true) : cw;
                 cx = innerX + CrossOffset(childAlign, innerW, cwUse);
                 cy = cursor;
                 cursor += ch + st.Gap + extraGap;
             }
             else
             {
-                chUse = Stretches(box.Children[i].Style, st, col: false) ? StretchTo(box.Children[i].Style, innerH, col: false) : ch;
+                chUse = Stretches(box.Children[i], st, col: false) ? StretchTo(box.Children[i].Style, innerH, col: false) : ch;
                 cy = innerY + CrossOffset(childAlign, innerH, chUse);
                 cx = cursor;
                 cursor += cw + st.Gap + extraGap;
@@ -1912,8 +1912,14 @@ public sealed class LayoutEngine
 
     // CSS 와 같이 — stretch 는 교차 축 크기(width/height)가 정해지지 않은 자식만 늘리고, min/max 안으로 자른다.
     // aspect-ratio 상자는 늘린 칸을 받아 그 안에 맞춘다(기존 동작).
-    private static bool Stretches(ComputedStyle child, ComputedStyle parent, bool col) =>
-        (child.AlignSelf ?? parent.Align) == AlignItems.Stretch && (col ? child.Width : child.Height) is null;
+    // 세그먼트는 세로 배치에서 늘이지 않는다(항목이 글자 폭이라 배경만 늘어나 뒤가 빈다) — align-self 를 직접 주면 그대로 따른다.
+    private static bool Stretches(LayoutBox child, ComputedStyle parent, bool col)
+    {
+        var cs = child.Style;
+        if (col && cs.AlignSelf is null && child.Node.Tag == "DvSegment")
+            return false;
+        return (cs.AlignSelf ?? parent.Align) == AlignItems.Stretch && (col ? cs.Width : cs.Height) is null;
+    }
 
     private static float StretchTo(ComputedStyle child, float cross, bool col)
     {
@@ -2125,14 +2131,14 @@ public sealed class LayoutEngine
 
                 if (col)
                 {
-                    var cwUse = Stretches(box.Children[i].Style, st, col: true) ? StretchTo(box.Children[i].Style, bandCross, col: true) : cw;
+                    var cwUse = Stretches(box.Children[i], st, col: true) ? StretchTo(box.Children[i].Style, bandCross, col: true) : cw;
                     var cx = crossCursor + CrossOffset(childAlign, bandCross, cwUse);
                     Arrange(box.Children[i], cx, mainCursor, cwUse, ch);
                     mainCursor += ch + st.Gap + mainExtra;
                 }
                 else
                 {
-                    var chUse = Stretches(box.Children[i].Style, st, col: false) ? StretchTo(box.Children[i].Style, bandCross, col: false) : ch;
+                    var chUse = Stretches(box.Children[i], st, col: false) ? StretchTo(box.Children[i].Style, bandCross, col: false) : ch;
                     var cy = crossCursor + CrossOffset(childAlign, bandCross, chUse);
                     Arrange(box.Children[i], mainCursor, cy, cw, chUse);
                     mainCursor += cw + st.Gap + mainExtra;

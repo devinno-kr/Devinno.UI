@@ -188,4 +188,37 @@ public class SegmentLatchTests
         Tap(s, Items(s)[2]);
         Assert.Equal(3, vm.Level);
     }
+
+    // 세로 배치(stretch 기본) 안의 세그먼트는 내용 폭 — 배경이 마지막 항목 뒤로 비지 않는다
+    [Theory]
+    [InlineData("<DvStack>{0}</DvStack>")]
+    [InlineData("<DvCard title=\"모드\">{0}</DvCard>")]
+    [InlineData("{0}")]
+    public void Segment_InColumn_FitsItems(string wrap)
+    {
+        var (s, _) = Start(string.Format(wrap, Seg));
+        var seg = Find(s, b => b.Node.Tag == "DvSegment");
+        var last = Items(s)[^1];
+        Assert.True(seg.Rect.Width < W / 2, $"segment width {seg.Rect.Width}");
+        Assert.InRange(seg.Rect.Right - last.Rect.Right, 0f, 5f);
+    }
+
+    [Theory]
+    [InlineData("style=\"align-self:stretch\"", W - 40)] // 화면 padding 20 × 2
+    [InlineData("width=\"300\"", 300f)]
+    public void Segment_InColumn_ExplicitStretchOrWidth_Kept(string attrs, float expected)
+    {
+        var (s, _) = Start($"<DvStack><DvSegment value=\"{{Bind Mode}}\" {attrs}><DvOption value=\"auto\" text=\"자동\"/><DvOption value=\"manual\" text=\"수동\"/></DvSegment></DvStack>");
+        var seg = Find(s, b => b.Node.Tag == "DvSegment");
+        Assert.Equal(expected, seg.Rect.Width, 0.5f);
+    }
+
+    [Fact]
+    public void Segment_InRow_StaysVerticallyCentered()
+    {
+        var (s, _) = Start($"<DvRow>{Seg}<DvButton text=\"ON\" style=\"height:80\"/></DvRow>");
+        var seg = Find(s, b => b.Node.Tag == "DvSegment");
+        var btn = Find(s, b => b.Node.Tag == "DvButton");
+        Assert.Equal(btn.Rect.MidY, seg.Rect.MidY, 0.5f);
+    }
 }

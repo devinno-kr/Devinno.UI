@@ -748,6 +748,7 @@ public bool IsFault => State == 2;
 ```
 - Writes the pressed item's `value` to the VM (value type conversion and `onbeforecommit` are the same as `DvSelect` — 10.2). The selected item has a `primary` background (`.segment-item-on`).
 - With one-way `value`, `readonly`, or `disabled`, it only displays. Items are created by the library (`.segment-item`) and do not wrap.
+- Its width fits its items, also inside a vertical layout (`DvStack`, `DvCard` — not stretched like other children). To fill the width, give `style="align-self:stretch"` or a `width`. To put it at one end of a row with another control at the other end, use `<DvRow justify="between">` rather than `grow="1"` (a grown segment leaves empty background after the last item).
 
 **DvTabs · DvTab** — switch between content groups with tabs within one page (different from page transition `App.Show` — same VM).
 ```xml
