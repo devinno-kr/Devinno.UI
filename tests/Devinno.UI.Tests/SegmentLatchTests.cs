@@ -213,6 +213,46 @@ public class SegmentLatchTests
         Assert.Equal(expected, seg.Rect.Width, 0.5f);
     }
 
+    // grow 로 넓어진 세그먼트 — 기본은 항목 폭 그대로·배경만 항목까지, fill="true" 면 남는 폭을 항목에 나눠 꽉 채운다
+    private const string GrownRow = """
+        <DvRow><DvSegment value="{Bind Mode}" grow="1" ATTRS><DvOption value="auto" text="자동"/><DvOption value="manual" text="수동 운전"/></DvSegment><DvButton text="ON"/></DvRow>
+        """;
+
+    [Fact]
+    public void Segment_Grown_PaintsBackgroundFittedToItems()
+    {
+        var (s, _) = Start(GrownRow.Replace("ATTRS", ""));
+        var seg = Find(s, b => b.Node.Tag == "DvSegment");
+        var last = Items(s)[^1];
+        Assert.True(seg.Rect.Right - last.Rect.Right > 50, "the segment box itself grows");
+        var fit = Devinno.UI.Painting.Painter.SegmentFitRect(seg, seg.Style);
+        Assert.Equal(last.Rect.Right + seg.Style.Padding.Right, fit.Right, 0.5f);
+        Assert.Equal(seg.Rect.Left, fit.Left);
+    }
+
+    [Fact]
+    public void Segment_GrownFill_ItemsShareExtraWidth()
+    {
+        var (plain, _) = Start(GrownRow.Replace("ATTRS", ""));
+        var (s, _) = Start(GrownRow.Replace("ATTRS", "fill=\"true\""));
+        var seg = Find(s, b => b.Node.Tag == "DvSegment");
+        var items = Items(s);
+        var natural = Items(plain);
+        Assert.Equal(seg.Rect.Right - seg.Style.Padding.Right, items[^1].Rect.Right, 0.5f);
+        // 같은 양을 더한다 — 긴 글자 항목은 여전히 더 넓다
+        Assert.Equal(items[0].Rect.Width - natural[0].Rect.Width, items[1].Rect.Width - natural[1].Rect.Width, 0.5f);
+        Assert.True(items[1].Rect.Width > items[0].Rect.Width);
+    }
+
+    [Fact]
+    public void Segment_InColumn_Fill_Stretches()
+    {
+        var (s, _) = Start($"<DvStack><DvSegment value=\"{{Bind Mode}}\" fill=\"true\"><DvOption value=\"auto\" text=\"자동\"/><DvOption value=\"manual\" text=\"수동\"/></DvSegment></DvStack>");
+        var seg = Find(s, b => b.Node.Tag == "DvSegment");
+        Assert.Equal(W - 40, seg.Rect.Width, 0.5f);
+        Assert.Equal(seg.Rect.Right - seg.Style.Padding.Right, Items(s)[^1].Rect.Right, 0.5f);
+    }
+
     [Fact]
     public void Segment_InRow_StaysVerticallyCentered()
     {

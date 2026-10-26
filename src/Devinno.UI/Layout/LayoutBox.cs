@@ -138,6 +138,8 @@ public sealed class LayoutBox
     internal LayoutBox? SegmentOwner { get; set; }
     /// <summary>The option number of the segment item (index into <see cref="SelectOptions"/>).</summary>
     internal int SegmentIndex { get; set; }
+    /// <summary><c>fill</c> of <c>DvSegment</c>: when the segment is wider than its items, the items share the extra width. Otherwise the background is drawn fitted to the items.</summary>
+    internal bool SegmentFill { get; set; }
     /// <summary>
     /// The raw <c>value</c> attribute of a value-writing widget (<c>DvToggle</c>, <c>DvKnob</c>, <c>DvInput</c>, <c>DvSelect</c>, <c>DvDateTimeInput</c>, <c>DvColorInput</c>), e.g. <c>{Bind Speed}</c>.
     /// Inside a component it is the expression rewritten to the outer view model path. When the user changes the value, it is written to this path. <see langword="null"/> for other tags.

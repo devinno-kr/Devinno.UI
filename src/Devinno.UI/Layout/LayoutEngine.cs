@@ -886,6 +886,8 @@ public sealed class LayoutEngine
             box.SelectedIndex = box.SelectOptions.FindIndex(o => SelectValue.Matches(o.Value, current, box.SelectValueType));
             box.InputPlaceholder = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("placeholder"));
             box.ReadOnly = InputReadOnly(node, vm, _valueOverride);
+            if (node.Tag == "DvSegment")
+                box.SegmentFill = ToBool(BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("fill")));
         }
 
         if (node.Tag is "DvDateTimeInput" or "DvColorInput")
@@ -1861,6 +1863,19 @@ public sealed class LayoutEngine
         if (st.IsFlex)
         {
             DistributeMain(sizes, box.Children, flow, col, col ? innerH : innerW, st.Gap);
+            if (box.SegmentFill && !col && flow.Count > 0)
+            {
+                // DvSegment fill — 남는 폭을 항목에 똑같이 더한다(글자 폭은 그대로 — 길이가 달라도 잘리지 않음)
+                var used = st.Gap * (flow.Count - 1);
+                foreach (var i in flow)
+                    used += sizes[i].w;
+                if (innerW > used)
+                {
+                    var add = (innerW - used) / flow.Count;
+                    foreach (var i in flow)
+                        sizes[i] = (sizes[i].w + add, sizes[i].h);
+                }
+            }
         }
 
         float totalMain = 0;
@@ -1912,11 +1927,11 @@ public sealed class LayoutEngine
 
     // CSS 와 같이 — stretch 는 교차 축 크기(width/height)가 정해지지 않은 자식만 늘리고, min/max 안으로 자른다.
     // aspect-ratio 상자는 늘린 칸을 받아 그 안에 맞춘다(기존 동작).
-    // 세그먼트는 세로 배치에서 늘이지 않는다(항목이 글자 폭이라 배경만 늘어나 뒤가 빈다) — align-self 를 직접 주면 그대로 따른다.
+    // 세그먼트는 세로 배치에서 늘이지 않는다(항목이 글자 폭이라 배경만 늘어나 뒤가 빈다) — align-self 를 직접 주거나 fill 이면 늘인다.
     private static bool Stretches(LayoutBox child, ComputedStyle parent, bool col)
     {
         var cs = child.Style;
-        if (col && cs.AlignSelf is null && child.Node.Tag == "DvSegment")
+        if (col && cs.AlignSelf is null && child.Node.Tag == "DvSegment" && !child.SegmentFill)
             return false;
         return (cs.AlignSelf ?? parent.Align) == AlignItems.Stretch && (col ? cs.Width : cs.Height) is null;
     }

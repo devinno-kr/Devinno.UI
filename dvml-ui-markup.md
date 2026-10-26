@@ -748,7 +748,17 @@ public bool IsFault => State == 2;
 ```
 - Writes the pressed item's `value` to the VM (value type conversion and `onbeforecommit` are the same as `DvSelect` — 10.2). The selected item has a `primary` background (`.segment-item-on`).
 - With one-way `value`, `readonly`, or `disabled`, it only displays. Items are created by the library (`.segment-item`) and do not wrap.
-- Its width fits its items, also inside a vertical layout (`DvStack`, `DvCard` — not stretched like other children). To fill the width, give `style="align-self:stretch"` or a `width`. To put it at one end of a row with another control at the other end, use `<DvRow justify="between">` rather than `grow="1"` (a grown segment leaves empty background after the last item).
+- Its width fits its items, also inside a vertical layout (`DvStack`, `DvCard` — not stretched like other children). When `grow`, `width` or `align-self:stretch` makes it wider than its items, the box takes that space but the background and border are drawn only around the items (no empty background after the last item).
+- `fill="true"`: fill the width instead — the items share the extra width equally (each keeps its text width, so longer labels stay wider and are not cut). Inside a vertical layout it also stretches to the full width.
+```xml
+<DvRow gap="sm">
+  <DvSegment value="{Bind Mode}" grow="1" fill="true">
+    <DvOption value="auto" text="AUTO"/>
+    <DvOption value="manual" text="MANUAL"/>
+  </DvSegment>
+  <DvButton text="OFF" style="width:84"/>
+</DvRow>
+```
 
 **DvTabs · DvTab** — switch between content groups with tabs within one page (different from page transition `App.Show` — same VM).
 ```xml

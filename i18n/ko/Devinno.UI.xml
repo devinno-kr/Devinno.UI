@@ -3900,6 +3900,9 @@
         <member name="P:Devinno.UI.Layout.LayoutBox.SegmentIndex" en-hash="090662e44cba4d72">
             <summary>세그먼트 항목의 선택지 번호(<see cref="P:Devinno.UI.Layout.LayoutBox.SelectOptions" /> 인덱스).</summary>
         </member>
+        <member name="P:Devinno.UI.Layout.LayoutBox.SegmentFill" en-hash="ddd728e2d24f8e10">
+            <summary><c>DvSegment</c> 의 <c>fill</c>: 세그먼트가 항목보다 넓으면 남는 폭을 항목이 나눠 가집니다. 아니면 배경을 항목에 맞춰 그립니다.</summary>
+        </member>
         <member name="P:Devinno.UI.Layout.LayoutBox.ValueBindExpr" en-hash="5498e0136b7c425e">
             <summary>
             값을 쓰는 위젯(<c>DvToggle</c>·<c>DvKnob</c>·<c>DvInput</c>·<c>DvSelect</c>·<c>DvDateTimeInput</c>·<c>DvColorInput</c>)의 <c>value</c> 속성 원문(예: <c>{Bind Speed}</c>).

@@ -127,7 +127,7 @@ public sealed partial class Painter
 
     private void PaintBox(SKCanvas canvas, LayoutBox box, ComputedStyle st, object? vm, InteractionState? state, long timestampMs, long key)
     {
-        var rect = box.Rect;
+        var rect = box.Node.Tag == "DvSegment" && !box.SegmentFill ? SegmentFitRect(box, st) : box.Rect;
         var r = st.BorderRadius;
 
         if (st.Shadow is { } sh)
@@ -589,6 +589,16 @@ public sealed partial class Painter
             PaintScrollBars(canvas, box);
             canvas.Restore();
         }
+    }
+
+    // DvSegment(fill 아님) — 상자가 grow·stretch 로 넓어져도 배경·테두리·그림자는 항목까지만(뒤에 빈 배경이 남지 않게)
+    internal static SKRect SegmentFitRect(LayoutBox box, ComputedStyle st)
+    {
+        var rect = box.Rect;
+        if (box.Children.Count == 0)
+            return rect;
+        var right = box.Children.Max(c => c.Rect.Right) + st.Padding.Right;
+        return right < rect.Right ? new SKRect(rect.Left, rect.Top, right, rect.Bottom) : rect;
     }
 
     private static void DrawBorder(SKCanvas canvas, SKRect rect, ComputedStyle st)
