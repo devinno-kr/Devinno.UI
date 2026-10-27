@@ -5,7 +5,7 @@ using Devinno.UI.Styling;
 
 // 데모 — DvApp 하나에 페이지를 전부 넣고, 실행 인자로 시작 페이지를 고른다.
 //   인자 없음 = 쇼케이스(영어): 상단 바 + Overview(운영 대시보드)·Process(P&ID)·Widgets(아래 페이지 목록), PlantSim 이 값을 움직인다.
-//   -- shot <폴더> = 쇼케이스 화면을 창 없이 PNG 로(README 이미지)
+//   -- shot <폴더> = 쇼케이스 화면을 창 없이 PNG 로(README 이미지), anim 을 더하면 P&ID 흐름 애니메이션 프레임도
 //   dotnet run --project samples/Devinno.UI.Demo [-- gpu] [-- dashboard|lang|control|equipment|grid|trend [fast]|alarm|input|knob|neon|process|basic|v2] [-- light]
 //   시나리오: -- top = 상단 바(모니터링·설정·알람) + 홈 + 각 페이지의 "이전",  -- nav = 왼쪽 사이드바,
 //            -- dialog = 레시피 편집 다이얼로그 + 그 위 메시지 박스 + 통신 시뮬레이션 알람(DvApp.Current, 키 중복 방지)
@@ -121,6 +121,32 @@ internal static class Program
                 Shot(app, width, height, Path.Combine(dir, name + ".png"));
             }
 
+            if (args.Contains("anim")) // -- shot <폴더> anim = P&ID 운전 전환 시퀀스를 50ms 프레임으로(README 애니메이션 WebP)
+            {
+                // 단계마다 1.2초(점선 한 주기 600ms 의 배수) — 예비 펌프 P-102 기동(유량 상승) 후 정지, 처음 상태로 돌아와 끊김 없이 반복
+                Action[] steps =
+                [
+                    () => { },
+                    () => sim.P102Run = true,
+                    () => sim.P102Run = false,
+                ];
+                app.Show(plantProcess);
+                Shot(app, width, height, null);
+                var frame = 0;
+                var t0 = DateTime.Now;
+                foreach (var step in steps)
+                {
+                    step();
+                    for (var i = 0; i < 24; i++, frame++)
+                    {
+                        if (frame % 4 == 0) // 200ms 마다 시뮬레이션(실제 500ms 보다 빠르게) — 펌프 2대면 유량이 오르는 게 단계 안에 보이도록
+                            sim.Tick(t0.AddMilliseconds(frame * 50));
+                        app.Invalidate();
+                        Shot(app, width, height, Path.Combine(dir, $"process-frame-{frame:000}.png"), frame * 50L);
+                    }
+                }
+            }
+
             return;
         }
 
@@ -206,11 +232,11 @@ internal static class Program
     }
 
     // 창 없이 앱 화면(바 + 현재 페이지) 한 프레임 — path 가 null 이면 그리기만(대기 중인 페이지 전환 적용)
-    private static void Shot(DvApp app, int width, int height, string? path)
+    private static void Shot(DvApp app, int width, int height, string? path, long timestampMs = 0)
     {
         using var bitmap = new SkiaSharp.SKBitmap(width, height);
         using (var canvas = new SkiaSharp.SKCanvas(bitmap))
-            app.Surface.RenderTo(canvas, width, height);
+            app.Surface.RenderTo(canvas, width, height, timestampMs);
         if (path is null)
             return;
         using var file = File.Create(path);
