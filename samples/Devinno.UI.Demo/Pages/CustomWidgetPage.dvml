@@ -2,11 +2,11 @@
   <DvRow align="start">
     <DvStack gap="none" grow="1" style="width:0">
       <DvLabel class="heading" text="Custom widgets"/>
-      <DvLabel class="label muted" text="BatteryGauge and Fan are C# classes registered with RegisterWidget; the markup uses them like any other tag"/>
+      <DvLabel class="label muted" text="BatteryGauge, Fan and SetpointTank are C# classes registered with RegisterWidget; the markup uses them like any other tag"/>
     </DvStack>
     <DvButton variant="secondary" icon="fa-arrow-left" text="Back" onclick="Back" visible="{ShowBack}"/>
   </DvRow>
-  <DvGrid columns="2">
+  <DvGrid columns="3">
     <DvCard title="Battery racks" badge="BatteryGauge">
       <DvStack gap="md">
         <DvRepeat items="{Racks}" gap="sm">
@@ -28,6 +28,13 @@
           <DvLabel class="label" text="{FanText}"/>
         </DvRow>
         <DvLabel class="caption muted" text="Spins only while running (FrameInterval); stopped = no repaint"/>
+      </DvStack>
+    </DvCard>
+    <DvCard title="Level setpoint" badge="SetpointTank">
+      <DvStack align="center" gap="md">
+        <SetpointTank level="{Level}" value="{Bind Setpoint}"/>
+        <DvLabel class="label" text="{SetpointText}"/>
+        <DvLabel class="caption muted" text="Drag the setpoint line; it is written to the VM on release"/>
       </DvStack>
     </DvCard>
   </DvGrid>

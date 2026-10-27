@@ -15,12 +15,53 @@ public sealed class DvWidgetContext
 {
     private readonly LayoutBox _box;
     private readonly DvTheme _theme;
+    private readonly DvSurface? _owner;
+    private readonly object? _vm;
 
-    internal DvWidgetContext(LayoutBox box, DvTheme? theme, long timestampMs)
+    internal DvWidgetContext(LayoutBox box, DvTheme? theme, long timestampMs, DvSurface? owner = null, object? vm = null)
     {
         _box = box;
         _theme = theme ?? DvTheme.Default;
         TimestampMs = timestampMs;
+        _owner = owner;
+        _vm = vm;
+        var r = box.Rect;
+        var pad = box.Style.Padding;
+        Bounds = r.IsEmpty ? SKRect.Empty : new SKRect(r.Left + pad.Left, r.Top + pad.Top, r.Right - pad.Right, r.Bottom - pad.Bottom);
+    }
+
+    /// <summary>
+    /// Gets the content area (the element's area minus <c>padding</c>) — the same rectangle <see cref="DvWidget.Paint"/> receives, in the same coordinates as pointer points.
+    /// <see cref="SKRect.Empty"/> in <see cref="DvWidget.Measure"/> (the element has no area yet).
+    /// </summary>
+    public SKRect Bounds { get; }
+
+    /// <summary>
+    /// Gets whether <see cref="Commit"/> can write: inside a pointer method, the element is enabled, and its <c>value</c> is a two-way binding (<c>{Bind …}</c>, or a two-way component parameter).
+    /// </summary>
+    public bool CanCommit => _owner is not null && !_box.Disabled && _box.ValueBindExpr is { } e && BindingResolver.IsTwoWay(e);
+
+    /// <summary>
+    /// Writes a value to the element's <c>value</c> binding, the same way built-in widgets do: <c>onbeforecommit="M"</c> is asked first (<c>bool M(T proposed)</c>, where
+    /// <c>T</c> is the value's type or <see cref="object"/>), the value is converted to the property type, and inside <c>DvRepeat</c> it goes to the item.
+    /// The screen is rebuilt afterwards.
+    /// </summary>
+    /// <param name="value">The new value.</param>
+    /// <returns><see langword="true"/> if written; <see langword="false"/> if <see cref="CanCommit"/> is false, the gate refused, or the property setter failed (reported through <see cref="DvSurface.HandlerError"/>).</returns>
+    /// <remarks>Only works inside pointer methods (<see cref="DvWidget.OnPointerDown"/> … <see cref="DvWidget.OnPointerUp"/>); elsewhere it returns <see langword="false"/>.</remarks>
+    public bool Commit(object? value)
+    {
+        if (!CanCommit)
+            return false;
+        var tag = _box.Node.Tag;
+        var types = value is null ? new[] { typeof(object) } : new[] { value.GetType(), typeof(object) };
+        if (!Interaction.CommitGate.Allows(_owner, tag, _vm, _box.OnBeforeCommit, value, types))
+            return false;
+        if (!Interaction.HandlerErrors.TrySet(_owner, tag, _box.ValueContext(_vm), BindingResolver.ExtractPath(_box.ValueBindExpr!), value))
+            return false;
+        _owner!.NotifyValueWritten(_box);
+        _owner.Invalidate();
+        return true;
     }
 
     /// <summary>Gets the element's tag (the name the widget was registered under).</summary>

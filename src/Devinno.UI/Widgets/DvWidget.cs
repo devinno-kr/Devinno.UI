@@ -7,7 +7,7 @@ namespace Devinno.UI.Widgets;
 /// <see cref="Components.ComponentRegistry.RegisterWidget{T}(string)"/> and use the tag in markup like any other element.
 /// </summary>
 /// <remarks>
-/// <para><b>What the class does</b>: only measuring and painting its own area. Everything else comes from the markup as for built-in elements:
+/// <para><b>What the class does</b>: measuring and painting its own area, and optionally handling pointer gestures (<see cref="OnPointerDown"/>) and writing its <c>value</c> (<see cref="DvWidgetContext.Commit"/>). Everything else comes from the markup as for built-in elements:
 /// attributes and bindings (read them through <see cref="DvWidgetContext"/>), <c>class</c>, <c>style</c> (background, border, padding, size),
 /// <c>onclick</c>, <c>hold</c>, <c>disabled</c>, <c>visible</c> and <c>id</c> (a plain <see cref="Controls.DvControl"/> handle). Child elements are not used.</para>
 /// <para><b>Instances</b>: one instance per element on screen, created with the parameterless constructor. The same instance is kept when the screen is rebuilt
@@ -62,4 +62,33 @@ public abstract class DvWidget
     /// <param name="ctx">Attributes of this element (read attributes only; the theme here is the default theme).</param>
     /// <returns>The frame interval in ms (at least 16), or <see langword="null"/>.</returns>
     public virtual int? FrameInterval(DvWidgetContext ctx) => null;
+
+    /// <summary>
+    /// The element was pressed. Return <see langword="true"/> to take the gesture: this widget then receives <see cref="OnPointerMove"/> and <see cref="OnPointerUp"/>
+    /// (or <see cref="OnPointerCancel"/>), the screen does not scroll, and no click (<c>onclick</c>) happens.
+    /// Return <see langword="false"/> (the default) to let the press work as for any element (click, <c>hold</c>, scrolling).
+    /// </summary>
+    /// <param name="ctx">The element's context; <see cref="DvWidgetContext.Bounds"/> is the content area in the same coordinates as <paramref name="point"/>.</param>
+    /// <param name="point">The press point.</param>
+    /// <returns>Whether this widget takes the gesture.</returns>
+    /// <remarks>
+    /// Not called while the element is disabled. Typical use: keep a preview value in a field while dragging (paint it in <see cref="Paint"/>) and write it once
+    /// with <see cref="DvWidgetContext.Commit"/> in <see cref="OnPointerUp"/> — the same way the built-in knob and slider work.
+    /// An exception from any pointer method is reported through <see cref="DvSurface.HandlerError"/> (<c>Kind</c> = <c>"Pointer"</c>) and ends the gesture.
+    /// </remarks>
+    public virtual bool OnPointerDown(DvWidgetContext ctx, SKPoint point) => false;
+
+    /// <summary>The pointer moved during a gesture this widget took. The screen is repainted afterwards.</summary>
+    /// <param name="ctx">The element's context.</param>
+    /// <param name="point">The pointer position (may be outside the element).</param>
+    public virtual void OnPointerMove(DvWidgetContext ctx, SKPoint point) { }
+
+    /// <summary>The pointer was released, ending the gesture. The screen is rebuilt afterwards, so committed values show at once.</summary>
+    /// <param name="ctx">The element's context.</param>
+    /// <param name="point">The release position (may be outside the element).</param>
+    public virtual void OnPointerUp(DvWidgetContext ctx, SKPoint point) { }
+
+    /// <summary>The gesture ended without a release — the element disappeared in a rebuild, or a dialog opened on top. Drop any preview; do not commit.</summary>
+    /// <param name="ctx">The element's context.</param>
+    public virtual void OnPointerCancel(DvWidgetContext ctx) { }
 }

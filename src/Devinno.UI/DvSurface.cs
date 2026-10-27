@@ -94,6 +94,30 @@ public sealed partial class DvSurface
     // DvKnob 회전 드래그 — 미리보기 값은 LayoutBox 에만, VM 은 pointer-up 에서 1회 커밋
     private IValueDrag? _knobDrag; // 노브·슬라이더 끌기
     private readonly Widgets.WidgetStore _widgetStore = new(); // 커스텀 위젯 인스턴스 — 재빌드에도 같은 것
+    private LayoutBox? _widgetDrag; // 누름을 잡은 커스텀 위젯(뗌·취소까지 이동을 받는다)
+    private SKPoint _widgetShift;   // 화면 점 → 위젯 상자 좌표(스크롤 보정), 노브의 _knobShift 와 같음
+
+    // 커스텀 위젯 포인터 메서드 호출 — 예외는 알리고 false(잡기 끝)
+    private bool WidgetCall(LayoutBox box, Func<Widgets.DvWidget, Widgets.DvWidgetContext, bool> call)
+    {
+        try
+        {
+            return call(box.Widget!, new Widgets.DvWidgetContext(box, _theme, Clock(), this, _vm));
+        }
+        catch (Exception ex)
+        {
+            HandlerErrors.Report(this, ex, "Pointer", box.Widget!.GetType().Name, box.Node.Tag);
+            return false;
+        }
+    }
+
+    // 잡고 있던 위젯의 몸짓을 취소로 끝낸다(사라짐·다이얼로그로 입력을 잃음)
+    private void CancelWidgetDrag(LayoutBox box)
+    {
+        _widgetDrag = null;
+        WidgetCall(box, (w, ctx) => { w.OnPointerCancel(ctx); return false; });
+        _needsRender = true;
+    }
     private SKPoint _knobShift; // 노브 좌표계(스크롤 상자 안이면 오프셋 반영) − 화면 좌표
 
     /// <summary>Creates a screen with the default theme. User components are not used.</summary>
@@ -756,6 +780,8 @@ public sealed partial class DvSurface
             _knobDrag = null;
             Invalidate(); // 드래그 미리보기 값을 버리고 VM 값으로 다시 빌드
         }
+        if (_widgetDrag is { } wd)
+            CancelWidgetDrag(wd);
         _scroll = null;
         _thumb = null;
         ClearHover();
@@ -775,6 +801,14 @@ public sealed partial class DvSurface
                     _knobDrag.Retarget(knob);
                 else
                     _knobDrag = null;
+            }
+
+            if (_widgetDrag is { } wd)
+            {
+                if (Counterpart(old, _box, wd) is { Widget: not null } nw && ReferenceEquals(nw.Widget, wd.Widget))
+                    _widgetDrag = nw; // 같은 요소(같은 인스턴스) — 몸짓 계속
+                else
+                    CancelWidgetDrag(wd); // 사라졌거나 다른 요소가 그 자리에
             }
 
             _pressOrigin = _pressOrigin is null ? null : Counterpart(old, _box, _pressOrigin);
@@ -1090,6 +1124,15 @@ public sealed partial class DvSurface
             return;
         }
 
+        if (_widgetDrag is { } wd)
+        {
+            var at = p + _widgetShift;
+            if (!WidgetCall(wd, (w, ctx) => { w.OnPointerMove(ctx, at); return true; }))
+                _widgetDrag = null; // 예외 — 몸짓 끝
+            _needsRender = true; // 위젯이 필드에 든 미리보기를 다시 그린다
+            return;
+        }
+
         if (ScrollPointerMove(p))
             return;
 
@@ -1219,7 +1262,15 @@ public sealed partial class DvSurface
         if (PressVisible(_pressOrigin))
             _needsRender = true;
 
-        if (_pressOrigin is { Node.Tag: "DvKnob" } knob && KnobBinder.CanDrag(knob) && knob.KnobInput != KnobInputMode.Tap)
+        if (_pressOrigin is { Widget: not null, Disabled: false } wbox && WidgetCall(wbox, (w, ctx) => w.OnPointerDown(ctx, local)))
+        {
+            // 위젯이 몸짓을 잡음 — 스크롤·길게 누르기·클릭 없이 이동·뗌을 위젯이 받는다
+            _widgetDrag = wbox;
+            _widgetShift = local - p;
+            CancelHold();
+            _needsRender = true;
+        }
+        else if (_pressOrigin is { Node.Tag: "DvKnob" } knob && KnobBinder.CanDrag(knob) && knob.KnobInput != KnobInputMode.Tap)
         {
             // 노브가 우선 — 노브 위에서 누른 드래그는 스크롤하지 않는다
             _knobShift = local - p;
@@ -1273,6 +1324,17 @@ public sealed partial class DvSurface
         // 어느 경로든 press 는 풀린다 → press 스타일이 보이고 있었다면 다시 그려야 함
         if (PressVisible(_state.Press))
             _needsRender = true;
+
+        if (_widgetDrag is { } wdrag)
+        {
+            _widgetDrag = null;
+            var at = p + _widgetShift;
+            WidgetCall(wdrag, (w, ctx) => { w.OnPointerUp(ctx, at); return true; });
+            Invalidate(); // 쓴 값(또는 거절된 값)을 VM 에서 다시 빌드
+            _state.Press = null;
+            _pressOrigin = null;
+            return;
+        }
 
         if (_knobDrag is not null)
         {

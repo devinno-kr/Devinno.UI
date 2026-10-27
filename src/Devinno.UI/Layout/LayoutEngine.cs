@@ -236,6 +236,7 @@ public sealed class LayoutEngine
     {
         var box = BuildSelf(node, vm);
         box.Widget = _widgets.Get(node, create);
+        box.ValueBindExpr = _valueOverride ?? node.Attributes.GetValueOrDefault("value"); // ctx.Commit 이 쓰는 경로(컴포넌트 양방향 파라미터면 바깥 경로)
         box.WidgetValues = node.Attributes.ToDictionary(a => a.Key, a => (BindingResolver.ResolveValueOrLiteral(vm, a.Value), (string?)a.Value), StringComparer.Ordinal);
         if (node.Children.Count > 0)
             System.Diagnostics.Trace.TraceWarning($"Devinno.UI: <{node.Tag}> is a custom widget; its child elements are not used ({string.Join(", ", node.Children.Select(c => c.Tag).Distinct())})");
@@ -1321,10 +1322,13 @@ public sealed class LayoutEngine
             return BuildRepeat(node, scope,
                 (ch, itemScope) => TemplateChild(ch, itemScope, registry, depth, slotChildren, slotBuilder, twoWay));
 
-        // 양방향 파라미터: 템플릿 DvToggle/DvKnob/DvInput value="{p}" 의 커밋 대상을 바깥 VM 경로로 연결
+        Func<Widgets.DvWidget>? createWidget = null;
+        var isWidget = registry is not null && registry.TryGetWidget(node.Tag, out createWidget);
+
+        // 양방향 파라미터: 템플릿 DvToggle/DvKnob/DvInput(·커스텀 위젯) value="{p}" 의 커밋 대상을 바깥 VM 경로로 연결
         string? outerExpr = null;
         object? outerTarget = null;
-        if (node.Tag is "DvToggle" or "DvCheckBox" or "DvKnob" or "DvSlider" or "DvInput" or "DvSelect" or "DvSegment" or "DvTabs" or "DvDateTimeInput" or "DvColorInput" or "DvButton" && twoWay is not null &&
+        if ((isWidget || node.Tag is "DvToggle" or "DvCheckBox" or "DvKnob" or "DvSlider" or "DvInput" or "DvSelect" or "DvSegment" or "DvTabs" or "DvDateTimeInput" or "DvColorInput" or "DvButton") && twoWay is not null &&
             node.Attributes.TryGetValue("value", out var ve) && BindingResolver.IsBinding(ve) &&
             twoWay.TryGetValue(ve[1..^1].Trim(), out var oe))
         {
@@ -1336,7 +1340,7 @@ public sealed class LayoutEngine
         LayoutBox box;
         try
         {
-            box = BuildSelf(node, scope);
+            box = isWidget ? BuildWidget(node, scope, createWidget!) : BuildSelf(node, scope);
         }
         finally
         {
@@ -1349,6 +1353,9 @@ public sealed class LayoutEngine
             box.ValueTarget = outerTarget; // 인스턴스 핸들 칸(없으면 바깥 VM)
             box.ValueOrigin = (twoWay as TwoWayParams)?.Instance;
         }
+
+        if (isWidget)
+            return box; // 위젯은 자식을 쓰지 않는다
 
         if (node.Tag == "DvTabs")
             return BuildTabs(box, scope, ch => TemplateChild(ch, scope, registry, depth, slotChildren, slotBuilder, twoWay));

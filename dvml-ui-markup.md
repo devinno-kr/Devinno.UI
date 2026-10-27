@@ -1307,7 +1307,49 @@ registry.RegisterWidget<BatteryGauge>("BatteryGauge"); // before creating screen
 - **Instances**: one per element, kept when the screen is rebuilt, so fields can hold animation state. Inside `DvRepeat` each item has its own. Read attribute values from `ctx` on every call; do not cache them in fields.
 - **Errors**: an exception from `Paint` does not stop the screen — it is reported once through `HandlerError` (`Kind` = `"Paint"`) and the element is outlined in red.
 - **Names**: tags starting with `Dv` are reserved; a widget and a `DvComponent` cannot share a name (`ArgumentException`).
-- Not yet: touch/drag input and two-way `value` inside the widget (use `onclick`/`hold`, or put a `DvSlider`/`DvKnob` next to it).
+- **Touch and drag**: override `OnPointerDown(ctx, point)` and return `true` to take the gesture — the widget then gets `OnPointerMove`, `OnPointerUp`, or `OnPointerCancel` (the element disappeared or a dialog opened), the screen does not scroll and no `onclick` happens. Return `false` to let the press work as a normal click. Points are in the same coordinates as `ctx.Bounds` (the content area). Not called while disabled.
+- **Writing `value`**: give the element a two-way binding (`value="{Bind Setpoint}"`, an item path inside `DvRepeat`, or a two-way component parameter) and call `ctx.Commit(newValue)` — `onbeforecommit` is asked first, the value is converted to the property type, and the screen is rebuilt. `ctx.CanCommit` says whether writing is possible (false for one-way `value` or when disabled). As with the built-in knob and slider, keep the preview in a field while dragging and commit once on release:
+
+```csharp
+public sealed class SetpointBar : DvWidget
+{
+    private double? _drag; // preview while dragging
+
+    public override void Paint(SKCanvas canvas, SKRect bounds, DvWidgetContext ctx)
+    {
+        var sp = _drag ?? ctx.Number("value");
+        using var p = new SKPaint { IsAntialias = true, Color = ctx.Color("primary") };
+        canvas.DrawRect(new SKRect(bounds.Left, bounds.Top, bounds.Left + bounds.Width * (float)sp / 100, bounds.Bottom), p);
+    }
+
+    public override bool OnPointerDown(DvWidgetContext ctx, SKPoint point)
+    {
+        if (!ctx.CanCommit)
+            return false;
+        _drag = At(ctx, point);
+        return true;
+    }
+
+    public override void OnPointerMove(DvWidgetContext ctx, SKPoint point) => _drag = At(ctx, point);
+
+    public override void OnPointerUp(DvWidgetContext ctx, SKPoint point)
+    {
+        ctx.Commit(Math.Round(At(ctx, point)));
+        _drag = null;
+    }
+
+    public override void OnPointerCancel(DvWidgetContext ctx) => _drag = null;
+
+    private static double At(DvWidgetContext ctx, SKPoint p) =>
+        Math.Clamp((p.X - ctx.Bounds.Left) / ctx.Bounds.Width * 100, 0, 100);
+}
+```
+
+```xml
+<SetpointBar value="{Bind Setpoint}" onbeforecommit="ConfirmSetpoint"/>
+```
+
+- An exception from a pointer method is reported through `HandlerError` (`Kind` = `"Pointer"`) and ends the gesture.
 - Order of choice: built-in widget → `DvComponent` (assembling built-ins) → custom widget.
 
 ---
