@@ -26,6 +26,7 @@ This document explains, from start to finish, how to build a **process screen** 
 17. Checklist (MUST · NEVER)
 18. Not yet available
 19. Frequently asked questions
+20. Coordinate placement (`placement="fixed"`) — matching a given drawing
 
 ---
 
@@ -57,6 +58,8 @@ This markup contains no coordinates at all. The library does the following.
 4. Where `T1.bottom` splits to the two pumps (a branch) and where the two pumps join into `V1.in` (a merge), it draws T-junctions.
 
 Adding or removing a piece of equipment recomputes the placement and the pipes. Since there are no coordinates for a person to touch, mistakes like "a pipe runs through equipment" or "lines are misaligned" cannot happen.
+
+This automatic placement is the default and the right choice for almost every screen. Only when the screen **must match a drawing you were given** (a customer's P&ID) can equipment be placed by coordinates instead — chapter 20. Even then, pipes are still routed automatically.
 
 ---
 
@@ -108,6 +111,8 @@ AI MUST follow the order below exactly. Each step says what to decide.
 | `look` | `plain` · `rich` | `plain` | Appearance (chapter 12). An unknown value gives `plain` + a Trace warning |
 | `flow-animation` | true/false | false | Moving dashes over pipes that have flow (12.1). Bindable |
 | `align` | `auto` · `step` · `row` | `auto` | Row alignment of the next equipment connected to a port that leaves perpendicular to the flow (the bottom port in lr, the right port in tb) (chapter 9, item 5). `step` = staircase, `row` = same row, `auto` = chosen to fit the area. An unknown value gives `auto` + a Trace warning |
+| `placement` | `auto` · `fixed` | `auto` | `auto` = automatic placement (this whole document). `fixed` = every piece of equipment sits at its `x`·`y` (chapter 20). An unknown value gives `auto` + a Trace warning |
+| `base-size` | `"W H"` (px) | — | `fixed` only: the size the coordinates were taken at; positions are scaled to the area (chapter 20.3) |
 | `style` | general style | — | `padding`, `background`, `width`, `height`, `border`, etc. |
 | `grow` and other layout attributes | — | — | Same as for an ordinary box |
 
@@ -152,6 +157,7 @@ Usable on every equipment tag (including user symbols).
 | `rotate` | `0` `90` `180` `270` (clockwise). The drawing and the port faces rotate together. Other values give 0 + a Trace warning |
 | `flip` | `h` (flip left-right) · `v` (up-down) · `hv`. Flip is applied, then rotation |
 | `row` · `rank` | Placement hints (chapter 11) |
+| `x` · `y` | Only with `placement="fixed"`: the symbol center in px (chapter 20). Ignored with a Trace warning in automatic placement |
 | `visible` | If false, the equipment is not created. **Lines connected to that equipment become "equipment does not exist" errors, so they cannot be hidden along with it** — do not hide equipment that has lines; express it with state instead |
 | `onclick` · `hold` · `disabled` | Same as an ordinary button. Pressing the equipment body (the symbol and accessory area) triggers `onclick` |
 | `class` · `style` · `hover-style` · `press-style` | Applied to the equipment body rectangle (giving a background paints a rectangle behind the symbol — not normally used) |
@@ -324,7 +330,7 @@ The heights of `a`·`b` match `in`·`out` of `DvValve` (in line with ordinary va
   - Several lines on a fixed port (`bottom`, `in`, `out`, etc.) → they split from that single point.
   - Several lines on a face port (`top`, `side`) → lines in the same direction (incoming with incoming, outgoing with outgoing) merge into one nozzle and gather into a T or cross in front of the tank. Incoming and outgoing lines are not merged (merging would make the inlet and outlet look connected outside the tank). To show separate nozzles, split the connections between `top` and `side`.
 - Pipes of different groups never overlap, and when running in parallel they keep a minimum spacing (plain 12px, rich 16px). Where they must cross, a semicircular jump is drawn on one of them.
-- There are **no** attributes for bend points or coordinates. Change the shape with the hints in chapter 11.
+- There are **no** attributes for bend points. Change the shape with the hints in chapter 11. (Equipment coordinates exist only in coordinate placement, chapter 20 — and even there, pipe routes are automatic.)
 - `DvLine` has no `visible`·`class`·`style` (ignored).
 
 **Invalid connections**
@@ -466,6 +472,7 @@ Groups several pieces of equipment **into one unit.** Use it in two cases.
 | `direction` | Flow direction **inside** the unit: `lr` (default) · `tb`. Independent of the outer direction |
 | `label` | Unit title. Top-left of the unit, font 13 bold (theme `--text`) |
 | `row` · `rank` | Placement hints in the outer process diagram (chapter 11) |
+| `x` · `y` | Only when the outer `DvProcess` has `placement="fixed"`: the center of the whole unit (chapter 20). The inside of a unit is always placed automatically |
 | `style` · `class` | Border and background of the unit rectangle. **Default is no border and no background** (set e.g. `style="border:1 token(border); border-radius:8"`) |
 | `onclick` · `visible` | Same as regular equipment (5.1) |
 
@@ -970,6 +977,10 @@ Process diagram problems are reported through `System.Diagnostics.Trace`. Keep a
 | `DvSignal '…': no instrument or equipment named 'X'` | Error | Signal line end name typo, a terminal / unit port, or an instrument that is not drawn | Check instrument / equipment names |
 | `DvSignal '…': signal lines use names only, without ports` | Error | Port appended, as in `to="V1.in"` | Name only |
 | `Signal line '…': no free path, so it is drawn across equipment` | Warning | No route for the signal line | Attach the instrument to other equipment, or enlarge the area |
+| `<X name='N'>: placement="fixed" needs both x and y …; not drawn` | Error | Coordinate placement, but the equipment has no (or an invalid) `x`/`y`. Lines to it then also report "no equipment named" | Give both `x` and `y` |
+| `'A' and 'B' overlap; move one of them (x/y) or enlarge base-size` | Warning | Coordinate placement: two pieces of equipment (symbol, label, attached boxes, instruments) overlap | Move one, or check `base-size` against the area |
+| `Not enough space: equipment reaches W×H, area is W×H …` | Warning | Coordinate placement: equipment goes past the area | Move equipment, set `base-size`, or enlarge the area |
+| `<X name='N'>: x/y are used only with <DvProcess placement="fixed">` · `row`/`rank`/`align … is not used with placement="fixed"` · `placement='…'` · `base-size …` | Warning | Attribute for the other placement mode, or a value typo | Remove it, or switch the mode |
 
 On screen, invalid connections show as a **red dashed line**, and equipment with a wrong port shows a **red border**.
 
@@ -1079,11 +1090,12 @@ The recirculation pipe branching from `P1.out` routes back into the tank's side.
 - Place instruments (`DvInstrument`) directly under `DvProcess` and always state the equipment to attach to with `on`. Attach controllers to the valve they move. Signal lines use `DvSignal`, ends by name only.
 - When there are several identical units of plant, define a unit component (template root `DvUnit`) once and repeat it as instances. For unit inside → outside connections, put a `DvPort` and use `유닛.포트` (unit.port).
 - For a button inside a unit template to receive its own unit, write the screen VM method with one parameter, like `Reset(BlenderVm unit)`.
+- Use automatic placement unless you were given a drawing the screen must match. Then use `placement="fixed"` with `x`·`y` on **every** piece of equipment (chapter 20).
 
 **NEVER**
 
 - Do not put `DvTank` (level widget), `DvLabel`·`DvButton` directly in a process diagram (→ `DvVessel`, `DvAttach`).
-- Do not invent attributes such as coordinates, bend points, `x`·`y`·`points`·`via`. They do not exist.
+- Do not invent bend-point attributes such as `points`·`via`. They do not exist. Do not put `x`·`y` on equipment in automatic placement (they work only with `placement="fixed"`, chapter 20), and do not mix: in a `fixed` diagram every piece of equipment needs `x`·`y`.
 - Do not overlay absolutely positioned boxes on the process diagram to draw values or lines (pipes cannot avoid them).
 - Do not invent junction equipment (`DvTee`, `DvJunction`, etc.). Connect several lines to the same port.
 - Do not use dots (`.`) in names.
@@ -1141,5 +1153,75 @@ Define a unit component once and use it like `<Blender name="BL1" U="{BL1}"/>` (
 **I want to connect an outer pipe directly to a tank inside a unit.**
 Not possible. Put `<DvPort name="in2" side="left"/>` on the unit, connect `<DvLine from="in2" to="T.side"/>` inside, and connect with `to="BL1.in2"` from outside.
 
+**The screen must look exactly like the customer's drawing.**
+Use coordinate placement (chapter 20): `placement="fixed"`, and the symbol center of each piece of equipment from the drawing as `x`·`y`. Pipes are still routed for you.
+
 **Can I give process diagram equipment an `id` to get it from code?**
 A code handle (`id`) for process diagram equipment is not a confirmed usage. Handle equipment state through VM binding and actions through `onclick`.
+
+---
+
+## 20. Coordinate placement (`placement="fixed"`) — matching a given drawing
+
+Automatic placement (chapters 1–19) lays equipment out in flow order so that it looks right. It cannot reproduce a specific drawing. When a customer hands you a P&ID and the screen must look **the same as that drawing**, place the equipment by coordinates instead.
+
+- **One mode per diagram.** A `DvProcess` is either automatic or coordinate-placed. In a `fixed` diagram, every piece of equipment (and every unit) has `x`·`y`; there is no mixing.
+- **Only equipment gets coordinates.** Pipes, branches, merges, crossing jumps, instruments and signal lines are still placed and routed automatically, exactly as in chapters 6–10. Moving a piece of equipment moves its pipes with it.
+- **Text and equipment are never scaled.** Only the distances between equipment change with the area (20.3).
+
+### 20.1 At a glance
+
+```xml
+<DvProcess placement="fixed" base-size="1000 560" look="rich">
+  <DvTerminal name="SRC1" text="FROM P-201" x="110" y="140"/>
+  <DvValve name="FV40" kind="control" open="true" label="FV-3040" x="300" y="140"/>
+  <DvInline name="FE10" kind="flowmeter" label="FE-10" x="470" y="140"/>
+  <DvTerminal name="SRC2" text="FROM P-504" x="110" y="400"/>
+  <DvValve name="FV41" kind="control" open="true" label="FV-3041" x="300" y="400"/>
+  <DvInline name="FE11" kind="flowmeter" label="FE-11" x="470" y="400"/>
+  <DvVessel name="R1" kind="reactor" level="55" label="R-102" x="800" y="270"/>
+
+  <DvLine from="SRC1" to="FV40.in"/>
+  <DvLine from="FV40.out" to="FE10.in"/>
+  <DvLine from="FE10.out" to="R1.side" arrow="end"/>
+  <DvLine from="SRC2" to="FV41.in"/>
+  <DvLine from="FV41.out" to="FE11.in"/>
+  <DvLine from="FE11.out" to="R1.side" arrow="end"/>
+</DvProcess>
+```
+
+### 20.2 Coordinates
+
+| Attribute | On | Meaning |
+|---|---|---|
+| `placement="fixed"` | `DvProcess` | Turns on coordinate placement |
+| `x` · `y` | each piece of equipment, each unit | The **center of the symbol** in px (labels, attached boxes, instruments and accessories such as an agitator are not counted). Bindable |
+| `base-size="W H"` | `DvProcess` | Optional. The size the coordinates were taken at (20.3) |
+
+- The origin `(0, 0)` is the top-left of the inside of the `DvProcess` (inside its `padding`).
+- Labels, `DvAttach` boxes, instruments and accessories go where they would in automatic placement, relative to their equipment.
+- `direction` still matters (terminal shape, which faces are "front" and "back"). `row`, `rank` and `align` are ignored with a Trace warning.
+- Equipment without both `x` and `y` is **not drawn** (Trace error).
+- A unit (`DvUnit` or a unit component) is placed as a whole: `x`·`y` is the center of the unit's frame. The inside of a unit is always placed automatically (`placement` on a unit is ignored with a warning).
+
+**Taking coordinates from a drawing**: measure the center of each symbol on the drawing image. If the image is a different size from the screen area, either convert the numbers yourself, or keep the image's numbers and set `base-size` to the image size.
+
+### 20.3 Size and `base-size`
+
+- **Without `base-size`**: coordinates are used as they are (scale 1). The diagram's natural size is from the origin to the far edge of the content, plus a 12px margin. If the area is smaller, it overflows and a "Not enough space" warning is left.
+- **With `base-size="W H"`**: the natural size is W×H. In an area of another size, the scale `s = min(area width / W, area height / H)` is applied **to the coordinates only**, and the W·s × H·s box is centered in the area. A larger area spreads the equipment apart; a smaller one brings it closer. Equipment, pipes and text keep their size.
+- Best practice: take `base-size` equal to the real size of the screen area, so the scale stays near 1 and the screen looks like the drawing. When the area is much smaller, equipment can end up touching — the overlap and "no free path" warnings tell you.
+
+### 20.4 Straightening small offsets (snap)
+
+Equipment has its ports at different heights — a valve's inlet is below its symbol center, a terminal's is at its center. Coordinates measured from a drawing therefore produce small jogs of a few px. To avoid this, when two connected fixed ports face each other (right ↔ left, or bottom ↔ top) and are **16px or less** out of line, the **downstream** (`to`) equipment is moved so the line is straight. The adjustment follows chains (A → B → C stay in line), and each piece of equipment follows only its first such upstream line. Face ports (vessel `top`·`side` …) are not snapped; the router picks their position on the face.
+
+So the coordinates you wrote may move by up to 16px. A larger offset is kept as written and gets a bend.
+
+### 20.5 Checking
+
+Render to PNG and check Trace, as in chapter 15. In coordinate placement, also watch for:
+
+- `'A' and 'B' overlap` — move one of them.
+- `no free path` — two pieces of equipment are too close for a pipe to leave one and enter the other (each pipe needs about 18px straight out of each port). Move them apart.
+- Crossings — move equipment; there are no `row` hints in this mode.

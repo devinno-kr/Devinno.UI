@@ -27,6 +27,9 @@ internal sealed class GraphNode
 
     public int? Row, Rank;
 
+    /// <summary>Coordinate placement: where the center of <see cref="Body"/> goes (px, already scaled). <see langword="null"/> in automatic placement.</summary>
+    public SKPoint? Pos;
+
     /// <summary>The equipment name used in diagnostic messages.</summary>
     public string? Name;
 
@@ -129,6 +132,12 @@ internal sealed class ProcessGraph
 
     /// <summary>Row alignment mode for perpendicular ports.</summary>
     public ProcessAlign Align = ProcessAlign.Step;
+
+    /// <summary>Coordinate placement — nodes go to <see cref="GraphNode.Pos"/> instead of the layered layout, and coordinates are not shifted (origin = the area's top left).</summary>
+    public bool Fixed;
+
+    /// <summary>Coordinate placement: two facing fixed ports this close (px) across the line are lined up by moving the downstream equipment — removes small jogs from ports at different heights.</summary>
+    private const float SnapTolerance = 16f;
 
     public const float Clearance = 10f;
 
@@ -252,8 +261,83 @@ internal sealed class ProcessGraph
     // Back = 되돌아가는 선(재순환) — 순서(교차 수)에는 들어가지만 자리 맞춤에는 쓰지 않는다
     private readonly record struct Link(Elem A, float AOff, Elem B, float BOff, int Net, bool Back = false);
 
+    // ── 좌표 배치: 몸통 가운데 = Pos, 마주 보는 포트의 작은 어긋남은 하류를 옮겨 맞춤, 겹치면 알림 ──
+    private void PlaceFixed()
+    {
+        foreach (var node in Nodes.Where(x => !x.Pinned && x.Pos is not null))
+        {
+            node.X = node.Pos!.Value.X - node.Body.MidX;
+            node.Y = node.Pos!.Value.Y - node.Body.MidY;
+        }
+
+        // 장비마다 기준선 하나(그 장비로 들어오는 첫 선 중 맞출 수 있는 것) — 처음 좌표로 고르고, 상류가 옮겨지면 따라가도록 안정될 때까지 반복
+        var anchor = new Dictionary<int, (GraphLine Line, bool AlongX)>();
+        foreach (var l in Lines)
+        {
+            var (a, b) = (l.From, l.To);
+            if (a.Face || b.Face || a.Node == b.Node || anchor.ContainsKey(b.Node) || Nodes[a.Node].Pinned || Nodes[b.Node].Pinned)
+                continue;
+            bool? alongX = (a.Side, b.Side) switch
+            {
+                (PortSide.Right, PortSide.Left) or (PortSide.Left, PortSide.Right) => false, // 좌우로 마주 봄 → y 맞춤
+                (PortSide.Bottom, PortSide.Top) or (PortSide.Top, PortSide.Bottom) => true,  // 위아래로 마주 봄 → x 맞춤
+                _ => null,
+            };
+            // 처음부터 맞아 있는 쌍(어긋남 0)도 넣는다 — 상류가 옮겨지면 같이 따라가야 일직선이 유지된다
+            if (alongX is { } ax && MathF.Abs(SnapDelta(l, ax)) <= SnapTolerance)
+                anchor[b.Node] = (l, ax);
+        }
+
+        for (var pass = 0; pass < Nodes.Count; pass++)
+        {
+            var changed = false;
+            foreach (var (v, (line, alongX)) in anchor)
+            {
+                var delta = SnapDelta(line, alongX);
+                if (MathF.Abs(delta) <= 0.01f)
+                    continue;
+                if (alongX)
+                    Nodes[v].X += delta;
+                else
+                    Nodes[v].Y += delta;
+                changed = true;
+            }
+
+            if (!changed)
+                break;
+        }
+
+        // 겹침 — 몸통과 이름표·붙은 칸·계기
+        var real = Enumerable.Range(0, Nodes.Count).Where(i => !Nodes[i].Pinned).ToList();
+        foreach (var i in real)
+        {
+            foreach (var j in real.Where(j => j > i))
+            {
+                var hit = Areas(Nodes[i]).Any(r => Areas(Nodes[j]).Any(o => r.IntersectsWith(o)));
+                if (hit)
+                    Warnings.Add($"'{Nodes[i].Name}' and '{Nodes[j].Name}' overlap; move one of them (x/y) or enlarge base-size");
+            }
+        }
+
+        IEnumerable<SKRect> Areas(GraphNode g) => g.Extras.Prepend(g.Body).Where(r => !r.IsEmpty).Select(g.Abs);
+    }
+
+    // 하류 끝이 상류 끝과 일직선이 되려면 하류 장비를 옮길 거리
+    private float SnapDelta(GraphLine l, bool alongX)
+    {
+        var (a, b) = (l.From, l.To);
+        var (na, nb) = (Nodes[a.Node], Nodes[b.Node]);
+        return alongX ? na.X + a.Local.X - (nb.X + b.Local.X) : na.Y + a.Local.Y - (nb.Y + b.Local.Y);
+    }
+
     private void Place()
     {
+        if (Fixed)
+        {
+            PlaceFixed();
+            return;
+        }
+
         var n = Nodes.Count;
         var edges = new List<(int u, int v, GraphLine line)>();
         foreach (var l in Lines)
@@ -1588,6 +1672,13 @@ internal sealed class ProcessGraph
         {
             foreach (var p in s.Points)
                 Union(new SKRect(p.X - 2, p.Y - 2, p.X + 2, p.Y + 2));
+        }
+
+        if (Fixed)
+        {
+            // 좌표 배치 — 좌표가 곧 영역 기준이라 옮기지 않는다. 크기 = 원점부터 내용 끝 + 여백
+            Size = new SKSize(MathF.Max(0, bounds.Right) + Margin, MathF.Max(0, bounds.Bottom) + Margin);
+            return;
         }
 
         if (Unit)

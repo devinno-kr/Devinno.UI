@@ -48,6 +48,12 @@ internal sealed class ProcessDiagram
 
     /// <summary><c>align</c>: null = auto (staircase if a staircase fits the area, otherwise a single line). Units follow the outer setting.</summary>
     public ProcessAlign? Align;
+
+    /// <summary><c>placement="fixed"</c>: equipment sits at its <c>x</c>·<c>y</c> (symbol center); pipes are still routed automatically. Units are always laid out automatically inside.</summary>
+    public bool Fixed;
+
+    /// <summary><c>base-size</c> (coordinate placement only): the size the coordinates were taken at. Positions (not equipment) are scaled to fit the area.</summary>
+    public SKSize? BaseSize;
 }
 
 /// <summary>One piece of equipment in a process diagram.</summary>
@@ -63,6 +69,9 @@ internal sealed class ProcessNode
     public int Rotate;
     public bool FlipH, FlipV;
     public int? Row, Rank;
+
+    /// <summary>Coordinate placement: the symbol center (<c>x</c>·<c>y</c>, px at base size). <see langword="null"/> in automatic placement.</summary>
+    public SKPoint? Pos;
     public List<(SymbolDef Def, bool Running)> Accessories { get; } = new();
     public List<(PortSide Side, LayoutBox Box)> Attach { get; } = new();
 
@@ -233,6 +242,7 @@ internal static class ProcessBuilder
             var a => WarnAlign(a),
         };
 
+        Placement(d, node, vm);
         d.FlowAnimation = BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("flow-animation")) is { } fa && ProcessNode.Truthy(fa);
         Fill(d, box, node, vm, registry, b);
         ProcessFlow.Compute(d);
@@ -254,6 +264,70 @@ internal static class ProcessBuilder
     {
         Warn($"DvProcess align='{a}' is not a valid value (auto, step, row); laying out as auto");
         return null;
+    }
+
+    // placement·base-size — 좌표 배치면 align 은 쓰지 않는다
+    private static void Placement(ProcessDiagram d, ElementNode node, object? vm)
+    {
+        var placement = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("placement"));
+        d.Fixed = placement is "fixed";
+        if (placement is not (null or "" or "auto" or "fixed"))
+            Warn($"DvProcess placement='{placement}' is not a valid value (auto, fixed); laying out as auto");
+
+        var baseText = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("base-size"));
+        if (!d.Fixed)
+        {
+            if (!string.IsNullOrEmpty(baseText))
+                Warn("DvProcess base-size is used only with placement=\"fixed\"; ignored");
+            return;
+        }
+
+        if (d.Align is not null)
+        {
+            Warn("DvProcess align is not used with placement=\"fixed\" (positions come from x/y); ignored");
+            d.Align = null;
+        }
+
+        if (string.IsNullOrEmpty(baseText))
+            return;
+        var parts = baseText.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 2 && TryCoord(parts[0], out var w) && TryCoord(parts[1], out var h) && w > 0 && h > 0)
+            d.BaseSize = new SKSize(w, h);
+        else
+            Warn($"DvProcess base-size='{baseText}' must be two positive numbers (width height, e.g. \"1400 800\"); ignored");
+    }
+
+    private static bool TryCoord(string? s, out float v) =>
+        float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out v) && float.IsFinite(v);
+
+    // 좌표(x·y) — 좌표 배치면 둘 다 있어야 그린다(false = 그리지 않음), 자동 배치면 무시하고 알린다
+    private static bool Coordinates(ProcessDiagram d, string tag, Func<string, string?> attr, out SKPoint? pos)
+    {
+        pos = null;
+        var name = attr("name");
+        var xs = attr("x");
+        var ys = attr("y");
+        if (!d.Fixed)
+        {
+            if (!string.IsNullOrEmpty(xs) || !string.IsNullOrEmpty(ys))
+                Warn($"<{tag} name='{name}'>: x/y are used only with <DvProcess placement=\"fixed\">; ignored");
+            return true;
+        }
+
+        foreach (var hint in new[] { "row", "rank" })
+        {
+            if (!string.IsNullOrEmpty(attr(hint)))
+                Warn($"<{tag} name='{name}'>: {hint} is not used with placement=\"fixed\" (positions come from x/y); ignored");
+        }
+
+        if (TryCoord(xs, out var x) && TryCoord(ys, out var y))
+        {
+            pos = new SKPoint(x, y);
+            return true;
+        }
+
+        Warn($"<{tag} name='{name}'>: placement=\"fixed\" needs both x and y (symbol center, px); not drawn", true);
+        return false;
     }
 
     private static bool Direction(ElementNode node, object? vm)
@@ -362,6 +436,9 @@ internal static class ProcessBuilder
                 continue;
             }
 
+            if (!Coordinates(d, ch.Tag, k => BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault(k)), out var pos))
+                continue;
+
             var pn = new ProcessNode
             {
                 Owner = d,
@@ -374,6 +451,7 @@ internal static class ProcessBuilder
                 Rotate = ParseRotate(BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("rotate"))),
                 Row = Int(BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("row"))),
                 Rank = Int(BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("rank"))),
+                Pos = pos,
             };
             var flip = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("flip"));
             pn.FlipH = flip is "h" or "hv" or "vh";
@@ -490,6 +568,11 @@ internal static class ProcessBuilder
             instance.Attributes.ContainsKey(name) ? BindingResolver.ResolveText(outerVm, instance.Attributes[name])
             : BindingResolver.ResolveText(scope, unitNode.Attributes.GetValueOrDefault(name));
 
+        if (!Coordinates(d, instance.Tag, Attr, out var pos))
+            return;
+        if (BindingResolver.ResolveText(scope, unitNode.Attributes.GetValueOrDefault("placement")) is { Length: > 0 } up && up != "auto")
+            Warn($"<{instance.Tag} name='{Attr("name")}'>: placement='{up}' is not supported inside a unit; the inside is laid out automatically");
+
         var inner = new ProcessDiagram { Source = unitNode, Vertical = Direction(unitNode, scope), Rich = d.Rich, IsUnit = true, FlowAnimation = d.FlowAnimation };
         var pn = new ProcessNode
         {
@@ -499,6 +582,7 @@ internal static class ProcessBuilder
             Label = Attr("label"),
             Row = Int(Attr("row")),
             Rank = Int(Attr("rank")),
+            Pos = pos,
             Unit = inner,
         };
 
@@ -724,7 +808,8 @@ internal static class ProcessBuilder
         SKSize symSize;
         if (n.Unit is { } unit)
         {
-            symSize = Layout(unit, family, spacing, align).Size; // 유닛 = 안쪽 배치 크기(테두리), 바깥과 같은 줄 맞춤
+            // 유닛 = 안쪽 배치 크기(테두리), 바깥과 같은 줄 맞춤. 좌표 배치의 배율은 위치에만 — 유닛 안쪽은 간격 1
+            symSize = Layout(unit, family, d.Fixed ? 1f : spacing, align).Size;
             n.Transform = SKMatrix.Identity;
         }
         else if (n.Terminal)
@@ -824,6 +909,8 @@ internal static class ProcessBuilder
 
         // 배관이 피할 몸통 = 심볼 사각형, 부속은 따로(합치면 용기 윗면 전체가 막힌다)
         var g = new GraphNode { W = foot.Width, H = foot.Height, Body = n.Sym, Row = n.Row, Rank = n.Rank, Name = n.Name };
+        if (d.Fixed && n.Pos is { } pos)
+            g.Pos = new SKPoint(pos.X * spacing, pos.Y * spacing); // 좌표 배치: spacing = 위치 배율(base-size → 영역)
         foreach (var (ar, _, _) in n.AccessoryRects)
             g.Extras.Add(new SKRect(ar.Left, ar.Top, ar.Right, MathF.Min(ar.Bottom, n.Sym.Top)));
         if (!n.LabelRect.IsEmpty)
@@ -1123,6 +1210,7 @@ internal static class ProcessBuilder
             Pitch = d.Pitch,
             Unit = d.IsUnit,
             Align = align,
+            Fixed = d.Fixed,
         };
         graph.Run();
 
@@ -1177,7 +1265,7 @@ internal static class ProcessBuilder
     private static string Signature(ProcessDiagram d, IEnumerable<ProcessLine> lines, IEnumerable<ProcessSignal> signals, float spacing)
     {
         var sb = new System.Text.StringBuilder();
-        sb.Append(d.Vertical ? 'V' : 'H').Append(d.Pitch).Append('|').Append(spacing.ToString(CultureInfo.InvariantCulture)).Append('|');
+        sb.Append(d.Vertical ? 'V' : 'H').Append(d.Fixed ? 'F' : 'A').Append(d.Pitch).Append('|').Append(spacing.ToString(CultureInfo.InvariantCulture)).Append('|');
         foreach (var n in d.Nodes)
         {
             sb.Append(n.Name).Append(':').Append(n.Def?.Name ?? "T").Append(n.TerminalSource ? 's' : 'd')
@@ -1191,6 +1279,8 @@ internal static class ProcessBuilder
             foreach (var inst in n.Instruments)
                 sb.Append('I').Append(inst.Name).Append(inst.Rect.ToString()).Append(inst.ValueRect.ToString());
             sb.Append(n.Accessories.Count);
+            if (n.Pos is { } pos)
+                sb.Append('@').Append(pos.X.ToString(CultureInfo.InvariantCulture)).Append(',').Append(pos.Y.ToString(CultureInfo.InvariantCulture));
             if (n.IsPort)
                 sb.Append('P').Append(n.PortSide).Append(n.PortAt.ToString(CultureInfo.InvariantCulture));
             if (n.UnitPorts is { } ups)
@@ -1212,6 +1302,8 @@ internal static class ProcessBuilder
     internal static SKSize Natural(LayoutBox box)
     {
         var d = box.Process!;
+        if (d.Fixed && d.BaseSize is { } baseSize)
+            return baseSize;
         return Layout(d, box.Style.FontFamily, 1f, d.Align ?? ProcessAlign.Step).Size;
     }
 
@@ -1238,9 +1330,13 @@ internal static class ProcessBuilder
             if (l.G is not { } gl)
                 continue;
             if (gl.Forced)
-                Warn($"'{l.FromRef}'→'{l.ToRef}': no free path, so it overlaps other piping; move equipment with row/rank hints or enlarge the area");
+                Warn(d.Fixed
+                    ? $"'{l.FromRef}'→'{l.ToRef}': no free path, so it overlaps other piping; move equipment (x/y) to open a gap"
+                    : $"'{l.FromRef}'→'{l.ToRef}': no free path, so it overlaps other piping; move equipment with row/rank hints or enlarge the area");
             else if (gl.Crossings > 0)
-                Warn($"'{l.FromRef}'→'{l.ToRef}': crosses other piping {gl.Crossings} time(s); a row hint can reduce this");
+                Warn(d.Fixed
+                    ? $"'{l.FromRef}'→'{l.ToRef}': crosses other piping {gl.Crossings} time(s); moving equipment (x/y) can reduce this"
+                    : $"'{l.FromRef}'→'{l.ToRef}': crosses other piping {gl.Crossings} time(s); a row hint can reduce this");
         }
     }
 
@@ -1252,6 +1348,12 @@ internal static class ProcessBuilder
     {
         var d = box.Process!;
         var family = box.Style.FontFamily;
+        if (d.Fixed)
+        {
+            ArrangeFixed(d, family, inner);
+            return;
+        }
+
         // 후보: (줄 맞춤) × (간격 배율). auto = 계단식이 맞으면 계단식, 아니면 같은 줄, 둘 다 넘치면 덜 넘치는 쪽
         var aligns = d.Align is { } fixedAlign ? new[] { fixedAlign } : new[] { ProcessAlign.Step, ProcessAlign.Row };
         var spacings = new[] { 1f, 0.85f, 0.7f, 0.6f, 0.5f };
@@ -1291,6 +1393,31 @@ internal static class ProcessBuilder
         d.Origin = new SKPoint(inner.Left + MathF.Max(0, (inner.Width - g.Size.Width) / 2),
             inner.Top + MathF.Max(0, (inner.Height - g.Size.Height) / 2));
 
+        Place(d);
+    }
+
+    // 좌표 배치 — 원점 = 영역 왼쪽 위. base-size 가 있으면 위치만 영역에 맞춰 비례(장비·글자 크기 그대로)하고 그 상자를 가운데에
+    private static void ArrangeFixed(ProcessDiagram d, string? family, SKRect inner)
+    {
+        var scale = 1f;
+        var origin = new SKPoint(inner.Left, inner.Top);
+        if (d.BaseSize is { } b && inner.Width > 0 && inner.Height > 0)
+        {
+            scale = MathF.Min(inner.Width / b.Width, inner.Height / b.Height);
+            origin = new SKPoint(inner.Left + (inner.Width - b.Width * scale) / 2, inner.Top + (inner.Height - b.Height * scale) / 2);
+        }
+
+        var g = Layout(d, family, scale, ProcessAlign.Step);
+        var right = origin.X + g.Size.Width - ProcessGraph.Margin;
+        var bottom = origin.Y + g.Size.Height - ProcessGraph.Margin;
+        var real = g.Nodes.Where(n => !n.Pinned).ToList();
+        var left = real.Count > 0 ? origin.X + real.Min(n => n.X) : inner.Left;
+        var top = real.Count > 0 ? origin.Y + real.Min(n => n.Y) : inner.Top;
+        d.Shortage = right > inner.Right + 0.5f || bottom > inner.Bottom + 0.5f || left < inner.Left - 0.5f || top < inner.Top - 0.5f
+            ? $"Not enough space: equipment reaches {right - inner.Left:0}×{bottom - inner.Top:0}, area is {inner.Width:0}×{inner.Height:0}. Move equipment (x/y), set base-size to the size the coordinates were taken at, or enlarge the area"
+            : null;
+        d.Graph = g;
+        d.Origin = origin;
         Place(d);
     }
 

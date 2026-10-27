@@ -2411,6 +2411,7 @@ A process screen that draws tanks·pumps·valves and pipes. **You do not write c
 - `align="auto|step|row"` (default `auto`): whether equipment after a line leaving a tank bottom is placed stepped below the tank (`step`) or on the same row as the tank (`row`, low and wide). `auto` uses stepped if it fits the area, otherwise the same row.
 - If the size is smaller than the content, it re-lays out by changing the row alignment (`auto`) and equipment spacing (down to 0.5×). If still short, it leaves a Trace warning ("Not enough space") and draws overflowing. If there is spare space, it is centered.
 - The background is not painted. It follows the app theme or `style`'s `background` (`rich` looks best on a dark background).
+- `placement="fixed"` (default `auto`) is only for screens that must match a given drawing: every piece of equipment then sits at its `x`·`y` (symbol center, px), pipes are still routed automatically, and `base-size="W H"` scales the positions (not the equipment or text) to the area. See `dvml-process.md` chapter 20.
 
 ### 22.2 Equipment
 
