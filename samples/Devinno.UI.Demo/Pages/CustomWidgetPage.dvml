@@ -1,0 +1,34 @@
+<DvPageFrame vm="CustomWidgetPage">
+  <DvRow align="start">
+    <DvStack gap="none" grow="1" style="width:0">
+      <DvLabel class="heading" text="Custom widgets"/>
+      <DvLabel class="label muted" text="BatteryGauge and Fan are C# classes registered with RegisterWidget; the markup uses them like any other tag"/>
+    </DvStack>
+    <DvButton variant="secondary" icon="fa-arrow-left" text="Back" onclick="Back" visible="{ShowBack}"/>
+  </DvRow>
+  <DvGrid columns="2">
+    <DvCard title="Battery racks" badge="BatteryGauge">
+      <DvStack gap="md">
+        <DvRepeat items="{Racks}" gap="sm">
+          <DvRow align="center">
+            <DvLabel class="label" text="{Item.Name}" style="width:72"/>
+            <BatteryGauge value="{Item.Soc}" cells="12" grow="1"/>
+          </DvRow>
+        </DvRepeat>
+        <DvLabel class="caption muted" text="Drag the slider — the gauge below is bound to the same value"/>
+        <DvSlider value="{Bind Soc}" min="0" max="100"/>
+        <BatteryGauge value="{Soc}" cells="20"/>
+      </DvStack>
+    </DvCard>
+    <DvCard title="Cooling fan" badge="Fan">
+      <DvStack align="center" gap="md">
+        <Fan running="{FanRun}" style="width:180; height:180"/>
+        <DvRow align="center">
+          <DvToggle value="{Bind FanRun}"/>
+          <DvLabel class="label" text="{FanText}"/>
+        </DvRow>
+        <DvLabel class="caption muted" text="Spins only while running (FrameInterval); stopped = no repaint"/>
+      </DvStack>
+    </DvCard>
+  </DvGrid>
+</DvPageFrame>

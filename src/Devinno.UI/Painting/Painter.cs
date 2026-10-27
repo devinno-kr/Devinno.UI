@@ -194,6 +194,9 @@ public sealed partial class Painter
                 canvas.DrawText(lines[i], tx, baseline + i * font.Spacing, align, font, tp);
         }
 
+        if (box.Widget is { } widget)
+            PaintWidget(canvas, box, widget, rect, st, timestampMs);
+
         if (box.Node.Tag == "DvToggle")
         {
             var tr = WidgetMetrics.ShapeRect(box); // 늘어난 상자에서도 자기 크기로 가운데
@@ -633,6 +636,31 @@ public sealed partial class Painter
             canvas.DrawRoundRect(ht, rr, rr, track);
         if (Interaction.ScrollBars.HorizontalThumb(box) is { } hth)
             canvas.DrawRoundRect(hth, rr, rr, thumb);
+    }
+
+    // 커스텀 위젯 — 상자로 잘라 내용 영역(패딩 안)을 넘긴다. 예외는 화면에 한 번 알리고(재빌드 전까지) 빨간 테두리로 표시
+    private void PaintWidget(SKCanvas canvas, LayoutBox box, Widgets.DvWidget widget, SKRect rect, ComputedStyle st, long timestampMs)
+    {
+        var pad = st.Padding;
+        var content = new SKRect(rect.Left + pad.Left, rect.Top + pad.Top, rect.Right - pad.Right, rect.Bottom - pad.Bottom);
+        var saved = canvas.Save();
+        canvas.ClipRect(rect);
+        try
+        {
+            widget.Paint(canvas, content, new Widgets.DvWidgetContext(box, _theme, timestampMs));
+        }
+        catch (Exception ex)
+        {
+            canvas.RestoreToCount(saved);
+            saved = canvas.Save();
+            Interaction.HandlerErrors.ReportRead(ex, "Paint", widget.GetType().Name, box.Node.Tag);
+            using var red = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2, Color = new SKColor(0xdc, 0x26, 0x26) };
+            canvas.DrawRect(SKRect.Inflate(rect, -1, -1), red);
+        }
+        finally
+        {
+            canvas.RestoreToCount(saved);
+        }
     }
 
     private SKColor ThemeColor(string token, SKColor fallback)

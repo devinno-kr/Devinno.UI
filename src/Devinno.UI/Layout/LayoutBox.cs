@@ -248,6 +248,10 @@ public sealed class LayoutBox
     internal Process.ProcessDiagram? Process { get; set; }
     /// <summary>Equipment information of a process diagram equipment box (symbol, state values, geometry). <see langword="null"/> for other boxes.</summary>
     internal Process.ProcessNode? Equipment { get; set; }
+    /// <summary>The instance of a custom widget (a tag registered with <c>RegisterWidget</c>). <see langword="null"/> for other tags.</summary>
+    internal Widgets.DvWidget? Widget { get; set; }
+    /// <summary>A custom widget's attributes at build time: resolved value + the raw attribute (for text formatting).</summary>
+    internal Dictionary<string, (object? Value, string? Raw)>? WidgetValues { get; set; }
     /// <summary>Instrument information of a process diagram instrument box (<c>DvInstrument</c>). <see langword="null"/> for other boxes.</summary>
     internal Process.ProcessInstrument? Instrument { get; set; }
     /// <summary>Settings and channel data of a <c>DvTrend</c> (a snapshot copied at build time). <see langword="null"/> for other tags.</summary>

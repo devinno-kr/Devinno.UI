@@ -94,7 +94,10 @@ public sealed class LayoutEngine
         var prevTag = readScope.Tag;
         try
         {
+            _widgets = WidgetStore ?? new Widgets.WidgetStore(); // 서피스가 없으면(직접 호출·DvRenderer) 이번 배치만 쓰는 새 인스턴스
+            _widgets.Begin();
             var box = Build(root, vm, registry, 0) ?? new LayoutBox { Node = root, Style = new ComputedStyle() };
+            _widgets.End();
 
             // 루트 font-lang-{언어} = font-family 를 지정하지 않은 요소의 기본 폰트, 이후 자식에게 상속
             var langFont = _strings is { } s ? root.Attributes.GetValueOrDefault("font-lang-" + s.Language) : null;
@@ -187,6 +190,9 @@ public sealed class LayoutEngine
             return ExpandComponent(node, def, vm, registry, depth,
                 child => Build(child, vm, registry, depth) is { } b ? new[] { b } : Array.Empty<LayoutBox>());
 
+        if (registry is not null && registry.TryGetWidget(node.Tag, out var create))
+            return BuildWidget(node, vm, create!);
+
         if (node.Tag == "DvRepeat")
             return BuildRepeat(node, vm,
                 (ch, scope) => Build(ch, scope, registry, depth) is { } b ? new[] { b } : Array.Empty<LayoutBox>());
@@ -217,6 +223,22 @@ public sealed class LayoutEngine
         AddListItems(box, vm);
         AddTreeItems(box, vm);
 
+        return box;
+    }
+
+    /// <summary>Keeps custom widget instances between builds (set by the surface). If <see langword="null"/>, each layout creates new instances.</summary>
+    internal Widgets.WidgetStore? WidgetStore { get; set; }
+
+    private Widgets.WidgetStore _widgets = null!;
+
+    // 커스텀 위젯 — 상자(스타일·onclick 등은 보통 요소와 같음) + 인스턴스(재빌드에도 같은 것) + 모든 속성을 바인딩 푼 값. 자식은 쓰지 않는다
+    private LayoutBox BuildWidget(ElementNode node, object? vm, Func<Widgets.DvWidget> create)
+    {
+        var box = BuildSelf(node, vm);
+        box.Widget = _widgets.Get(node, create);
+        box.WidgetValues = node.Attributes.ToDictionary(a => a.Key, a => (BindingResolver.ResolveValueOrLiteral(vm, a.Value), (string?)a.Value), StringComparer.Ordinal);
+        if (node.Children.Count > 0)
+            System.Diagnostics.Trace.TraceWarning($"Devinno.UI: <{node.Tag}> is a custom widget; its child elements are not used ({string.Join(", ", node.Children.Select(c => c.Tag).Distinct())})");
         return box;
     }
 
@@ -1585,6 +1607,25 @@ public sealed class LayoutEngine
     private static (float w, float h) MeasureRaw(LayoutBox box, float? avail)
     {
         var st = box.Style;
+        if (box.Widget is { } widget)
+        {
+            // 위젯이 정한 내용 크기 + 패딩. style 의 width/height 가 이긴다. 측정 예외는 알리고 기본 크기로
+            if (st.Width is { } fw && st.Height is { } fh)
+                return (fw, fh);
+            SKSize size;
+            try
+            {
+                size = widget.Measure(new Widgets.DvWidgetContext(box, null, 0), avail is { } aw ? aw - st.Padding.Horizontal : null);
+            }
+            catch (Exception ex)
+            {
+                HandlerErrors.ReportRead(ex, "Measure", widget.GetType().Name, box.Node.Tag);
+                size = new SKSize(120, 80);
+            }
+
+            return (st.Width ?? size.Width + st.Padding.Horizontal, st.Height ?? size.Height + st.Padding.Vertical);
+        }
+
         if (box.Node.Tag == "DvToggle")
             return (st.Width ?? 44f, st.Height ?? 24f);
 

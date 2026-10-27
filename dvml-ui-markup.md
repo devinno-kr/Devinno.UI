@@ -1270,6 +1270,46 @@ public async void Ack(AlarmRow row)
 - With the same name, a user component takes precedence over a built-in component (`DvCard`, etc.). A cycle that expands itself throws at depth 64.
 - A `<DvStyle>` inside a definition (whether before or inside the template) applies **globally** to every screen using that registry (same as a screen `DvStyle`). The order is theme < component `DvStyle` (registration order) < screen `DvStyle`, so for the same class and same property, **the screen `DvStyle` wins**. Prefix class names with the component name so they do not collide with other components (`.pumpcard-head`).
 
+### 15.1 Custom widgets drawn in C# (`DvWidget`)
+
+When no built-in widget or component can show something (a battery cell bar, a spinning fan, a special instrument face), the app can paint it itself with SkiaSharp. Write a class derived from `DvWidget`, register it under a tag with `registry.RegisterWidget<T>("Tag")`, and use the tag in markup.
+
+```csharp
+using Devinno.UI.Widgets;
+using SkiaSharp;
+
+public sealed class BatteryGauge : DvWidget
+{
+    public override SKSize Measure(DvWidgetContext ctx, float? availableWidth) => new(240, 28);
+
+    public override void Paint(SKCanvas canvas, SKRect bounds, DvWidgetContext ctx)
+    {
+        var soc = Math.Clamp(ctx.Number("value"), 0, 100);
+        using var track = new SKPaint { IsAntialias = true, Color = ctx.Color("gauge-track") };
+        using var fill = new SKPaint { IsAntialias = true, Color = ctx.Color(soc < 20 ? "tone-danger" : "tone-success") };
+        canvas.DrawRoundRect(bounds, 4, 4, track);
+        canvas.DrawRoundRect(new SKRect(bounds.Left, bounds.Top, bounds.Left + bounds.Width * (float)soc / 100, bounds.Bottom), 4, 4, fill);
+    }
+}
+
+registry.RegisterWidget<BatteryGauge>("BatteryGauge"); // before creating screens
+```
+
+```xml
+<BatteryGauge value="{Soc}" grow="1" onclick="OpenRack"/>
+```
+
+- **The markup side works like any element**: attributes and bindings, `class`, `style` (background, border, `padding`, `width`/`height`), `grow`, `onclick`, `hold`, `disabled`, `visible`, `id` (a plain `DvControl` handle). Child elements are not used (Trace warning).
+- **Attributes are free-form**: every attribute is resolved (bindings included) and read in the class with `ctx.Number("value")`, `ctx.Text("label")`, `ctx.Flag("running")`, `ctx.Value("series")` (the original object, e.g. a list). The widget class decides which attributes it reads.
+- **Size**: `Measure` returns the content size (inside `padding`); the default is 120×80. `width`/`height` in the style win.
+- **Painting**: `Paint` gets the content area; the canvas is clipped to the element. Use theme tokens through `ctx.Color("…")` (the same names as `token(…)`) so the widget follows light and dark themes. `ctx.TextColor`, `ctx.DrawText` and `ctx.MeasureText` draw text with the library's fonts (Korean included).
+- **Animation**: return a frame interval in ms from `FrameInterval` while the picture moves (e.g. `ctx.Flag("running") ? 33 : null`) and use `ctx.TimestampMs` for the phase. Return `null` when still — nothing is repainted.
+- **Instances**: one per element, kept when the screen is rebuilt, so fields can hold animation state. Inside `DvRepeat` each item has its own. Read attribute values from `ctx` on every call; do not cache them in fields.
+- **Errors**: an exception from `Paint` does not stop the screen — it is reported once through `HandlerError` (`Kind` = `"Paint"`) and the element is outlined in red.
+- **Names**: tags starting with `Dv` are reserved; a widget and a `DvComponent` cannot share a name (`ArgumentException`).
+- Not yet: touch/drag input and two-way `value` inside the widget (use `onclick`/`hold`, or put a `DvSlider`/`DvKnob` next to it).
+- Order of choice: built-in widget → `DvComponent` (assembling built-ins) → custom widget.
+
 ---
 
 ## 16. Pages and the app (DvApp·DvPage·DvBar)

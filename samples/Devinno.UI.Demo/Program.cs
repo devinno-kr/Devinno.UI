@@ -6,7 +6,7 @@ using Devinno.UI.Styling;
 // 데모 — DvApp 하나에 페이지를 전부 넣고, 실행 인자로 시작 페이지를 고른다.
 //   인자 없음 = 쇼케이스(영어): 상단 바 + Overview(운영 대시보드)·Process(P&ID)·Widgets(아래 페이지 목록), PlantSim 이 값을 움직인다.
 //   -- shot <폴더> = 쇼케이스 화면을 창 없이 PNG 로(README 이미지), anim 을 더하면 P&ID 흐름 애니메이션 프레임도
-//   dotnet run --project samples/Devinno.UI.Demo [-- gpu] [-- dashboard|lang|control|equipment|grid|trend [fast]|alarm|input|knob|neon|process|basic|v2] [-- light]
+//   dotnet run --project samples/Devinno.UI.Demo [-- gpu] [-- dashboard|lang|control|equipment|grid|trend [fast]|alarm|input|knob|neon|process|basic|v2|custom] [-- light]
 //   시나리오: -- top = 상단 바(모니터링·설정·알람) + 홈 + 각 페이지의 "이전",  -- nav = 왼쪽 사이드바,
 //            -- dialog = 레시피 편집 다이얼로그 + 그 위 메시지 박스 + 통신 시뮬레이션 알람(DvApp.Current, 키 중복 방지)
 internal static class Program
@@ -14,7 +14,7 @@ internal static class Program
     private static void Main(string[] args)
     {
         var theme = args.Contains("light") ? DvTheme.Light : DvTheme.Dark;
-        string[] scenarios = ["top", "nav", "dialog", "lang", "control", "equipment", "grid", "trend", "alarm", "input", "knob", "basic", "process", "neon", "v2", "dashboard"];
+        string[] scenarios = ["top", "nav", "dialog", "lang", "control", "equipment", "grid", "trend", "alarm", "input", "knob", "basic", "process", "neon", "v2", "dashboard", "custom"];
         var showcase = !args.Any(scenarios.Contains);
         // 데모 화면은 모두 영어 — 언어 전환 페이지(lang)가 ko·en·ja 를 바꿀 수 있게 그 페이지의 표를 앱 전체에 쓰고, 영어로 시작한다
         var strings = WithLanguage(LangPage.CreateStrings(), "en");
@@ -36,6 +36,7 @@ internal static class Program
         var process = new ProcessPage();
         var basic = new BasicPage();
         var motionNext = new MotionNextPage();
+        var custom = new CustomWidgetPage();
 
         var sim = new PlantSim();
         var overview = new OverviewPage(sim);
@@ -56,15 +57,17 @@ internal static class Program
             new("fa-code", "Controls from code", "Typed handles generated from id", control),
             new("fa-table-columns", "Semantic components", "Cards, stats, badges and status items from the theme", components),
             new("fa-palette", "Custom styling", "Gradients, glow shadows and absolute layout", neon),
+            new("fa-paintbrush", "Custom widgets", "Your own C# classes painted with SkiaSharp, used as markup tags", custom),
         ]);
 
         var registry = new Devinno.UI.Components.ComponentRegistry();
         ProcessPage.Register(registry); // 공정도 유닛 컴포넌트(Blender)
+        CustomWidgetPage.Register(registry); // 커스텀 위젯(BatteryGauge·Fan)
         var app = new DvApp { Strings = strings, Registry = registry };
 #if DEBUG
         app.HotReload = true; // 개발 중 — dvml 을 저장하면 실행 중인 화면에 바로 반영(배포 빌드에서는 꺼짐)
 #endif
-        foreach (var page in new DvPage[] { overview, plantProcess, widgets, home, dashboard, components, control, lang, equipment, grid, trend, fastTrend, alarm, input, knob, neon, dialog, process, basic, motionNext })
+        foreach (var page in new DvPage[] { overview, plantProcess, widgets, home, dashboard, components, control, lang, equipment, grid, trend, fastTrend, alarm, input, knob, neon, dialog, process, basic, motionNext, custom })
             app.Pages.Add(page);
 
         // 시작 페이지 · 창 크기 · 제목 · 테마(null = 기본 테마)
@@ -87,6 +90,7 @@ internal static class Program
             : args.Contains("neon") ? (neon, NeonPage.Width, NeonPage.Height, "Devinno.UI Demo — Neon", null)
             : args.Contains("v2") ? (components, ComponentDashboardPage.Width, ComponentDashboardPage.Height, "Devinno.UI Demo — Components", theme)
             : args.Contains("dashboard") ? (dashboard, DashboardPage.Width, DashboardPage.Height, "Devinno.UI Demo — Dashboard", null)
+            : args.Contains("custom") ? (custom, CustomWidgetPage.Width, CustomWidgetPage.Height, "Devinno.UI Demo — Custom widgets", theme)
             : (overview, 1440, 900, "Devinno.UI Demo", theme);
 
         if (args.Contains("top"))

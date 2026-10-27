@@ -93,6 +93,7 @@ public sealed partial class DvSurface
 
     // DvKnob 회전 드래그 — 미리보기 값은 LayoutBox 에만, VM 은 pointer-up 에서 1회 커밋
     private IValueDrag? _knobDrag; // 노브·슬라이더 끌기
+    private readonly Widgets.WidgetStore _widgetStore = new(); // 커스텀 위젯 인스턴스 — 재빌드에도 같은 것
     private SKPoint _knobShift; // 노브 좌표계(스크롤 상자 안이면 오프셋 반영) − 화면 좌표
 
     /// <summary>Creates a screen with the default theme. User components are not used.</summary>
@@ -417,8 +418,23 @@ public sealed partial class DvSurface
         "DvAlarmBanner" or "DvAlarmList"
             when !string.IsNullOrEmpty(box.CommAlarm) || box.AlarmItems.Any(a => !a.Acked) => Painter.AlarmBlinkMs,
         "DvProcess" when box.Process is { FlowAnimation: true } p && p.AnyFlowing => Painter.FlowFrameMs, // 흐름 애니메이션(초당 20프레임 상한)
+        _ when box.Widget is { } w => WidgetFrameMs(box, w),
         _ => 0
     };
+
+    // 커스텀 위젯이 원하는 프레임 간격(최소 16ms). 예외는 알리고 정지 그림으로
+    private static int WidgetFrameMs(LayoutBox box, Widgets.DvWidget widget)
+    {
+        try
+        {
+            return widget.FrameInterval(new Widgets.DvWidgetContext(box, null, 0)) is { } ms ? Math.Max(16, ms) : 0;
+        }
+        catch (Exception ex)
+        {
+            HandlerErrors.ReportRead(ex, "FrameInterval", widget.GetType().Name, box.Node.Tag);
+            return 0;
+        }
+    }
 
     private Localization.DvStrings? _strings;
 
@@ -504,7 +520,7 @@ public sealed partial class DvSurface
             _dirty = false;
             _reads.Seen.Clear(); // 재빌드 — 같은 VM 읽기 예외도 다시 한 번 알린다
             var old = _box;
-            var engine = new LayoutEngine(_theme, _strings);
+            var engine = new LayoutEngine(_theme, _strings) { WidgetStore = _widgetStore };
             if (_controlsByNode.Count > 0)
                 engine.ControlOf = n => _controlsByNode.GetValueOrDefault(n);
             if (_tabIndex.Count > 0)

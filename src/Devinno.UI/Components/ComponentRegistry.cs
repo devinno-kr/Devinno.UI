@@ -56,6 +56,28 @@ public sealed class ComponentRegistry
 {
     private readonly Dictionary<string, ComponentDef> _defs = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Process.SymbolDef> _symbols = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Func<Widgets.DvWidget>> _widgets = new(StringComparer.Ordinal);
+
+    // 커스텀 위젯(C# 클래스) — 이름이 곧 태그
+    internal bool TryGetWidget(string tag, out Func<Widgets.DvWidget>? create) => _widgets.TryGetValue(tag, out create);
+
+    /// <summary>
+    /// Registers a custom widget class (<see cref="Widgets.DvWidget"/>) under a tag, so markup can use <c>&lt;Tag …/&gt;</c>. Registering the same tag again replaces the class.
+    /// </summary>
+    /// <typeparam name="T">The widget class; a new instance is created for each element on screen.</typeparam>
+    /// <param name="tag">The markup tag. Must not start with <c>Dv</c> (built-in names) and must not be a component registered here.</param>
+    /// <exception cref="ArgumentException">The tag is empty, starts with <c>Dv</c>, or is already a component name.</exception>
+    /// <remarks>Register before creating screens (not thread-safe). Screens already created are not updated.</remarks>
+    public void RegisterWidget<T>(string tag) where T : Widgets.DvWidget, new()
+    {
+        if (string.IsNullOrWhiteSpace(tag))
+            throw new ArgumentException("A widget needs a tag name.", nameof(tag));
+        if (tag.StartsWith("Dv", StringComparison.Ordinal))
+            throw new ArgumentException($"'{tag}': names starting with 'Dv' are reserved for built-in elements.", nameof(tag));
+        if (_defs.ContainsKey(tag))
+            throw new ArgumentException($"'{tag}' is already a component name.", nameof(tag));
+        _widgets[tag] = static () => new T();
+    }
 
     // 공정도 사용자 심볼(<DvSymbol>) — 공정도 안에서 이름이 곧 태그
     internal bool TryGetSymbol(string name, out Process.SymbolDef? def) => _symbols.TryGetValue(name, out def);
@@ -103,6 +125,9 @@ public sealed class ComponentRegistry
             throw new ArgumentException("Root must be <DvComponent> or <DvSymbol>.", nameof(componentMarkup));
         if (!node.Attributes.TryGetValue("name", out var name))
             throw new ArgumentException("<DvComponent> requires a name attribute.", nameof(componentMarkup));
+
+        if (_widgets.ContainsKey(name))
+            throw new ArgumentException($"'{name}' is already a widget name.", nameof(componentMarkup));
 
         var template = node.Children.FirstOrDefault(c => c.Tag is not ("DvParam" or "DvStyle"))
             ?? throw new ArgumentException($"Component '{name}' requires one template root.", nameof(componentMarkup));
