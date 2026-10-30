@@ -675,4 +675,26 @@ public class ProcessTests(ITestOutputHelper output)
         // 펌프 출구(오른쪽) 쪽 면으로 돌아 들어간다
         Assert.Equal(tank.Right, ret.To.Point.X, 0.5);
     }
+    // 터미널 글자 줄바꿈(&#10;) — 줄마다 따로 그린다. 폭은 가장 긴 줄, 높이는 줄 수만큼
+    [Theory]
+    [InlineData("")]
+    [InlineData("direction=\"tb\"")]
+    public void Terminal_MultiLineText_FitsLongestLineAndGrowsTaller(string attrs)
+    {
+        const string body = """
+            <DvTerminal name="A" text="SOLVENT&#10;FROM UNIT 1"/>
+            <DvTerminal name="B" text="FROM UNIT 1"/>
+            <DvTerminal name="C" text="SOLVENT FROM UNIT 1"/>
+            <DvValve name="V1" open="true"/>
+            <DvValve name="V2" open="true"/>
+            <DvLine from="A" to="V1.in"/>
+            <DvLine from="B" to="V2.in"/>
+            <DvLine from="C" to="V2.in"/>
+            """;
+        var (_, d) = Start(body, attrs);
+        var (two, one, flat) = (Node(d, "A").Sym, Node(d, "B").Sym, Node(d, "C").Sym);
+        Assert.Equal(one.Width, two.Width, 0.5);
+        Assert.True(two.Width < flat.Width - 20);
+        Assert.True(two.Height >= one.Height + 12);
+    }
 }

@@ -237,7 +237,7 @@ A tag (off-page connector) for a pipe that continues outside the screen.
 
 | Attribute | Description |
 |---|---|
-| `text` | Tag text (font 12 bold). The width fits the text |
+| `text` | Tag text (font 12 bold). The width fits the longest line. For two or more lines, put `&#10;` at each line break (`text="SOLVENT&#10;FROM UNIT 1"`); the tag grows one line height taller per extra line |
 | Port | Only one, and it has no name. In a line, write just the name, like `from="IN"`, `to="OUT"` (adding a dot gives a Trace warning and is ignored) |
 
 - **Used in a line's `from`, it means "coming in from outside"**; used only in `to`, it means "going out".

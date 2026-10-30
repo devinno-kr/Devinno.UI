@@ -4057,7 +4057,7 @@
             </summary>
         </member><member name="M:Devinno.UI.Process.ProcessBuilder.SignalTarget(Devinno.UI.Process.ProcessDiagram,System.String)" en-hash="4f62522562dd4d26">
             <summary>신호선 끝 이름 → 계기(그려지는 것) 또는 장비(끝점·유닛 포트 자리 제외). 없으면 <see langword="null" />.</summary>
-        </member><member name="M:Devinno.UI.Process.ProcessBuilder.TerminalShape(Devinno.UI.Process.ProcessNode,System.Boolean)" en-hash="02bed7fc97313122">
+        </member><member name="M:Devinno.UI.Process.ProcessBuilder.TerminalLines(Devinno.UI.Process.ProcessNode)" en-hash="170af0a16a27e6ee"><summary>끝점 글자 줄 — <c>text</c> 를 줄바꿈(마크업에서는 <c>&amp;#10;</c>)에서 나눈 것.</summary></member><member name="M:Devinno.UI.Process.ProcessBuilder.TerminalShape(Devinno.UI.Process.ProcessNode,System.Boolean)" en-hash="02bed7fc97313122">
             <summary>끝점 모양(공정도 방향·출발/도착에 따라) — 차지 영역 기준 path 와 포트.</summary>
         </member><member name="F:Devinno.UI.Process.ProcessBuilder.BubbleMin" en-hash="b3b12bfc73a100a9">
             <summary>계기 버블 최소 지름·글자 크기.</summary>

@@ -399,12 +399,17 @@ public sealed partial class Painter
                     canvas.DrawPath(shape, stroke);
                 }
 
-                var text = n.Text ?? "";
-                using var font = TextFont.Create(text, 12, true, st.FontFamily);
+                var lines = ProcessBuilder.TerminalLines(n);
+                using var font = TextFont.Create(n.Text ?? "", 12, true, st.FontFamily);
                 using var tp = new SKPaint { IsAntialias = true, Color = look.TagText };
                 var cx = d.Vertical ? n.Sym.MidX : n.Sym.Left + (n.Sym.Width - 14) / 2;
-                var cy = (d.Vertical ? n.Sym.Top + (n.Sym.Height - 10) / 2 : n.Sym.MidY) - (font.Metrics.Ascent + font.Metrics.Descent) / 2;
-                canvas.DrawText(text, cx, cy, SKTextAlign.Center, font, tp);
+                var cy = (d.Vertical ? n.Sym.Top + (n.Sym.Height - 10) / 2 : n.Sym.MidY) - (font.Metrics.Ascent + font.Metrics.Descent) / 2
+                    - (lines.Length - 1) * font.Spacing / 2; // 여러 줄이면 묶음 가운데를 맞춘다
+                foreach (var line in lines)
+                {
+                    canvas.DrawText(line, cx, cy, SKTextAlign.Center, font, tp);
+                    cy += font.Spacing;
+                }
             }
             else
             {

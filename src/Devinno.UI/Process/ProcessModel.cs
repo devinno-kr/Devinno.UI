@@ -768,6 +768,9 @@ internal static class ProcessBuilder
         return s;
     }
 
+    /// <summary>Terminal text lines — <c>text</c> split at line breaks (<c>&amp;#10;</c> in markup).</summary>
+    internal static string[] TerminalLines(ProcessNode n) => (n.Text ?? "").Replace("\r", "").Split('\n');
+
     /// <summary>End point shape (depending on the diagram direction and start/end): the path and ports relative to the footprint.</summary>
     internal static (SKPath Path, SKPoint Port, PortSide Side) TerminalShape(ProcessNode n, bool vertical)
     {
@@ -814,9 +817,11 @@ internal static class ProcessBuilder
         }
         else if (n.Terminal)
         {
+            var lines = TerminalLines(n);
             using var f = TextFont.Create(n.Text ?? "", 12, true, family);
-            var tw = f.MeasureText(n.Text ?? "");
-            symSize = d.Vertical ? new SKSize(MathF.Max(60, tw + 20), 38) : new SKSize(MathF.Max(64, tw + 34), 28);
+            var tw = lines.Max(l => f.MeasureText(l));
+            var more = (lines.Length - 1) * f.Spacing; // 둘째 줄부터 한 줄씩 높아진다
+            symSize = d.Vertical ? new SKSize(MathF.Max(60, tw + 20), 38 + more) : new SKSize(MathF.Max(64, tw + 34), 28 + more);
             n.Transform = SKMatrix.Identity;
         }
         else
