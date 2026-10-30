@@ -1170,9 +1170,18 @@ internal static class ProcessBuilder
     private sealed class CacheEntry
     {
         public readonly Dictionary<string, ProcessGraph> Graphs = new(StringComparer.Ordinal);
+        public readonly Queue<string> Order = new();
+        public int Runs;
     }
 
+    // 한 번의 Arrange 가 시도하는 후보(줄 맞춤 2 × 간격 5 = 10)가 모두 남아 있어야 한다 — 모자라면 매 갱신마다 다음 후보가 지운 것을 다시 계산한다.
+    // 같은 유닛 컴포넌트를 여러 번 쓰면 인스턴스들이 한 항목을 나눠 쓰므로(안쪽 이름표가 다르면 인스턴스마다 10개) 넉넉히
+    private const int CacheSize = 64;
+
     private static readonly ConditionalWeakTable<ElementNode, CacheEntry> Cache = new();
+
+    /// <summary>How many times the layout of the diagram from <paramref name="source"/> has actually been computed (not reused) — for tests.</summary>
+    internal static int LayoutRuns(ElementNode source) => Cache.TryGetValue(source, out var e) ? e.Runs : 0;
 
     /// <summary>The layout result at spacing scale <paramref name="spacing"/>. Returns the previously computed result for the same structure and scale.</summary>
     internal static ProcessGraph Layout(ProcessDiagram d, string? family, float spacing, ProcessAlign align)
@@ -1216,9 +1225,15 @@ internal static class ProcessBuilder
 
         lock (entry)
         {
-            if (entry.Graphs.Count > 8)
-                entry.Graphs.Clear();
-            entry.Graphs[sig] = graph;
+            if (entry.Graphs.TryAdd(sig, graph))
+            {
+                entry.Order.Enqueue(sig);
+                while (entry.Order.Count > CacheSize) // 오래된 것부터(값 글자 폭이 바뀌어 생긴 이전 배치 등)
+                    entry.Graphs.Remove(entry.Order.Dequeue());
+            }
+            else
+                entry.Graphs[sig] = graph;
+            entry.Runs++;
         }
 
         Attach(d, graph, lines, signals);

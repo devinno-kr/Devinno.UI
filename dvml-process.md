@@ -835,8 +835,8 @@ public sealed partial class WaterPage : DvPage
 
 **Updates and cost**
 
-- When only values (`level`, `running`, `open`, attached-box text) change, **layout is not recomputed.** If equipment, line structure, name labels and attached-box sizes are the same, the previously computed layout is reused. On a 1600×1000 screen, one value update costs 1–2ms for layout and about 16ms for drawing (CPU).
-- If attached-box text length changes and the box size changes, layout is recomputed (tens of ms). Giving frequently changing numbers a fixed width (`style="width:…"`) keeps the layout from shifting.
+- When only values (`level`, `running`, `open`, attached-box text, instrument `value`) change, **layout is not recomputed.** If equipment, line structure, name labels, attached-box sizes and the width of instrument `value` text are the same, the previously computed layout is reused. This holds inside units too. On a 1600×1000 screen, one value update costs 1–2ms for layout and about 16ms for drawing (CPU).
+- If attached-box text length changes and the box size changes, or the instrument `value` text gets wider or narrower, layout is recomputed (tens of ms). Recent layouts are kept, so going back to a width seen before reuses its layout. Giving frequently changing numbers a fixed width (`style="width:…"` on the attached box) keeps the layout from shifting.
 - Thread rules are the same as regular screens: after changing the VM on a communication/timer thread, call `App.Invalidate()`. Handlers (`onclick`) and code after their `await` run on the input thread, so `Invalidate` is not needed (`llm-rules.md` chapter 6).
 - To draw several units of the same arrangement (3 blenders, etc.), use a unit component. Keep one VM object of the same class per unit and pass it as a parameter (8.4).
 

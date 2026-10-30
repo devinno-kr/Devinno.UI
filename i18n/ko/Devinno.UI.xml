@@ -4071,6 +4071,8 @@
             <summary>계기 줄과 장비(또는 그 면의 이름표·붙은 칸) 사이 — 신호선이 곧게 내려갈 자리.</summary>
         </member><member name="M:Devinno.UI.Process.ProcessBuilder.BubbleSize(Devinno.UI.Process.ProcessInstrument,System.String)" en-hash="221ed50cb3d6240c">
             <summary>버블 지름 — 글자(tag·number) 중 넓은 것 + 여백, 최소 <see cref="F:Devinno.UI.Process.ProcessBuilder.BubbleMin" />.</summary>
+        </member><member name="M:Devinno.UI.Process.ProcessBuilder.LayoutRuns(Devinno.UI.Markup.ElementNode)" en-hash="2719db53e91ce025">
+            <summary><paramref name="source" /> 의 공정도 배치를 실제로 계산한(재사용하지 않은) 횟수 — 테스트용.</summary>
         </member><member name="M:Devinno.UI.Process.ProcessBuilder.Layout(Devinno.UI.Process.ProcessDiagram,System.String,System.Single,Devinno.UI.Process.ProcessAlign)" en-hash="c6ecce3d6ce85d83">
             <summary>간격 배율 <paramref name="spacing" /> 로 배치한 결과. 같은 구조·같은 배율이면 전에 계산한 것을 돌려준다.</summary>
         </member><member name="F:Devinno.UI.Process.ProcessBuilder.ActuatorTop" en-hash="c8fd70fcc7827820">
