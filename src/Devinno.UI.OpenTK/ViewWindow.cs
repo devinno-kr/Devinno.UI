@@ -28,6 +28,9 @@ namespace Devinno.UI.OpenTK;
 /// Enter, Backspace, Esc, Tab and Shift+Tab are passed through as well.</para>
 /// <para><b>Drawing mode</b>: the default is CPU raster (Skia draws into a bitmap, which is then uploaded as a texture); turning on <see cref="Gpu"/> makes Skia draw directly to the window with OpenGL.
 /// CPU raster keeps the bitmap between frames, so frames that change only with time (flow animation, blinking) redraw only the changed region and upload only that region to the texture (<see cref="DvSurface.PartialRender"/>). GPU mode also draws the same way to an offscreen GPU surface, then copies it whole to the window every frame.</para>
+/// <para><b>Devices</b>: choose these with constructor arguments, because they must be fixed when the window is created. <c>gles</c> uses OpenGL ES 3.0 instead of desktop OpenGL 3.3 (embedded boards such as ARM touch panels).
+/// <c>fullscreen</c> opens a borderless full-screen window on the current monitor (kiosk). <c>fit</c> lays the screen out at the constructor size and scales it to the window, keeping the aspect ratio:
+/// a screen made for 1280×750 shows whole on a 1024×600 panel, and when the ratios differ it is centered with margins in the theme background color (<c>--bg</c>). Pointer coordinates are converted to the same layout size.</para>
 /// </remarks>
 /// <example>
 /// <code>
@@ -48,6 +51,8 @@ namespace Devinno.UI.OpenTK;
 public sealed class ViewWindow : GameWindow
 {
     private readonly DvApp _app;
+    private readonly bool _gles; // OpenGL ES 3.0 컨텍스트 — 셰이더 머리·Skia GL 인터페이스가 다르다
+    private readonly Vector2i? _fit; // fit 모드의 설계 크기(논리 px) — 레이아웃은 늘 이 크기, 창에 비율 유지로 맞춘다
     private readonly DvSurface _surface; // _app.Surface — 루트 화면 하나(고정)
     private int _texture;
     private Vector2i _texSize; // 텍스처에 마지막으로 통째로 올린 크기 — 같을 때만 일부 갱신
@@ -80,16 +85,20 @@ public sealed class ViewWindow : GameWindow
     /// <param name="width">The width of the window client area (logical px — at 150% display scaling, physical px is 1.5 times this).</param>
     /// <param name="height">The height of the window client area (logical px).</param>
     /// <param name="title">The window title.</param>
+    /// <param name="gles">If <see langword="true"/>, creates an OpenGL ES 3.0 context instead of desktop OpenGL 3.3 (for boards that only have GLES, such as linux-arm64 touch panels). Applies to both CPU raster and <see cref="Gpu"/> mode.</param>
+    /// <param name="fullscreen">If <see langword="true"/>, opens a borderless window that fills the current monitor (kiosk). The window size is the monitor resolution, so <paramref name="width"/> and <paramref name="height"/> only matter as the layout size when <paramref name="fit"/> is on.</param>
+    /// <param name="fit">If <see langword="true"/>, the screen is always laid out at <paramref name="width"/>×<paramref name="height"/> and scaled to the window keeping the aspect ratio (centered, with margins in the theme <c>--bg</c> color when the ratios differ). Pointer coordinates are converted to that size, so pages work as if the window were exactly that size.</param>
     /// <exception cref="ArgumentNullException">When <paramref name="app"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">When <paramref name="app"/> is already attached to another window or control.</exception>
-    public ViewWindow(DvApp app, int width, int height, string title)
-        : base(
-            GameWindowSettings.Default,
-            CheckAvailable(app, new NativeWindowSettings
-            {
-                ClientSize = new Vector2i(width, height),
-                Title = title
-            }))
+    /// <example>
+    /// <code>
+    /// // a screen made for 1280×750 on a 1024×600 GLES touch panel, full screen
+    /// using var window = new ViewWindow(app, 1280, 750, "HMI", gles: true, fullscreen: true, fit: true);
+    /// window.Run();
+    /// </code>
+    /// </example>
+    public ViewWindow(DvApp app, int width, int height, string title, bool gles = false, bool fullscreen = false, bool fit = false)
+        : base(GameWindowSettings.Default, CheckAvailable(app, Settings(width, height, title, gles, fullscreen)))
     {
         try
         {
@@ -102,12 +111,39 @@ public sealed class ViewWindow : GameWindow
         }
 
         _app = app;
+        _gles = gles;
+        _fit = fit ? new Vector2i(Math.Max(width, 1), Math.Max(height, 1)) : null;
         _surface = app.Surface;
         _surface.UseNativeEditor = false; // 이전에 ViewControl(네이티브 편집기)에 붙었던 앱이어도 이 창은 내장 가상 키보드
         _app.HandlerError += OnAppHandlerError;
         _app.RenderRequested += OnAppRenderRequested;
         _animTimer = new System.Threading.Timer(_ => Wake());
         IsEventDriven = true;
+    }
+
+    // 컨텍스트 종류·창 모양은 창을 만들 때 정해진다 — 생성 뒤에는 못 바꾼다
+    private static NativeWindowSettings Settings(int width, int height, string title, bool gles, bool fullscreen)
+    {
+        var settings = new NativeWindowSettings
+        {
+            ClientSize = new Vector2i(width, height),
+            Title = title
+        };
+        if (gles)
+        {
+            settings.API = ContextAPI.OpenGLES;
+            settings.APIVersion = new Version(3, 0);
+            settings.Profile = ContextProfile.Any; // 프로필은 데스크톱 GL 전용
+        }
+
+        if (fullscreen)
+        {
+            settings.WindowBorder = WindowBorder.Hidden;
+            settings.WindowState = WindowState.Fullscreen; // 현재 모니터 해상도로
+            settings.AutoIconify = false; // GLFW 기본은 포커스를 잃으면 최소화 — 키오스크는 늘 떠 있어야 한다
+        }
+
+        return settings;
     }
 
     // 기반 생성자(네이티브 창 생성) 인자로 평가 — 앱이 없거나 이미 붙어 있으면 창을 만들기 전에 거절한다
@@ -198,7 +234,7 @@ public sealed class ViewWindow : GameWindow
     {
         base.OnLoad();
         _scale = CurrentScale();
-        if (_scale != 1f)
+        if (_scale != 1f && WindowState != WindowState.Fullscreen) // 전체 화면은 모니터 크기 그대로
             ClientSize = new Vector2i((int)MathF.Round(ClientSize.X * _scale), (int)MathF.Round(ClientSize.Y * _scale)); // 생성자 크기는 논리 px
         if (!(Gpu && TryInitGpu()))
             InitCpu();
@@ -225,7 +261,8 @@ public sealed class ViewWindow : GameWindow
         var k = scale / _scale;
         _scale = scale;
         _forcePaint = true;
-        ClientSize = new Vector2i((int)MathF.Round(ClientSize.X * k), (int)MathF.Round(ClientSize.Y * k)); // OnResize 가 새 배율로 그린다
+        if (WindowState != WindowState.Fullscreen)
+            ClientSize = new Vector2i((int)MathF.Round(ClientSize.X * k), (int)MathF.Round(ClientSize.Y * k)); // OnResize 가 새 배율로 그린다
         Wake();
     }
 
@@ -234,7 +271,9 @@ public sealed class ViewWindow : GameWindow
         try
         {
             var bindings = new GLFWBindingsContext();
-            _gli = GRGlInterface.CreateOpenGl(name => bindings.GetProcAddress(name));
+            _gli = _gles
+                ? GRGlInterface.CreateGles(name => bindings.GetProcAddress(name))
+                : GRGlInterface.CreateOpenGl(name => bindings.GetProcAddress(name));
             _gr = _gli is null ? null : GRContext.CreateGl(_gli);
             if (_gr is null)
                 throw new InvalidOperationException("GRContext.CreateGl returned null");
@@ -346,8 +385,9 @@ public sealed class ViewWindow : GameWindow
         _forcePaint = false;
         var pixelW = Math.Max(ClientSize.X, 1);
         var pixelH = Math.Max(ClientSize.Y, 1);
-        var width = Math.Max((int)MathF.Round(pixelW / scale), 1); // 레이아웃은 논리 px
-        var height = Math.Max((int)MathF.Round(pixelH / scale), 1);
+        var view = ViewTransform(pixelW, pixelH, scale, _fit); // 레이아웃은 논리 px(fit 이면 설계 크기)
+        var width = view.Width;
+        var height = view.Height;
         _paintedSize = ClientSize;
 
         if (_gr is not null && EnsureGpuSurface())
@@ -367,8 +407,9 @@ public sealed class ViewWindow : GameWindow
             _surface.PartialRender = _gpuLayer is not null && !force && !newLayer;
             var lc = layer.Canvas;
             lc.Save();
-            // 레이아웃·포인터는 클라이언트 좌표, 타깃은 프레임버퍼 픽셀 — 둘이 다르면(DPI) 맞춰 늘린다
-            lc.Scale((float)_target!.Width / width, (float)_target.Height / height);
+            // 클라이언트 px → 프레임버퍼 px(macOS 처럼 둘이 다르면 늘린다), 그다음 논리 px → 클라이언트 px
+            lc.Scale((float)_target!.Width / pixelW, (float)_target.Height / pixelH);
+            PrepareView(lc, view);
             _surface.RenderTo(lc, width, height, now);
             lc.Restore();
             if (_surface.LastRenderRect is { IsEmpty: true })
@@ -403,12 +444,12 @@ public sealed class ViewWindow : GameWindow
         _surface.PartialRender = !force && !fresh && texReady;
         using (var canvas = new SKCanvas(bitmap))
         {
-            canvas.Scale(scale);
+            PrepareView(canvas, view);
             _surface.RenderTo(canvas, width, height, now);
         }
         ScheduleAnimation(now);
 
-        var dirty = ToPixels(_surface.LastRenderRect, scale, pixelW, pixelH);
+        var dirty = ToPixels(_surface.LastRenderRect, view.Scale, view.X, view.Y, pixelW, pixelH);
         if (dirty is { IsEmpty: true })
             return; // 다시 그린 것이 없다 — 화면은 마지막 프레임 그대로
 
@@ -446,7 +487,38 @@ public sealed class ViewWindow : GameWindow
         SwapBuffers();
     }
 
-    private SKPoint Logical(float x, float y) => new(x / _scale, y / _scale);
+    private SKPoint Logical(float x, float y)
+    {
+        var view = ViewTransform(Math.Max(ClientSize.X, 1), Math.Max(ClientSize.Y, 1), _scale, _fit);
+        return new((x - view.X) / view.Scale, (y - view.Y) / view.Scale);
+    }
+
+    /// <summary>
+    /// The layout size (logical px) for a client area, and the scale and offset that map it to client px. Without fit, the layout is the client size ÷ monitor scale at offset 0;
+    /// with fit, the layout is the design size, scaled uniformly to fit and centered.
+    /// </summary>
+    internal static (int Width, int Height, float Scale, int X, int Y) ViewTransform(int pixelW, int pixelH, float scale, Vector2i? fit)
+    {
+        if (fit is not { } design)
+            return (Math.Max((int)MathF.Round(pixelW / scale), 1), Math.Max((int)MathF.Round(pixelH / scale), 1), scale, 0, 0);
+        var k = MathF.Min((float)pixelW / design.X, (float)pixelH / design.Y);
+        return (design.X, design.Y, k, (int)MathF.Round((pixelW - design.X * k) / 2), (int)MathF.Round((pixelH - design.Y * k) / 2));
+    }
+
+    // 캔버스를 논리 px 로 맞춘다. fit 이면 전체를 다시 그리는 프레임에 여백을 테마 배경색으로 칠하고,
+    // 화면이 지우는(Clear) 범위를 설계 크기 안으로 묶는다 — Clear 는 변환을 무시하고 클립 전체를 칠한다
+    private void PrepareView(SKCanvas canvas, (int Width, int Height, float Scale, int X, int Y) view)
+    {
+        if (_fit is not null && !_surface.PartialRender)
+            canvas.Clear(MarginColor());
+        canvas.Translate(view.X, view.Y);
+        canvas.Scale(view.Scale);
+        if (_fit is not null)
+            canvas.ClipRect(SKRect.Create(0, 0, view.Width, view.Height));
+    }
+
+    private SKColor MarginColor() =>
+        (_app.Theme ?? DvTheme.Default).TryGet("--bg", out var value) && SKColor.TryParse(value, out var color) ? color : SKColors.Black;
 
     /// <summary>For testing — draws at this scale instead of the monitor scale (to check without a real high-DPI monitor). If null, the monitor scale is used.</summary>
     internal float? ScaleOverride { get; init; }
@@ -461,14 +533,14 @@ public sealed class ViewWindow : GameWindow
         return TryGetCurrentMonitorScale(out var x, out _) && x > 0 ? x : 1f;
     }
 
-    /// <summary>Redrawn region in logical px → physical px (rounded outward, clipped to the bitmap). null = everything, empty rectangle = nothing.</summary>
-    internal static SKRectI? ToPixels(SKRectI? logical, float scale, int pixelW, int pixelH)
+    /// <summary>Redrawn region in logical px → physical px (scaled, moved by the fit offset, rounded outward, clipped to the bitmap). null = everything, empty rectangle = nothing.</summary>
+    internal static SKRectI? ToPixels(SKRectI? logical, float scale, int offsetX, int offsetY, int pixelW, int pixelH)
     {
-        if (logical is not { } r || r.IsEmpty || scale == 1f)
+        if (logical is not { } r || r.IsEmpty || (scale == 1f && offsetX == 0 && offsetY == 0))
             return logical;
         var px = SKRectI.Create(0, 0, pixelW, pixelH);
-        var scaled = new SKRectI((int)MathF.Floor(r.Left * scale), (int)MathF.Floor(r.Top * scale),
-            (int)MathF.Ceiling(r.Right * scale), (int)MathF.Ceiling(r.Bottom * scale));
+        var scaled = new SKRectI(offsetX + (int)MathF.Floor(r.Left * scale), offsetY + (int)MathF.Floor(r.Top * scale),
+            offsetX + (int)MathF.Ceiling(r.Right * scale), offsetY + (int)MathF.Ceiling(r.Bottom * scale));
         return SKRectI.Intersect(scaled, px);
     }
 
@@ -621,7 +693,7 @@ public sealed class ViewWindow : GameWindow
             -1f,  1f, 0f, 0f
         };
 
-        _program = CreateProgram();
+        _program = CreateProgram(_gles);
         _vao = GL.GenVertexArray();
         _vbo = GL.GenBuffer();
 
@@ -649,10 +721,11 @@ public sealed class ViewWindow : GameWindow
         GL.UseProgram(0);
     }
 
-    private static int CreateProgram()
+    private static int CreateProgram(bool gles)
     {
-        const string vertex = """
-            #version 330 core
+        // 데스크톱 GL 3.3 core / OpenGL ES 3.0 — 본문은 같고 머리만 다르다(ES 프래그먼트는 float 정밀도 지정 필수)
+        var header = gles ? "#version 300 es\nprecision mediump float;\n" : "#version 330 core\n";
+        var vertex = header + """
             layout (location = 0) in vec2 aPos;
             layout (location = 1) in vec2 aTex;
             out vec2 vTex;
@@ -663,8 +736,7 @@ public sealed class ViewWindow : GameWindow
             }
             """;
 
-        const string fragment = """
-            #version 330 core
+        var fragment = header + """
             in vec2 vTex;
             out vec4 FragColor;
             uniform sampler2D uTexture;

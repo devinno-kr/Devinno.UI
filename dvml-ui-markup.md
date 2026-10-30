@@ -1748,7 +1748,7 @@ For detailed usage, see each type's XML documentation.
 
 | Host | Purpose | Refresh |
 |---|---|---|
-| `ViewWindow` (Devinno.UI.OpenTK) | OpenTK window. Touch-first (virtual keyboard). Sleeps when there is no input, using almost no CPU. `Gpu = true` draws with OpenGL | `Invalidate()`, `Repaint()` |
+| `ViewWindow` (Devinno.UI.OpenTK) | OpenTK window. Touch-first (virtual keyboard). Sleeps when there is no input, using almost no CPU. `Gpu = true` draws with OpenGL. Constructor options `gles`, `fullscreen`, `fit` for embedded panels | `Invalidate()`, `Repaint()` |
 | `ViewControl` (Devinno.UI.WinForms) | WinForms control. `App = app`. Edits through a hidden TextBox by default; virtual keyboard in `TouchMode` | `MarkUpdated()`, `MarkRepaint()` |
 | `DvSurface` | For hosts you build yourself (engine API). Drawing to a canvas and pointer input | `Invalidate()`, `Repaint()` |
 | `DvRenderer` | Markup → PNG (check output without a window) | — |
@@ -1758,6 +1758,10 @@ For detailed usage, see each type's XML documentation.
 using var window = new ViewWindow(app, 1280, 800, "My HMI") { Gpu = true };   // Gpu 는 선택
 window.Run();
 
+// OpenTK — GLES 터치 패널(1024×600)에 1280×750 으로 만든 화면을 전체 화면으로
+using var panel = new ViewWindow(app, 1280, 750, "HMI", gles: true, fullscreen: true, fit: true);
+panel.Run();
+
 // WinForms
 var view = new ViewControl { Dock = DockStyle.Fill, TouchMode = false, App = app };
 form.Controls.Add(view);
@@ -1766,6 +1770,7 @@ form.Controls.Add(view);
 - Both adapters take a single `DvApp` (chapter 16): `new ViewWindow(app, width, height, title)` / `ViewControl.App`. `ViewWindow(markup, vm …)`, which took markup and a VM directly, and `ViewControl.Surface` have been removed.
 - The adapter decides the size of the window/control (the `DvApp` areas divide the space inside it).
 - **Display scaling (DPI):** px in markup are **logical px** (the same as CSS px). When the Windows display scale is 125% or 150%, both adapters scale drawing up accordingly, so text and widgets appear at the same physical size as on a 100% display, only sharper. Pointer coordinates, `Bounds` (chapter 20), and the `width`/`height` of the `ViewWindow` constructor are also logical px (at 150%, a `1280×800` window is 1920×1200 physical). If the scale changes at runtime (moving to a monitor with a different scale, changing the display scale), the screen is redrawn at the new scale immediately, and `ViewWindow` also grows or shrinks the window to the new scale to keep its logical size. WinForms receives per-monitor scaling when the app is `PerMonitorV2` (`<ApplicationHighDpiMode>`), and resizing the window (Form) for the scale is the form's job — for a form built in code, do it like designer code: `SuspendLayout()` → `AutoScaleDimensions = new SizeF(96, 96)`, `AutoScaleMode = AutoScaleMode.Dpi`, `ClientSize` (at 100%) → `ResumeLayout(false)` (otherwise, at 150% the window stays the same while the content grows and gets clipped). On a 100% display (the typical HMI panel), nothing changes from before.
+- **Devices (`ViewWindow` constructor arguments):** `gles: true` creates an OpenGL ES 3.0 context instead of desktop OpenGL 3.3 (boards that only have GLES, such as linux-arm64 touch panels). `fullscreen: true` opens a borderless window filling the current monitor (kiosk; there is no close button, so the app provides its own way to exit). `fit: true` always lays the screen out at `width`×`height` and scales it to the window keeping the aspect ratio — when the ratios differ it is centered with margins in the theme `--bg` color. Pointer coordinates and `Bounds` stay in that layout size, so pages behave as if the window were exactly `width`×`height`. Use `fit` only to show one fixed screen on a panel of a different resolution; for windows that change size, keep the layout responsive (`fit` shrinks text along with everything else).
 - Localization is `app.Strings` (the old `ViewWindow.Strings` is gone); the theme is `app.Theme`.
 - An app attaches to only one adapter at a time, and only one app per process can be attached to an adapter (attaching while another app is attached throws `InvalidOperationException`). Changing `ViewControl.App` or closing the window detaches the previous app. Closing the window or calling `Dispose` on the control closes open dialogs as canceled; merely switching the app leaves dialogs open (21.6).
 - All three hosts report VM code exceptions through the `HandlerError` event (6.7). With `DvApp`, `app.HandlerError` alone is enough.
