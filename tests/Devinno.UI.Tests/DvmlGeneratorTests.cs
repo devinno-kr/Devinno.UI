@@ -385,6 +385,18 @@ public class DvmlGeneratorTests
             """, "direction=\"lr\" look=\"rich\" align=\"auto\""));
     }
 
+    // 면 위 자리(장비.면@위치)와 계기 연결선(tap) — tap 이 있으면 on 은 없어도 된다
+    [Fact]
+    public void Process_FaceAtAndTap_NoDiagnostics()
+    {
+        Assert.Empty(Process(Plant + """
+            <DvLine from="IN" to="T1.left@0.15"/>
+            <DvLine from="T1.right@.9" to="P1.in"/>
+            <DvInstrument name="LS" tag="L" tap="T1.left@0.8"/>
+            <DvInstrument name="PI" tag="PI" tap="P1.out"/>
+            """));
+    }
+
     [Theory]
     [InlineData("<DvLine from=\"NOPE\" to=\"P1.in\"/>", "DVML008", "NOPE")]
     [InlineData("<DvLine from=\"P1.out\" to=\"V1.inlet\"/>", "DVML009", "inlet")]
@@ -398,6 +410,10 @@ public class DvmlGeneratorTests
     [InlineData("<DvInstrument name=\"X\" tag=\"PI\"/>", "DVML008", "on")]
     [InlineData("<DvPump name=\"P1\"/>", "DVML010", "P1")]
     [InlineData("<DvInstrument name=\"V1\" tag=\"PI\" on=\"P1\"/>", "DVML010", "V1")]
+    [InlineData("<DvLine from=\"IN\" to=\"T1.middle@0.5\"/>", "DVML009", "top·bottom·left·right")]
+    [InlineData("<DvLine from=\"IN\" to=\"T1.left@x\"/>", "DVML009", "0")]
+    [InlineData("<DvInstrument name=\"X\" tag=\"PI\" tap=\"NOPE.in\"/>", "DVML008", "NOPE")]
+    [InlineData("<DvInstrument name=\"X\" tag=\"PI\" tap=\"P1.inlet\"/>", "DVML009", "inlet")]
     [InlineData("<DvPump name=\"P9\" kind=\"turbo\"/>", "DVML011", "turbo")]
     [InlineData("<DvPump name=\"P9\" rotate=\"45\"/>", "DVML011", "45")]
     [InlineData("<DvLine from=\"P1.out\" to=\"V1.in\" medium=\"lava\"/>", "DVML011", "lava")]

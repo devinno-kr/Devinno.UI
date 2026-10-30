@@ -78,11 +78,13 @@ internal static class ProcessFlow
                 // 용기(채움이 있는 심볼) — 모든 포트가 받는 곳, 수위가 있으면 소스
                 if (def.FillValue is not null)
                 {
-                    foreach (var p in def.Ports)
+                    var faceAts = d.Lines.SelectMany(l => new[] { (l.FromNode, l.FromPort), (l.ToNode, l.ToPort) })
+                        .Where(e => e.Item1 == i && ProcessBuilder.IsFaceAt(e.Item2, out _, out _)).Select(e => e.Item2!);
+                    foreach (var p in def.Ports.Select(p => p.Name).Concat(faceAts)) // 면 위 자리(left@0.8)도 용기 포트
                     {
-                        sinks.Add(K(d, i, p.Name));
+                        sinks.Add(K(d, i, p));
                         if (n.Level > 0)
-                            sources.Add(K(d, i, p.Name));
+                            sources.Add(K(d, i, p));
                     }
                 }
             }

@@ -316,7 +316,7 @@ The heights of `a`·`b` match `in`·`out` of `DvValve` (in line with ordinary va
 
 | Attribute | Description |
 |---|---|
-| `from` | The upstream end of the flow: `장비.포트` (equipment.port). For a terminal or a user symbol with only one port, just `장비` (equipment). For a unit, `유닛.포트` (unit.port — the name of that unit's `DvPort`); inside a unit, that unit's own ports are referenced by name only (chapter 8) |
+| `from` | The upstream end of the flow: `장비.포트` (equipment.port), or a face position `장비.면@위치` (6.1). For a terminal or a user symbol with only one port, just `장비` (equipment). For a unit, `유닛.포트` (unit.port — the name of that unit's `DvPort`); inside a unit, that unit's own ports are referenced by name only (chapter 8) |
 | `to` | The downstream end of the flow. Same format as `from` |
 | `arrow` | `end` (arrow into the `to` port) · `start` (into the `from` port) · `both` · `none` (default) |
 | `flow` | The app decides this line's flow (true/false, bindable). If omitted, judged automatically (12.1) |
@@ -342,6 +342,21 @@ The heights of `a`·`b` match `in`·`out` of `DvValve` (in line with ordinary va
 | No port given on equipment with several ports (`from="P1"`) | Red dashed line + red border | Error "'X' requires a port (…)" |
 
 All other lines and equipment are drawn normally. The available port names appear in the parentheses, so fix it with one of those.
+
+### 6.1 Face position (`장비.면@위치`) — a nozzle at a set point
+
+Instead of a port name, a line end (and an instrument `tap`, 7.3) can name **a point on a face of the equipment**: `T1.left@0.15` = the left face, 15 % of the way down.
+
+```xml
+<DvLine from="IN" to="T1.left@0.15"/>       <!-- nozzle N1: upper left -->
+<DvLine from="PSV.out" to="T1.right@0.15"/> <!-- nozzle N2: upper right -->
+```
+
+- Face: `top` · `bottom` · `left` · `right` — the faces of the symbol rectangle **as seen on screen** (after `rotate`/`flip`).
+- Position: 0–1 along the face — `top`/`bottom` from left to right, `left`/`right` from top to bottom. Outside 0–1 is clamped with a Trace warning; a wrong face or a non-number is an error.
+- The pipe leaves straight out of that face. Lines naming the same point share one nozzle (a branch there).
+- Works on any equipment except terminals and units (units connect only at their `DvPort`s). On a vessel the point counts as a vessel port for flow (12.1).
+- Use it when a drawing fixes where nozzles are (mostly with `placement="fixed"`, chapter 20). Otherwise prefer the ports, which place nozzles automatically.
 
 ---
 
@@ -381,7 +396,7 @@ All other lines and equipment are drawn normally. The available port names appea
 | `DvMotor` | 76 × 46 | Mounted whole on the top center of the equipment | `running` |
 
 - Mainly used inside `DvVessel` (agitator). When an accessory is present, the vessel's `top` port leaves the center empty and takes positions on both sides.
-- Pump drive motors are usually not drawn (they are considered part of the pump symbol).
+- Pump drive motors are usually not drawn (they are considered part of the pump symbol). When the drawing shows one, put `DvMotor` inside `DvPump`: a shaft line joins the motor to the pump.
 
 ### 7.3 `DvInstrument` — instrument bubble
 
@@ -407,17 +422,19 @@ Draws field instruments (flow transmitter FT, level transmitter LT …) and cont
 | Attribute | Required | Description |
 |---|---|---|
 | `name` | Yes | The name signal lines connect to. Must not collide with equipment names either (one each within the process diagram) |
-| `on` | Yes | Name of the equipment to attach to (in the same process diagram and same unit). If missing or wrong, not drawn and a Trace error |
+| `on` | Yes (unless `tap`) | Name of the equipment to attach to (in the same process diagram and same unit). If missing or wrong, not drawn and a Trace error |
+| `tap` | — | Connection line: a thin solid line from the bubble to a point on equipment — `장비.면@위치` (equipment.face@position, like `T1.left@0.85`, 6.1) or a fixed port `장비.포트` (equipment.port, like `CV1.in`, = the pipe just outside that port). The bubble then stands at that point instead of on a free face. That equipment is the instrument's equipment (`on` may be left out; if `on` names other equipment, `tap` wins with a warning) |
 | `tag` | — | Text in the top of the bubble (instrument symbol: `FT`·`TT`·`LT`·`PT`·`FIC`·`LIC` …) |
 | `number` | — | Text in the bottom of the bubble (loop number: `101`, `1001` …) |
 | `panel` | — | If true, a horizontal line across the middle of the bubble (central control room instrument). Default false = no line (field instrument) |
 | `value` | — | Small text to the right of the bubble (current value, etc.). Bindable |
 | `onclick` · `style` · `visible` | — | Same as an ordinary box |
 
-- **Always write `on`.** Instruments do not take part in the pipe-flow placement (columns and layers); they go into the footprint of the `on` equipment and are placed on a free face beside it. So when the equipment moves, the instrument follows, and **pipes avoid the instrument.**
+- **Always write `on` (or `tap`).** Instruments do not take part in the pipe-flow placement (columns and layers); they go into the footprint of the `on` equipment and are placed on a free face beside it. So when the equipment moves, the instrument follows, and **pipes avoid the instrument.**
 - The face is chosen automatically: the face of that equipment with the fewest lines, attached cells and name tags; on a tie, top → right → bottom → left. It is placed 20px outside the name tag and attached cells on that face. Pumps, valves and inline equipment usually get the **top**; vessels using both top and bottom ports usually get the **side**.
 - If one piece of equipment has several instruments, they sit side by side on that face (horizontally on top/bottom, vertically on a side). A single instrument is aligned to the equipment's center line (a controller above a control valve → the signal line drops straight down to the actuator).
 - **A controller not attached to equipment** (control room instruments such as FIC, LIC) is attached with `on` to **the valve (or pump) that controller drives**. Like `FIC1` in the example above.
+- **With `tap`** (to match a drawing): a face position puts the bubble 24px outside that point, on the line out of the face (`left@…` → to the left, `top@…` → above). A fixed port taps the pipe 12px out of the port and puts the bubble 24px above it (to the right of a vertical pipe). Several instruments with `tap` on the same equipment are each placed at their own point; instruments without `tap` keep the automatic face. When the connection line leaves the bubble to the right, the `value` text goes below the line.
 - The bubble diameter is 40px (wider if the text is long); text sizes are `tag` 12px, `number` 11px, `value` 11px. The color follows `look` (same fill as terminals).
 - The width of the `value` text is included in that equipment's size. If a value change alters the text width, placement is recomputed as with `DvAttach`, and surrounding items may move slightly. Large, frequently changing values are better shown separately with `DvAttach`.
 
@@ -973,6 +990,8 @@ Process diagram problems are reported through `System.Diagnostics.Trace`. Keep a
 | `<X>: a unit cannot be placed inside another unit` | Error | Nested units | Move it outside |
 | `rotate='r' is not a valid value` · `direction=…` · `look=…` | Warning | Value typo | Use a value from the tables |
 | `<DvInstrument name='X'> has no on (name of the equipment to attach to)` · `on='Y': no such equipment` | Error | No equipment for the instrument to attach to (not drawn) | Put the name of equipment in the same process diagram in `on` |
+| `<DvInstrument name='X'> tap='…': …` | Error | `tap` target missing, a terminal or unit, no port given, an unknown port, or a face port without a position (`T1.side`) — not drawn | `장비.면@위치` or a fixed port such as `CV1.in` |
+| `'…' is not a face (top·bottom·left·right)` · `'@…' is not a position` · `position … is outside 0–1` | Error (last: Warning, clamped) | Face position typo in `DvLine` `from`/`to` or `tap` | `left@0.85` form |
 | `<DvInstrument> has no name` · `Name 'X' is used twice (equipment and instrument names must be unique …)` | Error | Instrument name missing, or clashing with equipment or another instrument | A unique `name` |
 | `DvSignal '…': no instrument or equipment named 'X'` | Error | Signal line end name typo, a terminal / unit port, or an instrument that is not drawn | Check instrument / equipment names |
 | `DvSignal '…': signal lines use names only, without ports` | Error | Port appended, as in `to="V1.in"` | Name only |
@@ -1087,7 +1106,7 @@ The recirculation pipe branching from `P1.out` routes back into the tank's side.
 - Value displays and buttons go inside `<DvAttach>`; text uses classes (`label`·`caption`·`title`).
 - To fill the area, `grow="1" style="height:0"` (inside a vertical layout).
 - After fixing, render to PNG and check Trace errors and warnings.
-- Place instruments (`DvInstrument`) directly under `DvProcess` and always state the equipment to attach to with `on`. Attach controllers to the valve they move. Signal lines use `DvSignal`, ends by name only.
+- Place instruments (`DvInstrument`) directly under `DvProcess` and always state the equipment to attach to with `on` (or with `tap`, when matching a drawing). Attach controllers to the valve they move. Signal lines use `DvSignal`, ends by name only.
 - When there are several identical units of plant, define a unit component (template root `DvUnit`) once and repeat it as instances. For unit inside → outside connections, put a `DvPort` and use `유닛.포트` (unit.port).
 - For a button inside a unit template to receive its own unit, write the screen VM method with one parameter, like `Reset(BlenderVm unit)`.
 - Use automatic placement unless you were given a drawing the screen must match. Then use `placement="fixed"` with `x`·`y` on **every** piece of equipment (chapter 20).
@@ -1200,6 +1219,7 @@ Automatic placement (chapters 1–19) lays equipment out in flow order so that i
 
 - The origin `(0, 0)` is the top-left of the inside of the `DvProcess` (inside its `padding`).
 - Labels, `DvAttach` boxes, instruments and accessories go where they would in automatic placement, relative to their equipment.
+- To match the drawing's nozzles and instruments, connect at face positions (`to="T1.left@0.15"`, 6.1) and give instruments `tap` (`tap="T1.left@0.85"`, `tap="CV1.in"`, 7.3) — the bubble then stands where the drawing has it, joined by a connection line.
 - `direction` still matters (terminal shape, which faces are "front" and "back"). `row`, `rank` and `align` are ignored with a Trace warning.
 - Equipment without both `x` and `y` is **not drawn** (Trace error).
 - A unit (`DvUnit` or a unit component) is placed as a whole: `x`·`y` is the center of the unit's frame. The inside of a unit is always placed automatically (`placement` on a unit is ignored with a warning).

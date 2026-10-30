@@ -138,7 +138,9 @@ internal static class ProcessCheck
                 case "DvInstrument":
                 {
                     var on = ch.Attribute("on");
-                    if (on is null)
+                    if (ch.Attribute("tap") is not null)
+                        LineEnd(ch, "tap", items, dynamicNames, report); // 연결선이 있으면 그 장비에 붙는다(on 은 없어도 된다)
+                    else if (on is null)
                         report(Diagnostics.ProcessNameNotFound, (XObject?)ch.Attribute("name") ?? ch, ["<DvInstrument>", "on", Diagnostics.Text("Proc_InstrumentOnRequired")]);
                     else if (!Dynamic(on.Value) && !dynamicNames && (!items.TryGetValue(on.Value, out var host) || host.Port || host.Instrument))
                         report(Diagnostics.ProcessNameNotFound, on, ["<DvInstrument on>", on.Value, Diagnostics.Text("Proc_InstrumentOnEquipment")]);
@@ -157,7 +159,7 @@ internal static class ProcessCheck
         var dot = raw.IndexOf('.');
         var name = dot < 0 ? raw : raw.Substring(0, dot);
         var port = dot < 0 ? null : raw.Substring(dot + 1);
-        var where = $"DvLine {attr}='{raw}'";
+        var where = $"{line.Name.LocalName} {attr}='{raw}'";
         if (!items.TryGetValue(name, out var item) || item.Instrument)
         {
             if (!dynamicNames)
@@ -170,6 +172,17 @@ internal static class ProcessCheck
         if (item.Element.Name.LocalName == "DvUnit" && port is not null && port.IndexOf('.') >= 0)
         {
             report(Diagnostics.ProcessBadPort, a, [where, Diagnostics.Text("Proc_UnitInnerDirect", name, Join(item.Ports))]);
+            return;
+        }
+
+        if (port is not null && port.IndexOf('@') >= 0 && item.Element.Name.LocalName != "DvUnit")
+        {
+            // 면 위 자리(left@0.85) — 면 이름과 0~1 위치(범위 밖은 실행 때 경고하고 맞춘다)
+            var at = port.IndexOf('@');
+            if (port.Substring(0, at) is not ("top" or "bottom" or "left" or "right"))
+                report(Diagnostics.ProcessBadPort, a, [where, Diagnostics.Text("Proc_BadFace", port.Substring(0, at))]);
+            else if (!float.TryParse(port.Substring(at + 1), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out _))
+                report(Diagnostics.ProcessBadPort, a, [where, Diagnostics.Text("Proc_BadFaceAt", port.Substring(at + 1))]);
             return;
         }
 

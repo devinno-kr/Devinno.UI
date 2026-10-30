@@ -1901,7 +1901,7 @@ Problems in each dvml are reported at compile time. The location points inside t
 | DVML005 | Error | `vm` type not found |
 | DVML006 | Error | `vm` type is not `partial` |
 | DVML007 | Error | More than one dvml specifies the same `vm` |
-| DVML008 | Error | Process diagram: the equipment/instrument name referenced by `DvLine`, `DvSignal`, or `DvInstrument on` does not exist |
+| DVML008 | Error | Process diagram: the equipment/instrument name referenced by `DvLine`, `DvSignal`, or `DvInstrument on`·`tap` does not exist |
 | DVML009 | Error | Process diagram: nonexistent port, port required but not chosen, port/endpoint on a signal line, connecting directly from outside to equipment inside a unit |
 | DVML010 | Error | Process diagram: duplicate equipment/instrument name (within the process diagram or a unit) |
 | DVML011 | Warning | Process diagram: nonexistent value (`kind`, `medium`, `rotate`, `direction`, `look`, `align`) — default used at runtime |
@@ -2563,7 +2563,7 @@ Attributes available on all equipment:
 - Inside `<DvAttach side="left|right|top|bottom">` put ordinary dvml (value displays, buttons, lamps). It attaches beside the equipment, is included in the equipment size during layout, and pipes avoid that slot. Buttons are pressable like ordinary buttons.
 - Text color inside an attached slot is given by class (`label`·`caption`·`title` …) as on ordinary screens (follows the theme). Text without a class is a dark color regardless of the theme.
 - `<DvAgitator running>` (agitator)·`<DvMotor running>` (motor) are accessories mounted on top of equipment. The agitator's shaft goes into the vessel.
-- Instrument bubbles: place `<DvInstrument name tag number on panel value>` **directly under `DvProcess`** (not inside equipment). `on` (required) is the name of the equipment to attach to — instruments do not take part in pipe layout; they sit on a free side next to that equipment and pipes avoid them. Controllers not attached to equipment (FIC·LIC) attach to the valve they control. `tag` is the text above in the bubble, `number` the text below, `panel="true"` adds a horizontal line through the middle, and `value` is small text to the right of the bubble.
+- Instrument bubbles: place `<DvInstrument name tag number on panel value>` **directly under `DvProcess`** (not inside equipment). `on` (required) is the name of the equipment to attach to — instruments do not take part in pipe layout; they sit on a free side next to that equipment and pipes avoid them. Controllers not attached to equipment (FIC·LIC) attach to the valve they control. `tag` is the text above in the bubble, `number` the text below, `panel="true"` adds a horizontal line through the middle, and `value` is small text to the right of the bubble. To match a drawing, `tap="T1.left@0.85"` (a face position) or `tap="CV1.in"` (a pipe at a port) stands the bubble at that point with a thin connection line (`on` not needed).
 - Signal lines are `<DvSignal from to>` — both ends are instrument·equipment **names only** (no port; for a control valve it touches the actuator). Drawn as thin orthogonal dashed lines after all pipes are drawn; they do not affect layout·flow and do not jump where they cross pipes. Do not draw signals with pipes (`DvLine`). Detailed rules in `dvml-process.md` 7.3·7.4.
 
 ```xml

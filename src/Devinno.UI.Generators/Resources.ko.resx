@@ -148,6 +148,12 @@
   <data name="Proc_NoSuchPort" xml:space="preserve">
     <value>'{0}' 에 포트 '{1}' 이(가) 없습니다({2})</value>
   </data>
+  <data name="Proc_BadFace" xml:space="preserve">
+    <value>'{0}' 은(는) 면이 아닙니다(top·bottom·left·right)</value>
+  </data>
+  <data name="Proc_BadFaceAt" xml:space="preserve">
+    <value>'@{0}' 은(는) 위치가 아닙니다(면을 따라 0~1 사이 숫자)</value>
+  </data>
   <data name="Proc_SignalNoPort" xml:space="preserve">
     <value>신호선은 포트 없이 계기·장비 이름만 씁니다</value>
   </data>

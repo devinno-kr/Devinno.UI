@@ -4033,7 +4033,7 @@
             계기 하나(<c>DvInstrument</c>) — ISA-5.1 버블(원 위 <see cref="F:Devinno.UI.Process.ProcessInstrument.Letters" />, 아래 <see cref="F:Devinno.UI.Process.ProcessInstrument.Number" />, <see cref="F:Devinno.UI.Process.ProcessInstrument.Panel" /> 이면 가운데 가로줄).
             배관 흐름 배치에 끼지 않고 <see cref="F:Devinno.UI.Process.ProcessInstrument.Host" /> 장비의 차지 영역에 들어가 그 옆 빈 면에 놓인다(배관이 피한다).
             </summary>
-        </member><member name="F:Devinno.UI.Process.ProcessInstrument.Host" en-hash="bc60458df08a2b81">
+        </member><member name="F:Devinno.UI.Process.ProcessInstrument.TapPort" en-hash="386b3b000da7d4d5"><summary>연결선(<c>tap</c>)이 가는 <see cref="F:Devinno.UI.Process.ProcessInstrument.Host" /> 의 포트 — 고정 포트 이름 또는 면 위 자리(<c>left@0.8</c>). <see langword="null" /> = 연결선 없음.</summary></member><member name="F:Devinno.UI.Process.ProcessInstrument.TapFrom" en-hash="648daee3935bbc63"><summary>연결선 양 끝(장비 차지 영역 기준) — 장비(또는 배관) 쪽과 버블 쪽.</summary></member><member name="F:Devinno.UI.Process.ProcessInstrument.TapTo" en-hash="648daee3935bbc63"><summary>연결선 양 끝(장비 차지 영역 기준) — 장비(또는 배관) 쪽과 버블 쪽.</summary></member><member name="F:Devinno.UI.Process.ProcessInstrument.Host" en-hash="bc60458df08a2b81">
             <summary>붙은 장비. <c>on</c> 이 없거나 틀리면 <see langword="null" />(그리지 않음).</summary>
         </member><member name="F:Devinno.UI.Process.ProcessInstrument.Rect" en-hash="366faa8bfc957e1e">
             <summary>버블·값 글자 자리 — 장비 차지 영역 기준.</summary>
@@ -4055,7 +4055,7 @@
             <c>DvAttach</c> 안 내용도 일반 상자로 만들어 넣는다. 유닛(<c>DvUnit</c>, 또는 템플릿 루트가 <c>DvUnit</c> 인 컴포넌트)은
             유닛 상자를 만들고 그 안에 안쪽 장비 상자를 넣는다.
             </summary>
-        </member><member name="M:Devinno.UI.Process.ProcessBuilder.SignalTarget(Devinno.UI.Process.ProcessDiagram,System.String)" en-hash="4f62522562dd4d26">
+        </member><member name="M:Devinno.UI.Process.ProcessBuilder.FaceAt(System.String,System.String,Devinno.UI.Process.PortSide@,System.Single@)" en-hash="f0c5c0abf046c7d4"><summary>면 위 자리(<c>left@0.85</c>)를 진단과 함께 읽는다 — 면 이름이나 숫자가 틀리면 오류(<see langword="false" />), 0–1 밖 위치는 경고하고 맞춘다.</summary></member><member name="M:Devinno.UI.Process.ProcessBuilder.FaceAtName(Devinno.UI.Process.PortSide,System.Single)" en-hash="d5a0e627315f00f5"><summary>면 위 자리의 표준 이름(같은 자리는 늘 같은 이름 — 그 자리의 선들이 한 노즐을 함께 쓴다).</summary></member><member name="M:Devinno.UI.Process.ProcessBuilder.IsFaceAt(System.String,Devinno.UI.Process.PortSide@,System.Single@)" en-hash="ca8206c24ac57548"><summary>표준 면 위 자리 이름을 되읽는다. 일반 포트 이름이면 <see langword="false" />.</summary></member><member name="M:Devinno.UI.Process.ProcessBuilder.OnFace(SkiaSharp.SKRect,Devinno.UI.Process.PortSide,System.Single)" en-hash="4bc7971006658f09"><summary><paramref name="r" /> 의 <paramref name="side" /> 면을 따라 <paramref name="at" />(0–1) 위치의 점.</summary></member><member name="M:Devinno.UI.Process.ProcessBuilder.SignalTarget(Devinno.UI.Process.ProcessDiagram,System.String)" en-hash="4f62522562dd4d26">
             <summary>신호선 끝 이름 → 계기(그려지는 것) 또는 장비(끝점·유닛 포트 자리 제외). 없으면 <see langword="null" />.</summary>
         </member><member name="M:Devinno.UI.Process.ProcessBuilder.TerminalLines(Devinno.UI.Process.ProcessNode)" en-hash="170af0a16a27e6ee"><summary>끝점 글자 줄 — <c>text</c> 를 줄바꿈(마크업에서는 <c>&amp;#10;</c>)에서 나눈 것.</summary></member><member name="M:Devinno.UI.Process.ProcessBuilder.TerminalShape(Devinno.UI.Process.ProcessNode,System.Boolean)" en-hash="02bed7fc97313122">
             <summary>끝점 모양(공정도 방향·출발/도착에 따라) — 차지 영역 기준 path 와 포트.</summary>
@@ -4069,7 +4069,7 @@
             <summary>계기 버블 최소 지름·글자 크기.</summary>
         </member><member name="F:Devinno.UI.Process.ProcessBuilder.InstrumentGap" en-hash="5ff3ead0a17513b6">
             <summary>계기 줄과 장비(또는 그 면의 이름표·붙은 칸) 사이 — 신호선이 곧게 내려갈 자리.</summary>
-        </member><member name="M:Devinno.UI.Process.ProcessBuilder.BubbleSize(Devinno.UI.Process.ProcessInstrument,System.String)" en-hash="221ed50cb3d6240c">
+        </member><member name="F:Devinno.UI.Process.ProcessBuilder.TapLength" en-hash="c0877637c42d2fde"><summary>계기 연결선(<c>tap</c>) 길이 — 연결 자리에서 버블까지.</summary></member><member name="F:Devinno.UI.Process.ProcessBuilder.TapAlong" en-hash="94ea881c79c07fbb"><summary>고정 포트에서 배관을 따라 연결선을 따내는 거리(포트 곧은 끝 안쪽).</summary></member><member name="M:Devinno.UI.Process.ProcessBuilder.BubbleSize(Devinno.UI.Process.ProcessInstrument,System.String)" en-hash="221ed50cb3d6240c">
             <summary>버블 지름 — 글자(tag·number) 중 넓은 것 + 여백, 최소 <see cref="F:Devinno.UI.Process.ProcessBuilder.BubbleMin" />.</summary>
         </member><member name="M:Devinno.UI.Process.ProcessBuilder.LayoutRuns(Devinno.UI.Markup.ElementNode)" en-hash="2719db53e91ce025">
             <summary><paramref name="source" /> 의 공정도 배치를 실제로 계산한(재사용하지 않은) 횟수 — 테스트용.</summary>

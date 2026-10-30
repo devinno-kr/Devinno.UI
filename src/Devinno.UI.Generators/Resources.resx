@@ -148,6 +148,12 @@
   <data name="Proc_NoSuchPort" xml:space="preserve">
     <value>'{0}' has no port '{1}' ({2})</value>
   </data>
+  <data name="Proc_BadFace" xml:space="preserve">
+    <value>'{0}' is not a face (top·bottom·left·right)</value>
+  </data>
+  <data name="Proc_BadFaceAt" xml:space="preserve">
+    <value>'@{0}' is not a position (a number 0–1 along the face)</value>
+  </data>
   <data name="Proc_SignalNoPort" xml:space="preserve">
     <value>signal lines use only instrument or equipment names, without ports</value>
   </data>

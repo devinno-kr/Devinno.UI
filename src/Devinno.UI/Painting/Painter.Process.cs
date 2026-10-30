@@ -176,6 +176,24 @@ public sealed partial class Painter
                 }
             }
 
+            // 계기 연결선(tap) — 배관·장비 밑에. 면 위 자리는 몸통 안쪽까지 그어 심볼 테두리 안쪽 여백(둥근 머리 등)에서도 끊겨 보이지 않게(장비 그림이 덮는다)
+            using (var tap = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.2f, Color = look.TagStroke })
+            {
+                foreach (var inst in d.Instruments)
+                {
+                    if (inst.Host is not { } host || inst.TapPort is null)
+                        continue;
+                    var (a, b) = (inst.TapFrom, inst.TapTo);
+                    if (ProcessBuilder.IsFaceAt(inst.TapPort, out _, out _))
+                    {
+                        var len = MathF.Max(1, SKPoint.Distance(a, b));
+                        a = new SKPoint(a.X - (b.X - a.X) / len * 12, a.Y - (b.Y - a.Y) / len * 12);
+                    }
+
+                    canvas.DrawLine(host.G.X + a.X, host.G.Y + a.Y, host.G.X + b.X, host.G.Y + b.Y, tap);
+                }
+            }
+
             look.Pipes(canvas, pipes);
             if (d.FlowAnimation)
                 PaintFlow(canvas, flowing, look, timestampMs);
@@ -413,6 +431,15 @@ public sealed partial class Painter
             }
             else
             {
+                // 모터 축 — 모터 아래에서 장비 가운데까지, 장비 그림 밑에 그려 보이는 건 둘 사이 틈만
+                foreach (var (r, def, _) in n.AccessoryRects)
+                {
+                    if (def.Name != "motor")
+                        continue;
+                    using var shaft = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = look.Rich ? 4 : 2, Color = look.Stroke };
+                    canvas.DrawLine(r.MidX, r.Bottom - 1, r.MidX, n.Sym.MidY, shaft);
+                }
+
                 canvas.Save();
                 canvas.Concat(n.Transform);
                 DrawSymbol(canvas, n.Def!, look, n.On, n.Def!.FillValue is not null ? n.Level : null);

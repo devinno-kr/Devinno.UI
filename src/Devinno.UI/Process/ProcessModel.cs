@@ -168,8 +168,14 @@ internal sealed class ProcessLine
 internal sealed class ProcessInstrument
 {
     public required string Name;
-    public string? Letters, Number, Value, OnRef;
+    public string? Letters, Number, Value, OnRef, TapRef;
     public bool Panel;
+
+    /// <summary>The port of <see cref="Host"/> the connection line (<c>tap</c>) goes to: a fixed port name or a face position (<c>left@0.8</c>). <see langword="null"/> = no connection line.</summary>
+    public string? TapPort;
+
+    /// <summary>Connection line ends, relative to the equipment's footprint: on the equipment (or pipe) and on the bubble.</summary>
+    public SKPoint TapFrom, TapTo;
     public LayoutBox Box = null!;
     public ProcessDiagram Owner = null!;
 
@@ -384,6 +390,7 @@ internal static class ProcessBuilder
                     Number = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("number")),
                     Value = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("value")),
                     OnRef = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("on")),
+                    TapRef = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("tap")),
                     Panel = BindingResolver.ResolveValueOrLiteral(vm, ch.Attributes.GetValueOrDefault("panel")) is { } pv && ProcessNode.Truthy(pv),
                 }, ch));
                 continue;
@@ -516,12 +523,22 @@ internal static class ProcessBuilder
                 inst.Name = $"{inst.Name}#i{d.Instruments.Count}";
             }
 
-            var host = string.IsNullOrEmpty(inst.OnRef) ? null : d.Nodes.FirstOrDefault(n => n.Name == inst.OnRef && !n.IsPort);
+            ProcessNode? host;
+            if (!string.IsNullOrEmpty(inst.TapRef))
+            {
+                host = Tap(d, inst);
+            }
+            else
+            {
+                host = string.IsNullOrEmpty(inst.OnRef) ? null : d.Nodes.FirstOrDefault(n => n.Name == inst.OnRef && !n.IsPort);
+                if (host is null)
+                    Warn(string.IsNullOrEmpty(inst.OnRef)
+                        ? $"<DvInstrument name='{inst.Name}'> has no on (name of the equipment to attach to) or tap; not drawn"
+                        : $"<DvInstrument name='{inst.Name}'> on='{inst.OnRef}': no such equipment; not drawn", true);
+            }
+
             if (host is null)
             {
-                Warn(string.IsNullOrEmpty(inst.OnRef)
-                    ? $"<DvInstrument name='{inst.Name}'> has no on (name of the equipment to attach to); not drawn"
-                    : $"<DvInstrument name='{inst.Name}'> on='{inst.OnRef}': no such equipment; not drawn", true);
                 d.Instruments.Add(inst);
                 continue;
             }
@@ -534,6 +551,106 @@ internal static class ProcessBuilder
             d.Instruments.Add(inst);
         }
     }
+
+    // 연결선(tap) 대상 — "장비.고정포트" 또는 "장비.면@위치". 그 장비가 계기의 장비(on 보다 앞선다). 틀리면 null(그리지 않음)
+    private static ProcessNode? Tap(ProcessDiagram d, ProcessInstrument inst)
+    {
+        var raw = inst.TapRef!;
+        var where = $"<DvInstrument name='{inst.Name}'> tap='{raw}'";
+        var dot = raw.IndexOf('.');
+        var name = dot < 0 ? raw : raw[..dot];
+        var port = dot < 0 ? null : raw[(dot + 1)..];
+        var n = d.Nodes.FirstOrDefault(x => x.Name == name);
+        if (n is null || n.NameOnly || n.Unit is not null)
+        {
+            Warn(n is null
+                ? $"{where}: no equipment named '{name}'; not drawn"
+                : $"{where}: '{name}' is an endpoint or a unit; tap a piece of equipment; not drawn", true);
+            return null;
+        }
+
+        if (port is null || n.Def is not { } def)
+        {
+            Warn($"{where}: write the equipment with a port ('{name}.in') or a face position ('{name}.left@0.5'); not drawn", true);
+            return null;
+        }
+
+        if (port.Contains('@'))
+        {
+            if (!FaceAt(port, where, out var side, out var at))
+                return null;
+            inst.TapPort = FaceAtName(side, at);
+        }
+        else if (def.Port(port) is not { Face: false })
+        {
+            Warn(def.Port(port) is null
+                ? $"{where}: '{name}' has no port '{port}' ({string.Join(", ", def.Ports.Select(p => p.Name))}); not drawn"
+                : $"{where}: '{port}' has no fixed point on the face; write a position like '{name}.left@0.5'; not drawn", true);
+            return null;
+        }
+        else
+        {
+            inst.TapPort = port;
+        }
+
+        if (!string.IsNullOrEmpty(inst.OnRef) && inst.OnRef != name)
+            Warn($"<DvInstrument name='{inst.Name}'> on='{inst.OnRef}' and tap='{raw}' name different equipment; using the tap equipment '{name}'");
+        return n;
+    }
+
+    // ── 면 위 자리 "면@위치"(left@0.85) — 면은 화면에 보이는 심볼 사각형의 면, 위치는 그 면을 따라 0~1(왼쪽→오른쪽, 위→아래) ──
+
+    /// <summary>Parses a face position (<c>left@0.85</c>) with diagnostics: a wrong face or number is an error (<see langword="false"/>); a position outside 0–1 is clamped with a warning.</summary>
+    internal static bool FaceAt(string port, string where, out PortSide side, out float at)
+    {
+        var i = port.IndexOf('@');
+        var face = port[..i];
+        var num = port[(i + 1)..];
+        at = 0;
+        side = default;
+        if (face is not ("top" or "bottom" or "left" or "right"))
+        {
+            Warn($"{where}: '{face}' is not a face (top·bottom·left·right)", true);
+            return false;
+        }
+
+        if (!float.TryParse(num, NumberStyles.Float, CultureInfo.InvariantCulture, out at) || !float.IsFinite(at))
+        {
+            Warn($"{where}: '@{num}' is not a position (a number 0–1 along the face)", true);
+            return false;
+        }
+
+        if (at is < 0 or > 1)
+        {
+            Warn($"{where}: position {num} is outside 0–1; using {Math.Clamp(at, 0, 1)}");
+            at = Math.Clamp(at, 0, 1);
+        }
+
+        side = Enum.Parse<PortSide>(face, true);
+        return true;
+    }
+
+    /// <summary>The canonical name of a face position (the same point always gives the same name, so lines on it share one nozzle).</summary>
+    internal static string FaceAtName(PortSide side, float at) => $"{side.ToString().ToLowerInvariant()}@{at.ToString("0.###", CultureInfo.InvariantCulture)}";
+
+    /// <summary>Reads back a canonical face position name. <see langword="false"/> for an ordinary port name.</summary>
+    internal static bool IsFaceAt(string? port, out PortSide side, out float at)
+    {
+        side = default;
+        at = 0;
+        var i = port?.IndexOf('@') ?? -1;
+        return i > 0 && Enum.TryParse(port![..i], true, out side)
+            && float.TryParse(port[(i + 1)..], NumberStyles.Float, CultureInfo.InvariantCulture, out at);
+    }
+
+    /// <summary>The point at position <paramref name="at"/> (0–1) along face <paramref name="side"/> of <paramref name="r"/>.</summary>
+    internal static SKPoint OnFace(SKRect r, PortSide side, float at) => side switch
+    {
+        PortSide.Left => new SKPoint(r.Left, r.Top + r.Height * at),
+        PortSide.Right => new SKPoint(r.Right, r.Top + r.Height * at),
+        PortSide.Top => new SKPoint(r.Left + r.Width * at, r.Top),
+        _ => new SKPoint(r.Left + r.Width * at, r.Bottom),
+    };
 
     // 신호선 양 끝 — 계기 이름 또는 장비 이름(포트 없이)
     private static void ResolveSignals(ProcessDiagram d)
@@ -701,6 +818,25 @@ internal static class ProcessBuilder
             line.Error = true;
             n.Error = true;
             return (idx, null);
+        }
+
+        if (port is not null && port.Contains('@'))
+        {
+            var where = $"DvLine '{line.FromRef}'→'{line.ToRef}'";
+            if (n.Unit is not null)
+            {
+                Warn($"{where}: a unit is connected only at its ports (DvPort), not at a face position ('{raw}')", true);
+                line.Error = true;
+                return (idx, null);
+            }
+
+            if (!FaceAt(port, where, out var side, out var at))
+            {
+                line.Error = true;
+                return (idx, null);
+            }
+
+            return (idx, FaceAtName(side, at));
         }
 
         var ports = n.Ports;
@@ -907,6 +1043,8 @@ internal static class ProcessBuilder
         {
             inst.Rect = Move(inst.Rect);
             inst.ValueRect = Move(inst.ValueRect);
+            inst.TapFrom = new SKPoint(inst.TapFrom.X + dx, inst.TapFrom.Y + dy);
+            inst.TapTo = new SKPoint(inst.TapTo.X + dx, inst.TapTo.Y + dy);
         }
 
         n.Transform = n.Transform.PostConcat(SKMatrix.CreateTranslation(n.Sym.Left, n.Sym.Top));
@@ -971,6 +1109,20 @@ internal static class ProcessBuilder
 
     private const float BubbleGap = 12f, ValueGap = 4f;
 
+    /// <summary>Length of an instrument connection line (<c>tap</c>) from the tap point to the bubble.</summary>
+    internal const float TapLength = 24f;
+
+    /// <summary>How far along the pipe from a fixed port the connection line is tapped (inside the port's straight end).</summary>
+    private const float TapAlong = 12f;
+
+    private static SKPoint Dir(PortSide s) => s switch
+    {
+        PortSide.Left => new SKPoint(-1, 0),
+        PortSide.Right => new SKPoint(1, 0),
+        PortSide.Top => new SKPoint(0, -1),
+        _ => new SKPoint(0, 1),
+    };
+
     /// <summary>Bubble diameter: the wider of the texts (tag, number) + padding, at least <see cref="BubbleMin"/>.</summary>
     internal static float BubbleSize(ProcessInstrument inst, string? family)
     {
@@ -983,7 +1135,62 @@ internal static class ProcessBuilder
     // 버블 하나면 장비 가운데 줄에 맞춘다(조절 밸브 구동부로 가는 신호선이 곧게). 값 글자는 버블 오른쪽
     private static void PlaceInstruments(ProcessDiagram d, ProcessNode n, SKRect sym, SKRect body, PortSide? labelSide, List<SKRect> extras, string? family)
     {
-        if (n.Instruments.Count == 0)
+        (float D, SKSize V, float W) Size(ProcessInstrument inst)
+        {
+            var dia = BubbleSize(inst, family);
+            SKSize v = SKSize.Empty;
+            if (!string.IsNullOrEmpty(inst.Value))
+            {
+                using var vf = TextFont.Create(inst.Value, ValueSize, false, family);
+                v = new SKSize(vf.MeasureText(inst.Value), vf.Spacing);
+            }
+
+            return (dia, v, dia + (v.Width > 0 ? ValueGap + v.Width : 0));
+        }
+
+        // below = 값 글자를 버블 오른쪽 가운데가 아니라 그 아래로(오른쪽으로 나가는 연결선을 가리지 않게)
+        void Put(ProcessInstrument inst, SKRect bubble, SKSize v, bool below = false)
+        {
+            inst.Rect = bubble;
+            inst.ValueRect = v.Width > 0 ? SKRect.Create(bubble.Right + ValueGap, below ? bubble.MidY + 2 : bubble.MidY - v.Height / 2, v.Width, v.Height) : SKRect.Empty;
+            extras.Add(inst.Rect);
+            if (!inst.ValueRect.IsEmpty)
+                extras.Add(inst.ValueRect);
+        }
+
+        // 연결선(tap) 계기 — 면 위 자리면 그 면 바깥쪽으로, 고정 포트면 포트에서 배관으로 조금 나간 자리에서 배관 위(세로 배관이면 오른쪽)로 TapLength 띄운다
+        foreach (var inst in n.Instruments.Where(x => x.TapPort is not null))
+        {
+            SKPoint tap, dir;
+            if (IsFaceAt(inst.TapPort, out var tapSide, out var tapAt))
+            {
+                tap = OnFace(sym, tapSide, tapAt);
+                dir = Dir(tapSide);
+            }
+            else
+            {
+                var p = n.Def!.Port(inst.TapPort!)!;
+                var pd = Dir(MapSide(p.Side, n));
+                var pt = n.Transform.MapPoint(p.Side switch
+                {
+                    PortSide.Left => new SKPoint(0, n.Def.Height * p.At),
+                    PortSide.Right => new SKPoint(n.Def.Width, n.Def.Height * p.At),
+                    PortSide.Top => new SKPoint(n.Def.Width * p.At, 0),
+                    _ => new SKPoint(n.Def.Width * p.At, n.Def.Height),
+                });
+                tap = new SKPoint(pt.X + pd.X * TapAlong, pt.Y + pd.Y * TapAlong);
+                dir = pd.Y == 0 ? new SKPoint(0, -1) : new SKPoint(1, 0);
+            }
+
+            var (dia, v, _) = Size(inst);
+            var c = new SKPoint(tap.X + dir.X * (TapLength + dia / 2), tap.Y + dir.Y * (TapLength + dia / 2));
+            Put(inst, SKRect.Create(c.X - dia / 2, c.Y - dia / 2, dia, dia), v, below: dir.X < 0);
+            inst.TapFrom = tap;
+            inst.TapTo = new SKPoint(c.X - dir.X * dia / 2, c.Y - dir.Y * dia / 2);
+        }
+
+        var auto = n.Instruments.Where(x => x.TapPort is null).ToList();
+        if (auto.Count == 0)
             return;
 
         var load = new int[4];
@@ -995,17 +1202,10 @@ internal static class ProcessBuilder
             load[(int)ls]++;
         var side = new[] { PortSide.Top, PortSide.Right, PortSide.Bottom, PortSide.Left }.OrderBy(s => load[(int)s]).First();
 
-        var slots = n.Instruments.Select(inst =>
+        var slots = auto.Select(inst =>
         {
-            var dia = BubbleSize(inst, family);
-            SKSize v = SKSize.Empty;
-            if (!string.IsNullOrEmpty(inst.Value))
-            {
-                using var vf = TextFont.Create(inst.Value, ValueSize, false, family);
-                v = new SKSize(vf.MeasureText(inst.Value), vf.Spacing);
-            }
-
-            return (Inst: inst, D: dia, V: v, W: dia + (v.Width > 0 ? ValueGap + v.Width : 0));
+            var (dia, v, w) = Size(inst);
+            return (Inst: inst, D: dia, V: v, W: w);
         }).ToList();
 
         // 그 면 바깥에 이미 있는 것(이름표·붙은 칸)의 끝
@@ -1016,15 +1216,6 @@ internal static class ProcessBuilder
             PortSide.Left => extras.Where(r => r.Right <= sym.Left + 1).Select(r => r.Left).Append(sym.Left).Min(),
             _ => extras.Where(r => r.Left >= sym.Right - 1).Select(r => r.Right).Append(sym.Right).Max(),
         };
-
-        void Put(ProcessInstrument inst, SKRect bubble, SKSize v)
-        {
-            inst.Rect = bubble;
-            inst.ValueRect = v.Width > 0 ? SKRect.Create(bubble.Right + ValueGap, bubble.MidY - v.Height / 2, v.Width, v.Height) : SKRect.Empty;
-            extras.Add(inst.Rect);
-            if (!inst.ValueRect.IsEmpty)
-                extras.Add(inst.ValueRect);
-        }
 
         if (side is PortSide.Top or PortSide.Bottom)
         {
@@ -1068,6 +1259,12 @@ internal static class ProcessBuilder
                     continue;
                 }
 
+                if (IsFaceAt(port, out var faceSide, out _))
+                {
+                    yield return faceSide;
+                    continue;
+                }
+
                 if (n.Ports.FirstOrDefault(p => p.Name == port) is not { } p)
                     continue;
                 if (p.EitherSide)
@@ -1092,6 +1289,12 @@ internal static class ProcessBuilder
         {
             foreach (var (node, port) in new[] { (l.FromNode, l.FromPort), (l.ToNode, l.ToPort) })
             {
+                if (node == index && IsFaceAt(port, out var faceSide, out _))
+                {
+                    used.Add(faceSide);
+                    continue;
+                }
+
                 if (node != index || n.Def?.Port(port ?? "") is not { } p)
                     continue;
                 if (p.EitherSide)
@@ -1147,6 +1350,9 @@ internal static class ProcessBuilder
             };
             return new GraphEnd { Node = ni, Key = $"{n.Name}.{up.Name}", Local = at, Side = up.Side };
         }
+
+        if (IsFaceAt(portName, out var faceSide, out var faceAt))
+            return new GraphEnd { Node = ni, Key = $"{n.Name}.{portName}", Local = OnFace(n.Sym, faceSide, faceAt), Side = faceSide };
 
         var p = n.Def!.Port(portName!)!;
         var side2 = MapSide(p.Side, n);
