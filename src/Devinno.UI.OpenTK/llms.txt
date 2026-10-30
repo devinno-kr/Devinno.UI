@@ -1,6 +1,6 @@
 # Devinno.UI.OpenTK {{VERSION}}
 
-> OpenTK window host for Devinno.UI: `ViewWindow` shows a `DvApp` in its own window, with CPU raster (default) or GPU (`Gpu = true`) drawing.
+> OpenTK window host for Devinno.UI: `ViewWindow` shows a `DvApp` in its own window, with CPU raster (default) or GPU (`Gpu = true`) drawing. Constructor options for embedded panels: `gles: true` (OpenGL ES 3.0 — required on boards without desktop OpenGL 3.3, such as Raspberry Pi), `fullscreen: true` (borderless kiosk), `fit: true` (lay out at width×height, scale to the window keeping the aspect ratio).
 
-1. Devinno.UI.OpenTK.xml (same folder as this file): C# API reference for `ViewWindow` — constructor, `Gpu`, `Invalidate`/`Repaint`, input and DPI handling (`Run` comes from OpenTK `GameWindow`).
+1. Devinno.UI.OpenTK.xml (same folder as this file): C# API reference for `ViewWindow` — constructor (`gles`, `fullscreen`, `fit`), `Gpu`, `Invalidate`/`Repaint`, input and DPI handling (`Run` comes from OpenTK `GameWindow`).
 2. How to write screens is documented in the core package: read `.devinno/Devinno.UI/llms.txt` (in the Devinno.UI package: `docs/llms.txt`) first.
