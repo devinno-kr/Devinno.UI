@@ -3880,7 +3880,9 @@
             <summary>용기 면 포트가 자리를 나눠 쓰는 범위(면 길이 대비).</summary>
         </member><member name="M:Devinno.UI.Process.BuiltInSymbols.Get(System.String,System.String)" en-hash="83f1092dc05fef09">
             <summary>장비 태그 + kind 의 심볼. kind 가 없으면 기본 kind, 모르는 kind 면 <see langword="null" />.</summary>
-        </member><member name="T:Devinno.UI.Process.ProcessFlow" en-hash="f86aa4d0fc25edca">
+        </member><member name="M:Devinno.UI.Process.BuiltInSymbols.Stretch(Devinno.UI.Process.SymbolDef,System.Single)" en-hash="25890d34751a9b83"><summary>
+            <paramref name="height" /> 로 늘인 용기(<c>DvVessel height</c>) — 아래쪽 절반의 점을 그 차이만큼 내려, 머리 모양은 그대로 두고 곧은 몸통만 늘린다(또는 줄인다).
+            </summary></member><member name="T:Devinno.UI.Process.ProcessFlow" en-hash="f86aa4d0fc25edca">
             <summary>
             흐름 판단 — 어느 배관에 지금 흐름이 있는지(표시용 추론, 실측 아님).
             </summary>
@@ -4020,7 +4022,7 @@
             <summary>선이 이 장비에 포트 없이 이름만으로 잇는 장비(끝점·유닛 안 포트 자리).</summary>
         </member><member name="T:Devinno.UI.Process.ProcessLine" en-hash="e0ba1231ea2d7444">
             <summary>공정도 선 하나(<c>DvLine</c>).</summary>
-        </member><member name="F:Devinno.UI.Process.ProcessLine.FlowOverride" en-hash="5559bb3178fba1f7">
+        </member><member name="F:Devinno.UI.Process.ProcessLine.Label" en-hash="4eaf177470dd080a"><summary><c>label</c> — 배관 옆 작은 글자(라인 번호 <c>01-100-PE-N</c> 등), 가장 긴 구간 가운데에.</summary></member><member name="F:Devinno.UI.Process.ProcessLine.FlowOverride" en-hash="5559bb3178fba1f7">
             <summary><c>flow</c> 덮어쓰기(앱이 아는 실제 흐름). 없으면 <see langword="null" /> — 자동 판단.</summary>
         </member><member name="F:Devinno.UI.Process.ProcessLine.Flowing" en-hash="23b8c1532dd6e206">
             <summary>결과: 지금 흐르는지(<see cref="T:Devinno.UI.Process.ProcessFlow" />).</summary>
@@ -4041,7 +4043,7 @@
             <summary>버블·값 글자 자리 — 장비 차지 영역 기준.</summary>
         </member><member name="T:Devinno.UI.Process.ProcessSignal" en-hash="4e60a39ea7c0ecc6">
             <summary>신호선 하나(<c>DvSignal</c>) — 양 끝은 이름만(계기·장비).</summary>
-        </member><member name="T:Devinno.UI.Process.ProcessBuilder" en-hash="514d98e693f0adb6">
+        </member><member name="F:Devinno.UI.Process.ProcessSignal.ArrowEnd" en-hash="fc6af621a94dd918"><summary><c>arrow</c>(<c>DvLine</c> 과 같은 값)와 <c>label</c>(<c>from</c> 끝 옆 작은 글자, 예: <c>SH</c>).</summary></member><member name="F:Devinno.UI.Process.ProcessSignal.ArrowStart" en-hash="fc6af621a94dd918"><summary><c>arrow</c>(<c>DvLine</c> 과 같은 값)와 <c>label</c>(<c>from</c> 끝 옆 작은 글자, 예: <c>SH</c>).</summary></member><member name="T:Devinno.UI.Process.ProcessBuilder" en-hash="514d98e693f0adb6">
             <summary>
             마크업 → 공정도 모델, 장비 기하, 배치 계산(구조가 같으면 결과를 다시 쓴다), 화면 배치.
             </summary>

@@ -102,7 +102,7 @@ public sealed partial class Painter
         if (d.Graph is null)
             return;
         ProcessBuilder.Report(d);
-        PaintPipes(canvas, d, timestampMs);
+        PaintPipes(canvas, d, timestampMs, ThemeColor("--text", box.Style.Color.ToSK()), box.Style.FontFamily);
     }
 
     /// <summary>Flow animation frame interval (ms) — capped at 20 frames per second (saves CPU, since the whole screen is redrawn).</summary>
@@ -155,7 +155,8 @@ public sealed partial class Painter
         }
     }
 
-    private static void PaintPipes(SKCanvas canvas, ProcessDiagram d, long timestampMs)
+    // text·family = 라인 번호·신호선 라벨 글자(이름표처럼 테마 글자색)
+    private static void PaintPipes(SKCanvas canvas, ProcessDiagram d, long timestampMs, SKColor text, string? family)
     {
         var look = LookOf(d);
         canvas.Save();
@@ -197,7 +198,7 @@ public sealed partial class Painter
             look.Pipes(canvas, pipes);
             if (d.FlowAnimation)
                 PaintFlow(canvas, flowing, look, timestampMs);
-            PaintSignals(canvas, d, look);
+            PaintSignals(canvas, d, look, text, family);
 
             using var arrow = new SKPaint { IsAntialias = true, Color = look.Arrow };
             foreach (var l in d.Lines)
@@ -208,6 +209,22 @@ public sealed partial class Painter
                     DrawArrow(canvas, g.To, look, arrow);
                 if (l.ArrowStart)
                     DrawArrow(canvas, g.From, look, arrow);
+            }
+
+            // 라인 번호(label) — 가장 긴 구간 가운데, 가로면 배관 아래·세로면 오른쪽
+            foreach (var l in d.Lines)
+            {
+                if (l.G is not { Points.Count: >= 2 } g || string.IsNullOrEmpty(l.Label))
+                    continue;
+                var k = Enumerable.Range(1, g.Points.Count - 1).MaxBy(i => SKPoint.Distance(g.Points[i - 1], g.Points[i]));
+                var (a, b) = (g.Points[k - 1], g.Points[k]);
+                using var font = TextFont.Create(l.Label, 11, false, family);
+                using var tp = new SKPaint { IsAntialias = true, Color = text };
+                var off = look.Rich ? 9f : 5f;
+                if (MathF.Abs(a.Y - b.Y) < 0.5f)
+                    canvas.DrawText(l.Label, (a.X + b.X) / 2, a.Y + off - font.Metrics.Ascent, SKTextAlign.Center, font, tp);
+                else
+                    canvas.DrawText(l.Label, a.X + off, (a.Y + b.Y) / 2 - (font.Metrics.Ascent + font.Metrics.Descent) / 2, SKTextAlign.Left, font, tp);
             }
 
             // 잘못된 선 — 두 장비 가운데를 빨간 점선으로
@@ -232,7 +249,7 @@ public sealed partial class Painter
     }
 
     // 신호선 — 가는 점선 직교(ISA-5.1 전기 신호), 점프 없음. 배관 위에 긋는다(엇갈리는 곳에서 끊겨 보이지 않게)
-    private static void PaintSignals(SKCanvas canvas, ProcessDiagram d, ProcessLook look)
+    private static void PaintSignals(SKCanvas canvas, ProcessDiagram d, ProcessLook look, SKColor text, string? family)
     {
         using var paint = new SKPaint
         {
@@ -248,6 +265,23 @@ public sealed partial class Painter
             for (var i = 1; i < g.Points.Count; i++)
                 path.LineTo(g.Points[i]);
             canvas.DrawPath(path, paint);
+
+            // 화살표(작게) · 라벨(from 끝 옆 — 첫 구간이 가로면 그 위, 세로면 그 오른쪽)
+            using var fill = new SKPaint { IsAntialias = true, Color = look.Arrow };
+            if (s.ArrowEnd)
+                DrawArrow(canvas, g.To, look, fill, 8, 4);
+            if (s.ArrowStart)
+                DrawArrow(canvas, g.From, look, fill, 8, 4);
+            if (!string.IsNullOrEmpty(s.Label))
+            {
+                using var font = TextFont.Create(s.Label, 11, false, family);
+                using var tp = new SKPaint { IsAntialias = true, Color = text };
+                var (a, b) = (g.Points[0], g.Points[1]);
+                if (MathF.Abs(a.Y - b.Y) < 0.5f)
+                    canvas.DrawText(s.Label, b.X >= a.X ? a.X + 3 : a.X - 3, a.Y - 3, b.X >= a.X ? SKTextAlign.Left : SKTextAlign.Right, font, tp);
+                else
+                    canvas.DrawText(s.Label, a.X + 3, b.Y >= a.Y ? a.Y + 3 - font.Metrics.Ascent : a.Y - 3, SKTextAlign.Left, font, tp);
+            }
         }
     }
 
@@ -359,7 +393,7 @@ public sealed partial class Painter
             : MathF.Abs(p.Y - a.Y) < 0.01f && p.X >= MathF.Min(a.X, b.X) && p.X <= MathF.Max(a.X, b.X);
 
     // 포트로 들어가는 화살표 — 끝이 포트 점에 닿게
-    private static void DrawArrow(SKCanvas canvas, GraphEnd end, ProcessLook look, SKPaint paint)
+    private static void DrawArrow(SKCanvas canvas, GraphEnd end, ProcessLook look, SKPaint paint, float? length = null, float? halfWidth = null)
     {
         var (dx, dy) = end.Out switch
         {
@@ -368,7 +402,7 @@ public sealed partial class Painter
             PortSide.Top => (0f, -1f),
             _ => (0f, 1f),
         };
-        float len = look.Rich ? 14 : 10, half = look.Rich ? 8 : 5;
+        float len = length ?? (look.Rich ? 14 : 10), half = halfWidth ?? (look.Rich ? 8 : 5);
         var tip = end.Point;
         var bx = tip.X + dx * len;
         var by = tip.Y + dy * len;
@@ -398,7 +432,7 @@ public sealed partial class Painter
             }
 
             if (unit.Graph is not null)
-                PaintPipes(canvas, unit, timestampMs);
+                PaintPipes(canvas, unit, timestampMs, ThemeColor("--text", st.Color.ToSK()), st.FontFamily);
             return;
         }
 

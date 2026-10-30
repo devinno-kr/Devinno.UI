@@ -605,11 +605,12 @@ public class ProcessTests(ITestOutputHelper output)
             {
                 var def = BuiltInSymbols.Get(tag, kind);
                 Assert.NotNull(def);
-                var expected = tag switch
+                var expected = (tag, kind) switch
                 {
-                    "DvVessel" => new[] { "top", "bottom", "side" },
-                    "DvValve3" => new[] { "a", "b", "c" },
-                    "DvExchanger" => new[] { "in", "out", "in2", "out2" },
+                    ("DvInline", "vent" or "blind") => new[] { "in" }, // 포트 하나(대기 개방 끝·막힌 노즐)
+                    ("DvVessel", _) => new[] { "top", "bottom", "side" },
+                    ("DvValve3", _) => new[] { "a", "b", "c" },
+                    ("DvExchanger", _) => new[] { "in", "out", "in2", "out2" },
                     _ => new[] { "in", "out" },
                 };
                 Assert.Equal(expected, def!.Ports.Select(p => p.Name));
@@ -618,6 +619,8 @@ public class ProcessTests(ITestOutputHelper output)
 
         Assert.NotNull(BuiltInSymbols.Get("DvAgitator", null));
         Assert.NotNull(BuiltInSymbols.Get("DvMotor", null));
+        Assert.NotNull(BuiltInSymbols.Get("DvMotor", "isa"));
+        Assert.Null(BuiltInSymbols.Get("DvMotor", "nope"));
     }
 
     // ── 그리기 ──

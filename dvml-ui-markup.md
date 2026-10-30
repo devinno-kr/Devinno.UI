@@ -2504,10 +2504,10 @@ A process screen that draws tanks·pumps·valves and pipes. **You do not write c
 
 | Tag | `kind` (first value is the default) | Ports | State attribute |
 |---|---|---|---|
-| `DvVessel` | `tank` `reactor` `silo` `hopper` | `top` · `bottom` · `side` | `level` (0~100 %) |
-| `DvPump` | `centrifugal` `gear` `compressor` `blower` | `in` (left) · `out` (right) | `running` |
-| `DvValve` | `gate` `ball` `butterfly` `control` `check` | `in` · `out` | `open` |
-| `DvInline` | `flowmeter` `filter` `strainer` `sight` | `in` · `out` | — |
+| `DvVessel` | `tank` `reactor` `silo` `hopper` `drum` `column` `open` | `top` · `bottom` · `side` | `level` (0~100 %), `height` (px) |
+| `DvPump` | `centrifugal` `gear` `compressor` `blower` `isa` | `in` (left) · `out` (right) | `running` |
+| `DvValve` | `gate` `ball` `butterfly` `control` `check` `globe` `plug` `diaphragm` `angle` `relief` | `in` · `out` (`angle`·`relief`: `in` bottom) | `open` |
+| `DvInline` | `flowmeter` `filter` `strainer` `sight` `reducer` `orifice` `mixer` `vent` `blind` | `in` · `out` (`vent`·`blind`: `in` only) | — |
 | `DvValve3` | `ball` `control` | `a` (common, left) · `b` (straight, right) · `c` (branch, bottom) | `open-b` (a↔b) · `open-c` (a↔c) |
 | `DvExchanger` | `shell` `plate` | `in` · `out` (process, left→right) · `in2` (top) · `out2` (bottom) (heating/cooling medium) | — |
 | `DvTerminal` | — | One port (used without a name) | `text` (tag label text) |

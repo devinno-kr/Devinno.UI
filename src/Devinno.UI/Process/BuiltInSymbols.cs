@@ -1,4 +1,5 @@
 using Devinno.UI.Markup;
+using SkiaSharp;
 
 namespace Devinno.UI.Process;
 
@@ -11,10 +12,10 @@ internal static class BuiltInSymbols
     /// <summary>The kind list per tag (the first entry is the default).</summary>
     internal static readonly IReadOnlyDictionary<string, string[]> Kinds = new Dictionary<string, string[]>(StringComparer.Ordinal)
     {
-        ["DvVessel"] = ["tank", "reactor", "silo", "hopper"],
-        ["DvPump"] = ["centrifugal", "gear", "compressor", "blower"],
-        ["DvValve"] = ["gate", "ball", "butterfly", "control", "check"],
-        ["DvInline"] = ["flowmeter", "filter", "strainer", "sight"],
+        ["DvVessel"] = ["tank", "reactor", "silo", "hopper", "drum", "column", "open"],
+        ["DvPump"] = ["centrifugal", "gear", "compressor", "blower", "isa"],
+        ["DvValve"] = ["gate", "ball", "butterfly", "control", "check", "globe", "plug", "diaphragm", "angle", "relief"],
+        ["DvInline"] = ["flowmeter", "filter", "strainer", "sight", "reducer", "orifice", "mixer", "vent", "blind"],
         ["DvValve3"] = ["ball", "control"],
         ["DvExchanger"] = ["shell", "plate"],
     };
@@ -28,10 +29,50 @@ internal static class BuiltInSymbols
     internal static SymbolDef? Get(string tag, string? kind)
     {
         if (!Kinds.TryGetValue(tag, out var kinds))
-            return Defs.Value.GetValueOrDefault(tag); // 부속
+            return string.IsNullOrEmpty(kind) ? Defs.Value.GetValueOrDefault(tag) : Defs.Value.GetValueOrDefault($"{tag}:{kind}"); // 부속(DvMotor kind="isa")
         var k = string.IsNullOrEmpty(kind) ? kinds[0] : kind;
         return Defs.Value.GetValueOrDefault($"{tag}:{k}");
     }
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(SymbolDef, float), SymbolDef> Stretched = new();
+
+    /// <summary>
+    /// A vessel stretched to <paramref name="height"/> (<c>DvVessel height</c>): points in the lower half move down by the difference, so the heads keep their shape and only the straight body grows (or shrinks).
+    /// </summary>
+    internal static SymbolDef Stretch(SymbolDef def, float height) => Stretched.GetOrAdd((def, height), key =>
+    {
+        var (src, h) = key;
+        var mid = src.Height / 2;
+        var dy = h - src.Height;
+        var res = new SymbolDef { Name = src.Name, Width = src.Width, Height = h, FillClip = src.FillClip, FillValue = src.FillValue };
+        res.Params.AddRange(src.Params);
+        res.Ports.AddRange(src.Ports);
+        res.Passes.AddRange(src.Passes);
+        SKPoint M(SKPoint p) => p.Y > mid ? new SKPoint(p.X, p.Y + dy) : p;
+        foreach (var l in src.Layers)
+        {
+            var path = new SKPath();
+            using var it = l.Path.CreateRawIterator();
+            var pts = new SKPoint[4];
+            SKPathVerb verb;
+            while ((verb = it.Next(pts)) != SKPathVerb.Done)
+            {
+                switch (verb)
+                {
+                    case SKPathVerb.Move: path.MoveTo(M(pts[0])); break;
+                    case SKPathVerb.Line: path.LineTo(M(pts[1])); break;
+                    case SKPathVerb.Quad: path.QuadTo(M(pts[1]), M(pts[2])); break;
+                    case SKPathVerb.Conic: path.ConicTo(M(pts[1]), M(pts[2]), it.ConicWeight()); break;
+                    case SKPathVerb.Cubic: path.CubicTo(M(pts[1]), M(pts[2]), M(pts[3])); break;
+                    case SKPathVerb.Close: path.Close(); break;
+                }
+            }
+
+            res.Layers.Add(l with { Path = path });
+        }
+
+        return res;
+    });
 
     internal static bool IsEquipmentTag(string tag) => Kinds.ContainsKey(tag) || tag == "DvTerminal";
 
@@ -95,6 +136,29 @@ internal static class BuiltInSymbols
               <DvShape class="vessel" path="M4 7 H96 V44 L58 86 V102 H42 V86 L4 44 Z"/>
             </DvSymbol>
             """);
+        Add("DvVessel:drum", $"""
+            <DvSymbol name="drum" view-box="0 0 160 80">
+              {vesselPorts}
+              <DvShape class="accent" path="M74 0 H86 V6 H74 Z M74 74 H86 V80 H74 Z M34 70 H46 V80 H34 Z M114 70 H126 V80 H114 Z"/>
+              <DvShape class="vessel" path="M32 6 H128 Q156 6 156 40 Q156 74 128 74 H32 Q4 74 4 40 Q4 6 32 6 Z"/>
+            </DvSymbol>
+            """);
+        Add("DvVessel:column", $"""
+            <DvSymbol name="column" view-box="0 0 60 220">
+              {vesselPorts}
+              <DvShape class="accent" path="M24 0 H36 V6 H24 Z M24 214 H36 V220 H24 Z"/>
+              <DvShape class="vessel" path="M6 26 Q6 4 30 4 Q54 4 54 26 V194 Q54 216 30 216 Q6 216 6 194 Z"/>
+              <DvShape class="dash" path="M9 50 H51 M9 80 H51 M9 110 H51 M9 140 H51 M9 170 H51"/>
+            </DvSymbol>
+            """);
+        // 지붕 없는 탱크·수조 — 열린 경로라 테두리는 세 면만 그려진다(채움은 안쪽 전체)
+        Add("DvVessel:open", $"""
+            <DvSymbol name="open" view-box="0 0 120 90">
+              {vesselPorts}
+              <DvShape class="accent" path="M54 84 H66 V90 H54 Z"/>
+              <DvShape class="vessel" path="M6 4 V84 H114 V4"/>
+            </DvSymbol>
+            """);
 
         // ── 회전기: in(왼쪽) → out(오른쪽), 운전 중일 때만 통함 ──
         Add("DvPump:centrifugal", $"""
@@ -140,6 +204,18 @@ internal static class BuiltInSymbols
               <DvShape class="state" when="running" path="M32 12 H72 V26 H53.8 A24 24 0 1 1 8.76 42 H0 V30 H8.76 A24 24 0 0 1 32 12 Z"/>
               <DvShape class="detail" path="M32 36 Q42 24 34 16 M32 36 Q46 44 52 36 M32 36 Q22 50 30 56 M32 36 Q18 26 12 34"/>
               <DvShape class="accent" path="{Circle(32, 36, 4)}"/>
+            </DvSymbol>
+            """);
+        // ISA-5.1 원심 펌프 — 원 + 가운데 가로줄 + 출구 쪽 꼭짓점(>), 입·출구 같은 높이
+        Add("DvPump:isa", $"""
+            <DvSymbol name="isa" view-box="0 0 64 64">
+              <DvParam name="running" type="bool"/>
+              <DvPort name="in" side="left" at="0.5" role="in"/>
+              <DvPort name="out" side="right" at="0.5" role="out"/>
+              <DvPass from="in" to="out" when="running"/>
+              <DvShape class="accent" path="M0 29 H6 V35 H0 Z M58 29 H64 V35 H58 Z"/>
+              <DvShape class="state" when="running" path="{Circle(32, 32, 26)}"/>
+              <DvShape class="detail" path="M6 32 H58 M45 9.5 L58 32 L45 54.5"/>
             </DvSymbol>
             """);
 
@@ -191,6 +267,61 @@ internal static class BuiltInSymbols
               <DvShape class="accent" path="{Flanges}"/>
               <DvShape class="vessel" path="M6 22 H54 V42 H6 Z"/>
               <DvShape class="accent" path="M15 25 L40 32 L15 39 Z M41 24 H44 V40 H41 Z"/>
+            </DvSymbol>
+            """);
+        Add("DvValve:globe", $"""
+            <DvSymbol name="globe" view-box="0 0 60 48">
+              {ValvePorts}
+              <DvPass from="in" to="out" when="open"/>
+              <DvShape class="accent" path="{Flanges} M20 4 H40 V9 H20 Z"/>
+              <DvShape class="detail" path="M30 28 V9"/>
+              <DvShape class="state" when="open" path="{Bowtie}"/>
+              <DvShape class="accent" path="{Circle(30, 32, 4.5f)}"/>
+            </DvSymbol>
+            """);
+        Add("DvValve:plug", $"""
+            <DvSymbol name="plug" view-box="0 0 60 48">
+              {ValvePorts}
+              <DvPass from="in" to="out" when="open"/>
+              <DvShape class="accent" path="{Flanges} M30 8 H50 V13 H30 Z"/>
+              <DvShape class="detail" path="M30 25 V12"/>
+              <DvShape class="state" when="open" path="{Bowtie}"/>
+              <DvShape class="glass" path="{Circle(30, 32, 6)}"/>
+            </DvSymbol>
+            """);
+        Add("DvValve:diaphragm", $"""
+            <DvSymbol name="diaphragm" view-box="0 0 60 48">
+              {ValvePorts}
+              <DvPass from="in" to="out" when="open"/>
+              <DvShape class="accent" path="{Flanges} M22 4 H38 V8 H22 Z"/>
+              <DvShape class="detail" path="M30 8 V18"/>
+              <DvShape class="state" when="open" path="{Bowtie}"/>
+              <DvShape class="accent" path="M16 26 Q30 12 44 26 Z"/>
+            </DvSymbol>
+            """);
+        // 앵글 밸브 — in 아래, out 오른쪽(flip="h" 로 왼쪽)
+        Add("DvValve:angle", """
+            <DvSymbol name="angle" view-box="0 0 48 48">
+              <DvParam name="open" type="bool"/>
+              <DvPort name="in" side="bottom" at="0.4167" role="in"/>
+              <DvPort name="out" side="right" at="0.4167" role="out"/>
+              <DvPass from="in" to="out" when="open"/>
+              <DvShape class="accent" path="M44 7 H48 V33 H44 Z M7 44 H33 V48 H7 Z M10 0 H30 V4 H10 Z"/>
+              <DvShape class="detail" path="M20 4 V20"/>
+              <DvShape class="state" when="open" path="M44 8 L20 20 L44 32 Z M8 44 L20 20 L32 44 Z"/>
+            </DvSymbol>
+            """);
+        // 안전(릴리프) 밸브 — 앵글 몸통 + 스프링, in 아래·out 오른쪽(flip="h" 로 왼쪽). open = 방출 중
+        Add("DvValve:relief", $"""
+            <DvSymbol name="relief" view-box="0 0 48 64">
+              <DvParam name="open" type="bool"/>
+              <DvPort name="in" side="bottom" at="0.4167" role="in"/>
+              <DvPort name="out" side="right" at="0.5625" role="out"/>
+              <DvPass from="in" to="out" when="open"/>
+              <DvShape class="accent" path="M44 23 H48 V49 H44 Z M7 60 H33 V64 H7 Z"/>
+              <DvShape class="detail" path="M20 36 V26 L13 23 L27 18 L13 13 L27 8 L20 5 V2"/>
+              <DvShape class="state" when="open" path="M44 24 L20 36 L44 48 Z M8 60 L20 36 L32 60 Z"/>
+              <DvShape class="accent" path="{Circle(20, 36, 3)}"/>
             </DvSymbol>
             """);
 
@@ -303,6 +434,47 @@ internal static class BuiltInSymbols
               <DvShape class="glass" path="{Circle(32, 24, 9)}"/>
             </DvSymbol>
             """);
+        // 리듀서 — 왼쪽(넓음) → 오른쪽(좁음). 확대관은 flip="h"
+        Add("DvInline:reducer", $"""
+            <DvSymbol name="reducer" view-box="0 0 44 40">
+              <DvPort name="in" side="left" at="0.5" role="in"/>
+              <DvPort name="out" side="right" at="0.5" role="out"/>
+              {inlinePass}
+              <DvShape class="vessel" path="M4 6 L40 14 V26 L4 34 Z"/>
+            </DvSymbol>
+            """);
+        Add("DvInline:orifice", $"""
+            <DvSymbol name="orifice" view-box="0 0 40 44">
+              <DvPort name="in" side="left" at="0.5" role="in"/>
+              <DvPort name="out" side="right" at="0.5" role="out"/>
+              {inlinePass}
+              <DvShape class="vessel" path="M0 18 H40 V26 H0 Z"/>
+              <DvShape class="accent" path="M14 4 H18 V40 H14 Z M22 4 H26 V40 H22 Z"/>
+            </DvSymbol>
+            """);
+        Add("DvInline:mixer", $"""
+            <DvSymbol name="mixer" view-box="0 0 72 40">
+              <DvPort name="in" side="left" at="0.5" role="in"/>
+              <DvPort name="out" side="right" at="0.5" role="out"/>
+              {inlinePass}
+              <DvShape class="accent" path="M0 7 H6 V33 H0 Z M66 7 H72 V33 H66 Z"/>
+              <DvShape class="vessel" path="M6 10 H66 V30 H6 Z"/>
+              <DvShape class="detail" path="M10 27 L17 13 L24 27 L31 13 L38 27 L45 13 L52 27 L59 13 L62 19"/>
+            </DvSymbol>
+            """);
+        // 벤트(대기 개방 끝) · 막힌 노즐(맨홀·블라인드) — 포트 하나(in)
+        Add("DvInline:vent", """
+            <DvSymbol name="vent" view-box="0 0 32 40">
+              <DvPort name="in" side="bottom" at="0.5" role="in"/>
+              <DvShape class="accent" path="M14 12 H18 V40 H14 Z M2 17 L16 3 L30 17 L27 20 L16 9 L5 20 Z"/>
+            </DvSymbol>
+            """);
+        Add("DvInline:blind", """
+            <DvSymbol name="blind" view-box="0 0 16 44">
+              <DvPort name="in" side="left" at="0.5" role="in"/>
+              <DvShape class="accent" path="M0 6 H5 V38 H0 Z M8 2 H14 V42 H8 Z"/>
+            </DvSymbol>
+            """);
 
         // ── 부속(포트 없음): 장비 위에 얹힌다 ──
         Add("DvAgitator", """
@@ -321,6 +493,15 @@ internal static class BuiltInSymbols
               <DvShape class="accent" path="M12 40 H52 V46 H12 Z M0 18 H8 V26 H0 Z M54 8 H62 Q66 8 66 12 V32 Q66 36 62 36 H54 Z M24 0 H38 V4 H24 Z"/>
               <DvShape class="state" when="running" path="M8 8 Q8 4 12 4 H50 Q54 4 54 8 V36 Q54 40 50 40 H12 Q8 40 8 36 Z"/>
               <DvShape class="detail" path="M16 8 V36 M24 8 V36 M32 8 V36 M40 8 V36 M48 8 V36"/>
+            </DvSymbol>
+            """);
+        // ISA 모터 — 원 안 M, 아래로 축(장비 위에 얹으면 축이 장비에 닿는다)
+        Add("DvMotor:isa", $"""
+            <DvSymbol name="motor-isa" view-box="0 0 36 52">
+              <DvParam name="running" type="bool"/>
+              <DvShape class="accent" path="M17 34 H19 V52 H17 Z"/>
+              <DvShape class="state" when="running" path="{Circle(18, 18, 16)}"/>
+              <DvShape class="detail" path="M11 26 V11 L18 21 L25 11 V26"/>
             </DvSymbol>
             """);
 

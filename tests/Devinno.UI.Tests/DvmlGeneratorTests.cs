@@ -487,7 +487,7 @@ public class DvmlGeneratorTests
         {
             Assert.Equal(kinds, Devinno.UI.Generators.ProcessCheck.Kinds[tag]);
             foreach (var kind in kinds)
-                Assert.Equal(Devinno.UI.Process.BuiltInSymbols.Get(tag, kind)!.Ports.Select(p => p.Name), Devinno.UI.Generators.ProcessCheck.Ports[tag]);
+                Assert.Equal(Devinno.UI.Process.BuiltInSymbols.Get(tag, kind)!.Ports.Select(p => p.Name), Devinno.UI.Generators.ProcessCheck.PortsOf(tag, kind));
         }
 
         Assert.Equal(Devinno.UI.Process.BuiltInSymbols.Kinds.Keys.OrderBy(k => k), Devinno.UI.Generators.ProcessCheck.Kinds.Keys.OrderBy(k => k));

@@ -21,18 +21,30 @@ internal static class ProcessCheck
         ["DvInline"] = ["in", "out"],
         ["DvValve3"] = ["a", "b", "c"],
         ["DvExchanger"] = ["in", "out", "in2", "out2"],
+        ["DvInline:vent"] = ["in"],  // 포트가 다른 kind 는 "태그:kind" 로
+        ["DvInline:blind"] = ["in"],
     };
 
     /// <summary>내장 장비의 kind(첫 값이 기본) — 라이브러리와 같아야 한다(테스트가 비교).</summary>
     internal static readonly Dictionary<string, string[]> Kinds = new(StringComparer.Ordinal)
     {
-        ["DvVessel"] = ["tank", "reactor", "silo", "hopper"],
-        ["DvPump"] = ["centrifugal", "gear", "compressor", "blower"],
-        ["DvValve"] = ["gate", "ball", "butterfly", "control", "check"],
-        ["DvInline"] = ["flowmeter", "filter", "strainer", "sight"],
+        ["DvVessel"] = ["tank", "reactor", "silo", "hopper", "drum", "column", "open"],
+        ["DvPump"] = ["centrifugal", "gear", "compressor", "blower", "isa"],
+        ["DvValve"] = ["gate", "ball", "butterfly", "control", "check", "globe", "plug", "diaphragm", "angle", "relief"],
+        ["DvInline"] = ["flowmeter", "filter", "strainer", "sight", "reducer", "orifice", "mixer", "vent", "blind"],
         ["DvValve3"] = ["ball", "control"],
         ["DvExchanger"] = ["shell", "plate"],
     };
+
+    /// <summary>내장 장비 포트 — kind 별로 다르면 그것, 아니면 태그의 것. 모르면 null(검사 안 함, 바인딩된 kind 포함).</summary>
+    internal static string[]? PortsOf(string tag, string? kind)
+    {
+        if (kind is not null && Dynamic(kind))
+            return null;
+        if (kind is not null && Ports.TryGetValue(tag + ":" + kind, out var k))
+            return k;
+        return Ports.TryGetValue(tag, out var p) ? p : null;
+    }
 
     internal static readonly string[] Media = ["water", "steam", "air", "gas", "oil", "acid"];
 
@@ -111,7 +123,7 @@ internal static class ProcessCheck
                 Instrument = tag == "DvInstrument",
                 Ports = tag == "DvUnit"
                     ? ch.Elements().Where(x => x.Name.LocalName == "DvPort").Select(x => (string?)x.Attribute("name")).Where(n => n is not null && !Dynamic(n)).Select(n => n!).ToArray()
-                    : Ports.TryGetValue(tag, out var p) ? p : null,
+                    : PortsOf(tag, (string?)ch.Attribute("kind")),
             };
             if (tag == "DvUnit" && ch.Elements().Any(x => x.Name.LocalName == "DvPort" && Dynamic((string?)x.Attribute("name"))))
                 item.Ports = null;

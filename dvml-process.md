@@ -170,6 +170,9 @@ Usable on every equipment tag (including user symbols).
 | `reactor` | 100 × 160 | Reactor with a jacket (an added outer wall) |
 | `silo` | 100 × 160 | Conical roof + bottom funnel + legs |
 | `hopper` | 100 × 110 | Funnel open at the top |
+| `drum` | 160 × 80 | Horizontal drum (receiver, knock-out drum) with saddles |
+| `column` | 60 × 220 | Tall tower with dashed trays |
+| `open` | 120 × 90 | Open-top tank or basin (no roof line) |
 
 | Port | Position | When several lines connect |
 |---|---|---|
@@ -180,6 +183,10 @@ Usable on every equipment tag (including user symbols).
 | State attribute | Values | If omitted |
 |---|---|---|
 | `level` | 0–100 (%). Out-of-range values are clamped to 0 or 100. Number or numeric string | 0 (empty vessel) |
+
+| Size attribute | Values | If omitted |
+|---|---|---|
+| `height` | Height in px (to match a drawing's tall tank). Only the straight body grows or shrinks — the heads keep their shape and the width stays the same. 0.6–4 × the kind's height (outside that, clamped with a Trace warning) | The kind's height |
 
 - The level fills from the bottom following the body shape (rounded bottoms are filled round).
 - `label` is drawn as a rounded chip in the middle of the body (readable over the liquid too).
@@ -193,6 +200,7 @@ Usable on every equipment tag (including user symbols).
 | `gear` | 72 × 52 | Left center | Right center | Rounded rectangle + two gears |
 | `compressor` | 72 × 64 | Left center | Right center | Circle + two converging lines |
 | `blower` | 72 × 64 | Left, 36px from top | Right, 19px from top | Round casing + blades |
+| `isa` | 64 × 64 | Left center | Right center | ISA-5.1 pump: circle + centerline + `>` toward the outlet (as on P&ID drawings) |
 
 | State attribute | Values | If omitted |
 |---|---|---|
@@ -203,7 +211,7 @@ Usable on every equipment tag (including user symbols).
 
 ### 5.4 Valve `DvValve`
 
-All kinds are 60 × 48px, with `in` on the left and `out` on the right, both 32px from the top (the pipe centerline).
+Straight kinds are 60 × 48px, with `in` on the left and `out` on the right, both 32px from the top (the pipe centerline). `angle` and `relief` are angle bodies: `in` at the bottom, `out` on the right (`flip="h"` puts `out` on the left).
 
 | kind | Shape |
 |---|---|
@@ -212,6 +220,11 @@ All kinds are 60 × 48px, with `in` on the left and `out` on the right, both 32p
 | `butterfly` | Body + tilted disc + actuator on top |
 | `control` | Bowtie + dome-shaped actuator on top (control valve) |
 | `check` | Body + triangle (non-return, no state) |
+| `globe` | Bowtie + filled dot + handwheel (throttling) |
+| `plug` | Bowtie + hollow plug + lever |
+| `diaphragm` | Bowtie + dome (diaphragm) + handwheel |
+| `angle` | 48 × 48. Two triangles meeting at a right angle + handwheel. `in` bottom, `out` right (20px from top) |
+| `relief` | 48 × 64. Angle body + spring (pressure safety / relief valve, PSV). `in` bottom, `out` right (36px from top). `open` = relieving |
 
 | State attribute | Values | If omitted |
 |---|---|---|
@@ -228,6 +241,11 @@ All kinds are 60 × 48px, with `in` on the left and `out` on the right, both 32p
 | `filter` | 60 × 60 | Center (30px) | Diamond + dashed line |
 | `strainer` | 64 × 56 | 20px from top | Y-type strainer |
 | `sight` | 64 × 48 | Center (24px) | Pipe + round sight glass |
+| `reducer` | 44 × 40 | Center (20px) | Concentric reducer, wide `in` → narrow `out` (`flip="h"` for an expander) |
+| `orifice` | 40 × 44 | Center (22px) | Orifice plate between two flanges |
+| `mixer` | 72 × 40 | Center (20px) | Static mixer (zig-zag elements) |
+| `vent` | 32 × 40 | **One port `in`, at the bottom** | Open vent to atmosphere (hood). Connect by name only: `to="VT1"` |
+| `blind` | 16 × 44 | **One port `in`, on the left** | Blind flange / manhole (closed nozzle). Connect by name only: `to="M1"` |
 
 Put flow numbers in `<DvAttach side="bottom">` or `side="top"` (chapter 7).
 
@@ -321,6 +339,7 @@ The heights of `a`·`b` match `in`·`out` of `DvValve` (in line with ordinary va
 | `arrow` | `end` (arrow into the `to` port) · `start` (into the `from` port) · `both` · `none` (default) |
 | `flow` | The app decides this line's flow (true/false, bindable). If omitted, judged automatically (12.1) |
 | `medium` | Medium color `water`·`steam`·`air`·`gas`·`oil`·`acid` (12.2). Propagates in the flow direction. If omitted, gray |
+| `label` | Small text beside the pipe — the line number from the drawing (`01-100-PE-N`). Placed at the middle of the pipe's longest straight segment (below it if horizontal, to the right if vertical), in the theme text color. Does not affect layout, so give the pipe a segment long enough for the text |
 
 **Rules**
 
@@ -397,6 +416,8 @@ Instead of a port name, a line end (and an instrument `tap`, 7.3) can name **a p
 
 - Mainly used inside `DvVessel` (agitator). When an accessory is present, the vessel's `top` port leaves the center empty and takes positions on both sides.
 - Pump drive motors are usually not drawn (they are considered part of the pump symbol). When the drawing shows one, put `DvMotor` inside `DvPump`: a shaft line joins the motor to the pump.
+- `DvMotor kind="isa"` draws the ISA-5.1 motor instead: an `M` in a circle (36 × 52, stem included). Pair it with `DvPump kind="isa"` to match a P&ID drawing.
+- A signal line (`DvSignal to="P1"`) to equipment with an accessory ends on the accessory (the motor), as drawings show it.
 
 ### 7.3 `DvInstrument` — instrument bubble
 
@@ -450,11 +471,13 @@ Connects signals (electrical or control signals) between instruments, or between
 | Attribute | Description |
 |---|---|
 | `from` · `to` | Instrument name (`DvInstrument name`) or equipment name. Write **the name only, with no port** (writing it like `V1.in` is an error) |
+| `arrow` | `end` · `start` · `both` · `none` (default). Small arrowhead at that end |
+| `label` | Small text beside the `from` end (`SH`, `SL` …). Bindable |
 
 - It is a different tag from pipes (`DvLine`). Signal lines are drawn **after all pipes are drawn**, and have **no effect** on equipment placement, flow judgment or flow animation. Adding or removing signal lines leaves equipment positions unchanged.
 - Lines are orthogonal (horizontal and vertical) and avoid equipment bodies, name tags, attached cells and other instruments. Where they cross pipes they pass straight through **without a jump** (ISA convention). Paths running right alongside a pipe are avoided.
-- Where the ends land: for an instrument, the center of the bubble face toward the counterpart (avoiding the right face with the value text, the face toward its attached equipment, and faces already used by other signal lines); for a control valve (`DvValve kind="control"`), **the top of the actuator**; for other equipment, the center of the symbol area's face toward the counterpart.
-- There is no direction (arrow). Writing `from`·`to` in the direction the signal travels (measurement → controller → valve) makes it easier to read.
+- Where the ends land: for an instrument, the center of the bubble face toward the counterpart (avoiding the right face with the value text, the face toward its attached equipment, and faces already used by other signal lines); for a control valve (`DvValve kind="control"`), **the top of the actuator**; for other equipment, the center of the body's face toward the counterpart (the body includes accessories, so a pump with a `DvMotor` is reached at the motor).
+- `arrow="end"` (`start` · `both` · `none`, default none) draws a small arrowhead, like `DvLine`. `label="SH"` puts small text beside the `from` end (switch actions such as `SH`·`SL`, signal names). Write `from`·`to` in the direction the signal travels (measurement → controller → valve).
 - Terminals (`DvTerminal`), unit ports (`DvPort`) and instruments that are not drawn (instruments with a wrong `on`) cannot be connected (Trace error; only that signal line is dropped). Instruments inside a unit connect only within the same unit.
 
 ---

@@ -147,6 +147,9 @@ internal sealed class ProcessLine
     public bool ArrowEnd, ArrowStart;
     public bool Error;
 
+    /// <summary><c>label</c>: small text beside the pipe (line number such as <c>01-100-PE-N</c>), at the middle of its longest segment.</summary>
+    public string? Label;
+
     /// <summary><c>flow</c> override (the actual flow known to the app). <see langword="null"/> if absent, meaning it is determined automatically.</summary>
     public bool? FlowOverride;
 
@@ -190,6 +193,10 @@ internal sealed class ProcessInstrument
 internal sealed class ProcessSignal
 {
     public required string FromRef, ToRef;
+
+    /// <summary><c>arrow</c> (same values as <c>DvLine</c>) and <c>label</c> (small text beside the <c>from</c> end, e.g. <c>SH</c>).</summary>
+    public bool ArrowEnd, ArrowStart;
+    public string? Label;
     public bool Error;
     internal GraphSignal? G;
 }
@@ -363,6 +370,7 @@ internal static class ProcessBuilder
                         ? ProcessNode.Truthy(fv)
                         : null,
                     MediumSet = Medium(BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("medium"))),
+                    Label = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("label")),
                 });
                 continue;
             }
@@ -373,6 +381,9 @@ internal static class ProcessBuilder
                 {
                     FromRef = ch.Attributes.GetValueOrDefault("from") ?? "",
                     ToRef = ch.Attributes.GetValueOrDefault("to") ?? "",
+                    ArrowEnd = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("arrow")) is "end" or "both",
+                    ArrowStart = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("arrow")) is "start" or "both",
+                    Label = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("label")),
                 });
                 continue;
             }
@@ -481,7 +492,15 @@ internal static class ProcessBuilder
                 {
                     var running = sub.Attributes.TryGetValue("running", out var rr) &&
                                   BindingResolver.ResolveValueOrLiteral(vm, rr) is { } rv && ProcessNode.Truthy(rv);
-                    pn.Accessories.Add((BuiltInSymbols.Get(sub.Tag, null)!, running));
+                    var accKind = BindingResolver.ResolveText(vm, sub.Attributes.GetValueOrDefault("kind"));
+                    var acc = BuiltInSymbols.Get(sub.Tag, accKind);
+                    if (acc is null)
+                    {
+                        Warn($"<{sub.Tag} kind='{accKind}'> is not a known kind (isa); drawing the default");
+                        acc = BuiltInSymbols.Get(sub.Tag, null)!;
+                    }
+
+                    pn.Accessories.Add((acc, running));
                 }
                 else if (sub.Tag == "DvAttach")
                 {
@@ -747,10 +766,31 @@ internal static class ProcessBuilder
         if (BuiltInSymbols.Kinds.TryGetValue(ch.Tag, out var kinds))
         {
             var kind = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("kind"));
-            if (BuiltInSymbols.Get(ch.Tag, kind) is { } def)
-                return def;
-            Warn($"<{ch.Tag} kind='{kind}'> is not a known kind ({string.Join(", ", kinds)}); drawing as {kinds[0]}");
-            return BuiltInSymbols.Get(ch.Tag, null);
+            var def = BuiltInSymbols.Get(ch.Tag, kind);
+            if (def is null)
+            {
+                Warn($"<{ch.Tag} kind='{kind}'> is not a known kind ({string.Join(", ", kinds)}); drawing as {kinds[0]}");
+                def = BuiltInSymbols.Get(ch.Tag, null)!;
+            }
+
+            // 용기 높이(height) — 머리·바닥 모양은 그대로, 곧은 몸통만 늘리거나 줄인다(원래 높이의 0.6~4배)
+            if (ch.Tag == "DvVessel" && BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("height")) is { Length: > 0 } hText)
+            {
+                if (!float.TryParse(hText, NumberStyles.Float, CultureInfo.InvariantCulture, out var h) || !float.IsFinite(h))
+                {
+                    Warn($"<DvVessel height='{hText}'> is not a number (px); drawing at {def.Height:0}");
+                }
+                else
+                {
+                    var clamped = Math.Clamp(h, def.Height * 0.6f, def.Height * 4);
+                    if (clamped != h)
+                        Warn($"<DvVessel height='{hText}'> is outside {def.Height * 0.6f:0}–{def.Height * 4:0} for kind '{def.Name}'; using {clamped:0}");
+                    if (clamped != def.Height)
+                        def = BuiltInSymbols.Stretch(def, clamped);
+                }
+            }
+
+            return def;
         }
 
         if (registry is not null && registry.TryGetSymbol(ch.Tag, out var user) && user is not null)
@@ -1457,7 +1497,7 @@ internal static class ProcessBuilder
     private static bool HasActuator(ProcessNode n) =>
         (n.Tag == "DvValve" && n.Def?.Name == "control") || (n.Tag == "DvValve3" && n.Def?.Name == "valve3-control");
 
-    // 신호선 끝 — 계기는 버블, 조절 밸브는 구동부 위, 그 밖의 장비는 심볼 영역(상대 쪽 면 가운데)
+    // 신호선 끝 — 계기는 버블, 조절 밸브는 구동부 위, 그 밖의 장비는 몸통(심볼 + 부속, 상대 쪽 면 가운데)
     private static GraphEnd SignalEnd(ProcessDiagram d, string name)
     {
         switch (SignalTarget(d, name))
@@ -1467,7 +1507,7 @@ internal static class ProcessBuilder
             case ProcessNode n when HasActuator(n):
                 return new GraphEnd { Node = d.Nodes.IndexOf(n), Key = name, Local = n.Transform.MapPoint(ActuatorTop), Side = MapSide(PortSide.Top, n) };
             case ProcessNode n:
-                return new GraphEnd { Node = d.Nodes.IndexOf(n), Key = name, Pick = n.Sym };
+                return new GraphEnd { Node = d.Nodes.IndexOf(n), Key = name, Pick = n.Body }; // 부속(모터 등) 포함 — 심볼 윗면은 부속에 덮여 길이 없다
             default:
                 throw new InvalidOperationException(name); // ResolveSignals 가 걸러 낸다
         }
