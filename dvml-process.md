@@ -123,8 +123,9 @@ AI MUST follow the order below exactly. Each step says what to decide.
 **Size**
 
 - If no size is given, the process diagram's size = the content size (the placement result + a 12px outer margin).
-- If a size is given or the parent determines the size, the content is placed in the **center** of that area.
-- If the area is smaller than the content, placement is retried in the following order and the **first one that fits** is used. With `align="auto"` (default): staircase with spacing scale 1 → 0.85 → 0.7 → 0.6 → 0.5, then same-row with 1 → … → 0.5. With `align="step"`·`"row"`, spacing is reduced only in that mode. If it still overflows, the placement that overflows least is used and a Trace warning ("Not enough space") is left. No zooming (scaling) is done. Equipment sizes themselves do not shrink, so only spacing and row alignment can be reduced.
+- The placement and the pipe routes are decided **once, at the natural size** (spacing scale 1; with `align="auto"`, the staircase). If a size is given or the parent determines the size, that same drawing is **stretched or shrunk to the area**: only positions move — equipment, text and pipes keep their size — and each axis is scaled on its own (a wider area spreads equipment sideways, a taller one downward). Bends, branch points and the side a pipe passes equipment on do not change with the area size. Equipment joined by a straight pipe moves together, so straight runs stay straight.
+- Shrinking has a limit: bubbles, labels and pipe spacing do not shrink, so below a certain size the shape no longer fits (a segment would fold back, a pipe would run into equipment, or pipes would touch). Only then is placement retried the old way, and the **first one that fits** is used: with `align="auto"` (default), staircase with spacing scale 1 → 0.85 → 0.7 → 0.6 → 0.5, then same-row with 1 → … → 0.5; with `align="step"`·`"row"`, only that mode. The drawing then **looks different from the natural size**, and the Trace warning "The piping no longer fits the diagram's natural-size shape …" is left.
+- If nothing fits, the natural-size shape is kept at its smallest and overflows, with the Trace warning "Not enough space". No zooming is done (equipment and text never shrink).
 - **To make it fill the remaining space**, use `grow="1" style="height:0"` inside a vertical layout (same meaning as CSS `flex-basis:0` — grows from a base height of 0), and `grow="1"` inside a horizontal layout. With only `grow="1"` and no `height:0`, the process diagram does not shrink below its content height and may overflow the screen.
 
 ```xml
@@ -455,7 +456,7 @@ Draws field instruments (flow transmitter FT, level transmitter LT …) and cont
 - The face is chosen automatically: the face of that equipment with the fewest lines, attached cells and name tags; on a tie, top → right → bottom → left. It is placed 20px outside the name tag and attached cells on that face. Pumps, valves and inline equipment usually get the **top**; vessels using both top and bottom ports usually get the **side**.
 - If one piece of equipment has several instruments, they sit side by side on that face (horizontally on top/bottom, vertically on a side). A single instrument is aligned to the equipment's center line (a controller above a control valve → the signal line drops straight down to the actuator).
 - **A controller not attached to equipment** (control room instruments such as FIC, LIC) is attached with `on` to **the valve (or pump) that controller drives**. Like `FIC1` in the example above.
-- **With `tap`** (to match a drawing): a face position puts the bubble 24px outside that point, on the line out of the face (`left@…` → to the left, `top@…` → above). A fixed port taps the pipe 12px out of the port and puts the bubble 24px above it (to the right of a vertical pipe). Several instruments with `tap` on the same equipment are each placed at their own point; instruments without `tap` keep the automatic face. When the connection line leaves the bubble to the right, the `value` text goes below the line.
+- **With `tap`** (to match a drawing): a face position puts the bubble 24px outside that point, on the line out of the face (`left@…` → to the left, `top@…` → above). A fixed port taps the pipe 12px out of the port and puts the bubble 24px above it (to the right of a vertical pipe). Several instruments with `tap` on the same equipment are each placed at their own point; instruments without `tap` keep the automatic face. When the connection line leaves the bubble to the right, the `value` text goes below the line. Pipes do not cross the connection line (they go around the bubble rather than between it and its equipment).
 - The bubble diameter is 40px (wider if the text is long); text sizes are `tag` 12px, `number` 11px, `value` 11px. The color follows `look` (same fill as terminals).
 - The width of the `value` text is included in that equipment's size. If a value change alters the text width, placement is recomputed as with `DvAttach`, and surrounding items may move slightly. Large, frequently changing values are better shown separately with `DvAttach`.
 
@@ -472,7 +473,7 @@ Connects signals (electrical or control signals) between instruments, or between
 |---|---|
 | `from` · `to` | Instrument name (`DvInstrument name`) or equipment name. Write **the name only, with no port** (writing it like `V1.in` is an error) |
 | `arrow` | `end` · `start` · `both` · `none` (default). Small arrowhead at that end |
-| `label` | Small text beside the `from` end (`SH`, `SL` …). Bindable |
+| `label` | Small text beside the `from` end (`SH`, `SL` …), on the side away from the line's first bend — or the other side if that spot touches a pipe, a signal line or a bubble. Bindable |
 
 - It is a different tag from pipes (`DvLine`). Signal lines are drawn **after all pipes are drawn**, and have **no effect** on equipment placement, flow judgment or flow animation. Adding or removing signal lines leaves equipment positions unchanged.
 - Lines are orthogonal (horizontal and vertical) and avoid equipment bodies, name tags, attached cells and other instruments. Where they cross pipes they pass straight through **without a jump** (ISA convention). Paths running right alongside a pipe are avoided.
@@ -660,7 +661,7 @@ The order is written down so an AI can predict the result and choose hints. The 
 4. **In-column order** — start with declaration order, then repeatedly sort by the average position of neighbors in the previous/next columns, choosing the order with the fewest line crossings. The neighbor position uses **the side of the port the line is attached to** — equipment connected to a top (tb: left) side port goes earlier, equipment connected to a bottom (tb: right) side port goes later (the `c` branch of a 3-way valve, `in2`·`out2` of a heat exchanger). If crossings still remain, adjacent equipment pairs are swapped on trial, and the order is kept only if crossings decrease. If there is a `row` hint, that value is the order key.
 5. **Alignment** — each equipment is aligned to the average height (lr) / horizontal position (tb) of its neighbor ports in the previous column. Equipment with no predecessor (terminals, units) is aligned to its successor, then aligned once more against the previous column. So a series process becomes a straight line, and when several pieces of equipment converge on one (a merge, 3 units → 1 tank), the receiving equipment comes to the center. Ports on sides perpendicular to the flow are aligned according to `align`.
    - **Incoming (front) side ports** (top ports in lr, left ports in tb): always aligned to "the spot 26px outside in front of the port" — a line fed from above comes straight down and bends once to enter.
-   - **Outgoing (back) side ports** (bottom ports in lr, right ports in tb): with `step`, 26px outside in front of the port (the next equipment sits lower than the tank → staircase, 1 bend, taller drawing); with `row`, the equipment's center line (the next equipment's inlet is at the tank's mid height → same row, pipe bends in a U shape with 3 bends, shorter and wider drawing). `auto` uses staircase if it fits the area, otherwise same row (sizing in chapter 4). Unit interiors use the same method as the outside.
+   - **Outgoing (back) side ports** (bottom ports in lr, right ports in tb): with `step`, 26px outside in front of the port (the next equipment sits lower than the tank → staircase, 1 bend, taller drawing); with `row`, the equipment's center line (the next equipment's inlet is at the tank's mid height → same row, pipe bends in a U shape with 3 bends, shorter and wider drawing). `auto` uses staircase; same row only when the staircase drawing cannot be shrunk into the area (sizing in chapter 4). Unit interiors use the same method as the outside.
 6. **Spacing** — between equipment in the same column = 40px × spacing scale (minimum 28px). Corridor between columns = 48px × spacing scale (minimum 44px) + number of pipe bundles passing through that corridor (lines connected by branches/merges form one bundle) × pipe spacing (plain 12px, rich 16px). Column width = the widest equipment (footprint) in that column; equipment is centered in the column.
 7. **Footprint** — the size one piece of equipment occupies = the rectangle enclosing symbol + accessories + name label + attached boxes. So equipment with a large attached box also widens its column.
 
@@ -668,9 +669,9 @@ The order is written down so an AI can predict the result and choose hints. The 
 
 ## 10. How pipe routes are determined
 
-1. Pipes leave the port **18px straight** outward (the port's lead-out end). No bend directly in front of a port.
+1. Pipes leave the port **18px straight** outward (the port's lead-out end). No bend directly in front of a port. When two ports face each other closer than two lead-outs (36px — only possible with coordinate placement), both lead-outs are shortened to half the gap, so the pipe runs straight (or with one small step if the ports are offset).
 2. Routes are searched along an 8px grid (+ port coordinates). Cost = length + bend (30) + crossing another pipe (40). Following an already-drawn trunk of the same bundle costs 1/5, so branches and merges share a trunk.
-3. Routes do not enter within 10px of an equipment symbol, or within 4px of name labels and attached boxes.
+3. Routes do not enter within 10px of an equipment symbol, or within 4px of name labels and attached boxes, and do not cross an instrument's connection line (`tap`, 7.3).
 4. Pipes do not overlap pipes of other bundles, do not run closer than the pipe spacing when parallel, and do not bend on top of another pipe (it would look like they touch).
 5. If there is still no route, these constraints are turned into costs and the search is repeated (overlap allowed), leaving the Trace warning "no free path, so it overlaps other piping".
 6. Bundles are drawn in declaration order (lines written first get the good routes first).
@@ -993,7 +994,8 @@ Process diagram problems are reported through `System.Diagnostics.Trace`. Keep a
 |---|---|---|---|
 | `'A.out'→'B.in': crosses other piping N time(s)` | Warning | Crossings (drawn with jumps) | Change the order of equipment in the same column with `row`. Arrange declaration order in flow order |
 | `'A.out'→'B.in': no free path, so it overlaps other piping` | Warning | Blocked, drawn overlapping | Enlarge the area, adjust `row`·`rank`, move attached boxes |
-| `Not enough space: needs W×H, area is W×H` | Warning | Overflows even with minimum spacing | Enlarge the area, split the screen, or reduce equipment |
+| `Not enough space: needs W×H, area is W×H` | Warning | Overflows even with minimum spacing (the natural-size shape is kept and overflows) | Enlarge the area, split the screen, or reduce equipment |
+| `The piping no longer fits the diagram's natural-size shape in this area, so it is laid out again …` | Warning | Automatic placement: the area is too small for the natural-size drawing to shrink into, so alignment and spacing were chosen again and the drawing looks different (chapter 4) | Enlarge the area if the shape must stay the same |
 | `DvLine '…': no equipment named 'X'` | Error | Name typo, or equipment hidden with `visible` | Check the name |
 | `DvLine '…': 'X' has no port 'p' (…)` | Error | Port name typo | Use a name from the parentheses |
 | `DvLine '…': 'X' requires a port (…)` | Error | Port omitted, as in `from="X"` | Use `X.in`, etc. |
@@ -1022,6 +1024,7 @@ Process diagram problems are reported through `System.Diagnostics.Trace`. Keep a
 | `<X name='N'>: placement="fixed" needs both x and y …; not drawn` | Error | Coordinate placement, but the equipment has no (or an invalid) `x`/`y`. Lines to it then also report "no equipment named" | Give both `x` and `y` |
 | `'A' and 'B' overlap; move one of them (x/y) or enlarge base-size` | Warning | Coordinate placement: two pieces of equipment (symbol, label, attached boxes, instruments) overlap | Move one, or check `base-size` against the area |
 | `Not enough space: equipment reaches W×H, area is W×H …` | Warning | Coordinate placement: equipment goes past the area | Move equipment, set `base-size`, or enlarge the area |
+| `The area is smaller than base-size and the piping no longer fits its base-size shape, so it is routed again …` | Warning | Coordinate placement: the pipes were routed again for this smaller area and may look different from base-size (20.3) | Set `base-size` to the smallest area the screen is shown at |
 | `<X name='N'>: x/y are used only with <DvProcess placement="fixed">` · `row`/`rank`/`align … is not used with placement="fixed"` · `placement='…'` · `base-size …` | Warning | Attribute for the other placement mode, or a value typo | Remove it, or switch the mode |
 
 On screen, invalid connections show as a **red dashed line**, and equipment with a wrong port shows a **red border**.
@@ -1187,7 +1190,7 @@ This is due to the staircase layout, where equipment after a line leaving the ta
 Lines on the same side and in the same direction are already merged into one nozzle. What appears separate is an incoming and an outgoing line, or different left/right sides (`side`).
 
 **The screen is small and it overflows.**
-Alignment (`auto`) and spacing (down to 0.5×) adjust automatically. If it still overflows, enlarge the area, split the process across two screens, or omit less important equipment (inlet valves, etc.).
+The natural-size drawing is shrunk to fit (positions only — equipment and text keep their size). Below the smallest size its shape allows, alignment (`auto`) and spacing (down to 0.5×) are chosen again, so the drawing changes shape (with a warning). If it still overflows, the natural shape is kept and overflows: enlarge the area, split the process across two screens, or omit less important equipment (inlet valves, etc.).
 
 **I have several identical units of plant (3 blenders).**
 Define a unit component once and use it like `<Blender name="BL1" U="{BL1}"/>` (8.4). To stand them side by side, outer `direction="tb"` + unit outlet port `side="bottom"`.
@@ -1253,7 +1256,8 @@ Automatic placement (chapters 1–19) lays equipment out in flow order so that i
 
 - **Without `base-size`**: coordinates are used as they are (scale 1). The diagram's natural size is from the origin to the far edge of the content, plus a 12px margin. If the area is smaller, it overflows and a "Not enough space" warning is left.
 - **With `base-size="W H"`**: the natural size is W×H. In an area of another size, the scale `s = min(area width / W, area height / H)` is applied **to the coordinates only**, and the W·s × H·s box is centered in the area. A larger area spreads the equipment apart; a smaller one brings it closer. Equipment, pipes and text keep their size.
-- Best practice: take `base-size` equal to the real size of the screen area, so the scale stays near 1 and the screen looks like the drawing. When the area is much smaller, equipment can end up touching — the overlap and "no free path" warnings tell you.
+- **Pipe routes are decided once, at base-size.** At other sizes they are not routed again but stretched with the equipment: bends keep their number, order and side, and only their lengths change, so the drawing keeps its shape at every window size. If the area is smaller than base-size and that shape no longer fits (a segment would fold back, a pipe would run into equipment, or pipes would touch), the pipes are routed again for that size — they may look different — and the Trace warning "The area is smaller than base-size …" is left.
+- Best practice: take `base-size` equal to the **smallest** real size of the screen area, so the scale stays at 1 or above and the screen always looks like the drawing. When the area is much smaller, equipment can end up touching — the overlap and "no free path" warnings tell you.
 
 ### 20.4 Straightening small offsets (snap)
 
