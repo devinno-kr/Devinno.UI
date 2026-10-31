@@ -865,6 +865,24 @@ internal sealed class ProcessGraph
                 i = j;
             }
         }
+
+        // 마주 보는 두 끝이 곧은 끝 둘보다 가까우면(고정 좌표) 곧은 끝이 서로 지나쳐 U턴 없이는 못 이어
+        // 한 바퀴 도는 고리가 생긴다 — 간격의 절반씩으로 줄여 곧게(어긋나 있으면 Z 로) 잇는다
+        foreach (var l in Lines)
+        {
+            var (a, b) = (l.From, l.To);
+            if (DirIndex(a.Out) != (DirIndex(b.Out) + 2) % 4)
+                continue;
+            var gap = a.Out switch
+            {
+                PortSide.Right => b.Point.X - a.Point.X,
+                PortSide.Left => a.Point.X - b.Point.X,
+                PortSide.Bottom => b.Point.Y - a.Point.Y,
+                _ => a.Point.Y - b.Point.Y,
+            };
+            if (gap > 0 && gap < a.StubLen + b.StubLen)
+                a.StubLen = b.StubLen = gap / 2;
+        }
     }
 
     // 면 위 빈 구간 — 면 범위(FaceStart~FaceEnd)에서 그 면 바깥에 붙은 것(부속·붙은 칸)이 가리는 구간을 뺀다

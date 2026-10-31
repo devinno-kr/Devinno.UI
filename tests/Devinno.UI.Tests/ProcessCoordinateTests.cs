@@ -140,6 +140,28 @@ public class ProcessCoordinateTests
         Assert.True(d.Lines[0].G!.Points.Count > 2);
     }
 
+    // 마주 보는 포트가 곧은 끝 둘(36px)보다 가까워도 고리 없이 잇는다 — 예전엔 곧은 끝이 서로 지나쳐 한 바퀴 돌았다
+    [Theory]
+    [InlineData(200f)] // 일직선
+    [InlineData(230f)] // 스냅 범위 밖으로 어긋남 → Z
+    public void CloseFacingPorts_NoLoop(float y)
+    {
+        var (_, d) = ProcessTests.Start($"""
+            <DvValve name="A" kind="check" open="true" x="100" y="200"/>
+            <DvValve name="B" kind="check" open="true" x="170" y="{y}"/>
+            <DvLine from="A.out" to="B.in"/>
+            """, "placement=\"fixed\"");
+        var l = d.Lines[0].G!;
+        Assert.InRange(l.To.Point.X - l.From.Point.X, 1f, 35f); // 시험 전제: 곧은 끝 둘보다 가깝다
+        for (var k = 0; k + 1 < l.Points.Count; k++)
+            Assert.True(l.Points[k + 1].X >= l.Points[k].X - 0.01f, $"x goes back at point {k}");
+        if (y == 200f)
+        {
+            Assert.Equal(2, l.Points.Count);
+            Assert.Empty(ProcessTests.Violations(d)); // 어긋난 쪽은 좁은 틈의 Z 라 장비 여유보다 가까움(forced) — 그건 맞는 경고
+        }
+    }
+
     [Fact]
     public void Snap_SkipsFacePorts()
     {
