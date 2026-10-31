@@ -243,7 +243,10 @@ public class ProcessUnitTests
     [Fact]
     public void Units_SideBySide_TargetCentered()
     {
-        var (_, d, _) = Start(Plant);
+        // 자연 크기 영역(늘이지 않은 배치)에서 — 영역을 채우려고 늘이면 위치만 비례라 이 맞춤은 조금 어긋날 수 있다
+        var (s0, _, _) = Start(Plant);
+        var size = ProcessBuilder.Natural(Flatten(s0.Root!).First(b => b.Process is not null));
+        var (_, d, _) = Start(Plant, $"direction=\"tb\" style=\"width:{size.Width.ToString(System.Globalization.CultureInfo.InvariantCulture)};height:{size.Height.ToString(System.Globalization.CultureInfo.InvariantCulture)}\"");
         var units = new[] { "BL1", "BL2", "BL3" }.Select(n => Screen(Node(d, n))).ToArray();
         Assert.Equal(units[0].Top, units[1].Top, 0.5);
         Assert.True(units[0].Right < units[1].Left && units[1].Right < units[2].Left);

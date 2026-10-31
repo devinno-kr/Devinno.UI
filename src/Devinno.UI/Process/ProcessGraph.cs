@@ -127,6 +127,9 @@ internal sealed class ProcessGraph
     /// <summary>Spacing scale (1 = default; reduced when space is short).</summary>
     public float Spacing = 1f;
 
+    /// <summary>Automatic placement with <see cref="Shape"/>: the vertical position scale (<see cref="Spacing"/> is the horizontal one) — each axis is stretched or shrunk as far as the area needs.</summary>
+    public float? SpacingY;
+
     /// <summary>Minimum gap between parallel pipes (center to center).</summary>
     public float Pitch = 16f;
 
@@ -137,10 +140,13 @@ internal sealed class ProcessGraph
     public bool Fixed;
 
     /// <summary>
-    /// Coordinate placement with <c>base-size</c>: the layout already routed at base size. Pipes and signal lines are not routed again — their bends are kept
-    /// and only stretched to the scaled positions, so the drawing keeps its shape at every area size.
+    /// The layout already routed at the reference size — <c>base-size</c> in coordinate placement, the natural size (spacing 1) in automatic placement.
+    /// Pipes and signal lines are not routed again — their bends are kept and only stretched to the scaled positions, so the drawing keeps its shape at every area size.
     /// </summary>
     public ProcessGraph? Shape;
+
+    /// <summary>Result (automatic placement with <see cref="Shape"/>): the shape does not fit at this scale (a segment folds back, a pipe runs into equipment or pipe groups touch) — nothing is routed.</summary>
+    public bool Unfit;
 
     // 좌표 배치에서 고른 맞춤 쌍: 장비 → (들어오는 선 번호, x 맞춤 여부)
     private Dictionary<int, (int Line, bool AlongX)> SnapAnchors { get; } = new();
@@ -187,10 +193,19 @@ internal sealed class ProcessGraph
 
         if (Shape is not null)
         {
-            PlaceFixed();
+            if (Fixed)
+                PlaceFixed();
+            else
+                PlaceScaled(Shape);
             if (Stretch(Shape))
             {
                 Normalize();
+                return;
+            }
+
+            if (!Fixed)
+            {
+                Unfit = true; // 자동 배치는 간격·줄 맞춤 후보로 다시 배치한다(ProcessBuilder.Arrange)
                 return;
             }
 
@@ -363,6 +378,42 @@ internal sealed class ProcessGraph
         }
 
         IEnumerable<SKRect> Areas(GraphNode g) => g.Extras.Prepend(g.Body).Where(r => !r.IsEmpty).Select(g.Abs);
+    }
+
+    // 자동 배치 모양 늘이기·줄이기 — 장비 몸통 가운데를 축마다 배율만큼 옮긴다(장비 크기 그대로). 곧은 배관 하나로 이어진 장비끼리는
+    // 그 축에서 한 덩어리(가운데 평균을 옮긴다) — 일직선이 꺾이지 않게
+    private void PlaceScaled(ProcessGraph shape)
+    {
+        var dx = Shifts(shape, true, Spacing);
+        var dy = Shifts(shape, false, SpacingY ?? Spacing);
+        for (var i = 0; i < Nodes.Count; i++)
+        {
+            Nodes[i].X = shape.Nodes[i].X + dx[i];
+            Nodes[i].Y = shape.Nodes[i].Y + dy[i];
+        }
+    }
+
+    /// <summary>Automatic placement: the spread of the equipment groups along each axis — how much the size changes per unit of position scale.</summary>
+    internal static (float X, float Y) Spread(ProcessGraph g) => (Shifts(g, true, 2f).DefaultIfEmpty().Max() - Shifts(g, true, 2f).DefaultIfEmpty().Min(),
+        Shifts(g, false, 2f).DefaultIfEmpty().Max() - Shifts(g, false, 2f).DefaultIfEmpty().Min());
+
+    private static float[] Shifts(ProcessGraph shape, bool alongX, float scale)
+    {
+        var nodes = shape.Nodes;
+        var parent = Enumerable.Range(0, nodes.Count).ToArray();
+        int Find(int i) => parent[i] == i ? i : parent[i] = Find(parent[i]);
+        foreach (var l in shape.Lines)
+        {
+            if (l.Points.Count != 2)
+                continue;
+            var flat = MathF.Abs(l.Points[0].Y - l.Points[1].Y) < 0.01f;
+            if (flat != alongX) // 가로 직선이면 세로 위치를, 세로 직선이면 가로 위치를 같이
+                parent[Find(l.From.Node)] = Find(l.To.Node);
+        }
+
+        float Center(int i) => alongX ? nodes[i].X + nodes[i].Body.MidX : nodes[i].Y + nodes[i].Body.MidY;
+        var mean = Enumerable.Range(0, nodes.Count).Where(i => !nodes[i].Pinned).GroupBy(Find).ToDictionary(g => g.Key, g => g.Average(Center));
+        return Enumerable.Range(0, nodes.Count).Select(i => nodes[i].Pinned ? 0f : mean[Find(i)] * (scale - 1f)).ToArray();
     }
 
     // 하류 끝이 상류 끝과 일직선이 되려면 하류 장비를 옮길 거리
@@ -1673,8 +1724,8 @@ internal sealed class ProcessGraph
     {
         var dx = new float[Nodes.Count];
         var dy = new float[Nodes.Count];
-        var xs = new List<(float From, float To)>();
-        var ys = new List<(float From, float To)>();
+        var xs = new List<(float From, float To, bool Port)>();
+        var ys = new List<(float From, float To, bool Port)>();
         for (var i = 0; i < Nodes.Count; i++)
         {
             dx[i] = Nodes[i].X - shape.Nodes[i].X;
@@ -1685,10 +1736,17 @@ internal sealed class ProcessGraph
             {
                 var a = shape.Nodes[i].Abs(r);
                 foreach (var x in new[] { a.Left, a.MidX, a.Right })
-                    xs.Add((x, x + dx[i]));
+                    xs.Add((x, x + dx[i], false));
                 foreach (var y in new[] { a.Top, a.MidY, a.Bottom })
-                    ys.Add((y, y + dy[i]));
+                    ys.Add((y, y + dy[i], false));
             }
+        }
+
+        // 선 끝(포트) — 가장 앞선 기준점. 갈라지는 선들이 같이 지나던 줄이 끝 자리와 따로 놀지 않게
+        foreach (var e in shape.Lines.SelectMany(l => new[] { l.From, l.To }).Concat(shape.Signals.SelectMany(g => new[] { g.From, g.To })))
+        {
+            xs.Add((e.Point.X, e.Point.X + dx[e.Node], true));
+            ys.Add((e.Point.Y, e.Point.Y + dy[e.Node], true));
         }
 
         var fx = AxisMap(xs);
@@ -1759,7 +1817,10 @@ internal sealed class ProcessGraph
             dst.Points.AddRange(Map(src.Points, dst.From.Point, dst.To.Point));
         }
 
-        if (folded)
+        // 줄이면서 배관이 장비를 지나거나 다른 묶음끼리 붙으면 그 모양은 이 크기에 안 들어간다(기준 모양에 이미 있던 만큼은 괜찮다)
+        var (hits0, gap0, same0) = Clash(shape.Nodes, shape.Lines, shape.Signals);
+        var (hits, gap, same) = Clash(Nodes, Lines, Signals);
+        if (folded || hits > hits0 || gap < MathF.Min(Pitch / 2, gap0 - 0.5f) || same < MathF.Min(Pitch - 0.5f, same0 - 0.5f))
             return false;
         FindHops();
         foreach (var w in shape.Warnings.Where(w => !Warnings.Contains(w)))
@@ -1767,19 +1828,83 @@ internal sealed class ProcessGraph
         return true;
     }
 
-    // 기준 좌표 → 지금 좌표(같은 기준 좌표는 평균, 순서는 지킨다). 기준점 사이는 비율대로, 밖은 가장 가까운 기준점만큼 옮긴다
-    private static Func<float, float> AxisMap(List<(float From, float To)> pairs)
+    // 배관·신호선이 장비 몸통을 지나는 수, 다른 묶음 배관의 나란한 구간 사이 가장 좁은 간격,
+    // 같은 묶음 배관이 합쳐지지 않고 나란히 가는 가장 좁은 간격(겹쳐 하나로 보이는 0 은 뺀다)
+    private static (int Hits, float Gap, float Same) Clash(List<GraphNode> nodes, List<GraphLine> lines, List<GraphSignal> signals)
     {
-        var pts = pairs.GroupBy(p => MathF.Round(p.From * 100))
-            .Select(g => (From: g.Average(p => p.From), To: g.Average(p => p.To)))
+        static IEnumerable<(SKPoint A, SKPoint B)> Segs(List<SKPoint> pts) => pts.Zip(pts.Skip(1));
+        var bodies = nodes.Where(n => !n.Pinned).Select(n =>
+        {
+            var r = n.Abs(n.Body);
+            r.Inflate(-2, -2);
+            return r;
+        }).ToList();
+        var hits = 0;
+        foreach (var (a, b) in lines.SelectMany(l => Segs(l.Points)).Concat(signals.SelectMany(s => Segs(s.Points))))
+        {
+            var seg = new SKRect(MathF.Min(a.X, b.X), MathF.Min(a.Y, b.Y), MathF.Max(a.X, b.X), MathF.Max(a.Y, b.Y));
+            hits += bodies.Count(r => seg.Left < r.Right && seg.Right > r.Left && seg.Top < r.Bottom && seg.Bottom > r.Top);
+        }
+
+        var gap = float.PositiveInfinity;
+        var same = float.PositiveInfinity;
+        var segs = lines.SelectMany(l => Segs(l.Points).Select(s => (l.Net, s.A, s.B))).ToList();
+        for (var i = 0; i < segs.Count; i++)
+        {
+            for (var j = i + 1; j < segs.Count; j++)
+            {
+                var (p, q) = (segs[i], segs[j]);
+                var flat = MathF.Abs(p.A.Y - p.B.Y) < 0.01f;
+                if (flat != MathF.Abs(q.A.Y - q.B.Y) < 0.01f)
+                    continue;
+                float Lo(SKPoint u, SKPoint v) => flat ? MathF.Min(u.X, v.X) : MathF.Min(u.Y, v.Y);
+                float Hi(SKPoint u, SKPoint v) => flat ? MathF.Max(u.X, v.X) : MathF.Max(u.Y, v.Y);
+                if (MathF.Min(Hi(p.A, p.B), Hi(q.A, q.B)) - MathF.Max(Lo(p.A, p.B), Lo(q.A, q.B)) <= 0.5f)
+                    continue; // 나란히 겹치는 구간이 없다
+                var apart = flat ? MathF.Abs(p.A.Y - q.A.Y) : MathF.Abs(p.A.X - q.A.X);
+                if (p.Net != q.Net)
+                    gap = MathF.Min(gap, apart);
+                else if (apart > 0.01f)
+                    same = MathF.Min(same, apart);
+            }
+        }
+
+        return (hits, gap, same);
+    }
+
+    // 기준 좌표 → 지금 좌표(같은 기준 좌표는 평균 — 선 끝이 있으면 선 끝끼리만, 순서는 지킨다). 기준점 사이는 비율대로, 밖은 가장 가까운 기준점만큼 옮긴다.
+    // 선 끝은 그 자리 그대로 지키고, 순서를 깨는(앞 선 끝보다 작거나 뒤 선 끝보다 큰) 장비 기준점은 뺀다 — 장비 묶음마다 옮긴 양이 달라 생긴다
+    private static Func<float, float> AxisMap(List<(float From, float To, bool Port)> pairs)
+    {
+        var all = pairs.GroupBy(p => MathF.Round(p.From * 100))
+            .Select(g => g.Any(p => p.Port) ? g.Where(p => p.Port).ToList() : g.ToList())
+            .Select(g => (From: g.Average(p => p.From), To: g.Average(p => p.To), Port: g[0].Port))
             .OrderBy(p => p.From).ToList();
+        var ports = all.Where(p => p.Port).ToList();
+        // 선 끝과 같은 좌표는 그 선 끝 자리 그대로(아래 순서 맞춤 전) — 갈라지는 선들이 같이 지나던 줄이 끝 자리와 어긋나지 않게
+        var exact = ports.ToDictionary(p => MathF.Round(p.From * 100), p => p.To);
+        for (var i = 1; i < ports.Count; i++)
+            if (ports[i].To < ports[i - 1].To)
+                ports[i] = (ports[i].From, ports[i - 1].To, true); // 줄어든 창에서 장비가 겹쳐도 거꾸로 접히지 않게
+        var pts = ports.Select(p => (p.From, p.To)).ToList();
+        foreach (var (from, to, _) in all.Where(p => !p.Port))
+        {
+            var before = ports.LastOrDefault(p => p.From < from);
+            var after = ports.FirstOrDefault(p => p.From > from);
+            if ((!before.Port || to >= before.To) && (!after.Port || to <= after.To))
+                pts.Add((from, to));
+        }
+
+        pts = pts.OrderBy(p => p.From).ToList();
         for (var i = 1; i < pts.Count; i++)
             if (pts[i].To < pts[i - 1].To)
-                pts[i] = (pts[i].From, pts[i - 1].To); // 줄어든 창에서 장비가 겹쳐도 거꾸로 접히지 않게
+                pts[i] = (pts[i].From, pts[i - 1].To);
         if (pts.Count == 0)
             return v => v;
         return v =>
         {
+            if (exact.TryGetValue(MathF.Round(v * 100), out var at))
+                return at;
             if (v <= pts[0].From)
                 return v + pts[0].To - pts[0].From;
             if (v >= pts[^1].From)

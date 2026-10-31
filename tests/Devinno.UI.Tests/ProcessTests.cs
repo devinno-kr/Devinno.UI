@@ -183,28 +183,49 @@ public class ProcessTests(ITestOutputHelper output)
         Assert.All(d.Lines, l => Assert.Equal(0, l.G!.Crossings));
     }
 
+    [Fact]
+    public void SlightlySqueezed_KeepsNaturalShape()
+    {
+        // 자연 크기 모양(계단식)을 줄여서 들어가면 그 모양 그대로 — 창 크기마다 꺾임·갈림 자리가 바뀌지 않게
+        var (_, natural) = Start(Serial);
+        var turns = natural.Lines.Select(l => Turns(l.G!.Points)).ToList();
+        var (_, d) = Start(Serial, "style=\"height:440\"");
+        Assert.Equal(ProcessAlign.Step, d.Graph!.Align);
+        Assert.True(d.Graph.Size.Height <= 440.5f, $"{d.Graph.Size}");
+        Assert.Null(d.Shortage);
+        Assert.Equal(turns, d.Lines.Select(l => Turns(l.G!.Points)).ToList());
+        AssertClean(d);
+    }
+
+    // 구간마다 방향(+x, +y, -x, -y)
+    private static string Turns(List<SKPoint> pts) =>
+        string.Concat(pts.Zip(pts.Skip(1)).Select(s => MathF.Abs(s.First.Y - s.Second.Y) < 0.01f ? (s.Second.X > s.First.X ? 'R' : 'L') : (s.Second.Y > s.First.Y ? 'D' : 'U')));
+
     [Theory]
-    [InlineData(440)]
     [InlineData(400)]
     public void Squeezed_AutoAlign_FitsAndStaysClean(float h)
     {
-        // 계단식이 안 맞으면 같은 줄 방식(낮고 넓게)으로 — 그래도 안 맞으면 간격을 줄인다
+        // 자연 크기 모양을 줄여도 안 들어가면 같은 줄 방식(낮고 넓게)으로 — 그래도 안 맞으면 간격을 줄인다
         var (_, natural) = Start(Serial);
         Assert.Equal(ProcessAlign.Step, natural.Graph!.Align);
         var (_, d) = Start(Serial, $"style=\"height:{h}\"");
         Assert.Equal(ProcessAlign.Row, d.Graph!.Align);
         Assert.True(d.Graph.Size.Height <= h + 0.5f, $"{d.Graph.Size} spacing={d.Graph.Spacing}");
         Assert.Null(d.Shortage);
+        Assert.Contains(d.Graph.Warnings, w => w.Contains("natural-size shape")); // 모양이 바뀐 것을 알린다
         AssertClean(d);
     }
 
     [Theory]
     [InlineData(220)]
-    public void Squeezed_FixedStep_ShrinksSpacing_AndWarns(float h)
+    public void Squeezed_FixedStep_KeepsShape_AndWarns(float h)
     {
+        // 어느 방식으로도 안 들어가면 모양을 바꿀 까닭이 없다 — 자연 크기 모양을 세로로 최대한 줄이고(넘친다) 공간 부족을 알린다
+        var (_, natural) = Start(Serial, "align=\"step\"");
         var (_, d) = Start(Serial, $"align=\"step\" style=\"height:{h}\"");
         Assert.Equal(ProcessAlign.Step, d.Graph!.Align); // 고정 — 같은 줄로 바꾸지 않는다
-        Assert.True(d.Graph.Spacing < 1f);
+        Assert.True(d.Graph.SpacingY < 1f);
+        Assert.Equal(natural.Lines.Select(l => Turns(l.G!.Points)), d.Lines.Select(l => Turns(l.G!.Points)));
         Assert.NotNull(d.Shortage);
         AssertClean(d);
     }

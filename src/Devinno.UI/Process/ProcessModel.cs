@@ -1452,12 +1452,13 @@ internal static class ProcessBuilder
 
     /// <summary>
     /// The layout result at spacing scale <paramref name="spacing"/>. Returns the previously computed result for the same structure and scale.
-    /// With <paramref name="shape"/> (coordinate placement with <c>base-size</c>), pipes are not routed again but stretched from that base-size layout.
+    /// With <paramref name="shape"/> (the base-size layout in coordinate placement, the natural-size layout in automatic placement), pipes are not routed again
+    /// but stretched from that layout; in automatic placement <paramref name="spacing"/> and <paramref name="spacingY"/> are the horizontal and vertical position scales.
     /// </summary>
-    internal static ProcessGraph Layout(ProcessDiagram d, string? family, float spacing, ProcessAlign align, ProcessGraph? shape = null)
+    internal static ProcessGraph Layout(ProcessDiagram d, string? family, float spacing, ProcessAlign align, ProcessGraph? shape = null, float? spacingY = null)
     {
         foreach (var n in d.Nodes)
-            Geometry(d, n, family, spacing, align);
+            Geometry(d, n, family, shape is not null && !d.Fixed ? 1f : spacing, align); // 자동 배치 모양 줄이기: 크기는 자연 크기 그대로
 
         var lines = new List<(ProcessLine l, int i)>();
         for (var i = 0; i < d.Lines.Count; i++)
@@ -1468,7 +1469,7 @@ internal static class ProcessBuilder
         }
 
         var signals = d.Signals.Where(s => !s.Error).ToList();
-        var sig = align + (shape is null ? "|" : "|S|") + Signature(d, lines.Select(x => x.l), signals, spacing);
+        var sig = align + (shape is null ? "|" : $"|S{spacingY?.ToString(CultureInfo.InvariantCulture)}|") + Signature(d, lines.Select(x => x.l), signals, spacing);
         var entry = Cache.GetOrCreateValue(d.Source);
         lock (entry)
         {
@@ -1491,6 +1492,7 @@ internal static class ProcessBuilder
             Align = align,
             Fixed = d.Fixed,
             Shape = shape,
+            SpacingY = spacingY,
         };
         graph.Run();
 
@@ -1640,6 +1642,68 @@ internal static class ProcessBuilder
             return;
         }
 
+        // 배관 모양은 자연 크기(간격 배율 1)에서 한 번 정하고, 영역에 맞춰 위치만 축마다 늘이거나 줄인다(장비·글자 크기 그대로).
+        // 창 크기마다 다시 배치하면 꺾임·갈림 자리가 바뀐다. 줄인 모양이 안 들어갈 때만 아래 후보로 다시 배치한다
+        var natural = d.Align ?? ProcessAlign.Step;
+        var shape = Layout(d, family, 1f, natural);
+        ProcessGraph? fit = null, closest = null;
+        var closestOver = float.PositiveInfinity;
+        // 자동 배치 위치에는 가로세로 비율의 뜻이 없다 — 축마다 영역만큼. 장비 크기는 그대로라
+        // 크기 ≈ 자연 크기 + 장비 퍼짐 × (배율 - 1). 배관이 장비 밖으로 나간 자리 등으로 어긋나면 남은 만큼 몇 번 더 맞춘다
+        var (gx, gy) = ProcessGraph.Spread(shape);
+        float Next(float s, float size, float target, float gaps) => gaps > 0.5f ? s + (target - size) / gaps : s;
+        var sx = Next(1f, shape.Size.Width, inner.Width, gx);
+        var sy = Next(1f, shape.Size.Height, inner.Height, gy);
+        var (okX, okY) = (1f, 1f); // 모양이 지켜진 가장 작은 배율
+        for (var k = 0; k < 10; k++)
+        {
+            (sx, sy) = (MathF.Max(sx, MinPositionScale), MathF.Max(sy, MinPositionScale));
+            var st = MathF.Abs(sx - 1f) < 0.001f && MathF.Abs(sy - 1f) < 0.001f ? shape : Layout(d, family, sx, natural, shape, sy);
+            if (st.Unfit)
+            {
+                // 줄여서 접혔다 — 줄인 축을 마지막으로 들어간 배율(처음엔 자연 크기) 쪽으로 반씩 되돌려 모양이 지켜지는 가장 작은 배율을 찾는다
+                if (sx >= 1f && sy >= 1f)
+                    break;
+                (sx, sy) = ((sx + MathF.Max(sx, okX)) / 2, (sy + MathF.Max(sy, okY)) / 2);
+                continue;
+            }
+
+            (okX, okY) = (MathF.Min(okX, sx), MathF.Min(okY, sy));
+
+            var over = MathF.Max(0, st.Size.Width - inner.Width) + MathF.Max(0, st.Size.Height - inner.Height);
+            if (over < closestOver)
+                (closest, closestOver) = (st, over);
+            var (ox, oy) = (st.Size.Width / inner.Width, st.Size.Height / inner.Height);
+            if (ox <= 1.0005f && oy <= 1.0005f)
+            {
+                fit = st;
+                if (ox >= 0.99f && oy >= 0.99f)
+                    break; // 거의 꽉 찼다
+            }
+
+            var (nx, ny) = (MathF.Max(Next(sx, st.Size.Width, inner.Width, gx), MinPositionScale), MathF.Max(Next(sy, st.Size.Height, inner.Height, gy), MinPositionScale));
+            if (MathF.Abs(nx - sx) < 0.0005f && MathF.Abs(ny - sy) < 0.0005f)
+                break; // 더 맞출 수 없다(최소 배율이거나 퍼짐이 없다)
+            (sx, sy) = (nx, ny);
+        }
+
+        if (fit is not null)
+        {
+            Use(fit, null);
+            return;
+        }
+
+        // 마지막으로 계산한 배치가 붙어 있으므로 고른 것으로 다시(캐시) — 같은 모양이면 그것을, 아니면 기존 결과를 쓴다
+        void Use(ProcessGraph g, string? shortage)
+        {
+            g = g == shape ? Layout(d, family, 1f, natural) : g.Shape is not null ? Layout(d, family, g.Spacing, natural, shape, g.SpacingY) : g;
+            d.Shortage = shortage;
+            d.Graph = g;
+            d.Origin = new SKPoint(inner.Left + MathF.Max(0, (inner.Width - g.Size.Width) / 2),
+                inner.Top + MathF.Max(0, (inner.Height - g.Size.Height) / 2));
+            Place(d);
+        }
+
         // 후보: (줄 맞춤) × (간격 배율). auto = 계단식이 맞으면 계단식, 아니면 같은 줄, 둘 다 넘치면 덜 넘치는 쪽
         var aligns = d.Align is { } fixedAlign ? new[] { fixedAlign } : new[] { ProcessAlign.Step, ProcessAlign.Row };
         var spacings = new[] { 1f, 0.85f, 0.7f, 0.6f, 0.5f };
@@ -1669,8 +1733,19 @@ internal static class ProcessBuilder
                 break;
         }
 
+        // 어느 후보도 안 들어가면 모양을 바꿀 까닭이 없다 — 자연 크기 모양을 가장 많이 줄인 것으로(넘친다)
+        if (pick is null && closest is not null)
+        {
+            Use(closest, $"Not enough space: needs {closest.Size.Width:0}×{closest.Size.Height:0}, area is {inner.Width:0}×{inner.Height:0} (overflows even at minimum spacing). Enlarge the area, split the diagram over several screens, or use less equipment");
+            return;
+        }
+
         var (useAlign, useSpacing) = pick ?? least;
         var g = Layout(d, family, useSpacing, useAlign); // 고른 후보로 다시(캐시) — 장비·선에 그 결과를 붙인다
+        // 다시 배치해서 들어갔을 때만 — 어느 후보도 안 들어가면 아래 '공간 부족' 하나로 알린다
+        const string reshaped = "The piping no longer fits the diagram's natural-size shape in this area, so it is laid out again and may look different; resize the area to keep the shape";
+        if (pick is not null && !g.Warnings.Contains(reshaped))
+            g.Warnings.Add(reshaped);
 
         d.Shortage = g.Size.Width > inner.Width + 0.5f || g.Size.Height > inner.Height + 0.5f
             ? $"Not enough space: needs {g.Size.Width:0}×{g.Size.Height:0}, area is {inner.Width:0}×{inner.Height:0} (overflows even at minimum spacing). Enlarge the area, split the diagram over several screens, or use less equipment"
@@ -1681,6 +1756,11 @@ internal static class ProcessBuilder
 
         Place(d);
     }
+
+    // 자동 배치 모양 줄이기: 위치를 이 배율 아래로는 줄이지 않는다(그 전에 대개 모양이 안 들어간다)
+    private const float MinPositionScale = 0.2f;
+
+    private static bool Fits(ProcessGraph g, SKRect inner) => g.Size.Width <= inner.Width + 0.5f && g.Size.Height <= inner.Height + 0.5f;
 
     // 좌표 배치 — 원점 = 영역 왼쪽 위. base-size 가 있으면 위치만 영역에 맞춰 비례(장비·글자 크기 그대로)하고 그 상자를 가운데에
     private static void ArrangeFixed(ProcessDiagram d, string? family, SKRect inner)
