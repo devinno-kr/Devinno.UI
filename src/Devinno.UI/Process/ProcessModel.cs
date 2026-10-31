@@ -1104,9 +1104,25 @@ internal static class ProcessBuilder
             g.Extras.Add(inst.Rect);
             if (!inst.ValueRect.IsEmpty)
                 g.Extras.Add(inst.ValueRect);
+            if (inst.TapPort is not null)
+                g.Extras.Add(TapArea(inst));
         }
 
         n.G = g;
+    }
+
+    // 연결선(tap) 자리 — 배관이 장비와 계기 사이로 지나며 연결선을 가로지르지 않게. 격자(8)보다 넓게(10) 잡아야 사이로 빠지지 않고,
+    // 붙는 쪽 끝은 조금 띄운다(배관 위 tap 이면 그 배관 자체를 막지 않게)
+    private static SKRect TapArea(ProcessInstrument inst)
+    {
+        var (a, b) = (inst.TapFrom, inst.TapTo);
+        var len = MathF.Max(MathF.Abs(b.X - a.X), MathF.Abs(b.Y - a.Y));
+        if (len < 0.01f)
+            return SKRect.Empty;
+        var start = new SKPoint(a.X + (b.X - a.X) / len * 3, a.Y + (b.Y - a.Y) / len * 3);
+        var r = new SKRect(MathF.Min(start.X, b.X), MathF.Min(start.Y, b.Y), MathF.Max(start.X, b.X), MathF.Max(start.Y, b.Y));
+        r.Inflate(MathF.Abs(a.Y - b.Y) > 0.01f ? 5 : 0, MathF.Abs(a.X - b.X) > 0.01f ? 5 : 0);
+        return r;
     }
 
     // 이름표가 그 면의 포트(배관이 곧게 나가는 자리)를 가리면 면을 따라 비켜 놓는다 — 네 면을 다 쓰는 장비(열교환기)는
@@ -1434,8 +1450,11 @@ internal static class ProcessBuilder
     /// <summary>How many times the layout of the diagram from <paramref name="source"/> has actually been computed (not reused) — for tests.</summary>
     internal static int LayoutRuns(ElementNode source) => Cache.TryGetValue(source, out var e) ? e.Runs : 0;
 
-    /// <summary>The layout result at spacing scale <paramref name="spacing"/>. Returns the previously computed result for the same structure and scale.</summary>
-    internal static ProcessGraph Layout(ProcessDiagram d, string? family, float spacing, ProcessAlign align)
+    /// <summary>
+    /// The layout result at spacing scale <paramref name="spacing"/>. Returns the previously computed result for the same structure and scale.
+    /// With <paramref name="shape"/> (coordinate placement with <c>base-size</c>), pipes are not routed again but stretched from that base-size layout.
+    /// </summary>
+    internal static ProcessGraph Layout(ProcessDiagram d, string? family, float spacing, ProcessAlign align, ProcessGraph? shape = null)
     {
         foreach (var n in d.Nodes)
             Geometry(d, n, family, spacing, align);
@@ -1449,7 +1468,7 @@ internal static class ProcessBuilder
         }
 
         var signals = d.Signals.Where(s => !s.Error).ToList();
-        var sig = align + "|" + Signature(d, lines.Select(x => x.l), signals, spacing);
+        var sig = align + (shape is null ? "|" : "|S|") + Signature(d, lines.Select(x => x.l), signals, spacing);
         var entry = Cache.GetOrCreateValue(d.Source);
         lock (entry)
         {
@@ -1471,6 +1490,7 @@ internal static class ProcessBuilder
             Unit = d.IsUnit,
             Align = align,
             Fixed = d.Fixed,
+            Shape = shape,
         };
         graph.Run();
 
@@ -1673,7 +1693,10 @@ internal static class ProcessBuilder
             origin = new SKPoint(inner.Left + (inner.Width - b.Width * scale) / 2, inner.Top + (inner.Height - b.Height * scale) / 2);
         }
 
-        var g = Layout(d, family, scale, ProcessAlign.Step);
+        // 배관 모양(꺾임)은 기준 크기에서 한 번 정하고, 영역 크기는 그 모양을 늘이기만 한다 — 창 크기마다 모양이 바뀌지 않게
+        var g = d.BaseSize is not null && MathF.Abs(scale - 1f) > 0.0001f
+            ? Layout(d, family, scale, ProcessAlign.Step, Layout(d, family, 1f, ProcessAlign.Step))
+            : Layout(d, family, scale, ProcessAlign.Step);
         var right = origin.X + g.Size.Width - ProcessGraph.Margin;
         var bottom = origin.Y + g.Size.Height - ProcessGraph.Margin;
         var real = g.Nodes.Where(n => !n.Pinned).ToList();

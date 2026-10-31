@@ -243,6 +243,128 @@ public class ProcessCoordinateTests
         Assert.Equal(box.Rect.Left, d.Origin.X, 0.5f);
     }
 
+    // 고객 P&ID(Test16) — 창 크기마다 길을 다시 찾던 때 큰 창에서는 안전밸브 복귀 배관이 탱크와 L 0011 사이로 지나갔다
+    private const string Drawing = """
+        <DvTerminal name="IN" text="SOLVENT&#10;FROM UNIT 1" x="55" y="105"/>
+        <DvVessel name="T1" level="64" label="T001" height="200" x="200" y="165"/>
+        <DvInline name="VT1" kind="vent" x="175" y="22"/>
+        <DvValve name="DR1" kind="ball" rotate="90" x="200" y="374"/>
+        <DvValve name="CV0" kind="check" x="262" y="302"/>
+        <DvPump name="P1" kind="isa" label="P001" x="360" y="310"><DvMotor kind="isa"/></DvPump>
+        <DvValve name="PSV1" kind="relief" flip="h" label="PA 6 barg" x="412" y="190"/>
+        <DvValve name="CV1" kind="check" x="462" y="302"/>
+        <DvValve name="CV2" kind="check" x="558" y="302"/>
+        <DvTerminal name="OUT" text="SOLVENT&#10;TO UNIT 3" x="672" y="310"/>
+        <DvLine from="IN" to="T1.left@0.15" arrow="end"/>
+        <DvLine from="T1.top@0.25" to="VT1"/>
+        <DvLine from="T1.bottom" to="DR1.in"/>
+        <DvLine from="T1.bottom" to="CV0.in"/>
+        <DvLine from="CV0.out" to="P1.in"/>
+        <DvLine from="P1.out" to="PSV1.in"/>
+        <DvLine from="PSV1.out" to="T1.right@0.15" arrow="end"/>
+        <DvLine from="P1.out" to="CV1.in"/>
+        <DvLine from="CV1.out" to="CV2.in" label="02-100-PE-N"/>
+        <DvLine from="CV2.out" to="OUT"/>
+        <DvInstrument name="LT11" tag="L" number="0011" tap="T1.right@0.55" value="64.2 %"/>
+        <DvInstrument name="LS12" tag="L" number="0012" panel="true" tap="T1.left@0.85"/>
+        <DvInstrument name="PI13" tag="PI" number="0013" tap="CV2.out" value="0.00 bar"/>
+        <DvSignal from="LT11" to="P1" arrow="end" label="SH"/>
+        """;
+
+    // 구간마다 방향(+x, +y, -x, -y) — 꺾임 수·순서·도는 쪽
+    private static List<int> Turns(List<SKPoint> pts)
+    {
+        var dirs = new List<int>();
+        for (var k = 0; k + 1 < pts.Count; k++)
+        {
+            var (a, b) = (pts[k], pts[k + 1]);
+            Assert.True(MathF.Abs(a.X - b.X) < 0.01f || MathF.Abs(a.Y - b.Y) < 0.01f, $"diagonal segment {a} → {b}");
+            dirs.Add(MathF.Abs(a.Y - b.Y) < 0.01f ? (b.X > a.X ? 0 : 2) : (b.Y > a.Y ? 1 : 3));
+        }
+
+        return dirs;
+    }
+
+    [Theory]
+    [InlineData(944, 546)]
+    [InlineData(730, 480)]
+    [InlineData(1200, 700)]
+    public void BaseSize_KeepsPipeShapeAtEverySize(float w, float h)
+    {
+        var (_, b) = ProcessTests.Start(Drawing, "placement=\"fixed\" base-size=\"718 410\" style=\"width:718;height:410\"", w: 2000, h: 1200);
+        var (_, d) = ProcessTests.Start(Drawing, $"placement=\"fixed\" base-size=\"718 410\" style=\"width:{w};height:{h}\"", w: 2000, h: 1200);
+        for (var i = 0; i < b.Lines.Count; i++)
+        {
+            Assert.True(Turns(b.Lines[i].G!.Points).SequenceEqual(Turns(d.Lines[i].G!.Points)), $"{d.Lines[i].FromRef}->{d.Lines[i].ToRef}: {string.Join(" ", b.Lines[i].G!.Points)} vs {string.Join(" ", d.Lines[i].G!.Points)}");
+            Assert.Equal(d.Lines[i].G!.From.Point, d.Lines[i].G!.Points[0]);
+            Assert.Equal(d.Lines[i].G!.To.Point, d.Lines[i].G!.Points[^1]);
+        }
+
+        for (var i = 0; i < b.Signals.Count; i++)
+            Assert.True(Turns(b.Signals[i].G!.Points).SequenceEqual(Turns(d.Signals[i].G!.Points)), $"signal: {string.Join(" ", b.Signals[i].G!.Points)} vs {string.Join(" ", d.Signals[i].G!.Points)}");
+        Assert.Equal(200 * d.Graph!.Spacing, Center(Node(d, "T1")).X, 0.5f); // 위치는 그대로 비례
+    }
+
+    [Fact]
+    public void BaseSize_SmallerAreaThatDoesNotFit_RoutesAgainAndWarns()
+    {
+        // 0.86 배 — L 0011 버블 아래가 모터 위보다 낮아져 기준 크기의 신호선 모양(아래→오른쪽→아래)이 안 들어간다
+        List<string> w = [];
+        ProcessDiagram d = null!;
+        w = Warnings("base-size", () => d = Render(Drawing, "placement=\"fixed\" base-size=\"718 410\" style=\"width:620;height:360\"", 2000, 1200));
+        Assert.Contains(w, m => m.Contains("smaller than base-size"));
+        foreach (var l in d.Lines)
+            Turns(l.G!.Points); // 비스듬한 구간 없음
+        Turns(d.Signals.Single().G!.Points);
+    }
+
+    [Fact]
+    public void Pipes_DoNotCrossInstrumentTapLines()
+    {
+        // 기준 크기 없이 1.31476 배 좌표 — 예전엔 복귀 배관이 탱크와 L 0011 사이 틈으로 연결선을 가로질렀다
+        var body = System.Text.RegularExpressions.Regex.Replace(Drawing, " (x|y)=\"(\\d+)\"",
+            m => $" {m.Groups[1].Value}=\"{(int.Parse(m.Groups[2].Value) * 944f / 718f).ToString(System.Globalization.CultureInfo.InvariantCulture)}\"");
+        var (_, d) = ProcessTests.Start(body, "placement=\"fixed\" style=\"width:944;height:546\"", w: 2000, h: 1200);
+        foreach (var inst in d.Nodes.SelectMany(n => n.Instruments).Where(x => x.TapPort is not null))
+        {
+            var h = inst.Host!.G;
+            var (ta, tb) = (new SKPoint(h.X + inst.TapFrom.X, h.Y + inst.TapFrom.Y), new SKPoint(h.X + inst.TapTo.X, h.Y + inst.TapTo.Y));
+            var tap = new SKRect(MathF.Min(ta.X, tb.X), MathF.Min(ta.Y, tb.Y), MathF.Max(ta.X, tb.X), MathF.Max(ta.Y, tb.Y));
+            tap.Inflate(0.5f, 0.5f);
+            foreach (var l in d.Lines)
+            {
+                var pts = l.G!.Points;
+                for (var k = 0; k + 1 < pts.Count; k++)
+                {
+                    var seg = new SKRect(MathF.Min(pts[k].X, pts[k + 1].X), MathF.Min(pts[k].Y, pts[k + 1].Y), MathF.Max(pts[k].X, pts[k + 1].X), MathF.Max(pts[k].Y, pts[k + 1].Y));
+                    // 배관 위 tap(PI13)은 그 배관에서 시작한다 — 시작점 3px 밖만 본다
+                    var inner = new SKRect(tap.Left, tap.Top, tap.Right, tap.Bottom);
+                    if (ta.Y > tb.Y) inner.Bottom -= 3; else if (ta.Y < tb.Y) inner.Top += 3;
+                    if (ta.X > tb.X) inner.Right -= 3; else if (ta.X < tb.X) inner.Left += 3;
+                    Assert.False(seg.IntersectsWith(inner), $"{l.FromRef}->{l.ToRef} crosses the tap line of {inst.Name}");
+                }
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(718, 410)]
+    [InlineData(730, 480)]
+    [InlineData(620, 360)]
+    public void SignalLabel_StaysOffLines(float w, float h)
+    {
+        var (_, d) = ProcessTests.Start(Drawing, $"placement=\"fixed\" base-size=\"718 410\" style=\"width:{w};height:{h}\"", w: 2000, h: 1200);
+        var g = d.Signals.Single().G!;
+        var r = Devinno.UI.Painting.Painter.SignalLabelRect(d, g, 16, 12);
+        var pts = g.Points;
+        for (var k = 0; k + 1 < pts.Count; k++)
+        {
+            var seg = new SKRect(MathF.Min(pts[k].X, pts[k + 1].X), MathF.Min(pts[k].Y, pts[k + 1].Y), MathF.Max(pts[k].X, pts[k + 1].X), MathF.Max(pts[k].Y, pts[k + 1].Y));
+            seg.Inflate(1, 1);
+            Assert.False(seg.IntersectsWith(r), $"label {r} on segment {k}");
+        }
+    }
+
     [Fact]
     public void BaseSize_CentersWhenAspectDiffers()
     {

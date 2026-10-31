@@ -266,7 +266,7 @@ public sealed partial class Painter
                 path.LineTo(g.Points[i]);
             canvas.DrawPath(path, paint);
 
-            // 화살표(작게) · 라벨(from 끝 옆 — 첫 구간이 가로면 그 위, 세로면 그 오른쪽)
+            // 화살표(작게) · 라벨(from 끝 옆)
             using var fill = new SKPaint { IsAntialias = true, Color = look.Arrow };
             if (s.ArrowEnd)
                 DrawArrow(canvas, g.To, look, fill, 8, 4);
@@ -276,13 +276,56 @@ public sealed partial class Painter
             {
                 using var font = TextFont.Create(s.Label, 11, false, family);
                 using var tp = new SKPaint { IsAntialias = true, Color = text };
-                var (a, b) = (g.Points[0], g.Points[1]);
-                if (MathF.Abs(a.Y - b.Y) < 0.5f)
-                    canvas.DrawText(s.Label, b.X >= a.X ? a.X + 3 : a.X - 3, a.Y - 3, b.X >= a.X ? SKTextAlign.Left : SKTextAlign.Right, font, tp);
-                else
-                    canvas.DrawText(s.Label, a.X + 3, b.Y >= a.Y ? a.Y + 3 - font.Metrics.Ascent : a.Y - 3, SKTextAlign.Left, font, tp);
+                var r = SignalLabelRect(d, g, font.MeasureText(s.Label), font.Metrics.Descent - font.Metrics.Ascent);
+                canvas.DrawText(s.Label, r.Left, r.Top - font.Metrics.Ascent, SKTextAlign.Left, font, tp);
             }
         }
+    }
+
+    // 신호선 라벨 자리 — 첫 구간 시작 옆. 다음 구간이 꺾여 나가는 쪽의 반대편이 먼저, 그다음 꺾이는 쪽.
+    // 배관·신호선·계기 버블과 겹치지 않는 첫 자리(다 겹치면 첫 자리)
+    internal static SKRect SignalLabelRect(ProcessDiagram d, GraphSignal g, float w, float h)
+    {
+        const float gap = 3f;
+        var (a, b) = (g.Points[0], g.Points[1]);
+        var flat = MathF.Abs(a.Y - b.Y) < 0.5f;
+        var c = g.Points.Count > 2 ? g.Points[2] : b;
+        var candidates = new List<SKRect>();
+        if (flat)
+        {
+            var x = b.X >= a.X ? a.X + gap : a.X - gap - w;
+            var above = SKRect.Create(x, a.Y - gap - h, w, h);
+            var below = SKRect.Create(x, a.Y + gap, w, h);
+            candidates.AddRange(c.Y < b.Y - 0.5f ? [below, above] : [above, below]);
+        }
+        else
+        {
+            var y = b.Y >= a.Y ? a.Y + gap : a.Y - gap - h;
+            var right = SKRect.Create(a.X + gap, y, w, h);
+            var left = SKRect.Create(a.X - gap - w, y, w, h);
+            candidates.AddRange(c.X > b.X + 0.5f ? [left, right] : [right, left]);
+        }
+
+        var busy = new List<SKRect>();
+        void Segments(List<SKPoint> pts, float half)
+        {
+            for (var k = 0; k + 1 < pts.Count; k++)
+                busy.Add(new SKRect(MathF.Min(pts[k].X, pts[k + 1].X) - half, MathF.Min(pts[k].Y, pts[k + 1].Y) - half,
+                    MathF.Max(pts[k].X, pts[k + 1].X) + half, MathF.Max(pts[k].Y, pts[k + 1].Y) + half));
+        }
+
+        foreach (var l in d.Lines)
+            if (l.G is { } gl)
+                Segments(gl.Points, 5);
+        foreach (var s in d.Signals)
+            if (s.G is { } gs)
+                Segments(gs.Points, 1);
+        foreach (var n in d.Nodes)
+            foreach (var inst in n.Instruments)
+                if (!inst.Rect.IsEmpty)
+                    busy.Add(SKRect.Create(n.G.X + inst.Rect.Left, n.G.Y + inst.Rect.Top, inst.Rect.Width, inst.Rect.Height));
+
+        return candidates.FirstOrDefault(r => !busy.Any(o => o.IntersectsWith(r)), candidates[0]);
     }
 
     // 계기 버블 — ISA-5.1: 원 위 tag 글자, 아래 number, panel 이면 가운데 가로줄. 값은 버블 오른쪽 작은 글자

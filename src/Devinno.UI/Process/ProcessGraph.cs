@@ -136,6 +136,15 @@ internal sealed class ProcessGraph
     /// <summary>Coordinate placement — nodes go to <see cref="GraphNode.Pos"/> instead of the layered layout, and coordinates are not shifted (origin = the area's top left).</summary>
     public bool Fixed;
 
+    /// <summary>
+    /// Coordinate placement with <c>base-size</c>: the layout already routed at base size. Pipes and signal lines are not routed again — their bends are kept
+    /// and only stretched to the scaled positions, so the drawing keeps its shape at every area size.
+    /// </summary>
+    public ProcessGraph? Shape;
+
+    // 좌표 배치에서 고른 맞춤 쌍: 장비 → (들어오는 선 번호, x 맞춤 여부)
+    private Dictionary<int, (int Line, bool AlongX)> SnapAnchors { get; } = new();
+
     /// <summary>Coordinate placement: two facing fixed ports this close (px) across the line are lined up by moving the downstream equipment — removes small jogs from ports at different heights.</summary>
     private const float SnapTolerance = 16f;
 
@@ -174,6 +183,28 @@ internal sealed class ProcessGraph
             }
 
             return;
+        }
+
+        if (Shape is not null)
+        {
+            PlaceFixed();
+            if (Stretch(Shape))
+            {
+                Normalize();
+                return;
+            }
+
+            // 영역이 기준 크기보다 작아 그 모양이 안 들어간다(구간이 거꾸로 접힘) — 이 크기에서 길을 다시 찾는다
+            foreach (var l in Lines)
+            {
+                l.Points.Clear();
+                l.Hops.Clear();
+                l.Crossings = 0;
+            }
+
+            foreach (var s in Signals)
+                s.Points.Clear();
+            Warnings.Add("The area is smaller than base-size and the piping no longer fits its base-size shape, so it is routed again and may look different; set base-size to the smallest area the screen is shown at");
         }
 
         AssignNets();
@@ -270,23 +301,35 @@ internal sealed class ProcessGraph
             node.Y = node.Pos!.Value.Y - node.Body.MidY;
         }
 
-        // 장비마다 기준선 하나(그 장비로 들어오는 첫 선 중 맞출 수 있는 것) — 처음 좌표로 고르고, 상류가 옮겨지면 따라가도록 안정될 때까지 반복
+        // 장비마다 기준선 하나(그 장비로 들어오는 첫 선 중 맞출 수 있는 것) — 처음 좌표로 고르고, 상류가 옮겨지면 따라가도록 안정될 때까지 반복.
+        // 기준 크기 모양을 늘일 때는 기준 크기에서 고른 쌍을 그대로(배율에 따라 맞춤 여부가 바뀌면 곧은 선이 꺾인다)
         var anchor = new Dictionary<int, (GraphLine Line, bool AlongX)>();
-        foreach (var l in Lines)
+        if (Shape is not null)
         {
-            var (a, b) = (l.From, l.To);
-            if (a.Face || b.Face || a.Node == b.Node || anchor.ContainsKey(b.Node) || Nodes[a.Node].Pinned || Nodes[b.Node].Pinned)
-                continue;
-            bool? alongX = (a.Side, b.Side) switch
-            {
-                (PortSide.Right, PortSide.Left) or (PortSide.Left, PortSide.Right) => false, // 좌우로 마주 봄 → y 맞춤
-                (PortSide.Bottom, PortSide.Top) or (PortSide.Top, PortSide.Bottom) => true,  // 위아래로 마주 봄 → x 맞춤
-                _ => null,
-            };
-            // 처음부터 맞아 있는 쌍(어긋남 0)도 넣는다 — 상류가 옮겨지면 같이 따라가야 일직선이 유지된다
-            if (alongX is { } ax && MathF.Abs(SnapDelta(l, ax)) <= SnapTolerance)
-                anchor[b.Node] = (l, ax);
+            foreach (var (v, (k, ax)) in Shape.SnapAnchors)
+                anchor[v] = (Lines[k], ax);
         }
+        else
+        {
+            foreach (var l in Lines)
+            {
+                var (a, b) = (l.From, l.To);
+                if (a.Face || b.Face || a.Node == b.Node || anchor.ContainsKey(b.Node) || Nodes[a.Node].Pinned || Nodes[b.Node].Pinned)
+                    continue;
+                bool? alongX = (a.Side, b.Side) switch
+                {
+                    (PortSide.Right, PortSide.Left) or (PortSide.Left, PortSide.Right) => false, // 좌우로 마주 봄 → y 맞춤
+                    (PortSide.Bottom, PortSide.Top) or (PortSide.Top, PortSide.Bottom) => true,  // 위아래로 마주 봄 → x 맞춤
+                    _ => null,
+                };
+                // 처음부터 맞아 있는 쌍(어긋남 0)도 넣는다 — 상류가 옮겨지면 같이 따라가야 일직선이 유지된다
+                if (alongX is { } ax && MathF.Abs(SnapDelta(l, ax)) <= SnapTolerance)
+                    anchor[b.Node] = (l, ax);
+            }
+        }
+
+        foreach (var (v, (line, ax)) in anchor)
+            SnapAnchors[v] = (Lines.IndexOf(line), ax);
 
         for (var pass = 0; pass < Nodes.Count; pass++)
         {
@@ -1622,6 +1665,129 @@ internal sealed class ProcessGraph
         AddPoint(line.Points, new SKPoint(sb.X, sa.Y));
         AddPoint(line.Points, sb);
         AddPoint(line.Points, b.Point);
+    }
+
+    // ── 기준 크기 모양 늘이기: 꺾임 수·순서·도는 쪽은 base-size 에서 정한 그대로, 꺾인 자리는 양옆 장비 사이 같은 비율 자리로 ──
+    // (창 크기마다 다시 길을 찾으면 비용이 같은 두 길 중 이기는 쪽이 바뀌어 도면 모양이 달라진다)
+    private bool Stretch(ProcessGraph shape)
+    {
+        var dx = new float[Nodes.Count];
+        var dy = new float[Nodes.Count];
+        var xs = new List<(float From, float To)>();
+        var ys = new List<(float From, float To)>();
+        for (var i = 0; i < Nodes.Count; i++)
+        {
+            dx[i] = Nodes[i].X - shape.Nodes[i].X;
+            dy[i] = Nodes[i].Y - shape.Nodes[i].Y;
+            if (Nodes[i].Pinned)
+                continue;
+            foreach (var r in Nodes[i].Extras.Prepend(Nodes[i].Body).Prepend(new SKRect(0, 0, Nodes[i].W, Nodes[i].H)).Where(r => !r.IsEmpty))
+            {
+                var a = shape.Nodes[i].Abs(r);
+                foreach (var x in new[] { a.Left, a.MidX, a.Right })
+                    xs.Add((x, x + dx[i]));
+                foreach (var y in new[] { a.Top, a.MidY, a.Bottom })
+                    ys.Add((y, y + dy[i]));
+            }
+        }
+
+        var fx = AxisMap(xs);
+        var fy = AxisMap(ys);
+
+        void CopyEnd(GraphEnd src, GraphEnd dst)
+        {
+            dst.Point = new SKPoint(src.Point.X + dx[src.Node], src.Point.Y + dy[src.Node]);
+            dst.Out = src.Out;
+            dst.StubLen = src.StubLen;
+        }
+
+        var folded = false;
+        List<SKPoint> Map(List<SKPoint> src, SKPoint a, SKPoint b)
+        {
+            var pts = Fit(src, a, b);
+            for (var k = 0; k + 1 < src.Count && k + 1 < pts.Count && pts.Count == src.Count; k++)
+            {
+                var (u, v) = (src[k + 1] - src[k], pts[k + 1] - pts[k]);
+                if (u.X * v.X < -0.25f || u.Y * v.Y < -0.25f)
+                    folded = true;
+            }
+
+            return pts;
+        }
+
+        List<SKPoint> Fit(List<SKPoint> src, SKPoint a, SKPoint b)
+        {
+            var pts = src.Select(p => new SKPoint(fx(p.X), fy(p.Y))).ToList();
+            if (pts.Count < 2)
+                return pts;
+            bool Flat(int k) => MathF.Abs(src[k].Y - src[k + 1].Y) < 0.01f; // 원래 가로 구간
+            pts[0] = a;
+            pts[^1] = b;
+            if (pts.Count == 2)
+            {
+                // 곧은 선인데 양 끝이 어긋났다(맞춤이 비율대로 안 따라옴) — 가운데에서 한 번 비킨다
+                if (Flat(0) && MathF.Abs(a.Y - b.Y) > 0.01f)
+                    pts.InsertRange(1, [new SKPoint((a.X + b.X) / 2, a.Y), new SKPoint((a.X + b.X) / 2, b.Y)]);
+                else if (!Flat(0) && MathF.Abs(a.X - b.X) > 0.01f)
+                    pts.InsertRange(1, [new SKPoint(a.X, (a.Y + b.Y) / 2), new SKPoint(b.X, (a.Y + b.Y) / 2)]);
+                return pts;
+            }
+
+            // 끝 구간이 비스듬해지지 않게 — 포트 옆 점을 포트 줄에 맞춘다
+            pts[1] = Flat(0) ? new SKPoint(pts[1].X, a.Y) : new SKPoint(a.X, pts[1].Y);
+            var n = pts.Count;
+            pts[n - 2] = Flat(n - 2) ? new SKPoint(pts[n - 2].X, b.Y) : new SKPoint(b.X, pts[n - 2].Y);
+            return pts;
+        }
+
+        for (var k = 0; k < Lines.Count; k++)
+        {
+            var (src, dst) = (shape.Lines[k], Lines[k]);
+            CopyEnd(src.From, dst.From);
+            CopyEnd(src.To, dst.To);
+            dst.Net = src.Net;
+            dst.Bends = src.Bends;
+            dst.Forced = src.Forced;
+            dst.Points.AddRange(Map(src.Points, dst.From.Point, dst.To.Point));
+        }
+
+        for (var k = 0; k < Signals.Count; k++)
+        {
+            var (src, dst) = (shape.Signals[k], Signals[k]);
+            CopyEnd(src.From, dst.From);
+            CopyEnd(src.To, dst.To);
+            dst.Points.AddRange(Map(src.Points, dst.From.Point, dst.To.Point));
+        }
+
+        if (folded)
+            return false;
+        FindHops();
+        foreach (var w in shape.Warnings.Where(w => !Warnings.Contains(w)))
+            Warnings.Add(w);
+        return true;
+    }
+
+    // 기준 좌표 → 지금 좌표(같은 기준 좌표는 평균, 순서는 지킨다). 기준점 사이는 비율대로, 밖은 가장 가까운 기준점만큼 옮긴다
+    private static Func<float, float> AxisMap(List<(float From, float To)> pairs)
+    {
+        var pts = pairs.GroupBy(p => MathF.Round(p.From * 100))
+            .Select(g => (From: g.Average(p => p.From), To: g.Average(p => p.To)))
+            .OrderBy(p => p.From).ToList();
+        for (var i = 1; i < pts.Count; i++)
+            if (pts[i].To < pts[i - 1].To)
+                pts[i] = (pts[i].From, pts[i - 1].To); // 줄어든 창에서 장비가 겹쳐도 거꾸로 접히지 않게
+        if (pts.Count == 0)
+            return v => v;
+        return v =>
+        {
+            if (v <= pts[0].From)
+                return v + pts[0].To - pts[0].From;
+            if (v >= pts[^1].From)
+                return v + pts[^1].To - pts[^1].From;
+            var i = pts.FindLastIndex(p => p.From <= v);
+            var (a, b) = (pts[i], pts[i + 1]);
+            return a.To + (v - a.From) / (b.From - a.From) * (b.To - a.To);
+        };
     }
 
     // ── 교차 점프: 다른 묶음의 가로선을 지나는 세로선(위→아래 흐름이면 세로선을 지나는 가로선)에 반원 ──
