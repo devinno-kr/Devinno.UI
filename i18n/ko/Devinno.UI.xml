@@ -3880,7 +3880,7 @@
             <summary>용기 면 포트가 자리를 나눠 쓰는 범위(면 길이 대비).</summary>
         </member><member name="M:Devinno.UI.Process.BuiltInSymbols.Get(System.String,System.String)" en-hash="83f1092dc05fef09">
             <summary>장비 태그 + kind 의 심볼. kind 가 없으면 기본 kind, 모르는 kind 면 <see langword="null" />.</summary>
-        </member><member name="M:Devinno.UI.Process.BuiltInSymbols.Stretch(Devinno.UI.Process.SymbolDef,System.Single,System.Single)" en-hash="3afe9cbef1a3a495"><summary>
+        </member><member name="M:Devinno.UI.Process.BuiltInSymbols.Agitator(Devinno.UI.Process.SymbolDef,System.Single,System.Single)" en-hash="c17edf2aec1e3ed1"><summary>크기를 <paramref name="kx" /> × <paramref name="ky" /> 배로 바꾼 용기(<c>DvVessel width</c>·<c>height</c>)의 교반기 — 날개가 같은 깊이 비율에 오도록 축이 늘어나고, 날개는 용기와 함께 넓어진다. 위 구동부는 크기 그대로.</summary></member><member name="M:Devinno.UI.Process.BuiltInSymbols.Stretch(Devinno.UI.Process.SymbolDef,System.Single,System.Single)" en-hash="3afe9cbef1a3a495"><summary>
             용기를 <paramref name="width" /> × <paramref name="height" /> 로 바꾼 심볼(<c>DvVessel width</c>·<c>height</c>). 높이: 아래쪽 절반의 점을 그 차이만큼 내려, 머리 모양은 그대로 두고 곧은 몸통만 늘리거나 줄인다.
             폭: 가로 드럼은 머리가 좌우에 있어 같은 방식으로 옆으로, 나머지 종류는 고르게 넓혀 위·아래 머리가 더 넓은(또는 좁은) 타원이 된다.
             </summary></member><member name="T:Devinno.UI.Process.ProcessFlow" en-hash="f86aa4d0fc25edca">

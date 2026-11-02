@@ -413,7 +413,7 @@ Instead of a port name, a line end (and an instrument `tap`, 7.3) can name **a p
 
 | Tag | Size (px) | Placement | State |
 |---|---|---|---|
-| `DvAgitator` | 40 × 100 | Top center of the equipment. The motor and gearbox (30px) stick out above, and the shaft and blades go into the vessel | `running` |
+| `DvAgitator` | 40 × 100 | Top center of the equipment. The motor and gearbox (30px) stick out above, and the shaft and blades go into the vessel. In a vessel resized with `width`·`height` (5.2), the blades widen or narrow with the vessel and the shaft reaches the same relative depth; the drive on top keeps its size | `running` |
 | `DvMotor` | 76 × 46 | Mounted whole on the top center of the equipment | `running` |
 
 - Mainly used inside `DvVessel` (agitator). When an accessory is present, the vessel's `top` port leaves the center empty and takes positions on both sides.

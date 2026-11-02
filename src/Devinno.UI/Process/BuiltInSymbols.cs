@@ -53,29 +53,53 @@ internal static class BuiltInSymbols
         res.Passes.AddRange(src.Passes);
         SKPoint M(SKPoint p) => new(sideHeads ? (p.X > midX ? p.X + dx : p.X) : p.X * w / src.Width, p.Y > midY ? p.Y + dy : p.Y);
         foreach (var l in src.Layers)
-        {
-            var path = new SKPath();
-            using var it = l.Path.CreateRawIterator();
-            var pts = new SKPoint[4];
-            SKPathVerb verb;
-            while ((verb = it.Next(pts)) != SKPathVerb.Done)
-            {
-                switch (verb)
-                {
-                    case SKPathVerb.Move: path.MoveTo(M(pts[0])); break;
-                    case SKPathVerb.Line: path.LineTo(M(pts[1])); break;
-                    case SKPathVerb.Quad: path.QuadTo(M(pts[1]), M(pts[2])); break;
-                    case SKPathVerb.Conic: path.ConicTo(M(pts[1]), M(pts[2]), it.ConicWeight()); break;
-                    case SKPathVerb.Cubic: path.CubicTo(M(pts[1]), M(pts[2]), M(pts[3])); break;
-                    case SKPathVerb.Close: path.Close(); break;
-                }
-            }
-
-            res.Layers.Add(l with { Path = path });
-        }
-
+            res.Layers.Add(l with { Path = Map(l.Path, M) });
         return res;
     });
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(SymbolDef, float, float), SymbolDef> Agitators = new();
+
+    /// <summary>
+    /// The agitator for a vessel resized by <paramref name="kx"/> × <paramref name="ky"/> (<c>DvVessel width</c>·<c>height</c>): the shaft grows so the impeller stays at the same
+    /// relative depth, and the impeller blades widen with the vessel. The drive on top keeps its size.
+    /// </summary>
+    internal static SymbolDef Agitator(SymbolDef src, float kx, float ky) => Agitators.GetOrAdd((src, kx, ky), key =>
+    {
+        var (a, sx, sy) = key;
+        const float inside = 70f, impeller = 80f, cx = 20f; // 용기 안에 들어가는 길이(교반기 위 30 은 용기 위), 날개가 시작하는 y, 축 가운데
+        var dy = inside * (sy - 1);
+        var res = new SymbolDef { Name = a.Name, Width = a.Width, Height = a.Height + dy, FillClip = a.FillClip, FillValue = a.FillValue };
+        res.Params.AddRange(a.Params);
+        res.Ports.AddRange(a.Ports);
+        res.Passes.AddRange(a.Passes);
+        SKPoint M(SKPoint p) => p.Y < impeller ? p
+            : new SKPoint(MathF.Abs(p.X - cx) > 2 ? cx + (p.X - cx) * sx : p.X, p.Y + dy); // 축 끝은 아래로만, 날개는 넓게
+        foreach (var l in a.Layers)
+            res.Layers.Add(l with { Path = Map(l.Path, M) });
+        return res;
+    });
+
+    private static SKPath Map(SKPath src, Func<SKPoint, SKPoint> m)
+    {
+        var path = new SKPath();
+        using var it = src.CreateRawIterator();
+        var pts = new SKPoint[4];
+        SKPathVerb verb;
+        while ((verb = it.Next(pts)) != SKPathVerb.Done)
+        {
+            switch (verb)
+            {
+                case SKPathVerb.Move: path.MoveTo(m(pts[0])); break;
+                case SKPathVerb.Line: path.LineTo(m(pts[1])); break;
+                case SKPathVerb.Quad: path.QuadTo(m(pts[1]), m(pts[2])); break;
+                case SKPathVerb.Conic: path.ConicTo(m(pts[1]), m(pts[2]), it.ConicWeight()); break;
+                case SKPathVerb.Cubic: path.CubicTo(m(pts[1]), m(pts[2]), m(pts[3])); break;
+                case SKPathVerb.Close: path.Close(); break;
+            }
+        }
+
+        return path;
+    }
 
     internal static bool IsEquipmentTag(string tag) => Kinds.ContainsKey(tag) || tag == "DvTerminal";
 

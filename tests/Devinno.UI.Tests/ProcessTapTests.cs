@@ -356,6 +356,33 @@ public class ProcessTapTests
         Assert.Contains(w, x => x.Contains("9999"));
     }
 
+    // 크기를 바꾼 용기의 교반기 — 날개는 용기 폭만큼 넓어지고, 축은 같은 깊이 비율까지 내려간다(구동부는 그대로)
+    [Fact]
+    public void Agitator_FollowsVesselSize()
+    {
+        var (_, d) = ProcessTests.Start("""
+            <DvTerminal name="IN" text="IN"/>
+            <DvVessel name="A"><DvAgitator/></DvVessel>
+            <DvVessel name="B" width="190" height="300"><DvAgitator/></DvVessel>
+            <DvLine from="IN" to="A.top"/>
+            <DvLine from="A.bottom" to="B.top"/>
+            """, w: 1400, h: 1200);
+        (SKRect Blade, float Depth) Agitator(string name)
+        {
+            var n = Node(d, name);
+            var (r, def, _) = n.AccessoryRects.Single();
+            var blade = def.Layers.Select(l => l.Path.Bounds).Where(b => b.Width > 20).OrderBy(b => b.Top).Last(); // 날개(맨 아래 넓은 것)
+            return (blade, r.Top + blade.Bottom - n.Sym.Top); // 용기 위에서 날개 끝까지
+        }
+
+        var (bladeA, depthA) = Agitator("A");
+        var (bladeB, depthB) = Agitator("B");
+        Assert.Equal(bladeA.Width * 1.9f, bladeB.Width, 0.5);
+        Assert.Equal(depthA / 150, depthB / 300, 0.02);              // 같은 깊이 비율
+        var drive = Node(d, "B").AccessoryRects.Single().Def.Layers.First(l => l.Class == "state").Path.Bounds;
+        Assert.Equal(28, drive.Width, 0.5);                          // 구동부는 그대로
+    }
+
     // 가로 드럼은 머리가 좌우에 있으므로 폭은 곧은 몸통만 늘어난다(머리 모양 그대로)
     [Fact]
     public void DrumWidth_StretchesBodyOnly()

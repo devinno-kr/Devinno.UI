@@ -1018,8 +1018,13 @@ internal static class ProcessBuilder
         // 부속 — 심볼 위 가운데(교반기는 아래쪽이 용기 안으로 들어간다)
         n.AccessoryRects.Clear();
         var top = sym.Top;
-        foreach (var (def, running) in n.Accessories)
+        foreach (var (accessory, running) in n.Accessories)
         {
+            var def = accessory;
+            // 크기를 바꾼 용기(width·height)의 교반기 — 축은 같은 깊이 비율까지, 날개는 용기 폭만큼
+            if (def.Name == "agitator" && n.Tag == "DvVessel" && n.Def is { } vessel && BuiltInSymbols.Get("DvVessel", vessel.Name) is { } natural
+                && (vessel.Width != natural.Width || vessel.Height != natural.Height))
+                def = BuiltInSymbols.Agitator(def, vessel.Width / natural.Width, vessel.Height / natural.Height);
             var above = def.Name == "agitator" ? 30f : def.Height;
             var r = SKRect.Create(sym.MidX - def.Width / 2, top - above, def.Width, def.Height);
             n.AccessoryRects.Add((r, def, running));
