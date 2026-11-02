@@ -773,21 +773,28 @@ internal static class ProcessBuilder
                 def = BuiltInSymbols.Get(ch.Tag, null)!;
             }
 
-            // 용기 높이(height) — 머리·바닥 모양은 그대로, 곧은 몸통만 늘리거나 줄인다(원래 높이의 0.6~4배)
-            if (ch.Tag == "DvVessel" && BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("height")) is { Length: > 0 } hText)
+            // 용기 크기(width·height) — 머리·바닥 모양은 그대로 두고 몸통만 늘리거나 줄인다(원래 크기의 0.6~4배)
+            if (ch.Tag == "DvVessel")
             {
-                if (!float.TryParse(hText, NumberStyles.Float, CultureInfo.InvariantCulture, out var h) || !float.IsFinite(h))
+                float Size(string attr, float natural)
                 {
-                    Warn($"<DvVessel height='{hText}'> is not a number (px); drawing at {def.Height:0}");
+                    if (BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault(attr)) is not { Length: > 0 } text)
+                        return natural;
+                    if (!float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) || !float.IsFinite(v))
+                    {
+                        Warn($"<DvVessel {attr}='{text}'> is not a number (px); drawing at {natural:0}");
+                        return natural;
+                    }
+
+                    var clamped = Math.Clamp(v, natural * 0.6f, natural * 4);
+                    if (MathF.Abs(clamped - v) > 0.01f) // 끝값(0.6배)은 소수 오차로 조금 넘어 보인다
+                        Warn($"<DvVessel {attr}='{text}'> is outside {natural * 0.6f:0}–{natural * 4:0} for kind '{def.Name}'; using {clamped:0}");
+                    return clamped;
                 }
-                else
-                {
-                    var clamped = Math.Clamp(h, def.Height * 0.6f, def.Height * 4);
-                    if (clamped != h)
-                        Warn($"<DvVessel height='{hText}'> is outside {def.Height * 0.6f:0}–{def.Height * 4:0} for kind '{def.Name}'; using {clamped:0}");
-                    if (clamped != def.Height)
-                        def = BuiltInSymbols.Stretch(def, clamped);
-                }
+
+                var (w, h) = (Size("width", def.Width), Size("height", def.Height));
+                if (w != def.Width || h != def.Height)
+                    def = BuiltInSymbols.Stretch(def, w, h);
             }
 
             return def;

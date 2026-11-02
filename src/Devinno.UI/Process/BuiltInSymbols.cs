@@ -34,21 +34,24 @@ internal static class BuiltInSymbols
         return Defs.Value.GetValueOrDefault($"{tag}:{k}");
     }
 
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(SymbolDef, float), SymbolDef> Stretched = new();
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(SymbolDef, float, float), SymbolDef> Stretched = new();
 
     /// <summary>
-    /// A vessel stretched to <paramref name="height"/> (<c>DvVessel height</c>): points in the lower half move down by the difference, so the heads keep their shape and only the straight body grows (or shrinks).
+    /// A vessel resized to <paramref name="width"/> × <paramref name="height"/> (<c>DvVessel width</c>·<c>height</c>). Height: points in the lower half move down by the difference,
+    /// so the heads keep their shape and only the straight body grows (or shrinks). Width: the horizontal drum does the same sideways (its heads are left and right);
+    /// the other kinds widen evenly, so their top and bottom heads become wider ellipses.
     /// </summary>
-    internal static SymbolDef Stretch(SymbolDef def, float height) => Stretched.GetOrAdd((def, height), key =>
+    internal static SymbolDef Stretch(SymbolDef def, float width, float height) => Stretched.GetOrAdd((def, width, height), key =>
     {
-        var (src, h) = key;
-        var mid = src.Height / 2;
-        var dy = h - src.Height;
-        var res = new SymbolDef { Name = src.Name, Width = src.Width, Height = h, FillClip = src.FillClip, FillValue = src.FillValue };
+        var (src, w, h) = key;
+        var (midX, midY) = (src.Width / 2, src.Height / 2);
+        var (dx, dy) = (w - src.Width, h - src.Height);
+        var sideHeads = src.Name == "drum";
+        var res = new SymbolDef { Name = src.Name, Width = w, Height = h, FillClip = src.FillClip, FillValue = src.FillValue };
         res.Params.AddRange(src.Params);
         res.Ports.AddRange(src.Ports);
         res.Passes.AddRange(src.Passes);
-        SKPoint M(SKPoint p) => p.Y > mid ? new SKPoint(p.X, p.Y + dy) : p;
+        SKPoint M(SKPoint p) => new(sideHeads ? (p.X > midX ? p.X + dx : p.X) : p.X * w / src.Width, p.Y > midY ? p.Y + dy : p.Y);
         foreach (var l in src.Layers)
         {
             var path = new SKPath();

@@ -327,6 +327,54 @@ public class ProcessTapTests
         Assert.Contains(w, x => x.Contains("9999"));
     }
 
+    // 용기 폭(width) — 세운 용기는 고르게 넓어지고(위·아래 머리는 더 넓은 타원), 높이는 그대로, 위·아래 포트는 새 가운데에
+    [Fact]
+    public void VesselWidth_WidensEvenly()
+    {
+        ProcessDiagram d = null!;
+        var w = Warnings(() => (_, d) = ProcessTests.Start("""
+            <DvTerminal name="IN" text="IN"/>
+            <DvVessel name="T1" width="190" height="220"/>
+            <DvVessel name="T2" width="60"/>
+            <DvVessel name="T3" width="9999"/>
+            <DvTerminal name="OUT" text="OUT"/>
+            <DvLine from="IN" to="T1.top"/>
+            <DvLine from="T1.bottom" to="T2.top"/>
+            <DvLine from="T2.bottom" to="T3.top"/>
+            <DvLine from="T3.bottom" to="OUT"/>
+            """, w: 1800, h: 1600));
+        var t1 = Node(d, "T1");
+        Assert.Equal(190, t1.Sym.Width, 0.5);
+        Assert.Equal(220, t1.Sym.Height, 0.5);
+        var vessel = t1.Def!.Layers.Single(l => l.Class == "vessel").Path.Bounds;
+        Assert.Equal(t1.Def.Width / 2, vessel.MidX, 0.5);          // 좌우 대칭 그대로
+        var sym = Abs(t1, t1.Sym);
+        Assert.Equal(sym.MidX, G(d, "T1.bottom", "T2.top").From.Point.X, 0.5); // 바닥 포트는 새 가운데
+        Assert.Equal(60, Node(d, "T2").Sym.Width, 0.5);            // 0.6배 끝값 — 경고 없음
+        Assert.DoesNotContain(w, x => x.Contains("width='60'"));
+        Assert.Equal(400, Node(d, "T3").Sym.Width, 0.5);           // 4배까지
+        Assert.Contains(w, x => x.Contains("9999"));
+    }
+
+    // 가로 드럼은 머리가 좌우에 있으므로 폭은 곧은 몸통만 늘어난다(머리 모양 그대로)
+    [Fact]
+    public void DrumWidth_StretchesBodyOnly()
+    {
+        var (_, d) = ProcessTests.Start("""
+            <DvTerminal name="IN" text="IN"/>
+            <DvVessel name="D1" kind="drum" width="260"/>
+            <DvLine from="IN" to="D1.side"/>
+            """);
+        var natural = BuiltInSymbols.Get("DvVessel", "drum")!;
+        var d1 = Node(d, "D1");
+        Assert.Equal(260, d1.Sym.Width, 0.5);
+        var vessel = d1.Def!.Layers.Single(l => l.Class == "vessel").Path.Bounds;
+        var vessel0 = natural.Layers.Single(l => l.Class == "vessel").Path.Bounds;
+        Assert.Equal(vessel0.Left, vessel.Left, 0.5);              // 왼쪽 머리 그대로
+        Assert.Equal(vessel0.Right + 100, vessel.Right, 0.5);      // 오른쪽 머리는 100 옮겨짐
+        Assert.Equal(vessel0.Height, vessel.Height, 0.5);
+    }
+
     [Fact]
     public void LineLabel_Parsed()
     {

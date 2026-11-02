@@ -188,6 +188,7 @@ Usable on every equipment tag (including user symbols).
 | Size attribute | Values | If omitted |
 |---|---|---|
 | `height` | Height in px (to match a drawing's tall tank). Only the straight body grows or shrinks — the heads keep their shape and the width stays the same. 0.6–4 × the kind's height (outside that, clamped with a Trace warning) | The kind's height |
+| `width` | Width in px (to match a drawing's wide basin or narrow dosing tank). Upright kinds widen evenly — the top and bottom heads become wider (or narrower) ellipses; the horizontal `drum` grows only its straight body, keeping its left and right heads. The height stays the same. 0.6–4 × the kind's width (outside that, clamped with a Trace warning). Ports, the level fill and accessories follow the new width | The kind's width |
 
 - The level fills from the bottom following the body shape (rounded bottoms are filled round).
 - `label` is drawn as a rounded chip in the middle of the body (readable over the liquid too).
