@@ -97,7 +97,7 @@ AI MUST follow the order below exactly. Each step says what to decide.
 
 **⑥ Attach value displays and buttons.** Temperature or flow numbers next to equipment and Reset buttons go in ordinary dvml inside `<DvAttach side="right">` (chapter 7). For an agitator, put `<DvAgitator running="{…}"/>` inside the vessel.
 
-**⑦ Render and check.** Produce a PNG with `DvRenderer.RenderToFile`, look at it yourself, and check the Trace warnings (chapter 15). If there are no warnings and the picture looks natural, you are done.
+**⑦ Render and check.** Produce a PNG with `DvRenderer.RenderToFile` at the smallest size the screen is really shown at, look at it yourself, and check the Trace warnings (chapter 15). For `Not enough space` or `Shrunk to …`, follow the **sizing procedure** in chapter 4. If there are no warnings and the picture looks natural, you are done.
 
 **⑧ Refine with hints only when needed.** If lines cross, use `row`; to change an equipment's column, use `rank`; for equipment orientation, use `rotate`·`flip` (chapter 11). If the result is clean without hints, do not use hints.
 
@@ -126,15 +126,29 @@ AI MUST follow the order below exactly. Each step says what to decide.
 - If no size is given, the process diagram's size = the content size (the placement result + a 12px outer margin).
 - The placement and the pipe routes are decided **once, at the natural size** (spacing scale 1; with `align="auto"`, the staircase). If a size is given or the parent determines the size, that same drawing is **stretched or shrunk to the area**: only positions move — equipment, text and pipes keep their size — and each axis is scaled on its own (a wider area spreads equipment sideways, a taller one downward). Bends, branch points and the side a pipe passes equipment on do not change with the area size. Equipment joined by a straight pipe moves together, so straight runs stay straight.
 - Shrinking has a limit: bubbles, labels and pipe spacing do not shrink, so below a certain size the shape no longer fits (a segment would fold back, a pipe would run into equipment, or pipes would touch). Only then is placement retried the old way, and the **first one that fits** is used: with `align="auto"` (default), staircase with spacing scale 1 → 0.85 → 0.7 → 0.6 → 0.5, then same-row with 1 → … → 0.5; with `align="step"`·`"row"`, only that mode. The drawing then **looks different from the natural size**, and the Trace warning "The piping no longer fits the diagram's natural-size shape …" is left.
-- If nothing fits, the natural-size shape is kept at its smallest and overflows, with the Trace warning "Not enough space". Equipment and text do not shrink — unless `fit="shrink"` is set:
-- **`fit="shrink"`** (opt-in): only in that last case — after every step above has been tried and the diagram still overflows — the whole drawing (equipment, text, lines, attached boxes and instruments) is scaled down to the area, keeping its proportions, and centered. It is never enlarged, and a diagram that fits is not touched. Presses, drags and edits inside it follow the drawn positions. The Trace warning `Shrunk to N% to fit (…); the smallest diagram text is now X px …` reports the scale and the size the smallest text (instrument numbers and values, line labels; 11px at `font-size` 14) is drawn at. **Shrinking is a safety net for windows that get smaller, not a way to fit a diagram that is too big for its screen**: check the warning at the smallest size the screen is really shown at, and if the text is too small to read, raise `font-size`, enlarge the area or split the diagram over several screens. A rendered image of a shrunk diagram looks complete, so read the warning — do not judge from the picture alone.
-- **To make it fill the remaining space**, use `grow="1" style="height:0"` inside a vertical layout (same meaning as CSS `flex-basis:0` — grows from a base height of 0), and `grow="1"` inside a horizontal layout. With only `grow="1"` and no `height:0`, the process diagram does not shrink below its content height and may overflow the screen — then `fit="shrink"` has nothing to do either, because the diagram itself is not given a smaller area.
+- If nothing fits, the natural-size shape is kept at its smallest and overflows, with the Trace warning "Not enough space". Equipment and text do not shrink.
+- **`fit="shrink"`** changes only that last case: the whole drawing (equipment, text, lines, attached boxes, instruments) is scaled down to the area, keeping its proportions, and centered. A diagram that fits is not touched, and nothing is ever enlarged. Presses and drags follow the drawn positions. It reports the result as the Trace warning `Shrunk to N% … the smallest diagram text is now X px`.
+- **To make it fill the remaining space**, use `grow="1" style="height:0"` inside a vertical layout (same meaning as CSS `flex-basis:0` — grows from a base height of 0), and `grow="1"` inside a horizontal layout. With only `grow="1"` and no `height:0`, the process diagram does not shrink below its content height and may overflow the screen, and `fit="shrink"` does nothing (the diagram is not given a smaller area).
 
 **Text size**
 
 - All text the diagram draws itself — equipment labels (13px), vessel name chips (14px), terminal text (12px), instrument `tag` (12px), `number` and `value` (11px), line and signal labels (11px) — and the minimum bubble size (40px) are given at `font-size` 14 (the default). `style="font-size:N"` on `DvProcess` scales all of them by N / 14 (units inside follow it). The sizes written elsewhere in this document are at 14.
 - `font-size` is not inherited in Devinno.UI, so only a value set on `DvProcess` itself changes this. Attached boxes (`DvAttach`) keep their own styles.
-- Use it when the screen is shown at a small size or from a distance, or together with `fit="shrink"` so the text is still readable after shrinking.
+- Use it to keep text readable when the diagram is shrunk (procedure below), or when the screen is read from a distance.
+
+**Sizing procedure — do exactly this, in order**
+
+1. Give the diagram its area: `grow="1" style="height:0"` (above). Do not put `fit` or `font-size` yet.
+2. Render a PNG at the **smallest size the screen is really shown at** (the panel resolution, or the smallest window), and read the Trace warnings.
+3. No size warning → done.
+4. `Not enough space` → add `fit="shrink"` and render again.
+5. `Shrunk to N% … the smallest diagram text is now X px`:
+   - X ≥ 10 → done.
+   - X < 10 → set `style="font-size:F"` on `DvProcess` with F = (current font-size, 14 if none) × 10 / X, rounded up, and render again. Repeat step 5 at most twice.
+   - Still X < 10, or F would go above 28 → the diagram has too much for this screen: split it over several screens or leave out minor equipment (inlet valves, etc.). Do not go on raising `font-size`.
+6. Judge by the warning, not by the picture: a shrunk diagram always looks complete in the PNG.
+
+10px is the default minimum readable size. If the user gives another minimum (for example a distance-read panel), use theirs in place of 10.
 
 ```xml
 <DvPageFrame title="정수 공정">
@@ -146,6 +160,16 @@ AI MUST follow the order below exactly. Each step says what to decide.
     </DvProcess>
   </DvCard>
 </DvPageFrame>
+```
+
+After steps 4–5 (the render said `Not enough space`, then `… text is now 7.9px` → F = 14 × 10 / 7.9 = 18):
+
+```xml
+<DvProcess look="rich" grow="1" fit="shrink" style="height:0; font-size:18">
+  <DvVessel name="T1" level="40" label="T-101"/>
+  <DvPump name="P1" running="true" label="P-101"/>
+  <DvLine from="T1.bottom" to="P1.in"/>
+</DvProcess>
 ```
 
 The **background** is not painted. It follows the app theme's background or the `background` in `style`. `rich` looks best on a dark background, `plain` on a light or gray background.
@@ -1003,8 +1027,8 @@ Process diagram problems are reported through `System.Diagnostics.Trace`. Keep a
 |---|---|---|---|
 | `'A.out'→'B.in': crosses other piping N time(s)` | Warning | Crossings (drawn with jumps) | Change the order of equipment in the same column with `row`. Arrange declaration order in flow order |
 | `'A.out'→'B.in': no free path, so it overlaps other piping` | Warning | Blocked, drawn overlapping | Enlarge the area, adjust `row`·`rank`, move attached boxes |
-| `Not enough space: needs W×H, area is W×H` | Warning | Overflows even with minimum spacing (the natural-size shape is kept and overflows) | Enlarge the area, split the screen, or reduce equipment. `fit="shrink"` draws it smaller instead (chapter 4) |
-| `Shrunk to N% to fit (needs W×H, area is W×H); the smallest diagram text is now X px …` | Warning | `fit="shrink"`: the diagram still overflowed and was drawn smaller as a whole (chapter 4) | If X is too small to read at the smallest real screen size: raise `font-size`, enlarge the area or split the screen |
+| `Not enough space: needs W×H, area is W×H` | Warning | Overflows even with minimum spacing (the natural-size shape is kept and overflows) | Follow the sizing procedure in chapter 4 (step 4: `fit="shrink"`) |
+| `Shrunk to N% to fit (needs W×H, area is W×H); the smallest diagram text is now X px …` | Warning | `fit="shrink"`: the diagram still overflowed and was drawn smaller as a whole (chapter 4) | Sizing procedure in chapter 4, step 5 (X ≥ 10 is fine; otherwise raise `font-size`, or split the screen) |
 | `'X' value text overlaps 'Y'` | Warning | An instrument `value` covers other equipment, a name label or another instrument (the value is not part of the layout, 7.3) | Shorten the value, or show it with `DvAttach` |
 | `The piping no longer fits the diagram's natural-size shape in this area, so it is laid out again …` | Warning | Automatic placement: the area is too small for the natural-size drawing to shrink into, so alignment and spacing were chosen again and the drawing looks different (chapter 4) | Enlarge the area if the shape must stay the same |
 | `DvLine '…': no equipment named 'X'` | Error | Name typo, or equipment hidden with `visible` | Check the name |
@@ -1142,6 +1166,7 @@ The recirculation pipe branching from `P1.out` routes back into the tank's side.
 - Give state by binding or literal (`open="true"`). If not given, it is stopped / closed / empty vessel.
 - Value displays and buttons go inside `<DvAttach>`; text uses classes (`label`·`caption`·`title`).
 - To fill the area, `grow="1" style="height:0"` (inside a vertical layout).
+- For screen size, follow the sizing procedure in chapter 4 step by step, rendering at the smallest real screen size.
 - After fixing, render to PNG and check Trace errors and warnings.
 - Place instruments (`DvInstrument`) directly under `DvProcess` and always state the equipment to attach to with `on` (or with `tap`, when matching a drawing). Attach controllers to the valve they move. Signal lines use `DvSignal`, ends by name only.
 - When there are several identical units of plant, define a unit component (template root `DvUnit`) once and repeat it as instances. For unit inside → outside connections, put a `DvPort` and use `유닛.포트` (unit.port).
@@ -1164,6 +1189,8 @@ The recirculation pipe branching from `P1.out` routes back into the tank's side.
 - Do not draw signal lines as `DvLine` (pipes) (they interfere with flow and layout). Use `DvSignal`.
 - Do not invent attributes that set an instrument's position or side (`side`·`x`·`y`). They do not exist — the position is automatic, next to the `on` equipment.
 - Do not try to set pipe color via `style` or color values. Medium colors exist only as the 6 names of `medium`.
+- Do not add `fit="shrink"` before a render has shown `Not enough space`, and do not judge a shrunk diagram from the picture — use the `X px` in its warning.
+- Do not put `font-size` on a parent box for the diagram — it is not inherited; only `DvProcess`'s own `font-size` counts.
 - Do not invent the not-yet-available features in chapter 18 as attributes.
 
 ---
@@ -1201,7 +1228,7 @@ This is due to the staircase layout, where equipment after a line leaving the ta
 Lines on the same side and in the same direction are already merged into one nozzle. What appears separate is an incoming and an outgoing line, or different left/right sides (`side`).
 
 **The screen is small and it overflows.**
-The natural-size drawing is shrunk to fit (positions only — equipment and text keep their size). Below the smallest size its shape allows, alignment (`auto`) and spacing (down to 0.5×) are chosen again, so the drawing changes shape (with a warning). If it still overflows, the natural shape is kept and overflows: enlarge the area, split the process across two screens, or omit less important equipment (inlet valves, etc.).
+Follow the sizing procedure in chapter 4: `fit="shrink"`, then `font-size` if the reported text size is below 10px, and split the screen if that is not enough. (Before `fit` acts, the library already tries moving equipment closer and other alignments by itself.)
 
 **I have several identical units of plant (3 blenders).**
 Define a unit component once and use it like `<Blender name="BL1" U="{BL1}"/>` (8.4). To stand them side by side, outer `direction="tb"` + unit outlet port `side="bottom"`.

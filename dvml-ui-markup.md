@@ -2497,7 +2497,7 @@ A process screen that draws tanks·pumps·valves and pipes. **You do not write c
 - Without a given size, the process diagram size = the content size.
 - `flow-animation="true"` (off by default): dashes move in the flow direction over pipes the library judges to be flowing from the connections·equipment state (redrawn at 20 frames per second). Flow can be overridden per line with `<DvLine flow="{X}"/>` (lines with real flow-rate data). For the detailed judgment rules see `dvml-process.md` 12.1.
 - `align="auto|step|row"` (default `auto`): whether equipment after a line leaving a tank bottom is placed stepped below the tank (`step`) or on the same row as the tank (`row`, low and wide). `auto` uses stepped if it fits the area, otherwise the same row.
-- If the size is smaller than the content, it re-lays out by changing the row alignment (`auto`) and equipment spacing (down to 0.5×). If still short, it leaves a Trace warning ("Not enough space") and draws overflowing — or, with `fit="shrink"`, draws the whole diagram smaller to fit and reports the scale and the smallest text size ("Shrunk to N% … X px"). If there is spare space, it is centered. `style="font-size:N"` scales all diagram text (labels, bubbles, values) by N / 14; `font-size` is not inherited, so only a value on `DvProcess` counts. See `dvml-process.md` chapter 4.
+- If the size is smaller than the content, it re-lays out by changing the row alignment (`auto`) and equipment spacing (down to 0.5×). If still short, it leaves a Trace warning ("Not enough space") and draws overflowing — or, with `fit="shrink"`, draws the whole diagram smaller and reports the smallest text size ("Shrunk to N% … X px"). If there is spare space, it is centered. `style="font-size:N"` on `DvProcess` scales all diagram text by N / 14. **For screen size, follow the sizing procedure in `dvml-process.md` chapter 4** (render at the smallest real size → `Not enough space` → `fit="shrink"` → if X < 10px, raise `font-size` → if still too small, split the screen).
 - The background is not painted. It follows the app theme or `style`'s `background` (`rich` looks best on a dark background).
 - `placement="fixed"` (default `auto`) is only for screens that must match a given drawing: every piece of equipment then sits at its `x`·`y` (symbol center, px), pipes are still routed automatically, and `base-size="W H"` scales the positions (not the equipment or text) to the area. See `dvml-process.md` chapter 20.
 
@@ -2658,8 +2658,8 @@ Trace warnings·errors are left based on the layout drawn on screen (the same me
 |---|---|
 | `'A.out'→'B.in': crosses other piping N time(s)` | Crossing. Try changing the order with `row` |
 | `'A.out'→'B.in': no free path, so it overlaps other piping` | Path blocked, drawn overlapping. Change `row`·`rank` or enlarge the area |
-| `Not enough space: needs W×H, area is W×H` | Overflows even at minimum spacing. Enlarge the area or split the screen (or `fit="shrink"`) |
-| `Shrunk to N% to fit (…); the smallest diagram text is now X px …` | `fit="shrink"` drew it smaller. If X px is too small to read at the real screen size, raise `font-size`, enlarge the area or split the screen |
+| `Not enough space: needs W×H, area is W×H` | Overflows even at minimum spacing. Sizing procedure (`dvml-process.md` 4): add `fit="shrink"` |
+| `Shrunk to N% to fit (…); the smallest diagram text is now X px …` | Drawn smaller. X ≥ 10 is fine; otherwise raise `font-size` (sizing procedure, `dvml-process.md` 4) |
 | `no equipment named 'X'` · `'X' has no port 'p' (…)` · `'X' requires a port (…)` | Wrong connection (red marking). The parentheses list the usable ports |
 | `<Tag> is not process equipment` | A non-equipment tag inside a process diagram |
 | `<DvInstrument …> has no on …` · `on='Y': no such equipment` · `DvSignal '…': no instrument or equipment named 'X'` | Wrong name of the equipment an instrument attaches to, or of a signal line end (not drawn) |
