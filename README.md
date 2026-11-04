@@ -84,6 +84,7 @@ In UI code, the usual failure is a mistake that does nothing: no error, no warni
 **Good-looking screens by default**
 - Semantic components (`DvCard`, `DvStat`, `DvBadge` and others) and theme tokens (`token(surface)` and others) give consistent screens in both the dark and light themes. You do not have to pick colors by hand.
 - In a process diagram (P&ID) you list the equipment and how it connects. The library places the equipment and routes the pipes at right angles, so the AI never has to work out coordinates.
+- To copy a given drawing, place the equipment at the drawing's coordinates (`placement="fixed"`) and the pipes are still routed for you. With `fit="contain"` the whole drawing scales to any screen, smaller or larger, like an image; one `font-size` keeps its text readable on small panels.
 
 **Built for industrial HMIs**
 - Data and logic live in the VM (the app). Widgets only show values and take input.

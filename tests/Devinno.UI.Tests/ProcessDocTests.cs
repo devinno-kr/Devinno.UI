@@ -83,7 +83,9 @@ public class ProcessDocTests
             Assert.All(d.Nodes, n => Assert.False(n.Error, $"block #{index}: {n.Name} error"));
             var bad = ProcessTests.Violations(d);
             Assert.True(bad.Count == 0, $"block #{index}: " + string.Join(" / ", bad) + " :: " + string.Join(" | ", d.Lines.Select(l => $"{l.FromRef}->{l.ToRef} " + string.Join(" ", l.G?.Points.Select(p => $"({p.X:0},{p.Y:0})") ?? []))) + " :: " + string.Join(" | ", d.Nodes.Select(n => $"{n.Name}@({n.G.X:0},{n.G.Y:0}) sym={n.Sym}")));
-            Assert.All(d.Lines, l => Assert.Equal(0, l.G!.Crossings));
+            // 예제가 교차를 허용한다고 적은 경우(실제 도면처럼 피할 수 없는 교차 — 문서에 이유를 함께 쓴다)만 교차 검사를 건너뛴다
+            if (!block.Contains("doc-test: crossings-allowed", StringComparison.Ordinal))
+                Assert.All(d.Lines, l => Assert.Equal(0, l.G!.Crossings));
         }
     }
 

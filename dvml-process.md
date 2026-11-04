@@ -27,6 +27,7 @@ This document explains, from start to finish, how to build a **process screen** 
 18. Not yet available
 19. Frequently asked questions
 20. Coordinate placement (`placement="fixed"`) — matching a given drawing
+21. Screen size and complex P&IDs — which mode, which attributes
 
 ---
 
@@ -136,6 +137,8 @@ AI MUST follow the order below exactly. Each step says what to decide.
 - Attached boxes (`DvAttach`) grow with it too: each is laid out at its own size and drawn N / 14 times larger, contents included (buttons, values), and it takes that much room beside the equipment. So `font-size` on `DvProcess` is the one setting for every text in the diagram.
 - `font-size` is not inherited in Devinno.UI, so only a value set on `DvProcess` itself changes this.
 - Use it to keep text readable when the diagram is shrunk (procedure below), or when the screen is read from a distance.
+
+Which placement mode and which `fit` to use for a large or complicated process: chapter 21.
 
 **Sizing procedure — do exactly this, in order**
 
@@ -1290,7 +1293,7 @@ Automatic placement (chapters 1–19) lays equipment out in flow order so that i
 - Equipment without both `x` and `y` is **not drawn** (Trace error).
 - A unit (`DvUnit` or a unit component) is placed as a whole: `x`·`y` is the center of the unit's frame. The inside of a unit is always placed automatically (`placement` on a unit is ignored with a warning).
 
-**Taking coordinates from a drawing**: measure the center of each symbol on the drawing image. If the image is a different size from the screen area, either convert the numbers yourself, or keep the image's numbers and set `base-size` to the image size.
+**Taking coordinates from a drawing** (step by step: 21.4): measure the center of each symbol on the drawing image. If the image is a different size from the screen area, either convert the numbers yourself, or keep the image's numbers and set `base-size` to the image size.
 
 ### 20.3 Size and `base-size`
 
@@ -1313,3 +1316,188 @@ Render to PNG and check Trace, as in chapter 15. In coordinate placement, also w
 - `'A' and 'B' overlap` — move one of them.
 - `no free path` — two pieces of equipment are too close for a pipe to leave one and enter the other (each pipe needs about 18px straight out of each port). Move them apart.
 - Crossings — move equipment; there are no `row` hints in this mode.
+
+For laying out a large or complicated drawing, reading a given drawing, and fitting it to screens of every size, see chapter 21.
+
+---
+
+## 21. Screen size and complex P&IDs — which mode, which attributes
+
+This chapter puts in one place what to choose for a large or complicated process screen, how it meets screens of different sizes, and how to copy a given drawing. Chapters 4 and 20 have the details; follow this chapter for the decisions.
+
+### 21.1 Which placement mode
+
+Decide this before writing any equipment.
+
+| The screen is … | Use | Size attributes |
+|---|---|---|
+| A new screen, flow mostly goes one way (feed → equipment → product), up to about 15 pieces of equipment, at most one or two lines back to earlier equipment | Automatic placement (default) | `grow="1" style="height:0"`; add `fit="shrink"` only when a render shows `Not enough space` (sizing procedure, chapter 4) |
+| Many lines go **back to earlier equipment** (reflux, reboiler loops, recirculation, heat recovery from product to feed), or about 25 pieces of equipment or more | Coordinate placement `placement="fixed"` (chapter 20) | `base-size="W H"` + `fit="contain"` + `grow="1" style="height:0"` |
+| The user gave a drawing the screen must look like | Coordinate placement `placement="fixed"` | `base-size` = the size of the drawing image (or the size you took the coordinates at) + `fit="contain"` |
+
+Why: automatic placement puts equipment in columns along the flow. Every line that goes back to an earlier column has to cross the drawing, so a process with many such lines comes out tangled (in a test with a distillation unit: 17 crossings, 3 pipes with no free path, and 1–2 minutes of layout time). Hints (`row`·`rank`) do not fix that. **If the first render in automatic placement shows more than about 5 crossing warnings or any `no free path`, switch to coordinate placement instead of adding hints.**
+
+### 21.2 How the drawing meets the screen (`fit`)
+
+| `fit` | Placement | Area smaller than the drawing | Area larger | Text |
+|---|---|---|---|---|
+| `none` (default) | both | Automatic: spacing shrinks down to 0.5×, then the diagram overflows (`Not enough space`). Fixed: overflows | Automatic: equipment spreads out. Fixed: the drawing stays at the top left (with `base-size` alone: positions spread, 20.3) | keeps its size |
+| `shrink` | both (meant for automatic) | First everything `none` does; if it still overflows, the whole drawing is scaled down to fit, centered | same as `none` | shrinks with the drawing |
+| `contain` | `fixed` only (automatic: acts as `shrink`, with a warning) | The `base-size` picture is scaled down as a whole, centered | The picture is scaled **up** as a whole, centered | follows the drawing both ways |
+
+- The scaled drawing behaves like the real one: presses, drags (knobs, sliders, custom widgets in `DvAttach`), editing and flow animation all follow the drawn positions.
+- With `contain`, equipment positions and pipe routes are identical at every size — only the scale changes, like an image. A wide area leaves equal margins left and right; a tall one, above and below.
+- `fit` only acts on the area the diagram is **given**: use `grow="1" style="height:0"` inside a page frame or card (chapter 4). Directly under `DvScreen` (not a flex container) `grow` does nothing, the diagram keeps its natural size and `fit` has nothing to do.
+- When the drawing is shrunk, the warning `Shrunk to N% … the smallest diagram text is now X px` tells you the smallest text on screen. Text below 10px is not readable: follow the sizing procedure (chapter 4, step 5) — `style="font-size:F"` on `DvProcess`, F = current × 11 / X. That one `font-size` scales every diagram text, attached boxes included.
+- **After raising `font-size`, check the warnings at the base size again.** Bigger bubbles, labels and value text take more room: in the distillation example, `font-size:21` produced a value text over a pipe, a value text over another bubble and a signal line with no free path. Move the equipment involved apart (coordinate placement) and render again.
+
+### 21.3 Drawing a complex P&ID in coordinate placement
+
+1. **Pick `base-size`** for the shape of the real screen: `1800 980` for a wide (16:9) panel, `1400 1000` for 4:3. Coordinates are px inside that box; `fit="contain"` scales the box to any screen later, so draw it as large as is comfortable.
+2. **Place the main equipment first, then build bands around it.** For a distillation unit: the column in the middle; the overhead (condenser, reflux drum, reflux pumps) in the top band; the reboiler below the column; the feed train to the left; products to the right (distillate top right, bottoms bottom right). Each band reads left → right in the flow direction.
+3. **Spacing**: about 110–160px between neighboring pieces of equipment along a line (labels and instrument bubbles need room; each pipe needs about 18px straight out of a port), about 110px between parallel pumps.
+4. **Parallel equipment goes one above the other** (`P-202A` at y 270, `P-202B` at y 380), not side by side — side by side, their outlet pipes cross.
+5. **Terminals cannot be turned.** A terminal that receives a line (a product, `TO FLARE`, `CWR`) is drawn as an arrow pointing right and takes its line on its left side; one that supplies a line takes it on its right. Put receiving terminals **downstream (to the right)** of the equipment that feeds them, and supplying terminals upstream (to the left). A receiving terminal placed to the left makes the pipe loop around it.
+6. **Equipment that must flow right → left** (a reflux valve returning to the column, a reboiler fed from its right side) is mirrored with `flip="h"`: its `in` is then on the right.
+7. **Several lines on one face of a vessel**: do not connect them all to `side` (lines on the same face in the same direction merge into one nozzle). Give each its own point with a face position (6.1): feed `T201.left@0.5`, reflux return `T201.right@0.3`, reboiler return `T201.left@0.9`, relief `T201.right@0.1`.
+8. **Instruments**: `on="장비"` (equipment) puts the bubble on the least busy face automatically — fine for valves and flowmeters. Where the position means something (a level transmitter at the column base, a temperature at a tray, a temperature on a product line), use `tap`: `tap="T201.right@0.82"`, `tap="E203.out"`. A bubble placed with `on` can also sit in front of a nozzle and block a pipe (a `no free path` on that equipment's line) — `tap` fixes that too.
+9. **Value text** (`value`) is not part of the layout. Keep it short (`96.4 °C`, `38.2 m³/h`) and watch for `'X' value text overlaps …`.
+10. **Render at the base size** and fix every `overlap` and `no free path` by moving equipment. One or two crossings are normal on a real P&ID and are drawn with jumps. Then follow the sizing procedure (chapter 4) at the smallest real screen size.
+
+### 21.4 Reading a given drawing and copying it
+
+1. **Inventory first.** Write down from the drawing: every piece of equipment with its tag (`T-201`, `P-202A`), its kind (chapter 5 — column, drum, shell-and-tube exchanger, control valve, check valve, relief valve …), every line with its direction (follow the flow arrows; `from` is upstream), every instrument bubble with its letters and number, and every signal line (dashed) with its two ends. Equipment that is not in chapter 5 becomes a `DvSymbol` (chapter 14) — do not invent kinds.
+2. **Size**: set `base-size` to the size of the drawing image in px (e.g. `1600 900`), so the coordinates can be read straight off the image.
+3. **Coordinates**: for each piece of equipment, read the **center of its symbol** on the image (not of its label) and write it as `x`·`y`. Small offsets of up to 16px between connected ports are straightened automatically (20.4).
+4. **Nozzles**: where the drawing shows a line entering a vessel at a particular point, measure it along that face: position = (distance from the top of the face) ÷ (face height) — for the left and right faces from the top, for the top and bottom faces from the left. Write it as `T1.left@0.15`.
+5. **Instruments**: a bubble drawn next to a piece of equipment → `on`; a bubble drawn on a pipe or at a nozzle with a short connecting line → `tap` at that pipe's port (`tap="CV1.in"`) or at that point of the face (`tap="T1.left@0.85"`). Controllers drawn on their own go `on` the valve they move. Signal arrows and switch actions on signal lines are `DvSignal arrow`·`label` (7.4); line numbers are `DvLine label`.
+6. **Media**: color the main lines with `medium` (water, steam, gas, oil …) on the first line of each run, as the drawing's legend says.
+7. **Compare**: render at the image size and look at it next to the drawing. Fix differences by moving equipment (`x`·`y`) — the library routes the pipes, so a pipe that runs differently from the drawing usually means a nozzle position or a piece of equipment is off.
+8. Then add `fit="contain"` and follow the sizing procedure (chapter 4) for the real screen sizes.
+
+### 21.5 Full example — distillation unit
+
+A distillation unit with a feed train (two pumps, steam preheater, flow control), the column, overhead condenser, reflux drum with pressure control, reflux pumps with reflux flow control and distillate level control, a thermosiphon reboiler with steam temperature control, and bottoms pumps with a cooler and level control. Coordinates at `base-size` 1800×980; `font-size:21` comes from the sizing procedure at a 1280×720 screen (the smallest text was 7.6px → 14 × 11 / 7.6 = 21 → 11.4px).
+
+```xml
+<DvProcess look="rich" placement="fixed" base-size="1800 980" fit="contain" grow="1" style="height:0; font-size:21">
+  <!-- doc-test: crossings-allowed — the reboiler steam line and the reboiler return cross once, as on real drawings -->
+  <DvTerminal name="FEED" text="FEED&#10;FROM TK-100" x="80" y="470"/>
+  <DvPump name="P101A" running="true" label="P-101A" x="230" y="400"/>
+  <DvPump name="P101B" label="P-101B" x="230" y="540"/>
+  <DvExchanger name="E101" label="E-101" x="400" y="470"/>
+  <DvTerminal name="STM1" text="LP STEAM" x="270" y="300"/>
+  <DvTerminal name="CND1" text="CONDENSATE" x="560" y="555"/>
+  <DvInline name="FE101" kind="flowmeter" label="FE-101" x="540" y="470"/>
+  <DvValve name="FV101" kind="control" open="true" label="FV-101" x="650" y="470"/>
+  <DvVessel name="T201" kind="column" height="380" level="45" label="T-201" x="800" y="470"/>
+
+  <DvValve name="PSV201" kind="relief" label="PSV-201" x="920" y="250"/>
+  <DvTerminal name="FLR1" text="TO FLARE" x="1060" y="272"/>
+  <DvExchanger name="E201" label="E-201" x="1000" y="110"/>
+  <DvTerminal name="CWS1" text="CWS" x="860" y="40"/>
+  <DvTerminal name="CWR1" text="CWR" x="1110" y="215"/>
+  <DvVessel name="D201" kind="drum" level="55" label="D-201" x="1300" y="120"/>
+  <DvValve name="PV201" kind="control" open="true" label="PV-201" x="1490" y="100"/>
+  <DvTerminal name="FLR2" text="TO FLARE" x="1640" y="100"/>
+  <DvPump name="P202A" running="true" label="P-202A" x="1290" y="270"/>
+  <DvPump name="P202B" label="P-202B" x="1290" y="380"/>
+  <DvInline name="FE202" kind="flowmeter" label="FE-202" x="1470" y="330">
+    <DvAttach side="bottom"><DvLabel class="caption muted" text="REFLUX RATIO"/><DvLabel class="title" text="2.4"/></DvAttach>
+  </DvInline>
+  <DvValve name="FV202" kind="control" open="true" flip="h" label="FV-202" x="1060" y="450"/>
+  <DvValve name="LV201" kind="control" open="true" label="LV-201" x="1590" y="330"/>
+  <DvTerminal name="DIST" text="DISTILLATE" x="1720" y="330"/>
+
+  <DvExchanger name="E202" label="E-202" flip="h" x="640" y="810"/>
+  <DvValve name="TV201" kind="control" open="true" label="TV-201" x="470" y="725"/>
+  <DvTerminal name="STM2" text="LP STEAM" x="330" y="725"/>
+  <DvValve name="CV1" kind="check" label="CHK" x="690" y="915"/>
+  <DvTerminal name="CND2" text="CONDENSATE" x="840" y="915"/>
+  <DvPump name="P203A" running="true" label="P-203A" x="990" y="760"/>
+  <DvPump name="P203B" label="P-203B" x="990" y="880"/>
+  <DvExchanger name="E203" label="E-203" x="1160" y="820"/>
+  <DvTerminal name="CWS2" text="CWS" x="1020" y="700"/>
+  <DvTerminal name="CWR2" text="CWR" x="1280" y="915"/>
+  <DvValve name="LV202" kind="control" open="true" label="LV-202" x="1370" y="820"/>
+  <DvTerminal name="BTM" text="BOTTOMS" x="1510" y="820"/>
+
+  <DvLine from="FEED" to="P101A.in" medium="oil"/>
+  <DvLine from="FEED" to="P101B.in"/>
+  <DvLine from="P101A.out" to="E101.in"/>
+  <DvLine from="P101B.out" to="E101.in"/>
+  <DvLine from="STM1" to="E101.in2" medium="steam"/>
+  <DvLine from="E101.out2" to="CND1" medium="water"/>
+  <DvLine from="E101.out" to="FE101.in"/>
+  <DvLine from="FE101.out" to="FV101.in"/>
+  <DvLine from="FV101.out" to="T201.left@0.5" arrow="end"/>
+  <DvLine from="T201.top" to="E201.in" medium="gas"/>
+  <DvLine from="T201.right@0.1" to="PSV201.in"/>
+  <DvLine from="PSV201.out" to="FLR1"/>
+  <DvLine from="CWS1" to="E201.in2" medium="water"/>
+  <DvLine from="E201.out2" to="CWR1"/>
+  <DvLine from="E201.out" to="D201.top" medium="oil"/>
+  <DvLine from="D201.right@0.3" to="PV201.in" medium="gas"/>
+  <DvLine from="PV201.out" to="FLR2"/>
+  <DvLine from="D201.bottom" to="P202A.in"/>
+  <DvLine from="D201.bottom" to="P202B.in"/>
+  <DvLine from="P202A.out" to="FE202.in"/>
+  <DvLine from="P202B.out" to="FE202.in"/>
+  <DvLine from="FE202.out" to="FV202.in"/>
+  <DvLine from="FE202.out" to="LV201.in"/>
+  <DvLine from="FV202.out" to="T201.right@0.3" arrow="end"/>
+  <DvLine from="LV201.out" to="DIST"/>
+  <DvLine from="T201.bottom" to="E202.in"/>
+  <DvLine from="E202.out" to="T201.left@0.9" arrow="end"/>
+  <DvLine from="STM2" to="TV201.in" medium="steam"/>
+  <DvLine from="TV201.out" to="E202.in2"/>
+  <DvLine from="E202.out2" to="CV1.in" medium="water"/>
+  <DvLine from="CV1.out" to="CND2"/>
+  <DvLine from="T201.bottom" to="P203A.in"/>
+  <DvLine from="T201.bottom" to="P203B.in"/>
+  <DvLine from="P203A.out" to="E203.in"/>
+  <DvLine from="P203B.out" to="E203.in"/>
+  <DvLine from="CWS2" to="E203.in2" medium="water"/>
+  <DvLine from="E203.out2" to="CWR2"/>
+  <DvLine from="E203.out" to="LV202.in"/>
+  <DvLine from="LV202.out" to="BTM"/>
+
+  <DvInstrument name="FT101" tag="FT" number="101" on="FE101"/>
+  <DvInstrument name="FIC101" tag="FIC" number="101" on="FV101" panel="true" value="38.2 m³/h"/>
+  <DvInstrument name="PT201" tag="PT" number="201" on="D201"/>
+  <DvInstrument name="PIC201" tag="PIC" number="201" on="PV201" panel="true" value="1.8 barg"/>
+  <DvInstrument name="TT201" tag="TT" number="201" tap="T201.right@0.62"/>
+  <DvInstrument name="TIC201" tag="TIC" number="201" on="TV201" panel="true" value="96.4 °C"/>
+  <DvInstrument name="LT201" tag="LT" number="201" on="D201"/>
+  <DvInstrument name="LIC201" tag="LIC" number="201" on="LV201" panel="true" value="55 %"/>
+  <DvInstrument name="FT202" tag="FT" number="202" on="FE202"/>
+  <DvInstrument name="FIC202" tag="FIC" number="202" on="FV202" panel="true" value="21.0 m³/h"/>
+  <DvInstrument name="LT202" tag="LT" number="202" tap="T201.right@0.82"/>
+  <DvInstrument name="LIC202" tag="LIC" number="202" on="LV202" panel="true" value="45 %"/>
+  <DvInstrument name="TI203" tag="TI" number="203" tap="E203.out" value="42 °C"/>
+  <DvSignal from="FT101" to="FIC101"/>
+  <DvSignal from="FIC101" to="FV101"/>
+  <DvSignal from="PT201" to="PIC201"/>
+  <DvSignal from="PIC201" to="PV201"/>
+  <DvSignal from="TT201" to="TIC201"/>
+  <DvSignal from="TIC201" to="TV201"/>
+  <DvSignal from="LT201" to="LIC201"/>
+  <DvSignal from="LIC201" to="LV201"/>
+  <DvSignal from="FT202" to="FIC202"/>
+  <DvSignal from="FIC202" to="FV202"/>
+  <DvSignal from="LT202" to="LIC202"/>
+  <DvSignal from="LIC202" to="LV202"/>
+</DvProcess>
+```
+
+What to notice:
+
+- The column has four separate nozzles on its faces (feed, reflux return, reboiler return, relief), the reflux valve `FV202` and the reboiler `E202` are mirrored (`flip="h"`) because they flow right → left, and all receiving terminals are to the right of what feeds them.
+- `TT201`, `LT202` and `TI203` use `tap` so they sit where they measure; the other instruments use `on`.
+- In the demo app (`-- process`, tab "Distillation — fixed + contain") the same drawing scales down and up with the window, centered.
+
+### 21.6 Limits
+
+- Automatic placement is not meant for processes with many lines back to earlier equipment (21.1); its layout time grows quickly with such loops.
+- A large drawing is laid out once when the screen is first built (measured for the example above on a desktop CPU: about 1.3 s the first time, 0.4 s for another screen with the same markup). The result is kept: resizing the window with `fit="contain"` took 1–2 ms and a rebuild after a value change 12 ms.
+- Terminals cannot be mirrored (21.3, item 5).
