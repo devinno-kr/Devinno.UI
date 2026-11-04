@@ -229,11 +229,16 @@ internal static class ProcessBuilder
 
     private static readonly HashSet<string> Warned = new();
 
-    internal static void Warn(string message, bool error = false)
+    // 배치 품질 경고(Report) — 공정도 요소(파싱한 마크업)마다 같은 문구 한 번. 프로세스 전체로 한 번이면
+    // 같은 프로세스에서 마크업을 고쳐 다시 렌더할 때 남은 문제가 보이지 않는다
+    private static readonly ConditionalWeakTable<object, HashSet<string>> WarnedFor = new();
+
+    internal static void Warn(string message, bool error = false, object? scope = null)
     {
-        lock (Warned)
+        var seen = scope is null ? Warned : WarnedFor.GetValue(scope, _ => new HashSet<string>());
+        lock (seen)
         {
-            if (!Warned.Add(message))
+            if (!seen.Add(message))
                 return;
         }
 
@@ -1667,7 +1672,7 @@ internal static class ProcessBuilder
     internal static void Report(ProcessDiagram d)
     {
         if (d.Shortage is { } msg)
-            Warn(msg);
+            Warn(msg, scope: d.Source);
         foreach (var n in d.Nodes)
         {
             if (n.Unit is { } u)
@@ -1676,7 +1681,7 @@ internal static class ProcessBuilder
 
         if (d.Graph is { } g)
             foreach (var w in g.Warnings)
-                Warn(w);
+                Warn(w, scope: d.Source);
 
         ReportValueOverlap(d);
 
@@ -1687,11 +1692,11 @@ internal static class ProcessBuilder
             if (gl.Forced)
                 Warn(d.Fixed
                     ? $"'{l.FromRef}'→'{l.ToRef}': no free path, so it overlaps other piping; move equipment (x/y) to open a gap"
-                    : $"'{l.FromRef}'→'{l.ToRef}': no free path, so it overlaps other piping; move equipment with row/rank hints or enlarge the area");
+                    : $"'{l.FromRef}'→'{l.ToRef}': no free path, so it overlaps other piping; move equipment with row/rank hints or enlarge the area", scope: d.Source);
             else if (gl.Crossings > 0)
                 Warn(d.Fixed
                     ? $"'{l.FromRef}'→'{l.ToRef}': crosses other piping {gl.Crossings} time(s); moving equipment (x/y) can reduce this"
-                    : $"'{l.FromRef}'→'{l.ToRef}': crosses other piping {gl.Crossings} time(s); a row hint can reduce this");
+                    : $"'{l.FromRef}'→'{l.ToRef}': crosses other piping {gl.Crossings} time(s); a row hint can reduce this", scope: d.Source);
         }
     }
 
@@ -1708,8 +1713,17 @@ internal static class ProcessBuilder
                 .Select(n => n.Name)
                 .Concat(d.Instruments.Where(o => o != inst && o.Host is { } oh && (Abs(oh, o.Rect).IntersectsWith(v) || !o.ValueRect.IsEmpty && Abs(oh, o.ValueRect).IntersectsWith(v))).Select(o => o.Name))
                 .FirstOrDefault();
+            // 배관 — 굵기 절반만큼 넓힌 구간과 겹치면
+            var half = d.Rich ? 4f : 2f;
+            hit ??= d.Lines.Where(l => l.G is { Points.Count: >= 2 } && Enumerable.Range(1, l.G.Points.Count - 1).Any(k =>
+                {
+                    var (a, b) = (l.G.Points[k - 1], l.G.Points[k]);
+                    return new SKRect(MathF.Min(a.X, b.X) - half, MathF.Min(a.Y, b.Y) - half, MathF.Max(a.X, b.X) + half, MathF.Max(a.Y, b.Y) + half).IntersectsWith(v);
+                }))
+                .Select(l => $"{l.FromRef}'→'{l.ToRef}")
+                .FirstOrDefault();
             if (hit is not null)
-                Warn($"'{inst.Name}' value text overlaps '{hit}'; value text is not part of the layout, so keep it short or move the equipment apart");
+                Warn($"'{inst.Name}' value text overlaps '{hit}'; value text is not part of the layout, so keep it short or move the equipment apart", scope: d.Source);
         }
     }
 

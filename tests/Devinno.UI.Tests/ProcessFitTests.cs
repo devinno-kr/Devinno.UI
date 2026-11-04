@@ -2,6 +2,7 @@ using Devinno.UI;
 using Devinno.UI.Interaction;
 using Devinno.UI.Layout;
 using Devinno.UI.Process;
+using Devinno.UI.Styling;
 using SkiaSharp;
 using Xunit;
 
@@ -367,5 +368,71 @@ public class ProcessFitTests
         Assert.False(d.Contain);
         Assert.True(d.Shrink);
         Assert.True(ProcessBox(s).ContentScale < 1f);
+    }
+    // ── 경고 — 값 글자가 배관을 덮을 때, 같은 프로세스에서 다시 만든 화면에서도 다시 알림 ──
+
+    private sealed class Capture : System.Diagnostics.TraceListener
+    {
+        public readonly List<string> Lines = new();
+        public override void Write(string? message) { }
+        public override void WriteLine(string? message) { }
+        public override void TraceEvent(System.Diagnostics.TraceEventCache? c, string source, System.Diagnostics.TraceEventType t, int id, string? message)
+        {
+            lock (Lines)
+                Lines.Add(message ?? "");
+        }
+    }
+
+    private static List<string> Warnings(Action render)
+    {
+        var cap = new Capture();
+        System.Diagnostics.Trace.Listeners.Add(cap);
+        try
+        {
+            render();
+        }
+        finally
+        {
+            System.Diagnostics.Trace.Listeners.Remove(cap);
+        }
+
+        lock (cap.Lines)
+            return cap.Lines.ToList();
+    }
+
+    [Fact]
+    public void ValueText_OverPipe_IsReported()
+    {
+        // 증류탑 견본에서 TIC-201 을 리보일러 복귀 배관 쪽으로 — font-size 21 이면 값 글자가 그 배관을 덮는다
+        var body = DistillationSample.Markup.Replace("name=\"TV201\" kind=\"control\" open=\"true\" label=\"TV-201\" x=\"470\" y=\"725\"",
+            "name=\"TV201\" kind=\"control\" open=\"true\" label=\"TV-201\" x=\"500\" y=\"725\"");
+        Assert.NotEqual(DistillationSample.Markup, body);
+        var w = Warnings(() =>
+        {
+            var s = new DvSurface($"<DvScreen><DvProcess placement=\"fixed\" base-size=\"1800 980\" fit=\"contain\" style=\"width:1800; height:980; font-size:21\">{body}</DvProcess></DvScreen>",
+                new ProcessTests.Vm(), DvTheme.Light);
+            s.Layout(1800, 980);
+            using var bmp = new SKBitmap(1800, 980);
+            using var canvas = new SKCanvas(bmp);
+            s.RenderTo(canvas, 1800, 980, 0); // 경고는 그릴 때 알린다
+        });
+        Assert.Contains(w, m => m.Contains("'TIC201' value text overlaps 'E202.out'→'T201.left@0.9'"));
+    }
+
+    [Fact]
+    public void LayoutWarnings_AppearAgain_ForANewScreen()
+    {
+        // 같은 마크업을 새 화면으로 다시 만들면(고쳐서 다시 렌더) 남은 경고가 다시 보인다
+        static void Render()
+        {
+            var s = new DvSurface($"<DvScreen><DvProcess style=\"width:420; height:220\">{ProcessInstrumentTests.Loop}</DvProcess></DvScreen>", new ProcessTests.Vm(), DvTheme.Light);
+            s.Layout(420, 220);
+            using var bmp = new SKBitmap(420, 220);
+            using var canvas = new SKCanvas(bmp);
+            s.RenderTo(canvas, 420, 220, 0);
+        }
+
+        Assert.Contains(Warnings(Render), m => m.Contains("Not enough space"));
+        Assert.Contains(Warnings(Render), m => m.Contains("Not enough space"));
     }
 }
