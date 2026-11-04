@@ -82,11 +82,11 @@ public class DvControl
         get
         {
             var s = Surface;
-            if (s is null || !TryGetBox(out var box, out var scroll))
+            if (s is null || !TryGetBox(out var box, out var map))
                 return SKRect.Empty;
-            var r = box.Rect;
+            var r = map.Map(box.Rect);
             var o = s.WindowOffset;
-            r.Offset(o.X - scroll.X, o.Y - scroll.Y);
+            r.Offset(o.X, o.Y);
             return r;
         }
     }
@@ -118,13 +118,13 @@ public class DvControl
     /// <summary>Text to read: the override value, otherwise the markup/binding value from the last layout, otherwise <see langword="null"/>.</summary>
     internal string? CurrentText => _ov.Text ?? (TryGetBox(out var box, out _) ? box.ResolvedText : null);
 
-    private bool TryGetBox(out Layout.LayoutBox box, out SKPoint scroll)
+    private bool TryGetBox(out Layout.LayoutBox box, out Layout.ScreenMap map)
     {
         var s = Surface;
         if (s is not null && IsAttached)
-            return s.TryGetBox(this, out box, out scroll);
+            return s.TryGetBox(this, out box, out map);
         box = null!;
-        scroll = default;
+        map = Layout.ScreenMap.Identity;
         return false;
     }
 

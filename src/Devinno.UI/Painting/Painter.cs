@@ -560,7 +560,11 @@ public sealed partial class Painter
         }
 
         if (box.Process is not null)
+        {
+            var c = BeginContent(canvas, box);
             PaintProcess(canvas, box, timestampMs);
+            EndContent(canvas, c);
+        }
 
         if (box.Equipment is not null)
             PaintEquipment(canvas, box, st, timestampMs);
@@ -577,8 +581,10 @@ public sealed partial class Painter
                 canvas.Translate(-box.ScrollX, -box.ScrollY);
         }
 
+        var content = BeginContent(canvas, box);
         for (var i = 0; i < box.Children.Count; i++)
             PaintAt(canvas, box.Children[i], vm, state, timestampMs, unchecked(key * 31 + i + 1));
+        EndContent(canvas, content);
 
         if (clip)
             canvas.Restore();
@@ -592,6 +598,23 @@ public sealed partial class Painter
             PaintScrollBars(canvas, box);
             canvas.Restore();
         }
+    }
+
+    // 내용 배율(공정도 fit="shrink") — 자식·배관을 그 배율로. 없으면 -1(아무것도 안 함), 돌려준 값을 EndContent 에
+    private static int BeginContent(SKCanvas canvas, LayoutBox box)
+    {
+        if (!box.HasContentTransform)
+            return -1;
+        var saved = canvas.Save();
+        canvas.Translate(box.ContentOffset.X, box.ContentOffset.Y);
+        canvas.Scale(box.ContentScale);
+        return saved;
+    }
+
+    private static void EndContent(SKCanvas canvas, int saved)
+    {
+        if (saved >= 0)
+            canvas.RestoreToCount(saved);
     }
 
     // DvSegment(fill 아님) — 상자가 grow·stretch 로 넓어져도 배경·테두리·그림자는 항목까지만(뒤에 빈 배경이 남지 않게)

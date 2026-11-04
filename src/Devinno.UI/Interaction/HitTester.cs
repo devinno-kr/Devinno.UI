@@ -86,6 +86,8 @@ public static class HitTester
         var at = path.Count;
         path.Add((box, p));
         var inner = box.IsScroller ? new SKPoint(p.X + box.ScrollX, p.Y + box.ScrollY) : p;
+        if (box.HasContentTransform)
+            inner = new SKPoint((inner.X - box.ContentOffset.X) / box.ContentScale, (inner.Y - box.ContentOffset.Y) / box.ContentScale); // 줄여 그린 내용(공정도 fit="shrink")
         for (var i = box.Children.Count - 1; i >= 0; i--)
         {
             if (Collect(box.Children[i], inner, path))
@@ -97,6 +99,20 @@ public static class HitTester
 
         path.RemoveAt(at);
         return false;
+    }
+
+    /// <summary>The drawing scale of <paramref name="target"/> on the hit path (product of the content scales of the boxes above it) — screen distance = box distance × scale.</summary>
+    internal static float ScaleOf(List<(LayoutBox Box, SKPoint Local)> path, LayoutBox? target)
+    {
+        var scale = 1f;
+        foreach (var (b, _) in path)
+        {
+            if (ReferenceEquals(b, target))
+                break;
+            scale *= b.ContentScale;
+        }
+
+        return scale;
     }
 
     private static bool IsInteractive(LayoutBox b)

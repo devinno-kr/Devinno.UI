@@ -119,6 +119,12 @@ public sealed partial class DvSurface
         _needsRender = true;
     }
     private SKPoint _knobShift; // 노브 좌표계(스크롤 상자 안이면 오프셋 반영) − 화면 좌표
+    private SKPoint _dragPress;     // 끌기를 시작한 화면 점
+    private float _dragScale = 1f;  // 끄는 상자가 그려진 배율(줄여 그린 공정도 안이면 1 보다 작다) — 화면 이동량 ÷ 배율 = 상자 좌표 이동량
+
+    // 끄는 중인 화면 점 → 끄는 상자 좌표(누른 점 기준 이동량을 배율로 나눈다; 배율 1 이면 p + shift)
+    private SKPoint DragPoint(SKPoint p, SKPoint shift) =>
+        new(_dragPress.X + (p.X - _dragPress.X) / _dragScale + shift.X, _dragPress.Y + (p.Y - _dragPress.Y) / _dragScale + shift.Y);
 
     /// <summary>Creates a screen with the default theme. User components are not used.</summary>
     /// <param name="markup">Screen markup (XML) with a single root element.</param>
@@ -567,7 +573,7 @@ public sealed partial class DvSurface
         BuildControlBoxes();
     }
 
-    // 핸들 → (박스, 조상 스크롤 상자들). 레이아웃(재빌드·리사이즈) 끝에 새 사전으로 통째 교체 — 다른 스레드의 읽기가 늘 완성된 한 벌을 본다.
+    // 핸들 → (박스, 좌표를 바꾸는 조상 — 스크롤 상자·줄여 그린 공정도). 레이아웃(재빌드·리사이즈) 끝에 새 사전으로 통째 교체 — 다른 스레드의 읽기가 늘 완성된 한 벌을 본다.
     // 스크롤 오프셋은 저장하지 않는다(스크롤만 바뀌어도 읽을 때 현재 값을 더한다).
     private volatile Dictionary<Controls.DvControl, (LayoutBox Box, LayoutBox[] Scrollers)>? _controlBoxes;
 
@@ -581,11 +587,12 @@ public sealed partial class DvSurface
         {
             if (_controlsByNode.TryGetValue(b.Origin, out var c))
                 table.TryAdd(c, (b, scrollers.ToArray()));
-            if (b.IsScroller)
+            var maps = b.IsScroller || b.HasContentTransform;
+            if (maps)
                 scrollers.Add(b);
             foreach (var ch in b.Children)
                 Walk(ch);
-            if (b.IsScroller)
+            if (maps)
                 scrollers.RemoveAt(scrollers.Count - 1);
         }
         Walk(_box);
@@ -627,23 +634,19 @@ public sealed partial class DvSurface
     /// <summary>Whether a layout has completed (the handle box table exists).</summary>
     internal bool HasControlBoxes => _controlBoxes is not null;
 
-    /// <summary>The handle's current box and the sum of ancestor scroll offsets. <see langword="false"/> before layout or if there is no box (<c>visible</c> false, etc.).</summary>
-    internal bool TryGetBox(Controls.DvControl c, out LayoutBox box, out SKPoint scroll)
+    /// <summary>The handle's current box and the map from its coordinates to this screen's (ancestor scroll offsets and shrunk process diagrams, current values). <see langword="false"/> before layout or if there is no box (<c>visible</c> false, etc.).</summary>
+    internal bool TryGetBox(Controls.DvControl c, out LayoutBox box, out ScreenMap map)
     {
         if (_controlBoxes is { } t && t.TryGetValue(c, out var e))
         {
-            float sx = 0, sy = 0;
+            map = ScreenMap.Identity;
             foreach (var s in e.Scrollers)
-            {
-                sx += s.ScrollX;
-                sy += s.ScrollY;
-            }
+                map = map.Into(s);
             box = e.Box;
-            scroll = new SKPoint(sx, sy);
             return true;
         }
         box = null!;
-        scroll = default;
+        map = ScreenMap.Identity;
         return false;
     }
 
@@ -1021,7 +1024,7 @@ public sealed partial class DvSurface
     private void CollectAnimated(SKPoint offset, SKRect clip, Action<SKRect> add)
     {
         if (_box is not null)
-            Walk(_box, offset, clip);
+            Walk(_box, new ScreenMap(1f, offset), clip);
         foreach (var s in _slots)
         {
             if (s.Rect.IsEmpty)
@@ -1033,14 +1036,14 @@ public sealed partial class DvSurface
                 s.Child.CollectAnimated(new SKPoint(offset.X + s.Rect.Left, offset.Y + s.Rect.Top), slotClip, add);
         }
 
-        void Walk(LayoutBox b, SKPoint off, SKRect cl)
+        void Walk(LayoutBox b, ScreenMap map, SKRect cl)
         {
+            var inner = map.Into(b);
             if (BlinkInterval(b) > 0)
             {
-                var r = b.Rect;
+                var r = map.Map(b.Rect);
                 if (b.Process is { Graph: { } g } d)
-                    r = SKRect.Union(r, SKRect.Create(d.Origin.X, d.Origin.Y, g.Size.Width, g.Size.Height)); // 영역이 모자라 넘친 배관
-                r.Offset(off);
+                    r = SKRect.Union(r, inner.Map(SKRect.Create(d.Origin.X, d.Origin.Y, g.Size.Width, g.Size.Height))); // 영역이 모자라 넘친 배관(줄여 그렸으면 그 배율로)
                 r.Inflate(AnimationBleed, AnimationBleed);
                 r = SKRect.Intersect(r, cl);
                 if (!r.IsEmpty)
@@ -1049,16 +1052,13 @@ public sealed partial class DvSurface
 
             if (b.IsScroller)
             {
-                var view = b.Rect;
-                view.Offset(off);
-                cl = SKRect.Intersect(cl, view);
+                cl = SKRect.Intersect(cl, map.Map(b.Rect));
                 if (cl.IsEmpty)
                     return;
-                off = new SKPoint(off.X - b.ScrollX, off.Y - b.ScrollY);
             }
 
             foreach (var c in b.Children)
-                Walk(c, off, cl);
+                Walk(c, inner, cl);
         }
     }
 
@@ -1119,14 +1119,14 @@ public sealed partial class DvSurface
 
         if (_knobDrag is not null)
         {
-            _knobDrag.Move(p + _knobShift);
+            _knobDrag.Move(DragPoint(p, _knobShift));
             _needsRender = true;
             return;
         }
 
         if (_widgetDrag is { } wd)
         {
-            var at = p + _widgetShift;
+            var at = DragPoint(p, _widgetShift);
             if (!WidgetCall(wd, (w, ctx) => { w.OnPointerMove(ctx, at); return true; }))
                 _widgetDrag = null; // 예외 — 몸짓 끝
             _needsRender = true; // 위젯이 필드에 든 미리보기를 다시 그린다
@@ -1257,6 +1257,8 @@ public sealed partial class DvSurface
             return;
 
         _pressOrigin = HitTester.HitTarget(_box, p, out var local);
+        _dragPress = p;
+        _dragScale = HitTester.ScaleOf(path, _pressOrigin);
         _state.Press = _pressOrigin;
         StartHold(_pressOrigin, p);
         if (PressVisible(_pressOrigin))
@@ -1328,7 +1330,7 @@ public sealed partial class DvSurface
         if (_widgetDrag is { } wdrag)
         {
             _widgetDrag = null;
-            var at = p + _widgetShift;
+            var at = DragPoint(p, _widgetShift);
             WidgetCall(wdrag, (w, ctx) => { w.OnPointerUp(ctx, at); return true; });
             Invalidate(); // 쓴 값(또는 거절된 값)을 VM 에서 다시 빌드
             _state.Press = null;

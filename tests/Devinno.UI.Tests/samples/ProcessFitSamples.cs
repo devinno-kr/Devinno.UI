@@ -1,4 +1,5 @@
 using Devinno.UI;
+using Devinno.UI.Components;
 using Devinno.UI.Styling;
 using Xunit;
 
@@ -28,12 +29,29 @@ public class ProcessFitSamples
             <DvSignal from="A" to="B"/>
             """;
         Render($"<DvProcess>{values}</DvProcess>", vm, 900, 420, "fit-values.png");
+
+        // 통째 축소 — 같은 영역(640×340)에서 fit 없음(넘침) / fit="shrink" / font-size 를 키운 축소
+        Render($"<DvProcess grow=\"1\" style=\"height:0; border: 1px solid token(border)\">{ProcessInstrumentTests.Loop}</DvProcess>", vm, 640, 340, "fit-overflow.png");
+        Render($"<DvProcess fit=\"shrink\" grow=\"1\" style=\"height:0; border: 1px solid token(border)\">{ProcessInstrumentTests.Loop}</DvProcess>", vm, 640, 340, "fit-shrink.png");
+        Render($"<DvProcess fit=\"shrink\" grow=\"1\" style=\"height:0; font-size:20; border: 1px solid token(border)\">{ProcessInstrumentTests.Loop}</DvProcess>", vm, 640, 340, "fit-shrink-font20.png");
+        Render($"<DvProcess fit=\"shrink\" look=\"rich\" direction=\"tb\" grow=\"1\" style=\"height:0; border: 1px solid token(border)\">{ProcessUnitTests.PlantMarkup}</DvProcess>",
+            new ProcessUnitTests.Vm(), 700, 520, "fit-shrink-units.png", ProcessUnitTests.CreateRegistry());
+
+        // 좌표 배치 — base-size 없이 영역보다 넓은 좌표
+        const string fixedMarkup = """
+            <DvTerminal name="IN" text="IN" x="60" y="80"/>
+            <DvPump name="P1" label="P-1" x="420" y="80"/>
+            <DvVessel name="T1" label="T-1" level="50" x="900" y="160"/>
+            <DvLine from="IN" to="P1.in"/>
+            <DvLine from="P1.out" to="T1.top"/>
+            """;
+        Render($"<DvProcess placement=\"fixed\" fit=\"shrink\" grow=\"1\" style=\"height:0; border: 1px solid token(border)\">{fixedMarkup}</DvProcess>", vm, 600, 300, "fit-shrink-fixed.png");
     }
 
-    private static void Render(string process, object vm, int w, int h, string file)
+    private static void Render(string process, object vm, int w, int h, string file, ComponentRegistry? registry = null)
     {
         var path = Path.Combine(ReportsDir(), file);
-        DvRenderer.RenderToFile($"<DvScreen style=\"padding:16; background: token(bg)\">{process}</DvScreen>", vm, w, h, path, DvTheme.Light);
+        DvRenderer.RenderToFile($"<DvPageFrame style=\"padding:16\">{process}</DvPageFrame>", vm, w, h, path, DvTheme.Light, registry);
         Assert.True(new FileInfo(path).Length > 1000);
     }
 

@@ -55,6 +55,12 @@ internal sealed class ProcessDiagram
     /// <summary><c>base-size</c> (coordinate placement only): the size the coordinates were taken at. Positions (not equipment) are scaled to fit the area.</summary>
     public SKSize? BaseSize;
 
+    /// <summary><c>fit="shrink"</c>: if the diagram still overflows the area after laying out, it is drawn smaller as a whole (equipment, text and lines, keeping the proportions). Never enlarged.</summary>
+    public bool Shrink;
+
+    /// <summary>The drawn extent of the last layout (screen px before <c>fit="shrink"</c> scaling).</summary>
+    internal SKRect Drawn;
+
     /// <summary>Text scale: <c>font-size</c> of <c>DvProcess</c> / 14. <c>font-size</c> is not inherited, so only a value set on <c>DvProcess</c> itself changes it. Units follow the outer value.</summary>
     public float TextScale = 1f;
 
@@ -266,6 +272,10 @@ internal static class ProcessBuilder
 
         Placement(d, node, vm);
         d.FlowAnimation = BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("flow-animation")) is { } fa && ProcessNode.Truthy(fa);
+        var fit = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("fit"));
+        d.Shrink = fit is "shrink";
+        if (fit is not (null or "" or "none" or "shrink"))
+            Warn($"DvProcess fit='{fit}' is not a valid value (none, shrink); not shrinking");
         Fill(d, box, node, vm, registry, b);
         ProcessFlow.Compute(d);
         ProcessMedium.Compute(d);
@@ -1617,7 +1627,6 @@ internal static class ProcessBuilder
 
     // ── 화면 배치 ──
 
-    /// <summary>Natural size (spacing scale 1): the inner size (excluding padding).</summary>
     /// <summary>The <c>font-size</c> at which the diagram's text is drawn at its base sizes (<see cref="ProcessDiagram.TextScale"/> 1).</summary>
     private const float DefaultFontSize = 14f;
 
@@ -1630,6 +1639,7 @@ internal static class ProcessBuilder
                 SetTextScale(unit, k);
     }
 
+    /// <summary>Natural size (spacing scale 1): the inner size (excluding padding).</summary>
     internal static SKSize Natural(LayoutBox box)
     {
         var d = box.Process!;
@@ -1700,12 +1710,37 @@ internal static class ProcessBuilder
     {
         var d = box.Process!;
         SetTextScale(d, box.Style.FontSize > 0 ? box.Style.FontSize / DefaultFontSize : 1f);
-        var family = box.Style.FontFamily;
+        box.ContentScale = 1f;
+        box.ContentOffset = default;
         if (d.Fixed)
-        {
-            ArrangeFixed(d, family, inner);
+            ArrangeFixed(d, box.Style.FontFamily, inner);
+        else
+            ArrangeAuto(d, box.Style.FontFamily, inner);
+        if (d.Shrink && d.Shortage is not null)
+            ShrinkToFit(box, d, inner);
+    }
+
+    /// <summary>The smallest text size the diagram draws at <see cref="ProcessDiagram.TextScale"/> 1 (instrument number and value, line and signal labels).</summary>
+    internal const float SmallestText = 11f;
+
+    // fit="shrink" — 다 배치하고도 넘치면 그린 범위 전체를 영역에 맞게 줄여(비율 유지) 가운데에. 장비 상자·배관은 내용 좌표 그대로,
+    // 페인트·히트테스트가 공정도 상자의 내용 배율로 옮긴다. 줄인 정도와 가장 작은 글자 크기를 알린다(읽히는지는 앱이 판단)
+    private static void ShrinkToFit(LayoutBox box, ProcessDiagram d, SKRect inner)
+    {
+        var c = d.Drawn;
+        if (c.Width <= 0 || c.Height <= 0 || inner.Width <= 0 || inner.Height <= 0)
             return;
-        }
+        var s = MathF.Min(inner.Width / c.Width, inner.Height / c.Height);
+        if (s >= 1f)
+            return;
+        box.ContentScale = s;
+        box.ContentOffset = new SKPoint(inner.Left + (inner.Width - c.Width * s) / 2 - c.Left * s, inner.Top + (inner.Height - c.Height * s) / 2 - c.Top * s);
+        d.Shortage = $"Shrunk to {s * 100:0}% to fit (needs {c.Width:0}×{c.Height:0}, area is {inner.Width:0}×{inner.Height:0}); the smallest diagram text is now {d.Text(SmallestText) * s:0.#}px. "
+            + "If that is too small to read at the smallest size this screen is shown, raise DvProcess font-size, enlarge the area or split the diagram over several screens";
+    }
+
+    private static void ArrangeAuto(ProcessDiagram d, string? family, SKRect inner)
+    {
 
         // 배관 모양은 자연 크기(간격 배율 1)에서 한 번 정하고, 영역에 맞춰 위치만 축마다 늘이거나 줄인다(장비·글자 크기 그대로).
         // 창 크기마다 다시 배치하면 꺾임·갈림 자리가 바뀐다. 줄인 모양이 안 들어갈 때만 아래 후보로 다시 배치한다
@@ -1766,6 +1801,7 @@ internal static class ProcessBuilder
             d.Graph = g;
             d.Origin = new SKPoint(inner.Left + MathF.Max(0, (inner.Width - g.Size.Width) / 2),
                 inner.Top + MathF.Max(0, (inner.Height - g.Size.Height) / 2));
+            d.Drawn = SKRect.Create(d.Origin.X, d.Origin.Y, g.Size.Width, g.Size.Height);
             Place(d);
         }
 
@@ -1801,7 +1837,7 @@ internal static class ProcessBuilder
         // 어느 후보도 안 들어가면 모양을 바꿀 까닭이 없다 — 자연 크기 모양을 가장 많이 줄인 것으로(넘친다)
         if (pick is null && closest is not null)
         {
-            Use(closest, $"Not enough space: needs {closest.Size.Width:0}×{closest.Size.Height:0}, area is {inner.Width:0}×{inner.Height:0} (overflows even at minimum spacing). Enlarge the area, split the diagram over several screens, or use less equipment");
+            Use(closest, $"Not enough space: needs {closest.Size.Width:0}×{closest.Size.Height:0}, area is {inner.Width:0}×{inner.Height:0} (overflows even at minimum spacing). Enlarge the area, split the diagram over several screens, use less equipment, or set fit=\"shrink\" to draw it smaller");
             return;
         }
 
@@ -1813,11 +1849,12 @@ internal static class ProcessBuilder
             g.Warnings.Add(reshaped);
 
         d.Shortage = g.Size.Width > inner.Width + 0.5f || g.Size.Height > inner.Height + 0.5f
-            ? $"Not enough space: needs {g.Size.Width:0}×{g.Size.Height:0}, area is {inner.Width:0}×{inner.Height:0} (overflows even at minimum spacing). Enlarge the area, split the diagram over several screens, or use less equipment"
+            ? $"Not enough space: needs {g.Size.Width:0}×{g.Size.Height:0}, area is {inner.Width:0}×{inner.Height:0} (overflows even at minimum spacing). Enlarge the area, split the diagram over several screens, use less equipment, or set fit=\"shrink\" to draw it smaller"
             : null;
         d.Graph = g;
         d.Origin = new SKPoint(inner.Left + MathF.Max(0, (inner.Width - g.Size.Width) / 2),
             inner.Top + MathF.Max(0, (inner.Height - g.Size.Height) / 2));
+        d.Drawn = SKRect.Create(d.Origin.X, d.Origin.Y, g.Size.Width, g.Size.Height);
 
         Place(d);
     }
@@ -1848,10 +1885,11 @@ internal static class ProcessBuilder
         var left = real.Count > 0 ? origin.X + real.Min(n => n.X) : inner.Left;
         var top = real.Count > 0 ? origin.Y + real.Min(n => n.Y) : inner.Top;
         d.Shortage = right > inner.Right + 0.5f || bottom > inner.Bottom + 0.5f || left < inner.Left - 0.5f || top < inner.Top - 0.5f
-            ? $"Not enough space: equipment reaches {right - inner.Left:0}×{bottom - inner.Top:0}, area is {inner.Width:0}×{inner.Height:0}. Move equipment (x/y), set base-size to the size the coordinates were taken at, or enlarge the area"
+            ? $"Not enough space: equipment reaches {right - inner.Left:0}×{bottom - inner.Top:0}, area is {inner.Width:0}×{inner.Height:0}. Move equipment (x/y), set base-size to the size the coordinates were taken at, enlarge the area, or set fit=\"shrink\" to draw it smaller"
             : null;
         d.Graph = g;
         d.Origin = origin;
+        d.Drawn = new SKRect(MathF.Min(inner.Left, left), MathF.Min(inner.Top, top), MathF.Max(inner.Right, right), MathF.Max(inner.Bottom, bottom));
         Place(d);
     }
 

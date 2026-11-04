@@ -1,3 +1,6 @@
+using Devinno.UI;
+using Devinno.UI.Interaction;
+using Devinno.UI.Layout;
 using Devinno.UI.Process;
 using SkiaSharp;
 using Xunit;
@@ -69,6 +72,127 @@ public class ProcessFitTests
 
         var (_, single) = ProcessTests.Start(ProcessInstrumentTests.Loop);
         Assert.Equal(PortSide.Right, Inst(single, "FIC1").ValueSide);
+    }
+
+    private static IEnumerable<LayoutBox> Flatten(LayoutBox b) => new[] { b }.Concat(b.Children.SelectMany(Flatten));
+
+    private static LayoutBox ProcessBox(DvSurface s) => Flatten(s.Root!).First(b => b.Process is not null);
+
+    private static SKRect Inner(LayoutBox b) =>
+        new(b.Rect.Left + b.Style.Padding.Left, b.Rect.Top + b.Style.Padding.Top, b.Rect.Right - b.Style.Padding.Right, b.Rect.Bottom - b.Style.Padding.Bottom);
+
+    [Fact]
+    public void Shrink_Overflowing_ScalesWholeDiagramIntoArea()
+    {
+        var (s, d) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"shrink\"", 420, 220);
+        var box = ProcessBox(s);
+        Assert.True(box.ContentScale < 0.8f, $"배율 {box.ContentScale}");
+        var drawn = new ScreenMap(box.ContentScale, box.ContentOffset).Map(d.Drawn);
+        var inner = Inner(box);
+        inner.Inflate(0.5f, 0.5f);
+        Assert.True(inner.Contains(drawn), $"{drawn} 이 영역 {inner} 밖");
+        Assert.StartsWith("Shrunk to", d.Shortage);
+        Assert.Contains("px", d.Shortage);
+    }
+
+    [Fact]
+    public void Shrink_KeepsTheLayoutItWouldHaveOverflowedWith()
+    {
+        // 축소는 마지막 단계 — 장비 배치(내용 좌표)는 fit 이 없을 때와 같다
+        var (_, plain) = ProcessTests.Start(ProcessInstrumentTests.Loop, "", 420, 220);
+        var (_, shrunk) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"shrink\"", 420, 220);
+        foreach (var n in plain.Nodes)
+            Assert.Equal((n.G.X, n.G.Y), (Node(shrunk, n.Name).G.X, Node(shrunk, n.Name).G.Y));
+        Assert.StartsWith("Not enough space", plain.Shortage);
+        Assert.Contains("fit=\"shrink\"", plain.Shortage);
+    }
+
+    [Fact]
+    public void Shrink_FitsAlready_DoesNothing()
+    {
+        var (s, d) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"shrink\"");
+        Assert.Equal(1f, ProcessBox(s).ContentScale);
+        Assert.False(ProcessBox(s).HasContentTransform);
+        Assert.Null(d.Shortage);
+    }
+
+    [Fact]
+    public void Shrink_HitTest_FindsEquipmentWhereItIsDrawn()
+    {
+        var (s, d) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"shrink\"", 420, 220);
+        var box = ProcessBox(s);
+        var map = new ScreenMap(box.ContentScale, box.ContentOffset);
+        foreach (var name in new[] { "P1", "V1", "T2" })
+        {
+            var n = Node(d, name);
+            var at = map.Map(new SKPoint(n.Box.Rect.MidX, n.Box.Rect.MidY));
+            var path = HitTester.HitPath(s.Root!, at);
+            Assert.Contains(path, x => ReferenceEquals(x.Box, n.Box));
+            Assert.Equal(box.ContentScale, HitTester.ScaleOf(path, n.Box), 0.0001);
+        }
+
+        // 줄이기 전 자리(내용 좌표 그대로)는 그 장비가 아니다
+        var p1 = Node(d, "T2").Box.Rect;
+        Assert.DoesNotContain(HitTester.HitPath(s.Root!, new SKPoint(p1.MidX, p1.MidY)), x => ReferenceEquals(x.Box, Node(d, "T2").Box));
+    }
+
+    [Fact]
+    public void Shrink_Fixed_ScalesEquipmentBeyondArea()
+    {
+        const string markup = """
+            <DvTerminal name="IN" text="IN" x="60" y="60"/>
+            <DvPump name="P1" label="P-1" x="700" y="60"/>
+            <DvLine from="IN" to="P1.in"/>
+            """;
+        var (s, d) = ProcessTests.Start(markup, "placement=\"fixed\" fit=\"shrink\"", 500, 300);
+        var box = ProcessBox(s);
+        Assert.True(box.ContentScale < 1f);
+        var drawn = new ScreenMap(box.ContentScale, box.ContentOffset).Map(d.Drawn);
+        var inner = Inner(box);
+        inner.Inflate(0.5f, 0.5f);
+        Assert.True(inner.Contains(drawn), $"{drawn} 이 영역 {inner} 밖");
+    }
+
+    [Fact]
+    public void Shrink_Click_OnDrawnEquipment()
+    {
+        var vm = new ProcessTests.Vm();
+        var (s, d) = ProcessTests.Start(ProcessInstrumentTests.Loop.Replace("<DvPump name=\"P2\" label=\"P-102\"/>", "<DvPump name=\"P2\" label=\"P-102\" onclick=\"Hit\"/>"),
+            "fit=\"shrink\"", 420, 220, vm: vm);
+        var box = ProcessBox(s);
+        var at = new ScreenMap(box.ContentScale, box.ContentOffset).Map(new SKPoint(Node(d, "P2").Box.Rect.MidX, Node(d, "P2").Box.Rect.MidY));
+        s.PointerDown(at);
+        s.PointerUp(at);
+        Assert.Equal(1, vm.Clicks);
+    }
+
+    [Fact]
+    public void Shrink_SliderDrag_FollowsTheFinger()
+    {
+        // 줄여 그린 슬라이더 — 그려진 막대 왼쪽 끝 → 오른쪽 끝을 끌면 최솟값 → 최댓값(배율만큼 덜 가지 않는다)
+        var vm = new ProcessTests.Vm { Level = 0 };
+        var body = ProcessInstrumentTests.Loop.Replace("<DvVessel name=\"T1\" level=\"{Level}\" label=\"T-101\"/>",
+            "<DvVessel name=\"T1\" level=\"{Level}\" label=\"T-101\"><DvAttach side=\"left\"><DvSlider value=\"{Bind Level}\" style=\"width:160\"/></DvAttach></DvVessel>");
+        var (s, _) = ProcessTests.Start(body, "fit=\"shrink\"", 420, 220, vm: vm);
+        var box = ProcessBox(s);
+        Assert.True(box.ContentScale < 0.8f);
+        var map = new ScreenMap(box.ContentScale, box.ContentOffset);
+        var slider = Flatten(s.Root!).First(b => b.Node.Tag == "DvSlider");
+        var (a, z) = Devinno.UI.Interaction.SliderMetrics.Track(slider);
+        var (sa, sz) = (map.Map(a), map.Map(z));
+        s.PointerDown(sa);
+        for (var t = 0.1f; t <= 1.001f; t += 0.1f)
+            s.PointerMove(new SKPoint(sa.X + (sz.X - sa.X) * t, sa.Y));
+        s.PointerUp(sz);
+        Assert.Equal(100, vm.Level, 0.5);
+    }
+
+    [Fact]
+    public void Fit_InvalidValue_NotShrinking()
+    {
+        var (s, d) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"contain\"", 560, 300);
+        Assert.False(d.Shrink);
+        Assert.Equal(1f, ProcessBox(s).ContentScale);
     }
 
     [Fact]
