@@ -113,7 +113,8 @@ AI MUST follow the order below exactly. Each step says what to decide.
 | `align` | `auto` · `step` · `row` | `auto` | Row alignment of the next equipment connected to a port that leaves perpendicular to the flow (the bottom port in lr, the right port in tb) (chapter 9, item 5). `step` = staircase, `row` = same row, `auto` = chosen to fit the area. An unknown value gives `auto` + a Trace warning |
 | `placement` | `auto` · `fixed` | `auto` | `auto` = automatic placement (this whole document). `fixed` = every piece of equipment sits at its `x`·`y` (chapter 20). An unknown value gives `auto` + a Trace warning |
 | `base-size` | `"W H"` (px) | — | `fixed` only: the size the coordinates were taken at; positions are scaled to the area (chapter 20.3) |
-| `style` | general style | — | `padding`, `background`, `width`, `height`, `border`, etc. |
+| `fit` | `none` · `shrink` | `none` | What to do when the diagram still overflows the area after layout. `none` = overflow with the "Not enough space" warning. `shrink` = draw the whole diagram smaller to fit (see **Size** below). An unknown value gives `none` + a Trace warning |
+| `style` | general style | — | `padding`, `background`, `width`, `height`, `border`, `font-size`, etc. `font-size` sets the size of all diagram text (see **Text size** below) |
 | `grow` and other layout attributes | — | — | Same as for an ordinary box |
 
 `direction`·`look` can be bound (`look="{Look}"`).
@@ -125,8 +126,15 @@ AI MUST follow the order below exactly. Each step says what to decide.
 - If no size is given, the process diagram's size = the content size (the placement result + a 12px outer margin).
 - The placement and the pipe routes are decided **once, at the natural size** (spacing scale 1; with `align="auto"`, the staircase). If a size is given or the parent determines the size, that same drawing is **stretched or shrunk to the area**: only positions move — equipment, text and pipes keep their size — and each axis is scaled on its own (a wider area spreads equipment sideways, a taller one downward). Bends, branch points and the side a pipe passes equipment on do not change with the area size. Equipment joined by a straight pipe moves together, so straight runs stay straight.
 - Shrinking has a limit: bubbles, labels and pipe spacing do not shrink, so below a certain size the shape no longer fits (a segment would fold back, a pipe would run into equipment, or pipes would touch). Only then is placement retried the old way, and the **first one that fits** is used: with `align="auto"` (default), staircase with spacing scale 1 → 0.85 → 0.7 → 0.6 → 0.5, then same-row with 1 → … → 0.5; with `align="step"`·`"row"`, only that mode. The drawing then **looks different from the natural size**, and the Trace warning "The piping no longer fits the diagram's natural-size shape …" is left.
-- If nothing fits, the natural-size shape is kept at its smallest and overflows, with the Trace warning "Not enough space". No zooming is done (equipment and text never shrink).
-- **To make it fill the remaining space**, use `grow="1" style="height:0"` inside a vertical layout (same meaning as CSS `flex-basis:0` — grows from a base height of 0), and `grow="1"` inside a horizontal layout. With only `grow="1"` and no `height:0`, the process diagram does not shrink below its content height and may overflow the screen.
+- If nothing fits, the natural-size shape is kept at its smallest and overflows, with the Trace warning "Not enough space". Equipment and text do not shrink — unless `fit="shrink"` is set:
+- **`fit="shrink"`** (opt-in): only in that last case — after every step above has been tried and the diagram still overflows — the whole drawing (equipment, text, lines, attached boxes and instruments) is scaled down to the area, keeping its proportions, and centered. It is never enlarged, and a diagram that fits is not touched. Presses, drags and edits inside it follow the drawn positions. The Trace warning `Shrunk to N% to fit (…); the smallest diagram text is now X px …` reports the scale and the size the smallest text (instrument numbers and values, line labels; 11px at `font-size` 14) is drawn at. **Shrinking is a safety net for windows that get smaller, not a way to fit a diagram that is too big for its screen**: check the warning at the smallest size the screen is really shown at, and if the text is too small to read, raise `font-size`, enlarge the area or split the diagram over several screens. A rendered image of a shrunk diagram looks complete, so read the warning — do not judge from the picture alone.
+- **To make it fill the remaining space**, use `grow="1" style="height:0"` inside a vertical layout (same meaning as CSS `flex-basis:0` — grows from a base height of 0), and `grow="1"` inside a horizontal layout. With only `grow="1"` and no `height:0`, the process diagram does not shrink below its content height and may overflow the screen — then `fit="shrink"` has nothing to do either, because the diagram itself is not given a smaller area.
+
+**Text size**
+
+- All text the diagram draws itself — equipment labels (13px), vessel name chips (14px), terminal text (12px), instrument `tag` (12px), `number` and `value` (11px), line and signal labels (11px) — and the minimum bubble size (40px) are given at `font-size` 14 (the default). `style="font-size:N"` on `DvProcess` scales all of them by N / 14 (units inside follow it). The sizes written elsewhere in this document are at 14.
+- `font-size` is not inherited in Devinno.UI, so only a value set on `DvProcess` itself changes this. Attached boxes (`DvAttach`) keep their own styles.
+- Use it when the screen is shown at a small size or from a distance, or together with `fit="shrink"` so the text is still readable after shrinking.
 
 ```xml
 <DvPageFrame title="정수 공정">
@@ -450,7 +458,7 @@ Draws field instruments (flow transmitter FT, level transmitter LT …) and cont
 | `tag` | — | Text in the top of the bubble (instrument symbol: `FT`·`TT`·`LT`·`PT`·`FIC`·`LIC` …) |
 | `number` | — | Text in the bottom of the bubble (loop number: `101`, `1001` …) |
 | `panel` | — | If true, a horizontal line across the middle of the bubble (central control room instrument). Default false = no line (field instrument) |
-| `value` | — | Small text to the right of the bubble (current value, etc.). Bindable |
+| `value` | — | Small text beside the bubble (current value, etc.), on the side away from the equipment (see below). Bindable |
 | `onclick` · `style` · `visible` | — | Same as an ordinary box |
 
 - **Always write `on` (or `tap`).** Instruments do not take part in the pipe-flow placement (columns and layers); they go into the footprint of the `on` equipment and are placed on a free face beside it. So when the equipment moves, the instrument follows, and **pipes avoid the instrument.**
@@ -458,8 +466,8 @@ Draws field instruments (flow transmitter FT, level transmitter LT …) and cont
 - If one piece of equipment has several instruments, they sit side by side on that face (horizontally on top/bottom, vertically on a side). A single instrument is aligned to the equipment's center line (a controller above a control valve → the signal line drops straight down to the actuator).
 - **A controller not attached to equipment** (control room instruments such as FIC, LIC) is attached with `on` to **the valve (or pump) that controller drives**. Like `FIC1` in the example above.
 - **With `tap`** (to match a drawing): a face position puts the bubble 24px outside that point, on the line out of the face (`left@…` → to the left, `top@…` → above). A fixed port taps the pipe 12px out of the port and puts the bubble 24px above it (to the right of a vertical pipe). Several instruments with `tap` on the same equipment are each placed at their own point; instruments without `tap` keep the automatic face. When the connection line leaves the bubble to the right, the `value` text goes below the line. Pipes do not cross the connection line (they go around the bubble rather than between it and its equipment).
-- The bubble diameter is 40px (wider if the text is long); text sizes are `tag` 12px, `number` 11px, `value` 11px. The color follows `look` (same fill as terminals).
-- The width of the `value` text is included in that equipment's size. If a value change alters the text width, placement is recomputed as with `DvAttach`, and surrounding items may move slightly. Large, frequently changing values are better shown separately with `DvAttach`.
+- The bubble diameter is 40px (wider if the text is long); text sizes are `tag` 12px, `number` 11px, `value` 11px (all × `font-size` / 14, chapter 4). The color follows `look` (same fill as terminals).
+- The `value` text is **not part of the layout**: it does not widen the equipment's footprint and pipes do not avoid it, so a changing value never moves equipment, bubbles or pipes (signal lines still go around it). It sits on the bubble's outer side: to the right of a single bubble or of a column on the right face, to the left of a column on the left face, and above (top face) or below (bottom face) when several bubbles share a row. Keep it short — a long value can cover neighboring equipment, and that is reported with the Trace warning `'X' value text overlaps 'Y'`. Large or long values are better shown with `DvAttach`.
 
 ### 7.4 `DvSignal` — signal line
 
@@ -478,7 +486,7 @@ Connects signals (electrical or control signals) between instruments, or between
 
 - It is a different tag from pipes (`DvLine`). Signal lines are drawn **after all pipes are drawn**, and have **no effect** on equipment placement, flow judgment or flow animation. Adding or removing signal lines leaves equipment positions unchanged.
 - Lines are orthogonal (horizontal and vertical) and avoid equipment bodies, name tags, attached cells and other instruments. Where they cross pipes they pass straight through **without a jump** (ISA convention). Paths running right alongside a pipe are avoided.
-- Where the ends land: for an instrument, the center of the bubble face toward the counterpart (avoiding the right face with the value text, the face toward its attached equipment, and faces already used by other signal lines); for a control valve (`DvValve kind="control"`), **the top of the actuator**; for other equipment, the center of the body's face toward the counterpart (the body includes accessories, so a pump with a `DvMotor` is reached at the motor).
+- Where the ends land: for an instrument, the center of the bubble face toward the counterpart (avoiding the face with the value text, the face toward its attached equipment, and faces already used by other signal lines); for a control valve (`DvValve kind="control"`), **the top of the actuator**; for other equipment, the center of the body's face toward the counterpart (the body includes accessories, so a pump with a `DvMotor` is reached at the motor).
 - `arrow="end"` (`start` · `both` · `none`, default none) draws a small arrowhead, like `DvLine`. `label="SH"` puts small text beside the `from` end (switch actions such as `SH`·`SL`, signal names). Write `from`·`to` in the direction the signal travels (measurement → controller → valve).
 - Terminals (`DvTerminal`), unit ports (`DvPort`) and instruments that are not drawn (instruments with a wrong `on`) cannot be connected (Trace error; only that signal line is dropped). Instruments inside a unit connect only within the same unit.
 
@@ -877,8 +885,8 @@ public sealed partial class WaterPage : DvPage
 
 **Updates and cost**
 
-- When only values (`level`, `running`, `open`, attached-box text, instrument `value`) change, **layout is not recomputed.** If equipment, line structure, name labels, attached-box sizes and the width of instrument `value` text are the same, the previously computed layout is reused. This holds inside units too. On a 1600×1000 screen, one value update costs 1–2ms for layout and about 16ms for drawing (CPU).
-- If attached-box text length changes and the box size changes, or the instrument `value` text gets wider or narrower, layout is recomputed (tens of ms). Recent layouts are kept, so going back to a width seen before reuses its layout. Giving frequently changing numbers a fixed width (`style="width:…"` on the attached box) keeps the layout from shifting.
+- When only values (`level`, `running`, `open`, attached-box text, instrument `value`) change, **layout is not recomputed.** If equipment, line structure, name labels and attached-box sizes are the same, the previously computed layout is reused. This holds inside units too. On a 1600×1000 screen, one value update costs 1–2ms for layout and about 16ms for drawing (CPU).
+- If attached-box text length changes and the box size changes, layout is recomputed (tens of ms). Recent layouts are kept, so going back to a width seen before reuses its layout. Giving frequently changing numbers a fixed width (`style="width:…"` on the attached box) keeps the layout from shifting. An instrument `value` never moves anything (7.3); only the signal lines around it are routed again when its width changes.
 - Thread rules are the same as regular screens: after changing the VM on a communication/timer thread, call `App.Invalidate()`. Handlers (`onclick`) and code after their `await` run on the input thread, so `Invalidate` is not needed (`llm-rules.md` chapter 6).
 - To draw several units of the same arrangement (3 blenders, etc.), use a unit component. Keep one VM object of the same class per unit and pass it as a parameter (8.4).
 
@@ -995,7 +1003,9 @@ Process diagram problems are reported through `System.Diagnostics.Trace`. Keep a
 |---|---|---|---|
 | `'A.out'→'B.in': crosses other piping N time(s)` | Warning | Crossings (drawn with jumps) | Change the order of equipment in the same column with `row`. Arrange declaration order in flow order |
 | `'A.out'→'B.in': no free path, so it overlaps other piping` | Warning | Blocked, drawn overlapping | Enlarge the area, adjust `row`·`rank`, move attached boxes |
-| `Not enough space: needs W×H, area is W×H` | Warning | Overflows even with minimum spacing (the natural-size shape is kept and overflows) | Enlarge the area, split the screen, or reduce equipment |
+| `Not enough space: needs W×H, area is W×H` | Warning | Overflows even with minimum spacing (the natural-size shape is kept and overflows) | Enlarge the area, split the screen, or reduce equipment. `fit="shrink"` draws it smaller instead (chapter 4) |
+| `Shrunk to N% to fit (needs W×H, area is W×H); the smallest diagram text is now X px …` | Warning | `fit="shrink"`: the diagram still overflowed and was drawn smaller as a whole (chapter 4) | If X is too small to read at the smallest real screen size: raise `font-size`, enlarge the area or split the screen |
+| `'X' value text overlaps 'Y'` | Warning | An instrument `value` covers other equipment, a name label or another instrument (the value is not part of the layout, 7.3) | Shorten the value, or show it with `DvAttach` |
 | `The piping no longer fits the diagram's natural-size shape in this area, so it is laid out again …` | Warning | Automatic placement: the area is too small for the natural-size drawing to shrink into, so alignment and spacing were chosen again and the drawing looks different (chapter 4) | Enlarge the area if the shape must stay the same |
 | `DvLine '…': no equipment named 'X'` | Error | Name typo, or equipment hidden with `visible` | Check the name |
 | `DvLine '…': 'X' has no port 'p' (…)` | Error | Port name typo | Use a name from the parentheses |
@@ -1024,7 +1034,7 @@ Process diagram problems are reported through `System.Diagnostics.Trace`. Keep a
 | `Signal line '…': no free path, so it is drawn across equipment` | Warning | No route for the signal line | Attach the instrument to other equipment, or enlarge the area |
 | `<X name='N'>: placement="fixed" needs both x and y …; not drawn` | Error | Coordinate placement, but the equipment has no (or an invalid) `x`/`y`. Lines to it then also report "no equipment named" | Give both `x` and `y` |
 | `'A' and 'B' overlap; move one of them (x/y) or enlarge base-size` | Warning | Coordinate placement: two pieces of equipment (symbol, label, attached boxes, instruments) overlap | Move one, or check `base-size` against the area |
-| `Not enough space: equipment reaches W×H, area is W×H …` | Warning | Coordinate placement: equipment goes past the area | Move equipment, set `base-size`, or enlarge the area |
+| `Not enough space: equipment reaches W×H, area is W×H …` | Warning | Coordinate placement: equipment goes past the area | Move equipment, set `base-size`, enlarge the area, or set `fit="shrink"` |
 | `The area is smaller than base-size and the piping no longer fits its base-size shape, so it is routed again …` | Warning | Coordinate placement: the pipes were routed again for this smaller area and may look different from base-size (20.3) | Set `base-size` to the smallest area the screen is shown at |
 | `<X name='N'>: x/y are used only with <DvProcess placement="fixed">` · `row`/`rank`/`align … is not used with placement="fixed"` · `placement='…'` · `base-size …` | Warning | Attribute for the other placement mode, or a value typo | Remove it, or switch the mode |
 
@@ -1166,7 +1176,7 @@ Planned for later stages. Do not use them now (they are silently ignored or draw
 |---|---|
 | On hold | `exit` hint (specifying the outgoing direction) — when a real screen needs it |
 
-Other items not planned: specifying bend points directly, zoom (in/out), pipe click events, dragging equipment.
+Other items not planned: specifying bend points directly, zooming in or enlarging (`fit="shrink"` only shrinks an overflowing diagram), pipe click events, dragging equipment.
 
 ---
 
@@ -1255,7 +1265,7 @@ Automatic placement (chapters 1–19) lays equipment out in flow order so that i
 
 ### 20.3 Size and `base-size`
 
-- **Without `base-size`**: coordinates are used as they are (scale 1). The diagram's natural size is from the origin to the far edge of the content, plus a 12px margin. If the area is smaller, it overflows and a "Not enough space" warning is left.
+- **Without `base-size`**: coordinates are used as they are (scale 1). The diagram's natural size is from the origin to the far edge of the content, plus a 12px margin. If the area is smaller, it overflows and a "Not enough space" warning is left — or, with `fit="shrink"`, the whole drawing is scaled down to the area (chapter 4).
 - **With `base-size="W H"`**: the natural size is W×H. In an area of another size, the scale `s = min(area width / W, area height / H)` is applied **to the coordinates only**, and the W·s × H·s box is centered in the area. A larger area spreads the equipment apart; a smaller one brings it closer. Equipment, pipes and text keep their size.
 - **Pipe routes are decided once, at base-size.** At other sizes they are not routed again but stretched with the equipment: bends keep their number, order and side, and only their lengths change, so the drawing keeps its shape at every window size. If the area is smaller than base-size and that shape no longer fits (a segment would fold back, a pipe would run into equipment, or pipes would touch), the pipes are routed again for that size — they may look different — and the Trace warning "The area is smaller than base-size …" is left.
 - Best practice: take `base-size` equal to the **smallest** real size of the screen area, so the scale stays at 1 or above and the screen always looks like the drawing. When the area is much smaller, equipment can end up touching — the overlap and "no free path" warnings tell you.

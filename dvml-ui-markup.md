@@ -2491,12 +2491,13 @@ A process screen that draws tanks·pumps·valves and pipes. **You do not write c
 |---|---|---|
 | `direction` | `lr` (default) · `tb` | Flow direction. `lr` = left→right, `tb` = top→bottom |
 | `look` | `plain` (default) · `rich` | Appearance. `plain` = gray, color only for state (ISA-101 style). `rich` = metallic gradients·thick pipes |
-| `style` | Ordinary style | `padding`, `background`, `width`/`height`, etc. |
+| `fit` | `none` (default) · `shrink` | `shrink` = if the diagram still overflows its area after layout, draw the whole of it smaller to fit (never enlarged) |
+| `style` | Ordinary style | `padding`, `background`, `width`/`height`, `font-size` (size of all diagram text, ÷ 14), etc. |
 
 - Without a given size, the process diagram size = the content size.
 - `flow-animation="true"` (off by default): dashes move in the flow direction over pipes the library judges to be flowing from the connections·equipment state (redrawn at 20 frames per second). Flow can be overridden per line with `<DvLine flow="{X}"/>` (lines with real flow-rate data). For the detailed judgment rules see `dvml-process.md` 12.1.
 - `align="auto|step|row"` (default `auto`): whether equipment after a line leaving a tank bottom is placed stepped below the tank (`step`) or on the same row as the tank (`row`, low and wide). `auto` uses stepped if it fits the area, otherwise the same row.
-- If the size is smaller than the content, it re-lays out by changing the row alignment (`auto`) and equipment spacing (down to 0.5×). If still short, it leaves a Trace warning ("Not enough space") and draws overflowing. If there is spare space, it is centered.
+- If the size is smaller than the content, it re-lays out by changing the row alignment (`auto`) and equipment spacing (down to 0.5×). If still short, it leaves a Trace warning ("Not enough space") and draws overflowing — or, with `fit="shrink"`, draws the whole diagram smaller to fit and reports the scale and the smallest text size ("Shrunk to N% … X px"). If there is spare space, it is centered. `style="font-size:N"` scales all diagram text (labels, bubbles, values) by N / 14; `font-size` is not inherited, so only a value on `DvProcess` counts. See `dvml-process.md` chapter 4.
 - The background is not painted. It follows the app theme or `style`'s `background` (`rich` looks best on a dark background).
 - `placement="fixed"` (default `auto`) is only for screens that must match a given drawing: every piece of equipment then sits at its `x`·`y` (symbol center, px), pipes are still routed automatically, and `base-size="W H"` scales the positions (not the equipment or text) to the area. See `dvml-process.md` chapter 20.
 
@@ -2563,7 +2564,7 @@ Attributes available on all equipment:
 - Inside `<DvAttach side="left|right|top|bottom">` put ordinary dvml (value displays, buttons, lamps). It attaches beside the equipment, is included in the equipment size during layout, and pipes avoid that slot. Buttons are pressable like ordinary buttons.
 - Text color inside an attached slot is given by class (`label`·`caption`·`title` …) as on ordinary screens (follows the theme). Text without a class is a dark color regardless of the theme.
 - `<DvAgitator running>` (agitator)·`<DvMotor running>` (motor) are accessories mounted on top of equipment. The agitator's shaft goes into the vessel.
-- Instrument bubbles: place `<DvInstrument name tag number on panel value>` **directly under `DvProcess`** (not inside equipment). `on` (required) is the name of the equipment to attach to — instruments do not take part in pipe layout; they sit on a free side next to that equipment and pipes avoid them. Controllers not attached to equipment (FIC·LIC) attach to the valve they control. `tag` is the text above in the bubble, `number` the text below, `panel="true"` adds a horizontal line through the middle, and `value` is small text to the right of the bubble. To match a drawing, `tap="T1.left@0.85"` (a face position) or `tap="CV1.in"` (a pipe at a port) stands the bubble at that point with a thin connection line (`on` not needed).
+- Instrument bubbles: place `<DvInstrument name tag number on panel value>` **directly under `DvProcess`** (not inside equipment). `on` (required) is the name of the equipment to attach to — instruments do not take part in pipe layout; they sit on a free side next to that equipment and pipes avoid them. Controllers not attached to equipment (FIC·LIC) attach to the valve they control. `tag` is the text above in the bubble, `number` the text below, `panel="true"` adds a horizontal line through the middle, and `value` is small text beside the bubble (on its outer side; it is not part of the layout, so a changing value never moves anything — keep it short). To match a drawing, `tap="T1.left@0.85"` (a face position) or `tap="CV1.in"` (a pipe at a port) stands the bubble at that point with a thin connection line (`on` not needed).
 - Signal lines are `<DvSignal from to>` — both ends are instrument·equipment **names only** (no port; for a control valve it touches the actuator). Drawn as thin orthogonal dashed lines after all pipes are drawn; they do not affect layout·flow and do not jump where they cross pipes. Do not draw signals with pipes (`DvLine`). Detailed rules in `dvml-process.md` 7.3·7.4.
 
 ```xml
@@ -2657,7 +2658,8 @@ Trace warnings·errors are left based on the layout drawn on screen (the same me
 |---|---|
 | `'A.out'→'B.in': crosses other piping N time(s)` | Crossing. Try changing the order with `row` |
 | `'A.out'→'B.in': no free path, so it overlaps other piping` | Path blocked, drawn overlapping. Change `row`·`rank` or enlarge the area |
-| `Not enough space: needs W×H, area is W×H` | Overflows even at minimum spacing. Enlarge the area or split the screen |
+| `Not enough space: needs W×H, area is W×H` | Overflows even at minimum spacing. Enlarge the area or split the screen (or `fit="shrink"`) |
+| `Shrunk to N% to fit (…); the smallest diagram text is now X px …` | `fit="shrink"` drew it smaller. If X px is too small to read at the real screen size, raise `font-size`, enlarge the area or split the screen |
 | `no equipment named 'X'` · `'X' has no port 'p' (…)` · `'X' requires a port (…)` | Wrong connection (red marking). The parentheses list the usable ports |
 | `<Tag> is not process equipment` | A non-equipment tag inside a process diagram |
 | `<DvInstrument …> has no on …` · `on='Y': no such equipment` · `DvSignal '…': no instrument or equipment named 'X'` | Wrong name of the equipment an instrument attaches to, or of a signal line end (not drawn) |
