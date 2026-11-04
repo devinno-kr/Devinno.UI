@@ -113,7 +113,7 @@ AI MUST follow the order below exactly. Each step says what to decide.
 | `align` | `auto` · `step` · `row` | `auto` | Row alignment of the next equipment connected to a port that leaves perpendicular to the flow (the bottom port in lr, the right port in tb) (chapter 9, item 5). `step` = staircase, `row` = same row, `auto` = chosen to fit the area. An unknown value gives `auto` + a Trace warning |
 | `placement` | `auto` · `fixed` | `auto` | `auto` = automatic placement (this whole document). `fixed` = every piece of equipment sits at its `x`·`y` (chapter 20). An unknown value gives `auto` + a Trace warning |
 | `base-size` | `"W H"` (px) | — | `fixed` only: the size the coordinates were taken at; positions are scaled to the area (chapter 20.3) |
-| `fit` | `none` · `shrink` | `none` | What to do when the diagram still overflows the area after layout. `none` = overflow with the "Not enough space" warning. `shrink` = draw the whole diagram smaller to fit (see **Size** below). An unknown value gives `none` + a Trace warning |
+| `fit` | `none` · `shrink` · `contain` | `none` | How the drawing meets the area. `none` = overflow with the "Not enough space" warning. `shrink` = draw the whole diagram smaller when it still overflows (see **Size** below). `contain` = `placement="fixed"` only: the drawing at `base-size` is scaled as a whole to the area, smaller or larger, and centered (chapter 20.3); in automatic placement it acts as `shrink` with a Trace warning. An unknown value gives `none` + a Trace warning |
 | `style` | general style | — | `padding`, `background`, `width`, `height`, `border`, `font-size`, etc. `font-size` sets the size of all diagram text (see **Text size** below) |
 | `grow` and other layout attributes | — | — | Same as for an ordinary box |
 
@@ -139,7 +139,7 @@ AI MUST follow the order below exactly. Each step says what to decide.
 
 **Sizing procedure — do exactly this, in order**
 
-1. Give the diagram its area: `grow="1" style="height:0"` (above). Do not put `fit` or `font-size` yet.
+1. Give the diagram its area: `grow="1" style="height:0"` (above). Do not put `font-size` yet. Automatic placement: no `fit` yet. Coordinate placement (`placement="fixed"`, chapter 20): always `base-size` + `fit="contain"` from the start, then skip to step 2 and read step 5 for the `Shrunk to …` warning.
 2. Render a PNG at the **smallest size the screen is really shown at** (the panel resolution, or the smallest window), and read the Trace warnings.
 3. No size warning → done.
 4. `Not enough space` → add `fit="shrink"` and render again.
@@ -1059,7 +1059,8 @@ Process diagram problems are reported through `System.Diagnostics.Trace`. Keep a
 | `Signal line '…': no free path, so it is drawn across equipment` | Warning | No route for the signal line | Attach the instrument to other equipment, or enlarge the area |
 | `<X name='N'>: placement="fixed" needs both x and y …; not drawn` | Error | Coordinate placement, but the equipment has no (or an invalid) `x`/`y`. Lines to it then also report "no equipment named" | Give both `x` and `y` |
 | `'A' and 'B' overlap; move one of them (x/y) or enlarge base-size` | Warning | Coordinate placement: two pieces of equipment (symbol, label, attached boxes, instruments) overlap | Move one, or check `base-size` against the area |
-| `Not enough space: equipment reaches W×H, area is W×H …` | Warning | Coordinate placement: equipment goes past the area | Move equipment, set `base-size`, enlarge the area, or set `fit="shrink"` |
+| `Not enough space: equipment reaches W×H, area is W×H …` | Warning | Coordinate placement: equipment goes past the area | Use `base-size` + `fit="contain"` (20.3) |
+| `Equipment reaches W×H, outside base-size W×H …` | Warning | `fit="contain"`: equipment is placed beyond `base-size`, so it sticks out of the scaled picture | Move equipment (x/y) or enlarge `base-size` |
 | `The area is smaller than base-size and the piping no longer fits its base-size shape, so it is routed again …` | Warning | Coordinate placement: the pipes were routed again for this smaller area and may look different from base-size (20.3) | Set `base-size` to the smallest area the screen is shown at |
 | `<X name='N'>: x/y are used only with <DvProcess placement="fixed">` · `row`/`rank`/`align … is not used with placement="fixed"` · `placement='…'` · `base-size …` | Warning | Attribute for the other placement mode, or a value typo | Remove it, or switch the mode |
 
@@ -1190,7 +1191,7 @@ The recirculation pipe branching from `P1.out` routes back into the tank's side.
 - Do not draw signal lines as `DvLine` (pipes) (they interfere with flow and layout). Use `DvSignal`.
 - Do not invent attributes that set an instrument's position or side (`side`·`x`·`y`). They do not exist — the position is automatic, next to the `on` equipment.
 - Do not try to set pipe color via `style` or color values. Medium colors exist only as the 6 names of `medium`.
-- Do not add `fit="shrink"` before a render has shown `Not enough space`, and do not judge a shrunk diagram from the picture — use the `X px` in its warning.
+- In automatic placement, do not add `fit="shrink"` before a render has shown `Not enough space`. In coordinate placement, do not use `base-size` without `fit="contain"` to show a drawing. Do not judge a shrunk diagram from the picture — use the `X px` in its warning.
 - Do not put `font-size` on a parent box for the diagram, and do not enlarge attached boxes one by one — `DvProcess`'s own `font-size` scales every diagram text, attached boxes included.
 - Do not invent the not-yet-available features in chapter 18 as attributes.
 
@@ -1256,7 +1257,7 @@ Automatic placement (chapters 1–19) lays equipment out in flow order so that i
 ### 20.1 At a glance
 
 ```xml
-<DvProcess placement="fixed" base-size="1000 560" look="rich">
+<DvProcess placement="fixed" base-size="1000 560" fit="contain" look="rich">
   <DvTerminal name="SRC1" text="FROM P-201" x="110" y="140"/>
   <DvValve name="FV40" kind="control" open="true" label="FV-3040" x="300" y="140"/>
   <DvInline name="FE10" kind="flowmeter" label="FE-10" x="470" y="140"/>
@@ -1294,9 +1295,10 @@ Automatic placement (chapters 1–19) lays equipment out in flow order so that i
 ### 20.3 Size and `base-size`
 
 - **Without `base-size`**: coordinates are used as they are (scale 1). The diagram's natural size is from the origin to the far edge of the content, plus a 12px margin. If the area is smaller, it overflows and a "Not enough space" warning is left — or, with `fit="shrink"`, the whole drawing is scaled down to the area (chapter 4).
-- **With `base-size="W H"`**: the natural size is W×H. In an area of another size, the scale `s = min(area width / W, area height / H)` is applied **to the coordinates only**, and the W·s × H·s box is centered in the area. A larger area spreads the equipment apart; a smaller one brings it closer. Equipment, pipes and text keep their size.
+- **With `base-size="W H"` and `fit="contain"` (use this to show a drawing)**: the drawing is laid out exactly at the coordinates, as a W×H picture, and that picture is scaled **as a whole** — equipment, text, lines, instruments and attached boxes — to the area: `s = min(area width / W, area height / H)`, smaller or larger, and centered on the axis with room left over (a wide area leaves equal margins left and right). Equipment positions and pipe routes are the same at every size, like an image. When it is drawn smaller, the `Shrunk to N% … X px` warning reports the text size (sizing procedure, chapter 4, step 5); larger needs no warning. Without `base-size`, the content extent (origin to the far edge of the content, plus the 12px margin) is the picture. Equipment placed beyond `base-size` is drawn outside the picture and warned (`Equipment reaches … outside base-size`).
+- **With `base-size="W H"` only (no `fit`)**: the natural size is W×H. In an area of another size, the scale `s = min(area width / W, area height / H)` is applied **to the coordinates only**, and the W·s × H·s box is centered in the area. A larger area spreads the equipment apart; a smaller one brings it closer. Equipment, pipes and text keep their size, so in a much smaller area equipment can touch.
 - **Pipe routes are decided once, at base-size.** At other sizes they are not routed again but stretched with the equipment: bends keep their number, order and side, and only their lengths change, so the drawing keeps its shape at every window size. If the area is smaller than base-size and that shape no longer fits (a segment would fold back, a pipe would run into equipment, or pipes would touch), the pipes are routed again for that size — they may look different — and the Trace warning "The area is smaller than base-size …" is left.
-- Best practice: take `base-size` equal to the **smallest** real size of the screen area, so the scale stays at 1 or above and the screen always looks like the drawing. When the area is much smaller, equipment can end up touching — the overlap and "no free path" warnings tell you.
+- Best practice: use `base-size` + `fit="contain"`, with `base-size` = the size the coordinates were taken at. Without `fit`, take `base-size` equal to the **smallest** real size of the screen area, so the scale stays at 1 or above; when the area is much smaller, equipment can end up touching — the overlap and "no free path" warnings tell you.
 
 ### 20.4 Straightening small offsets (snap)
 

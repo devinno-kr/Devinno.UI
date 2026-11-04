@@ -58,6 +58,9 @@ internal sealed class ProcessDiagram
     /// <summary><c>fit="shrink"</c>: if the diagram still overflows the area after laying out, it is drawn smaller as a whole (equipment, text and lines, keeping the proportions). Never enlarged.</summary>
     public bool Shrink;
 
+    /// <summary><c>fit="contain"</c> (coordinate placement): the drawing at <c>base-size</c> (or, without it, at its own extent) is scaled as a whole to the area, down or up, keeping the proportions, and centered — like an image.</summary>
+    public bool Contain;
+
     /// <summary>The drawn extent of the last layout (screen px before <c>fit="shrink"</c> scaling).</summary>
     internal SKRect Drawn;
 
@@ -274,8 +277,14 @@ internal static class ProcessBuilder
         d.FlowAnimation = BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("flow-animation")) is { } fa && ProcessNode.Truthy(fa);
         var fit = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("fit"));
         d.Shrink = fit is "shrink";
-        if (fit is not (null or "" or "none" or "shrink"))
-            Warn($"DvProcess fit='{fit}' is not a valid value (none, shrink); not shrinking");
+        d.Contain = fit is "contain" && d.Fixed;
+        if (fit is "contain" && !d.Fixed)
+        {
+            Warn("DvProcess fit=\"contain\" is used only with placement=\"fixed\" (coordinates have a base size); shrinking only when it overflows, as with fit=\"shrink\"");
+            d.Shrink = true;
+        }
+        if (fit is not (null or "" or "none" or "shrink" or "contain"))
+            Warn($"DvProcess fit='{fit}' is not a valid value (none, shrink, contain); not scaling");
         Fill(d, box, node, vm, registry, b);
         ProcessFlow.Compute(d);
         ProcessMedium.Compute(d);
@@ -1718,25 +1727,29 @@ internal static class ProcessBuilder
             ArrangeFixed(d, box.Style.FontFamily, inner);
         else
             ArrangeAuto(d, box.Style.FontFamily, inner);
-        if (d.Shrink && d.Shortage is not null)
-            ShrinkToFit(box, d, inner);
+        if (d.Contain)
+            ScaleToFit(box, d, inner, enlarge: true);
+        else if (d.Shrink && d.Shortage is not null)
+            ScaleToFit(box, d, inner, enlarge: false);
     }
 
     /// <summary>The smallest text size the diagram draws at <see cref="ProcessDiagram.TextScale"/> 1 (instrument number and value, line and signal labels).</summary>
     internal const float SmallestText = 11f;
 
-    // fit="shrink" — 다 배치하고도 넘치면 그린 범위 전체를 영역에 맞게 줄여(비율 유지) 가운데에. 장비 상자·배관은 내용 좌표 그대로,
-    // 페인트·히트테스트가 공정도 상자의 내용 배율로 옮긴다. 줄인 정도와 가장 작은 글자 크기를 알린다(읽히는지는 앱이 판단)
-    private static void ShrinkToFit(LayoutBox box, ProcessDiagram d, SKRect inner)
+    // fit="shrink"(넘치면 줄이기)·fit="contain"(기준 크기 그대로 줄이기·키우기) — 그린 범위(Drawn) 전체를 영역에 맞게(비율 유지) 가운데에.
+    // 장비 상자·배관은 내용 좌표 그대로, 페인트·히트테스트가 공정도 상자의 내용 배율로 옮긴다. 줄였으면 줄인 정도와 가장 작은 글자 크기를 알린다(읽히는지는 앱이 판단)
+    private static void ScaleToFit(LayoutBox box, ProcessDiagram d, SKRect inner, bool enlarge)
     {
         var c = d.Drawn;
         if (c.Width <= 0 || c.Height <= 0 || inner.Width <= 0 || inner.Height <= 0)
             return;
         var s = MathF.Min(inner.Width / c.Width, inner.Height / c.Height);
-        if (s >= 1f)
+        if (!enlarge && s >= 1f)
             return;
         box.ContentScale = s;
         box.ContentOffset = new SKPoint(inner.Left + (inner.Width - c.Width * s) / 2 - c.Left * s, inner.Top + (inner.Height - c.Height * s) / 2 - c.Top * s);
+        if (s >= 1f)
+            return; // 키운 경우 — 알릴 것 없음(기준 크기 밖으로 나간 장비 경고는 그대로)
         d.Shortage = $"Shrunk to {s * 100:0}% to fit (needs {c.Width:0}×{c.Height:0}, area is {inner.Width:0}×{inner.Height:0}); the smallest diagram text is now {SmallestDrawnText(d) * s:0.#}px. "
             + "If that is too small to read at the smallest size this screen is shown, raise DvProcess font-size, enlarge the area or split the diagram over several screens";
     }
@@ -1894,6 +1907,12 @@ internal static class ProcessBuilder
     {
         var scale = 1f;
         var origin = new SKPoint(inner.Left, inner.Top);
+        if (d.Contain)
+        {
+            ArrangeFixedContain(d, family, origin);
+            return;
+        }
+
         if (d.BaseSize is { } b && inner.Width > 0 && inner.Height > 0)
         {
             scale = MathF.Min(inner.Width / b.Width, inner.Height / b.Height);
@@ -1931,6 +1950,23 @@ internal static class ProcessBuilder
         ab.Rect = SKRect.Create(x, y, r.Width, r.Height);
         ab.ContentScale = k;
         ab.ContentOffset = new SKPoint(x - x * k, y - y * k); // 왼쪽 위(x, y) 기준
+    }
+
+    // 좌표 배치 + fit="contain" — 좌표 그대로(배율 1) 배치하고, 그릴 범위 = base-size 상자(없으면 원점부터 내용 끝 + 여백).
+    // 영역에 맞추는 것은 Arrange 의 ScaleToFit(줄이기·키우기, 가운데)
+    private static void ArrangeFixedContain(ProcessDiagram d, string? family, SKPoint origin)
+    {
+        var g = Layout(d, family, 1f, ProcessAlign.Step);
+        var size = d.BaseSize ?? g.Size;
+        var right = g.Size.Width - ProcessGraph.Margin;
+        var bottom = g.Size.Height - ProcessGraph.Margin;
+        d.Shortage = d.BaseSize is { } b && (right > b.Width + 0.5f || bottom > b.Height + 0.5f)
+            ? $"Equipment reaches {right:0}×{bottom:0}, outside base-size {b.Width:0}×{b.Height:0}; it is drawn outside the scaled drawing. Move equipment (x/y) or enlarge base-size"
+            : null;
+        d.Graph = g;
+        d.Origin = origin;
+        d.Drawn = SKRect.Create(origin.X, origin.Y, size.Width, size.Height);
+        Place(d);
     }
 
     // 장비 상자·붙은 칸 상자의 화면 위치(유닛은 안쪽까지)

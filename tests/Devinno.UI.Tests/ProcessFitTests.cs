@@ -190,7 +190,7 @@ public class ProcessFitTests
     [Fact]
     public void Fit_InvalidValue_NotShrinking()
     {
-        var (s, d) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"contain\"", 560, 300);
+        var (s, d) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"stretch\"", 560, 300);
         Assert.False(d.Shrink);
         Assert.Equal(1f, ProcessBox(s).ContentScale);
     }
@@ -253,5 +253,119 @@ public class ProcessFitTests
         var scale = ProcessBox(s).ContentScale;
         Assert.True(scale < 1f);
         Assert.Contains($"text is now {8 * scale:0.#}px", d.Shortage);
+    }
+    // ── fit="contain"(좌표 배치) — base-size 로 그린 도면을 통째로 줄이기·키우기, 가운데 ──
+
+    private const string FixedMarkup = """
+        <DvTerminal name="IN" text="IN" x="80" y="100"/>
+        <DvPump name="P1" label="P-1" x="300" y="100" onclick="Hit"/>
+        <DvVessel name="T1" label="T-1" level="50" x="520" y="200"/>
+        <DvLine from="IN" to="P1.in"/>
+        <DvLine from="P1.out" to="T1.top"/>
+        """;
+
+    // 공정도가 영역 전체를 받게(DvScreen 은 flex 가 아니라 grow 가 안 먹으므로 크기를 직접)
+    private static (DvSurface S, ProcessDiagram D) StartSized(string body, string attrs, float w, float h, ProcessTests.Vm? vm = null) =>
+        ProcessTests.Start(body, $"{attrs} style=\"width:{w}; height:{h}\"", w, h, vm: vm);
+
+    private static SKRect Drawn(DvSurface s, ProcessDiagram d)
+    {
+        var b = ProcessBox(s);
+        return new ScreenMap(b.ContentScale, b.ContentOffset).Map(d.Drawn);
+    }
+
+    [Theory]
+    [InlineData(600, 300, 1f)]     // 기준 크기 그대로
+    [InlineData(1200, 600, 2f)]    // 두 배 — 키운다
+    [InlineData(300, 150, 0.5f)]   // 절반 — 줄인다
+    public void Contain_ScalesBaseSizeBothWays(float w, float h, float expected)
+    {
+        var (s, d) = StartSized(FixedMarkup, "placement=\"fixed\" base-size=\"600 300\" fit=\"contain\"", w, h);
+        var box = ProcessBox(s);
+        Assert.Equal(expected, box.ContentScale, 0.001);
+        var drawn = Drawn(s, d);
+        Assert.Equal(600 * expected, drawn.Width, 0.5);
+        Assert.Equal(300 * expected, drawn.Height, 0.5);
+    }
+
+    [Theory]
+    [InlineData(1600, 400)] // 가로로 긴 영역 — 세로에 맞추고 가로 가운데
+    [InlineData(400, 900)]  // 세로로 긴 영역 — 가로에 맞추고 세로 가운데
+    public void Contain_CentersOnTheLongAxis(float w, float h)
+    {
+        var (s, d) = StartSized(FixedMarkup, "placement=\"fixed\" base-size=\"600 300\" fit=\"contain\"", w, h);
+        var inner = Inner(ProcessBox(s));
+        var drawn = Drawn(s, d);
+        Assert.Equal(inner.MidX, drawn.MidX, 0.5);
+        Assert.Equal(inner.MidY, drawn.MidY, 0.5);
+        Assert.True(drawn.Width <= inner.Width + 0.5f && drawn.Height <= inner.Height + 0.5f);
+        Assert.True(MathF.Abs(drawn.Width - inner.Width) < 0.5f || MathF.Abs(drawn.Height - inner.Height) < 0.5f, "한 축은 꽉 찬다");
+    }
+
+    [Theory]
+    [InlineData(1200, 600)]
+    [InlineData(300, 150)]
+    public void Contain_LayoutIsTheSameAtEverySize(float w, float h)
+    {
+        // 장비 위치(내용 좌표)는 영역 크기와 무관 — 그림 한 장처럼 배율만 달라진다
+        var (_, a) = StartSized(FixedMarkup, "placement=\"fixed\" base-size=\"600 300\" fit=\"contain\"", 600, 300);
+        var (_, b) = StartSized(FixedMarkup, "placement=\"fixed\" base-size=\"600 300\" fit=\"contain\"", w, h);
+        foreach (var n in a.Nodes)
+            Assert.Equal((n.G.X, n.G.Y), (Node(b, n.Name).G.X, Node(b, n.Name).G.Y));
+        for (var i = 0; i < a.Lines.Count; i++)
+            Assert.Equal(a.Lines[i].G!.Points, b.Lines[i].G!.Points);
+    }
+
+    [Theory]
+    [InlineData(1200, 600)]
+    [InlineData(300, 150)]
+    public void Contain_ClickFollowsTheDrawing(float w, float h)
+    {
+        var vm = new ProcessTests.Vm();
+        var (s, d) = StartSized(FixedMarkup, "placement=\"fixed\" base-size=\"600 300\" fit=\"contain\"", w, h, vm: vm);
+        var box = ProcessBox(s);
+        var r = Node(d, "P1").Box.Rect;
+        var at = new ScreenMap(box.ContentScale, box.ContentOffset).Map(new SKPoint(r.MidX, r.MidY));
+        s.PointerDown(at);
+        s.PointerUp(at);
+        Assert.Equal(1, vm.Clicks);
+    }
+
+    [Fact]
+    public void Contain_Shrinking_ReportsTextSize_Enlarging_Silent()
+    {
+        var (_, small) = StartSized(FixedMarkup, "placement=\"fixed\" base-size=\"600 300\" fit=\"contain\"", 300, 150);
+        Assert.StartsWith("Shrunk to 50%", small.Shortage);
+        var (_, big) = StartSized(FixedMarkup, "placement=\"fixed\" base-size=\"600 300\" fit=\"contain\"", 1200, 600);
+        Assert.Null(big.Shortage);
+    }
+
+    [Fact]
+    public void Contain_WithoutBaseSize_UsesTheDrawingExtent()
+    {
+        var (s, d) = StartSized(FixedMarkup, "placement=\"fixed\" fit=\"contain\"", 1600, 900);
+        Assert.True(ProcessBox(s).ContentScale > 1f, "내용 범위 기준으로 키운다");
+        var inner = Inner(ProcessBox(s));
+        Assert.Equal(inner.MidX, Drawn(s, d).MidX, 0.5);
+    }
+
+    [Fact]
+    public void BaseSizeWithoutFit_KeepsPositionOnlyScaling()
+    {
+        // 기존 동작(10-27) 그대로 — 위치만 비례, 장비 크기·내용 배율 없음
+        var (s, d) = StartSized(FixedMarkup, "placement=\"fixed\" base-size=\"600 300\"", 1200, 600);
+        Assert.False(ProcessBox(s).HasContentTransform);
+        var (_, at1) = StartSized(FixedMarkup, "placement=\"fixed\" base-size=\"600 300\"", 600, 300);
+        Assert.Equal(Node(at1, "P1").Box.Rect.Width, Node(d, "P1").Box.Rect.Width, 0.01);
+        Assert.True(Node(d, "T1").G.X > Node(at1, "T1").G.X + 100, "위치는 벌어진다");
+    }
+
+    [Fact]
+    public void Contain_OnAutoPlacement_ActsAsShrink()
+    {
+        var (s, d) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"contain\"", 420, 220);
+        Assert.False(d.Contain);
+        Assert.True(d.Shrink);
+        Assert.True(ProcessBox(s).ContentScale < 1f);
     }
 }

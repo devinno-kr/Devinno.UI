@@ -2491,7 +2491,7 @@ A process screen that draws tanks·pumps·valves and pipes. **You do not write c
 |---|---|---|
 | `direction` | `lr` (default) · `tb` | Flow direction. `lr` = left→right, `tb` = top→bottom |
 | `look` | `plain` (default) · `rich` | Appearance. `plain` = gray, color only for state (ISA-101 style). `rich` = metallic gradients·thick pipes |
-| `fit` | `none` (default) · `shrink` | `shrink` = if the diagram still overflows its area after layout, draw the whole of it smaller to fit (never enlarged) |
+| `fit` | `none` (default) · `shrink` · `contain` | `shrink` = if the diagram still overflows its area after layout, draw the whole of it smaller to fit. `contain` = with `placement="fixed"` + `base-size`, scale the whole drawing to the area, smaller or larger, centered (like an image) |
 | `style` | Ordinary style | `padding`, `background`, `width`/`height`, `font-size` (size of all diagram text, ÷ 14), etc. |
 
 - Without a given size, the process diagram size = the content size.
@@ -2499,7 +2499,7 @@ A process screen that draws tanks·pumps·valves and pipes. **You do not write c
 - `align="auto|step|row"` (default `auto`): whether equipment after a line leaving a tank bottom is placed stepped below the tank (`step`) or on the same row as the tank (`row`, low and wide). `auto` uses stepped if it fits the area, otherwise the same row.
 - If the size is smaller than the content, it re-lays out by changing the row alignment (`auto`) and equipment spacing (down to 0.5×). If still short, it leaves a Trace warning ("Not enough space") and draws overflowing — or, with `fit="shrink"`, draws the whole diagram smaller and reports the smallest text size ("Shrunk to N% … X px"). If there is spare space, it is centered. `style="font-size:N"` on `DvProcess` scales all diagram text by N / 14, attached boxes (`DvAttach`) included. **For screen size, follow the sizing procedure in `dvml-process.md` chapter 4** (render at the smallest real size → `Not enough space` → `fit="shrink"` → if X < 10px, `font-size` × 11 / X → if still too small, split the screen).
 - The background is not painted. It follows the app theme or `style`'s `background` (`rich` looks best on a dark background).
-- `placement="fixed"` (default `auto`) is only for screens that must match a given drawing: every piece of equipment then sits at its `x`·`y` (symbol center, px), pipes are still routed automatically, and `base-size="W H"` scales the positions (not the equipment or text) to the area. See `dvml-process.md` chapter 20.
+- `placement="fixed"` (default `auto`) is only for screens that must match a given drawing: every piece of equipment then sits at its `x`·`y` (symbol center, px), pipes are still routed automatically, and `base-size="W H"` (the size the coordinates were taken at) + `fit="contain"` scales the whole drawing to the area, smaller or larger, centered. See `dvml-process.md` chapter 20.
 
 ### 22.2 Equipment
 
