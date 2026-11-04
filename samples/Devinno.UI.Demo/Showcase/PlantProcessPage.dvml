@@ -1,6 +1,6 @@
 <DvPageFrame vm="PlantProcessPage" style="padding:12 16; gap:12">
   <DvCard title="Treatment &amp; disinfection" badge="P&amp;ID · raw water intake to clear well" grow="1" style="height:0; padding:14 12 8 12">
-    <DvProcess look="rich" flow-animation="{FlowAnimation}" grow="1" style="height:0">
+    <DvProcess look="rich" flow-animation="{FlowAnimation}" fit="shrink" grow="1" style="height:0">
       <DvVessel name="T401" level="{DosingLevel}" label="T-401"/>
       <DvPump name="P401" kind="gear" running="{P401Run}" label="P-401" onclick="ToggleP401"/>
       <DvTerminal name="STEAM" text="LP STEAM"/>
