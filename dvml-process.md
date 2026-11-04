@@ -149,7 +149,7 @@ AI MUST follow the order below exactly. Each step says what to decide.
    - Still X < 10, or F would go above 28 → the diagram has too much for this screen: split it over several screens or leave out minor equipment (inlet valves, etc.). Do not go on raising `font-size`.
 6. Judge by the warning, not by the picture: a shrunk diagram always looks complete in the PNG.
 
-10px is the default minimum readable size. If the user gives another minimum (for example a distance-read panel), use theirs in place of 10.
+The minimum readable size is always 10px. Do not use another number.
 
 ```xml
 <DvPageFrame title="정수 공정">
