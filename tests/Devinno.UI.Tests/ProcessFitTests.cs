@@ -29,6 +29,49 @@ public class ProcessFitTests
     }
 
     [Fact]
+    public void ValueText_DoesNotMoveAnything()
+    {
+        var shortValue = ProcessInstrumentTests.Loop.Replace("value=\"12.5 m³/h\"", "value=\"8\"");
+        var longValue = ProcessInstrumentTests.Loop.Replace("value=\"12.5 m³/h\"", "value=\"1,284,000.5 m³/h (high)\"");
+        var (_, a) = ProcessTests.Start(shortValue);
+        var (_, b) = ProcessTests.Start(longValue);
+        Assert.Equal(a.Graph!.Size, b.Graph!.Size);
+        foreach (var n in a.Nodes)
+        {
+            var m = Node(b, n.Name);
+            Assert.Equal((n.G.X, n.G.Y), (m.G.X, m.G.Y));
+            Assert.Equal(n.Footprint, m.Footprint);
+        }
+
+        Assert.Equal(Inst(a, "FIC1").Rect, Inst(b, "FIC1").Rect);
+    }
+
+    [Fact]
+    public void ValueText_OnOuterSide()
+    {
+        // 왼쪽 면 열 → 버블 왼쪽, 위 면 여럿 → 버블 위, 하나 → 오른쪽
+        const string markup = """
+            <DvTerminal name="IN" text="IN"/>
+            <DvPump name="P1" label="P-1"/>
+            <DvTerminal name="OUT" text="OUT"/>
+            <DvLine from="IN" to="P1.in"/>
+            <DvLine from="P1.out" to="OUT"/>
+            <DvInstrument name="A" tag="PI" number="1" on="P1" value="1.2 bar"/>
+            <DvInstrument name="B" tag="TI" number="2" on="P1" value="40 °C"/>
+            """;
+        var (_, d) = ProcessTests.Start(markup);
+        foreach (var name in new[] { "A", "B" })
+        {
+            var i = Inst(d, name);
+            Assert.NotEqual(PortSide.Right, i.ValueSide); // 버블 둘 — 옆 버블 쪽(오른쪽)이 아니다
+            Assert.False(i.ValueRect.IntersectsWith(Inst(d, name == "A" ? "B" : "A").Rect), "값 글자가 옆 버블과 겹침");
+        }
+
+        var (_, single) = ProcessTests.Start(ProcessInstrumentTests.Loop);
+        Assert.Equal(PortSide.Right, Inst(single, "FIC1").ValueSide);
+    }
+
+    [Fact]
     public void FontSize_UnitsFollowOuter()
     {
         var (_, d) = ProcessTests.Start(ProcessUnitTests.PlantMarkup, "direction=\"tb\" style=\"font-size:28\"", 1000, 1600,

@@ -25,6 +25,9 @@ internal sealed class GraphNode
     /// <summary>Name label and attached cell areas — relative to the footprint. Pipes avoid them.</summary>
     public List<SKRect> Extras { get; } = new();
 
+    /// <summary>Areas only signal lines avoid (instrument value text) — relative to the footprint. Not part of the layout or pipe routing.</summary>
+    public List<SKRect> SignalExtras { get; } = new();
+
     public int? Row, Rank;
 
     /// <summary>Coordinate placement: where the center of <see cref="Body"/> goes (px, already scaled). <see langword="null"/> in automatic placement.</summary>
@@ -71,8 +74,8 @@ internal sealed class GraphEnd
     /// </summary>
     public SKRect? Pick;
 
-    /// <summary>The picked end does not use the right face (the instrument value text is to the right of the bubble) — the face opposite the equipment is used instead.</summary>
-    public bool PickNoRight;
+    /// <summary>The face the picked end does not use (the side of the bubble with the instrument value text); <see langword="null"/> = none.</summary>
+    public PortSide? PickBlocked;
 
     /// <summary>Length of the straight segment out of the port (default 18; 8 for unit frame ports — so it does not overlap the straight ends of inner equipment). Nearly equal coordinates are aligned by lengthening or shortening it.</summary>
     public float StubLen = 18f;
@@ -1179,7 +1182,7 @@ internal sealed class ProcessGraph
                     var score = o.X * dx + o.Y * dy;
                     if (sd == hostSide && other.Node != e.Node)
                         score -= 2;
-                    if (sd == PortSide.Right && e.PickNoRight)
+                    if (sd == e.PickBlocked)
                         score -= 10; // 값 글자 쪽
                     if (used.Contains((e.Node, pick, sd)))
                         score -= 4; // 같은 면을 다른 신호선이 이미 쓴다
@@ -1213,7 +1216,7 @@ internal sealed class ProcessGraph
             var b = node.Abs(node.Body);
             b.Inflate(3, 3);
             obstacles.Add(b);
-            foreach (var x in node.Extras)
+            foreach (var x in node.Extras.Concat(node.SignalExtras))
             {
                 var r = node.Abs(x);
                 r.Inflate(2, 2);

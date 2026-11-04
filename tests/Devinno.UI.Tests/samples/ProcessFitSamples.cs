@@ -12,6 +12,22 @@ public class ProcessFitSamples
 
         // 글자 크기 — font-size 18(기본 14)
         Render($"<DvProcess style=\"font-size:18\">{ProcessInstrumentTests.Loop}</DvProcess>", vm, 1280, 680, "fit-font18.png");
+
+        // 값 글자 — 배치에 끼지 않음. 위 면 버블 여럿(값은 위), 긴 값
+        const string values = """
+            <DvTerminal name="IN" text="IN"/>
+            <DvPump name="P1" label="P-1"/>
+            <DvVessel name="T1" label="T-1" level="40"/>
+            <DvTerminal name="OUT" text="OUT"/>
+            <DvLine from="IN" to="P1.in"/>
+            <DvLine from="P1.out" to="T1.top"/>
+            <DvLine from="T1.bottom" to="OUT"/>
+            <DvInstrument name="A" tag="PI" number="1" on="P1" value="1.2 bar"/>
+            <DvInstrument name="B" tag="TI" number="2" on="P1" value="40 °C"/>
+            <DvInstrument name="L" tag="LT" number="3" on="T1" value="1,284.5 L"/>
+            <DvSignal from="A" to="B"/>
+            """;
+        Render($"<DvProcess>{values}</DvProcess>", vm, 900, 420, "fit-values.png");
     }
 
     private static void Render(string process, object vm, int w, int h, string file)

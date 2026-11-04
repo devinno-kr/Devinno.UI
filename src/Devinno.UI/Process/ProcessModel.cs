@@ -191,8 +191,11 @@ internal sealed class ProcessInstrument
     /// <summary>The equipment it is attached to. <see langword="null"/> if <c>on</c> is missing or wrong (not drawn).</summary>
     public ProcessNode? Host;
 
-    /// <summary>Position of the bubble and value text, relative to the equipment's footprint.</summary>
+    /// <summary>Position of the bubble and value text, relative to the equipment's footprint. The value text is not part of the layout (footprint, pipes), so a changing value never moves anything.</summary>
     public SKRect Rect, ValueRect;
+
+    /// <summary>The side of the bubble the value text is on (the outer side, away from the equipment). Signal lines avoid it.</summary>
+    public PortSide ValueSide = PortSide.Right;
 }
 
 /// <summary>One signal line (<c>DvSignal</c>); both ends are names only (instruments or equipment).</summary>
@@ -1122,7 +1125,7 @@ internal static class ProcessBuilder
         {
             g.Extras.Add(inst.Rect);
             if (!inst.ValueRect.IsEmpty)
-                g.Extras.Add(inst.ValueRect);
+                g.SignalExtras.Add(inst.ValueRect); // 신호선만 피한다 — 배관·차지 영역은 값과 무관
             if (inst.TapPort is not null)
                 g.Extras.Add(TapArea(inst));
         }
@@ -1211,7 +1214,8 @@ internal static class ProcessBuilder
     // 버블 하나면 장비 가운데 줄에 맞춘다(조절 밸브 구동부로 가는 신호선이 곧게). 값 글자는 버블 오른쪽
     private static void PlaceInstruments(ProcessDiagram d, ProcessNode n, SKRect sym, SKRect body, PortSide? labelSide, List<SKRect> extras, string? family)
     {
-        (float D, SKSize V, float W) Size(ProcessInstrument inst)
+        // 값 글자는 배치에 끼지 않는다 — 버블 자리·차지 영역은 지름만으로(값이 바뀌어도 아무것도 움직이지 않게)
+        (float D, SKSize V) Size(ProcessInstrument inst)
         {
             var dia = BubbleSize(inst, family);
             SKSize v = SKSize.Empty;
@@ -1221,17 +1225,23 @@ internal static class ProcessBuilder
                 v = new SKSize(vf.MeasureText(inst.Value), vf.Spacing);
             }
 
-            return (dia, v, dia + (v.Width > 0 ? ValueGap + v.Width : 0));
+            return (dia, v);
         }
 
-        // below = 값 글자를 버블 오른쪽 가운데가 아니라 그 아래로(오른쪽으로 나가는 연결선을 가리지 않게)
-        void Put(ProcessInstrument inst, SKRect bubble, SKSize v, bool below = false)
+        // 값 글자 = 버블의 valueSide 쪽(장비 반대쪽). below = 오른쪽이되 아래 절반(오른쪽으로 나가는 연결선을 가리지 않게)
+        void Put(ProcessInstrument inst, SKRect bubble, SKSize v, PortSide valueSide = PortSide.Right, bool below = false)
         {
             inst.Rect = bubble;
-            inst.ValueRect = v.Width > 0 ? SKRect.Create(bubble.Right + ValueGap, below ? bubble.MidY + 2 : bubble.MidY - v.Height / 2, v.Width, v.Height) : SKRect.Empty;
+            inst.ValueSide = valueSide;
+            var gap = d.Text(ValueGap);
+            inst.ValueRect = v.Width <= 0 ? SKRect.Empty : valueSide switch
+            {
+                PortSide.Left => SKRect.Create(bubble.Left - gap - v.Width, bubble.MidY - v.Height / 2, v.Width, v.Height),
+                PortSide.Top => SKRect.Create(bubble.MidX - v.Width / 2, bubble.Top - gap - v.Height, v.Width, v.Height),
+                PortSide.Bottom => SKRect.Create(bubble.MidX - v.Width / 2, bubble.Bottom + gap, v.Width, v.Height),
+                _ => SKRect.Create(bubble.Right + gap, below ? bubble.MidY + 2 : bubble.MidY - v.Height / 2, v.Width, v.Height),
+            };
             extras.Add(inst.Rect);
-            if (!inst.ValueRect.IsEmpty)
-                extras.Add(inst.ValueRect);
         }
 
         // 연결선(tap) 계기 — 면 위 자리면 그 면 바깥쪽으로, 고정 포트면 포트에서 배관으로 조금 나간 자리에서 배관 위(세로 배관이면 오른쪽)로 TapLength 띄운다
@@ -1258,7 +1268,7 @@ internal static class ProcessBuilder
                 dir = pd.Y == 0 ? new SKPoint(0, -1) : new SKPoint(1, 0);
             }
 
-            var (dia, v, _) = Size(inst);
+            var (dia, v) = Size(inst);
             var c = new SKPoint(tap.X + dir.X * (TapLength + dia / 2), tap.Y + dir.Y * (TapLength + dia / 2));
             Put(inst, SKRect.Create(c.X - dia / 2, c.Y - dia / 2, dia, dia), v, below: dir.X < 0);
             inst.TapFrom = tap;
@@ -1280,8 +1290,8 @@ internal static class ProcessBuilder
 
         var slots = auto.Select(inst =>
         {
-            var (dia, v, w) = Size(inst);
-            return (Inst: inst, D: dia, V: v, W: w);
+            var (dia, v) = Size(inst);
+            return (Inst: inst, D: dia, V: v);
         }).ToList();
 
         // 그 면 바깥에 이미 있는 것(이름표·붙은 칸)의 끝
@@ -1297,24 +1307,25 @@ internal static class ProcessBuilder
         {
             var rowH = slots.Max(s => s.D);
             var mid = side == PortSide.Top ? outer - InstrumentGap - rowH / 2 : outer + InstrumentGap + rowH / 2;
-            var x = slots.Count == 1 ? sym.MidX - slots[0].D / 2 : sym.MidX - (slots.Sum(s => s.W) + BubbleGap * (slots.Count - 1)) / 2;
+            var x = sym.MidX - (slots.Sum(s => s.D) + BubbleGap * (slots.Count - 1)) / 2;
+            // 버블 하나면 값 글자는 오른쪽, 여럿이면 옆 버블과 겹치지 않게 바깥(위 면은 위, 아래 면은 아래)
+            var valueSide = slots.Count == 1 ? PortSide.Right : side;
             foreach (var s in slots)
             {
-                Put(s.Inst, SKRect.Create(x, mid - s.D / 2, s.D, s.D), s.V);
-                x += s.W + BubbleGap;
+                Put(s.Inst, SKRect.Create(x, mid - s.D / 2, s.D, s.D), s.V, valueSide);
+                x += s.D + BubbleGap;
             }
         }
         else
         {
-            var colW = slots.Max(s => s.W);
-            var heights = slots.Select(s => MathF.Max(s.D, s.V.Height)).ToList();
-            var y = slots.Count == 1 ? sym.MidY - heights[0] / 2 : sym.MidY - (heights.Sum() + BubbleGap * (slots.Count - 1)) / 2;
-            for (var i = 0; i < slots.Count; i++)
+            var colW = slots.Max(s => s.D);
+            var y = sym.MidY - (slots.Sum(s => s.D) + BubbleGap * (slots.Count - 1)) / 2;
+            foreach (var s in slots)
             {
-                var s = slots[i];
-                var left = side == PortSide.Right ? outer + InstrumentGap : outer - InstrumentGap - colW;
-                Put(s.Inst, SKRect.Create(left, y + (heights[i] - s.D) / 2, s.D, s.D), s.V);
-                y += heights[i] + BubbleGap;
+                // 버블은 열 가운데, 값 글자는 바깥쪽(왼쪽 면이면 버블 왼쪽) — 장비 쪽으로 파고들지 않게
+                var left = (side == PortSide.Right ? outer + InstrumentGap : outer - InstrumentGap - colW) + (colW - s.D) / 2;
+                Put(s.Inst, SKRect.Create(left, y, s.D, s.D), s.V, side);
+                y += s.D + BubbleGap;
             }
         }
     }
@@ -1545,7 +1556,7 @@ internal static class ProcessBuilder
         switch (SignalTarget(d, name))
         {
             case ProcessInstrument inst:
-                return new GraphEnd { Node = d.Nodes.IndexOf(inst.Host!), Key = name, Pick = inst.Rect, PickNoRight = !inst.ValueRect.IsEmpty };
+                return new GraphEnd { Node = d.Nodes.IndexOf(inst.Host!), Key = name, Pick = inst.Rect, PickBlocked = string.IsNullOrEmpty(inst.Value) ? null : inst.ValueSide };
             case ProcessNode n when HasActuator(n):
                 return new GraphEnd { Node = d.Nodes.IndexOf(n), Key = name, Local = n.Transform.MapPoint(ActuatorTop), Side = MapSide(PortSide.Top, n) };
             case ProcessNode n:
@@ -1585,7 +1596,7 @@ internal static class ProcessBuilder
             foreach (var r in n.AttachRects)
                 sb.Append(r.ToString());
             foreach (var inst in n.Instruments)
-                sb.Append('I').Append(inst.Name).Append(inst.Rect.ToString()).Append(inst.ValueRect.ToString());
+                sb.Append('I').Append(inst.Name).Append(inst.Rect.ToString()).Append(inst.ValueRect.ToString()).Append(inst.ValueSide); // 값 글자는 신호선 경로에만 영향
             sb.Append(n.Accessories.Count);
             if (n.Pos is { } pos)
                 sb.Append('@').Append(pos.X.ToString(CultureInfo.InvariantCulture)).Append(',').Append(pos.Y.ToString(CultureInfo.InvariantCulture));
@@ -1646,6 +1657,8 @@ internal static class ProcessBuilder
             foreach (var w in g.Warnings)
                 Warn(w);
 
+        ReportValueOverlap(d);
+
         foreach (var l in d.Lines)
         {
             if (l.G is not { } gl)
@@ -1658,6 +1671,24 @@ internal static class ProcessBuilder
                 Warn(d.Fixed
                     ? $"'{l.FromRef}'→'{l.ToRef}': crosses other piping {gl.Crossings} time(s); moving equipment (x/y) can reduce this"
                     : $"'{l.FromRef}'→'{l.ToRef}': crosses other piping {gl.Crossings} time(s); a row hint can reduce this");
+        }
+    }
+
+    // 값 글자는 배치에 끼지 않으므로 길면 다른 장비·이름표·계기를 덮을 수 있다 — 덮은 것을 알린다(같은 문구는 한 번)
+    private static void ReportValueOverlap(ProcessDiagram d)
+    {
+        static SKRect Abs(ProcessNode n, SKRect r) => new(n.G.X + r.Left, n.G.Y + r.Top, n.G.X + r.Right, n.G.Y + r.Bottom);
+        foreach (var inst in d.Instruments)
+        {
+            if (inst.Host is not { } host || inst.ValueRect.IsEmpty)
+                continue;
+            var v = Abs(host, inst.ValueRect);
+            var hit = d.Nodes.Where(n => !n.IsPort && (n.G is not null) && (Abs(n, n.Sym).IntersectsWith(v) || !n.LabelRect.IsEmpty && Abs(n, n.LabelRect).IntersectsWith(v)))
+                .Select(n => n.Name)
+                .Concat(d.Instruments.Where(o => o != inst && o.Host is { } oh && (Abs(oh, o.Rect).IntersectsWith(v) || !o.ValueRect.IsEmpty && Abs(oh, o.ValueRect).IntersectsWith(v))).Select(o => o.Name))
+                .FirstOrDefault();
+            if (hit is not null)
+                Warn($"'{inst.Name}' value text overlaps '{hit}'; value text is not part of the layout, so keep it short or move the equipment apart");
         }
     }
 
