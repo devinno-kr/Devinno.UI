@@ -54,6 +54,12 @@ internal sealed class ProcessDiagram
 
     /// <summary><c>base-size</c> (coordinate placement only): the size the coordinates were taken at. Positions (not equipment) are scaled to fit the area.</summary>
     public SKSize? BaseSize;
+
+    /// <summary>Text scale: <c>font-size</c> of <c>DvProcess</c> / 14. <c>font-size</c> is not inherited, so only a value set on <c>DvProcess</c> itself changes it. Units follow the outer value.</summary>
+    public float TextScale = 1f;
+
+    /// <summary>A text size (or text-sized length) of the diagram at <see cref="TextScale"/>.</summary>
+    internal float Text(float size) => size * TextScale;
 }
 
 /// <summary>One piece of equipment in a process diagram.</summary>
@@ -961,10 +967,11 @@ internal static class ProcessBuilder
         var path = new SKPath();
         if (!vertical)
         {
+            var tip = n.Owner.Text(14);
             path.MoveTo(r.Left, r.Top);
-            path.LineTo(r.Right - 14, r.Top);
+            path.LineTo(r.Right - tip, r.Top);
             path.LineTo(r.Right, r.MidY);
-            path.LineTo(r.Right - 14, r.Bottom);
+            path.LineTo(r.Right - tip, r.Bottom);
             path.LineTo(r.Left, r.Bottom);
             path.Close();
             return n.TerminalSource ? (path, new SKPoint(r.Right, r.MidY), PortSide.Right) : (path, new SKPoint(r.Left, r.MidY), PortSide.Left);
@@ -972,9 +979,9 @@ internal static class ProcessBuilder
 
         path.MoveTo(r.Left, r.Top);
         path.LineTo(r.Right, r.Top);
-        path.LineTo(r.Right, r.Bottom - 10);
+        path.LineTo(r.Right, r.Bottom - n.Owner.Text(10));
         path.LineTo(r.MidX, r.Bottom);
-        path.LineTo(r.Left, r.Bottom - 10);
+        path.LineTo(r.Left, r.Bottom - n.Owner.Text(10));
         path.Close();
         return n.TerminalSource ? (path, new SKPoint(r.MidX, r.Bottom), PortSide.Bottom) : (path, new SKPoint(r.MidX, r.Top), PortSide.Top);
     }
@@ -1001,10 +1008,10 @@ internal static class ProcessBuilder
         else if (n.Terminal)
         {
             var lines = TerminalLines(n);
-            using var f = TextFont.Create(n.Text ?? "", 12, true, family);
+            using var f = TextFont.Create(n.Text ?? "", d.Text(12), true, family);
             var tw = lines.Max(l => f.MeasureText(l));
             var more = (lines.Length - 1) * f.Spacing; // 둘째 줄부터 한 줄씩 높아진다
-            symSize = d.Vertical ? new SKSize(MathF.Max(60, tw + 20), 38 + more) : new SKSize(MathF.Max(64, tw + 34), 28 + more);
+            symSize = d.Vertical ? new SKSize(MathF.Max(d.Text(60), tw + d.Text(20)), d.Text(38) + more) : new SKSize(MathF.Max(d.Text(64), tw + d.Text(34)), d.Text(28) + more);
             n.Transform = SKMatrix.Identity;
         }
         else
@@ -1038,7 +1045,7 @@ internal static class ProcessBuilder
         var extras = new List<SKRect>();
         if (!string.IsNullOrEmpty(n.Label) && !n.Terminal && !n.IsVessel)
         {
-            using var f = TextFont.Create(n.Label, LabelSize, true, family);
+            using var f = TextFont.Create(n.Label, d.Text(LabelSize), true, family);
             var lw = f.MeasureText(n.Label);
             var lh = f.Spacing;
             var used = n.Unit is not null ? new HashSet<PortSide> { PortSide.Bottom } : UsedSides(d, n); // 유닛 이름은 제목(위)
@@ -1194,9 +1201,10 @@ internal static class ProcessBuilder
     /// <summary>Bubble diameter: the wider of the texts (tag, number) + padding, at least <see cref="BubbleMin"/>.</summary>
     internal static float BubbleSize(ProcessInstrument inst, string? family)
     {
-        using var tf = TextFont.Create(inst.Letters ?? "", LetterSize, true, family);
-        using var nf = TextFont.Create(inst.Number ?? "", NumberSize, true, family);
-        return MathF.Max(BubbleMin, MathF.Max(tf.MeasureText(inst.Letters ?? ""), nf.MeasureText(inst.Number ?? "")) + 14);
+        var d = inst.Owner;
+        using var tf = TextFont.Create(inst.Letters ?? "", d.Text(LetterSize), true, family);
+        using var nf = TextFont.Create(inst.Number ?? "", d.Text(NumberSize), true, family);
+        return MathF.Max(d.Text(BubbleMin), MathF.Max(tf.MeasureText(inst.Letters ?? ""), nf.MeasureText(inst.Number ?? "")) + d.Text(14));
     }
 
     // 계기 — 선·붙은 칸·이름표가 가장 적은 면(같으면 위 → 오른쪽 → 아래 → 왼쪽)에, 그 면 바깥 것(이름표·붙은 칸) 너머로 나란히.
@@ -1209,7 +1217,7 @@ internal static class ProcessBuilder
             SKSize v = SKSize.Empty;
             if (!string.IsNullOrEmpty(inst.Value))
             {
-                using var vf = TextFont.Create(inst.Value, ValueSize, false, family);
+                using var vf = TextFont.Create(inst.Value, d.Text(ValueSize), false, family);
                 v = new SKSize(vf.MeasureText(inst.Value), vf.Spacing);
             }
 
@@ -1565,7 +1573,7 @@ internal static class ProcessBuilder
     private static string Signature(ProcessDiagram d, IEnumerable<ProcessLine> lines, IEnumerable<ProcessSignal> signals, float spacing)
     {
         var sb = new System.Text.StringBuilder();
-        sb.Append(d.Vertical ? 'V' : 'H').Append(d.Fixed ? 'F' : 'A').Append(d.Pitch).Append('|').Append(spacing.ToString(CultureInfo.InvariantCulture)).Append('|');
+        sb.Append(d.Vertical ? 'V' : 'H').Append(d.Fixed ? 'F' : 'A').Append(d.Pitch).Append('T').Append(d.TextScale.ToString(CultureInfo.InvariantCulture)).Append('|').Append(spacing.ToString(CultureInfo.InvariantCulture)).Append('|');
         foreach (var n in d.Nodes)
         {
             sb.Append(n.Name).Append(':').Append(n.Def?.Name ?? "T").Append(n.TerminalSource ? 's' : 'd')
@@ -1599,9 +1607,22 @@ internal static class ProcessBuilder
     // ── 화면 배치 ──
 
     /// <summary>Natural size (spacing scale 1): the inner size (excluding padding).</summary>
+    /// <summary>The <c>font-size</c> at which the diagram's text is drawn at its base sizes (<see cref="ProcessDiagram.TextScale"/> 1).</summary>
+    private const float DefaultFontSize = 14f;
+
+    // 글자 배율 — 유닛 안쪽도 바깥과 같게
+    private static void SetTextScale(ProcessDiagram d, float k)
+    {
+        d.TextScale = k;
+        foreach (var n in d.Nodes)
+            if (n.Unit is { } unit)
+                SetTextScale(unit, k);
+    }
+
     internal static SKSize Natural(LayoutBox box)
     {
         var d = box.Process!;
+        SetTextScale(d, box.Style.FontSize > 0 ? box.Style.FontSize / DefaultFontSize : 1f);
         if (d.Fixed && d.BaseSize is { } baseSize)
             return baseSize;
         return Layout(d, box.Style.FontFamily, 1f, d.Align ?? ProcessAlign.Step).Size;
@@ -1647,6 +1668,7 @@ internal static class ProcessBuilder
     internal static void Arrange(LayoutBox box, SKRect inner)
     {
         var d = box.Process!;
+        SetTextScale(d, box.Style.FontSize > 0 ? box.Style.FontSize / DefaultFontSize : 1f);
         var family = box.Style.FontFamily;
         if (d.Fixed)
         {

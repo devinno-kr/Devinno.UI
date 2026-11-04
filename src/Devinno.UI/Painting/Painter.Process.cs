@@ -218,7 +218,7 @@ public sealed partial class Painter
                     continue;
                 var k = Enumerable.Range(1, g.Points.Count - 1).MaxBy(i => SKPoint.Distance(g.Points[i - 1], g.Points[i]));
                 var (a, b) = (g.Points[k - 1], g.Points[k]);
-                using var font = TextFont.Create(l.Label, 11, false, family);
+                using var font = TextFont.Create(l.Label, d.Text(11), false, family);
                 using var tp = new SKPaint { IsAntialias = true, Color = text };
                 var off = look.Rich ? 9f : 5f;
                 if (MathF.Abs(a.Y - b.Y) < 0.5f)
@@ -274,7 +274,7 @@ public sealed partial class Painter
                 DrawArrow(canvas, g.From, look, fill, 8, 4);
             if (!string.IsNullOrEmpty(s.Label))
             {
-                using var font = TextFont.Create(s.Label, 11, false, family);
+                using var font = TextFont.Create(s.Label, d.Text(11), false, family);
                 using var tp = new SKPaint { IsAntialias = true, Color = text };
                 var r = SignalLabelRect(d, g, font.MeasureText(s.Label), font.Metrics.Descent - font.Metrics.Ascent);
                 canvas.DrawText(s.Label, r.Left, r.Top - font.Metrics.Ascent, SKTextAlign.Left, font, tp);
@@ -347,21 +347,21 @@ public sealed partial class Painter
         using var tp = new SKPaint { IsAntialias = true, Color = look.TagText };
         if (!string.IsNullOrEmpty(inst.Letters))
         {
-            using var f = TextFont.Create(inst.Letters, ProcessBuilder.LetterSize, true, st.FontFamily);
-            canvas.DrawText(inst.Letters, r.MidX, r.MidY - 3 - f.Metrics.Descent, SKTextAlign.Center, f, tp);
+            using var f = TextFont.Create(inst.Letters, d.Text(ProcessBuilder.LetterSize), true, st.FontFamily);
+            canvas.DrawText(inst.Letters, r.MidX, r.MidY - d.Text(3) - f.Metrics.Descent, SKTextAlign.Center, f, tp);
         }
 
         if (!string.IsNullOrEmpty(inst.Number))
         {
-            using var f = TextFont.Create(inst.Number, ProcessBuilder.NumberSize, true, st.FontFamily);
-            canvas.DrawText(inst.Number, r.MidX, r.MidY + 3 - f.Metrics.Ascent, SKTextAlign.Center, f, tp);
+            using var f = TextFont.Create(inst.Number, d.Text(ProcessBuilder.NumberSize), true, st.FontFamily);
+            canvas.DrawText(inst.Number, r.MidX, r.MidY + d.Text(3) - f.Metrics.Ascent, SKTextAlign.Center, f, tp);
         }
 
         if (!string.IsNullOrEmpty(inst.Value))
         {
             var ox = d.Origin.X + host.G.X;
             var oy = d.Origin.Y + host.G.Y;
-            using var f = TextFont.Create(inst.Value, ProcessBuilder.ValueSize, false, st.FontFamily);
+            using var f = TextFont.Create(inst.Value, d.Text(ProcessBuilder.ValueSize), false, st.FontFamily);
             using var vp = new SKPaint { IsAntialias = true, Color = ThemeColor("--text", st.Color.ToSK()) };
             canvas.DrawText(inst.Value, ox + inst.ValueRect.Left, oy + inst.ValueRect.Top - f.Metrics.Ascent, SKTextAlign.Left, f, vp);
         }
@@ -468,7 +468,7 @@ public sealed partial class Painter
             // 유닛 — 제목(왼쪽 위) + 안쪽 배관. 안쪽 장비는 이 상자의 자식으로 그 위에 그린다. 테두리·배경은 style
             if (!string.IsNullOrEmpty(n.Label))
             {
-                using var font = TextFont.Create(n.Label, ProcessBuilder.LabelSize, true, st.FontFamily);
+                using var font = TextFont.Create(n.Label, d.Text(ProcessBuilder.LabelSize), true, st.FontFamily);
                 using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("--text", st.Color.ToSK()) };
                 canvas.DrawText(n.Label, d.Origin.X + n.G.X + n.LabelRect.Left, d.Origin.Y + n.G.Y + n.LabelRect.Top - font.Metrics.Ascent,
                     SKTextAlign.Left, font, tp);
@@ -495,10 +495,10 @@ public sealed partial class Painter
                 }
 
                 var lines = ProcessBuilder.TerminalLines(n);
-                using var font = TextFont.Create(n.Text ?? "", 12, true, st.FontFamily);
+                using var font = TextFont.Create(n.Text ?? "", d.Text(12), true, st.FontFamily);
                 using var tp = new SKPaint { IsAntialias = true, Color = look.TagText };
-                var cx = d.Vertical ? n.Sym.MidX : n.Sym.Left + (n.Sym.Width - 14) / 2;
-                var cy = (d.Vertical ? n.Sym.Top + (n.Sym.Height - 10) / 2 : n.Sym.MidY) - (font.Metrics.Ascent + font.Metrics.Descent) / 2
+                var cx = d.Vertical ? n.Sym.MidX : n.Sym.Left + (n.Sym.Width - d.Text(14)) / 2;
+                var cy = (d.Vertical ? n.Sym.Top + (n.Sym.Height - d.Text(10)) / 2 : n.Sym.MidY) - (font.Metrics.Ascent + font.Metrics.Descent) / 2
                     - (lines.Length - 1) * font.Spacing / 2; // 여러 줄이면 묶음 가운데를 맞춘다
                 foreach (var line in lines)
                 {
@@ -554,9 +554,10 @@ public sealed partial class Painter
         if (n.IsVessel)
         {
             // 용기 이름표 — 몸통 가운데 칩(액체·금속 위에서도 읽히게)
-            using var font = TextFont.Create(n.Label, 14, true, st.FontFamily);
+            var d = n.Owner;
+            using var font = TextFont.Create(n.Label, d.Text(14), true, st.FontFamily);
             var tw = font.MeasureText(n.Label);
-            var chip = SKRect.Create(n.Sym.MidX - tw / 2 - 8, n.Sym.MidY - font.Spacing / 2 - 2, tw + 16, font.Spacing + 4);
+            var chip = SKRect.Create(n.Sym.MidX - tw / 2 - d.Text(8), n.Sym.MidY - font.Spacing / 2 - d.Text(2), tw + d.Text(16), font.Spacing + d.Text(4));
             using var bg = new SKPaint { IsAntialias = true, Color = look.Rich ? new SKColor(0xCC0E151D) : new SKColor(0xDDFFFFFF) };
             canvas.DrawRoundRect(chip, chip.Height / 2, chip.Height / 2, bg);
             using var tp = new SKPaint { IsAntialias = true, Color = look.Rich ? new SKColor(0xFFDCE4EC) : new SKColor(0xFF2E3338) };
@@ -564,7 +565,7 @@ public sealed partial class Painter
             return;
         }
 
-        using (var font = TextFont.Create(n.Label, ProcessBuilder.LabelSize, true, st.FontFamily))
+        using (var font = TextFont.Create(n.Label, n.Owner.Text(ProcessBuilder.LabelSize), true, st.FontFamily))
         using (var tp = new SKPaint { IsAntialias = true, Color = text })
             canvas.DrawText(n.Label, n.LabelRect.MidX, n.LabelRect.Top - font.Metrics.Ascent, SKTextAlign.Center, font, tp);
     }
