@@ -93,7 +93,7 @@
           <DvPump name="P101B" label="P-101B" x="230" y="540"/>
           <DvExchanger name="E101" label="E-101" x="400" y="470"/>
           <DvTerminal name="STM1" text="LP STEAM" x="270" y="300"/>
-          <DvTerminal name="CND1" text="CONDENSATE" x="520" y="585"/>
+          <DvTerminal name="CND1" text="CONDENSATE" x="560" y="555"/>
           <DvInline name="FE101" kind="flowmeter" label="FE-101" x="540" y="470"/>
           <DvValve name="FV101" kind="control" open="true" label="FV-101" x="650" y="470"/>
           <DvVessel name="T201" kind="column" height="380" level="45" label="T-201" x="800" y="470"/>
@@ -103,9 +103,9 @@
           <DvExchanger name="E201" label="E-201" x="1000" y="110"/>
           <DvTerminal name="CWS1" text="CWS" x="860" y="40"/>
           <DvTerminal name="CWR1" text="CWR" x="1110" y="215"/>
-          <DvVessel name="D201" kind="drum" level="55" label="D-201" x="1260" y="120"/>
-          <DvValve name="PV201" kind="control" open="true" label="PV-201" x="1460" y="100"/>
-          <DvTerminal name="FLR2" text="TO FLARE" x="1610" y="100"/>
+          <DvVessel name="D201" kind="drum" level="55" label="D-201" x="1300" y="120"/>
+          <DvValve name="PV201" kind="control" open="true" label="PV-201" x="1490" y="100"/>
+          <DvTerminal name="FLR2" text="TO FLARE" x="1640" y="100"/>
           <DvPump name="P202A" running="true" label="P-202A" x="1290" y="270"/>
           <DvPump name="P202B" label="P-202B" x="1290" y="380"/>
           <DvInline name="FE202" kind="flowmeter" label="FE-202" x="1470" y="330">
@@ -116,17 +116,17 @@
           <DvTerminal name="DIST" text="DISTILLATE" x="1720" y="330"/>
 
           <DvExchanger name="E202" label="E-202" flip="h" x="640" y="810"/>
-          <DvValve name="TV201" kind="control" open="true" label="TV-201" x="500" y="725"/>
-          <DvTerminal name="STM2" text="LP STEAM" x="360" y="725"/>
+          <DvValve name="TV201" kind="control" open="true" label="TV-201" x="470" y="725"/>
+          <DvTerminal name="STM2" text="LP STEAM" x="330" y="725"/>
           <DvValve name="CV1" kind="check" label="CHK" x="690" y="915"/>
           <DvTerminal name="CND2" text="CONDENSATE" x="840" y="915"/>
           <DvPump name="P203A" running="true" label="P-203A" x="990" y="760"/>
           <DvPump name="P203B" label="P-203B" x="990" y="880"/>
           <DvExchanger name="E203" label="E-203" x="1160" y="820"/>
-          <DvTerminal name="CWS2" text="CWS" x="1060" y="690"/>
+          <DvTerminal name="CWS2" text="CWS" x="1020" y="700"/>
           <DvTerminal name="CWR2" text="CWR" x="1280" y="915"/>
-          <DvValve name="LV202" kind="control" open="true" label="LV-202" x="1320" y="820"/>
-          <DvTerminal name="BTM" text="BOTTOMS" x="1460" y="820"/>
+          <DvValve name="LV202" kind="control" open="true" label="LV-202" x="1370" y="820"/>
+          <DvTerminal name="BTM" text="BOTTOMS" x="1510" y="820"/>
 
           <DvLine from="FEED" to="P101A.in" medium="oil"/>
           <DvLine from="FEED" to="P101B.in"/>
@@ -180,7 +180,7 @@
           <DvInstrument name="FIC202" tag="FIC" number="202" on="FV202" panel="true" value="21.0 m³/h"/>
           <DvInstrument name="LT202" tag="LT" number="202" tap="T201.right@0.82"/>
           <DvInstrument name="LIC202" tag="LIC" number="202" on="LV202" panel="true" value="45 %"/>
-          <DvInstrument name="TI203" tag="TI" number="203" on="E203" value="42 °C"/>
+          <DvInstrument name="TI203" tag="TI" number="203" tap="E203.out" value="42 °C"/>
           <DvSignal from="FT101" to="FIC101"/>
           <DvSignal from="FIC101" to="FV101"/>
           <DvSignal from="PT201" to="PIC201"/>
