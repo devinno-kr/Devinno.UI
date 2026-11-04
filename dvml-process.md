@@ -133,7 +133,8 @@ AI MUST follow the order below exactly. Each step says what to decide.
 **Text size**
 
 - All text the diagram draws itself — equipment labels (13px), vessel name chips (14px), terminal text (12px), instrument `tag` (12px), `number` and `value` (11px), line and signal labels (11px) — and the minimum bubble size (40px) are given at `font-size` 14 (the default). `style="font-size:N"` on `DvProcess` scales all of them by N / 14 (units inside follow it). The sizes written elsewhere in this document are at 14.
-- `font-size` is not inherited in Devinno.UI, so only a value set on `DvProcess` itself changes this. Attached boxes (`DvAttach`) keep their own styles.
+- Attached boxes (`DvAttach`) grow with it too: each is laid out at its own size and drawn N / 14 times larger, contents included (buttons, values), and it takes that much room beside the equipment. So `font-size` on `DvProcess` is the one setting for every text in the diagram.
+- `font-size` is not inherited in Devinno.UI, so only a value set on `DvProcess` itself changes this.
 - Use it to keep text readable when the diagram is shrunk (procedure below), or when the screen is read from a distance.
 
 **Sizing procedure — do exactly this, in order**
@@ -144,7 +145,7 @@ AI MUST follow the order below exactly. Each step says what to decide.
 4. `Not enough space` → add `fit="shrink"` and render again.
 5. `Shrunk to N% … the smallest diagram text is now X px`:
    - X ≥ 10 → done.
-   - X < 10 → set `style="font-size:F"` on `DvProcess` with F = (current font-size, 14 if none) × 10 / X, rounded up, and render again. Repeat step 5 at most twice.
+   - X < 10 → set `style="font-size:F"` on `DvProcess` with F = (current font-size, 14 if none) × 11 / X, rounded up, and render again. (11, not 10: equipment symbols do not grow with the text, so the result lands a little below the aim.) Repeat step 5 at most twice.
    - Still X < 10, or F would go above 28 → the diagram has too much for this screen: split it over several screens or leave out minor equipment (inlet valves, etc.). Do not go on raising `font-size`.
 6. Judge by the warning, not by the picture: a shrunk diagram always looks complete in the PNG.
 
@@ -162,10 +163,10 @@ AI MUST follow the order below exactly. Each step says what to decide.
 </DvPageFrame>
 ```
 
-After steps 4–5 (the render said `Not enough space`, then `… text is now 7.9px` → F = 14 × 10 / 7.9 = 18):
+After steps 4–5 (the render said `Not enough space`, then `… text is now 7.9px` → F = 14 × 11 / 7.9 = 19.5 → 20):
 
 ```xml
-<DvProcess look="rich" grow="1" fit="shrink" style="height:0; font-size:18">
+<DvProcess look="rich" grow="1" fit="shrink" style="height:0; font-size:20">
   <DvVessel name="T1" level="40" label="T-101"/>
   <DvPump name="P1" running="true" label="P-101"/>
   <DvLine from="T1.bottom" to="P1.in"/>
@@ -1028,7 +1029,7 @@ Process diagram problems are reported through `System.Diagnostics.Trace`. Keep a
 | `'A.out'→'B.in': crosses other piping N time(s)` | Warning | Crossings (drawn with jumps) | Change the order of equipment in the same column with `row`. Arrange declaration order in flow order |
 | `'A.out'→'B.in': no free path, so it overlaps other piping` | Warning | Blocked, drawn overlapping | Enlarge the area, adjust `row`·`rank`, move attached boxes |
 | `Not enough space: needs W×H, area is W×H` | Warning | Overflows even with minimum spacing (the natural-size shape is kept and overflows) | Follow the sizing procedure in chapter 4 (step 4: `fit="shrink"`) |
-| `Shrunk to N% to fit (needs W×H, area is W×H); the smallest diagram text is now X px …` | Warning | `fit="shrink"`: the diagram still overflowed and was drawn smaller as a whole (chapter 4) | Sizing procedure in chapter 4, step 5 (X ≥ 10 is fine; otherwise raise `font-size`, or split the screen) |
+| `Shrunk to N% to fit (needs W×H, area is W×H); the smallest diagram text is now X px …` | Warning | `fit="shrink"`: the diagram still overflowed and was drawn smaller as a whole (chapter 4) | Sizing procedure in chapter 4, step 5 (X ≥ 10 is fine; otherwise `font-size` × 11 / X, or split the screen). X counts attached boxes too |
 | `'X' value text overlaps 'Y'` | Warning | An instrument `value` covers other equipment, a name label or another instrument (the value is not part of the layout, 7.3) | Shorten the value, or show it with `DvAttach` |
 | `The piping no longer fits the diagram's natural-size shape in this area, so it is laid out again …` | Warning | Automatic placement: the area is too small for the natural-size drawing to shrink into, so alignment and spacing were chosen again and the drawing looks different (chapter 4) | Enlarge the area if the shape must stay the same |
 | `DvLine '…': no equipment named 'X'` | Error | Name typo, or equipment hidden with `visible` | Check the name |
@@ -1190,7 +1191,7 @@ The recirculation pipe branching from `P1.out` routes back into the tank's side.
 - Do not invent attributes that set an instrument's position or side (`side`·`x`·`y`). They do not exist — the position is automatic, next to the `on` equipment.
 - Do not try to set pipe color via `style` or color values. Medium colors exist only as the 6 names of `medium`.
 - Do not add `fit="shrink"` before a render has shown `Not enough space`, and do not judge a shrunk diagram from the picture — use the `X px` in its warning.
-- Do not put `font-size` on a parent box for the diagram — it is not inherited; only `DvProcess`'s own `font-size` counts.
+- Do not put `font-size` on a parent box for the diagram, and do not enlarge attached boxes one by one — `DvProcess`'s own `font-size` scales every diagram text, attached boxes included.
 - Do not invent the not-yet-available features in chapter 18 as attributes.
 
 ---

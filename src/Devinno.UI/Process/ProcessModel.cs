@@ -1082,7 +1082,9 @@ internal static class ProcessBuilder
         var aboveTop = MathF.Min(body.Top, n.LabelRect.IsEmpty ? body.Top : n.LabelRect.Top);
         foreach (var (side, ab) in n.Attach)
         {
+            // 붙은 칸도 공정도 글자 배율만큼(font-size) — 자연 크기로 배치하고 Place 에서 그 배율로 그린다
             var (w, h) = LayoutEngine.MeasureBox(ab);
+            (w, h) = (d.Text(w), d.Text(h));
             var r = side switch
             {
                 PortSide.Left => SKRect.Create(sym.Left - AttachGap - w, sym.MidY - h / 2, w, h),
@@ -1735,8 +1737,31 @@ internal static class ProcessBuilder
             return;
         box.ContentScale = s;
         box.ContentOffset = new SKPoint(inner.Left + (inner.Width - c.Width * s) / 2 - c.Left * s, inner.Top + (inner.Height - c.Height * s) / 2 - c.Top * s);
-        d.Shortage = $"Shrunk to {s * 100:0}% to fit (needs {c.Width:0}×{c.Height:0}, area is {inner.Width:0}×{inner.Height:0}); the smallest diagram text is now {d.Text(SmallestText) * s:0.#}px. "
+        d.Shortage = $"Shrunk to {s * 100:0}% to fit (needs {c.Width:0}×{c.Height:0}, area is {inner.Width:0}×{inner.Height:0}); the smallest diagram text is now {SmallestDrawnText(d) * s:0.#}px. "
             + "If that is too small to read at the smallest size this screen is shown, raise DvProcess font-size, enlarge the area or split the diagram over several screens";
+    }
+
+    // 축소 전 가장 작은 글자 — 공정도가 그리는 글자와 붙은 칸(DvAttach) 안 글자(글자 배율 적용) 중 작은 것, 유닛 안쪽 포함
+    private static float SmallestDrawnText(ProcessDiagram d)
+    {
+        var smallest = d.Text(SmallestText);
+        foreach (var n in d.Nodes)
+        {
+            foreach (var (_, ab) in n.Attach)
+                smallest = MathF.Min(smallest, SmallestBoxText(ab) * d.TextScale);
+            if (n.Unit is { } u)
+                smallest = MathF.Min(smallest, SmallestDrawnText(u));
+        }
+
+        return smallest;
+
+        static float SmallestBoxText(LayoutBox b)
+        {
+            var m = b.ResolvedText is { Length: > 0 } ? b.Style.FontSize : float.PositiveInfinity;
+            foreach (var c in b.Children)
+                m = MathF.Min(m, SmallestBoxText(c));
+            return m;
+        }
     }
 
     private static void ArrangeAuto(ProcessDiagram d, string? family, SKRect inner)
@@ -1893,6 +1918,21 @@ internal static class ProcessBuilder
         Place(d);
     }
 
+    // 붙은 칸 — 자리(r, 글자 배율을 곱한 크기)의 왼쪽 위에 자연 크기로 배치하고, 상자는 그 자리, 안쪽은 글자 배율로 그린다
+    private static void PlaceAttach(ProcessDiagram d, LayoutBox ab, SKRect r, float ox, float oy)
+    {
+        var k = d.TextScale;
+        var (x, y) = (ox + r.Left, oy + r.Top);
+        LayoutEngine.ArrangeBox(ab, x, y, r.Width / k, r.Height / k);
+        ab.ContentScale = 1f;
+        ab.ContentOffset = default;
+        if (MathF.Abs(k - 1f) < 0.0001f)
+            return;
+        ab.Rect = SKRect.Create(x, y, r.Width, r.Height);
+        ab.ContentScale = k;
+        ab.ContentOffset = new SKPoint(x - x * k, y - y * k); // 왼쪽 위(x, y) 기준
+    }
+
     // 장비 상자·붙은 칸 상자의 화면 위치(유닛은 안쪽까지)
     private static void Place(ProcessDiagram d)
     {
@@ -1904,10 +1944,7 @@ internal static class ProcessBuilder
             var oy = d.Origin.Y + n.G.Y;
             n.Box.Rect = new SKRect(ox + n.Body.Left, oy + n.Body.Top, ox + n.Body.Right, oy + n.Body.Bottom);
             for (var i = 0; i < n.Attach.Count; i++)
-            {
-                var r = n.AttachRects[i];
-                LayoutEngine.ArrangeBox(n.Attach[i].Box, ox + r.Left, oy + r.Top, r.Width, r.Height);
-            }
+                PlaceAttach(d, n.Attach[i].Box, n.AttachRects[i], ox, oy);
 
             foreach (var inst in n.Instruments)
                 inst.Box.Rect = new SKRect(ox + inst.Rect.Left, oy + inst.Rect.Top, ox + inst.Rect.Right, oy + inst.Rect.Bottom);

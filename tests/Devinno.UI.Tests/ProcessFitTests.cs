@@ -203,4 +203,55 @@ public class ProcessFitTests
         var unit = d.Nodes.First(n => n.Unit is not null).Unit!;
         Assert.Equal(2f, unit.TextScale, 0.001);
     }
+
+    [Fact]
+    public void FontSize_AttachedBoxesGrowWithIt()
+    {
+        // 붙은 칸(DvAttach)도 글자 배율만큼 — 자리 크기 × 1.5, 안쪽은 1.5배로 그린다
+        var (s1, a) = ProcessTests.Start(ProcessTests.Blender, "direction=\"tb\"");
+        var (s2, b) = ProcessTests.Start(ProcessTests.Blender, "direction=\"tb\" style=\"font-size:21\"");
+        var ra = Node(a, "BL").AttachRects.Select(r => r.Size).ToArray();
+        var rb = Node(b, "BL").AttachRects.Select(r => r.Size).ToArray();
+        for (var i = 0; i < ra.Length; i++)
+        {
+            Assert.Equal(ra[i].Width * 1.5f, rb[i].Width, 0.05);
+            Assert.Equal(ra[i].Height * 1.5f, rb[i].Height, 0.05);
+        }
+
+        var box1 = Node(a, "BL").Attach[0].Box;
+        var box2 = Node(b, "BL").Attach[0].Box;
+        Assert.False(box1.HasContentTransform);
+        Assert.Equal(1.5f, box2.ContentScale, 0.001);
+        Assert.Equal(box1.Rect.Width * 1.5f, box2.Rect.Width, 0.05);
+    }
+
+    [Fact]
+    public void FontSize_And_Shrink_AttachedButtonStillClicks()
+    {
+        var vm = new ProcessTests.Vm();
+        var (s, d) = ProcessTests.Start(ProcessTests.Blender, "direction=\"tb\" fit=\"shrink\" style=\"font-size:21\"", 300, 380, vm: vm);
+        var process = ProcessBox(s);
+        Assert.True(process.ContentScale < 1f);
+        var attach = Node(d, "BL").Attach.Single(x => x.Side == PortSide.Left).Box;
+        var btn = Flatten(attach).First(x => x.Node.Tag == "DvButton");
+        // 버튼 → 붙은 칸(글자 배율) → 공정도(축소) 순서로 화면 좌표
+        var inAttach = new ScreenMap(attach.ContentScale, attach.ContentOffset).Map(new SKPoint(btn.Rect.MidX, btn.Rect.MidY));
+        var at = new ScreenMap(process.ContentScale, process.ContentOffset).Map(inAttach);
+        s.PointerDown(at);
+        s.PointerUp(at);
+        Assert.Equal(1, vm.Clicks);
+    }
+
+    [Fact]
+    public void Shrink_SmallestText_CountsAttachedBoxes()
+    {
+        // 붙은 칸 글자(caption 등)가 공정도 글자(11)보다 작으면 경고의 X 는 그 글자 기준
+        var body = ProcessTests.Blender.Replace("<DvButton variant=\"secondary\" text=\"Reset\" onclick=\"Hit\"/>",
+            "<DvLabel text=\"tiny\" style=\"font-size:8\"/>");
+        Assert.NotEqual(ProcessTests.Blender, body);
+        var (s, d) = ProcessTests.Start(body, "direction=\"tb\" fit=\"shrink\"", 200, 260);
+        var scale = ProcessBox(s).ContentScale;
+        Assert.True(scale < 1f);
+        Assert.Contains($"text is now {8 * scale:0.#}px", d.Shortage);
+    }
 }

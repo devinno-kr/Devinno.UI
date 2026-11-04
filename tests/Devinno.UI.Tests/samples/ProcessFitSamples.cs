@@ -36,6 +36,9 @@ public class ProcessFitSamples
         Render($"<DvProcess fit=\"shrink\" grow=\"1\" style=\"height:0; font-size:20; border: 1px solid token(border)\">{ProcessInstrumentTests.Loop}</DvProcess>", vm, 640, 340, "fit-shrink-font20.png");
         Render($"<DvProcess fit=\"shrink\" look=\"rich\" direction=\"tb\" grow=\"1\" style=\"height:0; border: 1px solid token(border)\">{ProcessUnitTests.PlantMarkup}</DvProcess>",
             new ProcessUnitTests.Vm(), 700, 520, "fit-shrink-units.png", ProcessUnitTests.CreateRegistry());
+        // 크기 결정 절차(dvml-process 4장) 그대로: 6.1px → 14 × 11 / 6.1 → font-size 26 → 10.3px(붙은 칸 버튼도 함께 커짐)
+        Render($"<DvProcess fit=\"shrink\" look=\"rich\" direction=\"tb\" grow=\"1\" style=\"height:0; font-size:26; border: 1px solid token(border)\">{ProcessUnitTests.PlantMarkup}</DvProcess>",
+            new ProcessUnitTests.Vm(), 700, 520, "fit-shrink-units-font26.png", ProcessUnitTests.CreateRegistry());
 
         // 좌표 배치 — base-size 없이 영역보다 넓은 좌표
         const string fixedMarkup = """
