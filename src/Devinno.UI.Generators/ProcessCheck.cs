@@ -103,6 +103,28 @@ internal static class ProcessCheck
         report(Diagnostics.ProcessUnknownValue, a, [$"<{e.Name.LocalName}> {attr}", a.Value, "px"]);
     }
 
+    // 신호선 색 — #색(3·4·6·8자리) 또는 token(이름). 토큰 이름은 앱 테마에 달렸으므로 형식만
+    private static void SignalColor(XElement signal, Action<DiagnosticDescriptor, XObject, object[]> report)
+    {
+        var a = signal.Attribute("color");
+        if (a is null || a.Value.Trim().Length == 0 || Dynamic(a.Value))
+            return;
+        var v = a.Value.Trim();
+        var hex = v.Length is 4 or 5 or 7 or 9 && v[0] == '#' && v.Skip(1).All(Uri.IsHexDigit);
+        if (!hex && !(v.StartsWith("token(", StringComparison.Ordinal) && v.EndsWith(")", StringComparison.Ordinal)))
+            report(Diagnostics.ProcessUnknownValue, a, ["<DvSignal> color", a.Value, "#RRGGBB·token(name)"]);
+    }
+
+    // 신호선 두께 — 0 보다 큰 수
+    private static void SignalWidth(XElement signal, Action<DiagnosticDescriptor, XObject, object[]> report)
+    {
+        var a = signal.Attribute("width");
+        if (a is null || a.Value.Trim().Length == 0 || Dynamic(a.Value))
+            return;
+        if (!double.TryParse(a.Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var w) || w <= 0)
+            report(Diagnostics.ProcessUnknownValue, a, ["<DvSignal> width", a.Value, "px > 0"]);
+    }
+
     // 배관 꺾임점 — "x,y x,y …"
     private static void Via(XElement line, Action<DiagnosticDescriptor, XObject, object[]> report)
     {
@@ -174,6 +196,9 @@ internal static class ProcessCheck
                 case "DvSignal":
                     SignalEnd(ch, "from", items, dynamicNames, report);
                     SignalEnd(ch, "to", items, dynamicNames, report);
+                    Value(ch, "kind", ["electric", "pneumatic"], report);
+                    SignalColor(ch, report);
+                    SignalWidth(ch, report);
                     break;
                 case "DvInstrument":
                 {

@@ -1,6 +1,8 @@
 using Devinno.UI;
 using Devinno.UI.Layout;
+using Devinno.UI.Painting;
 using Devinno.UI.Process;
+using Devinno.UI.Styling;
 using SkiaSharp;
 using Xunit;
 
@@ -288,6 +290,250 @@ public class ProcessInstrumentTests
         Assert.All(inner.Signals, s => Assert.True(s.G!.Points.Count >= 2));
         Assert.Empty(ProcessTests.Violations(inner));
         Assert.Empty(ProcessTests.Violations(d));
+    }
+
+    // ── 신호 종류(kind)·가독성 — 전기 = 점선, 공압 = 실선 + //, 색은 테마 글자색 ──
+
+    // 원점 그대로(여백 없음) — 신호선은 y=100 위 가로줄
+    private static string SignalScene(string attrs, string look = "plain") => $"""
+        <DvStack style="background:token(surface); padding:0">
+          <DvProcess placement="fixed" look="{look}" style="width:800; height:500">
+            <DvTerminal name="IN" text="IN" x="100" y="400"/>
+            <DvValve name="V1" open="true" x="400" y="392"/>
+            <DvTerminal name="OUT" text="OUT" x="700" y="400"/>
+            <DvLine from="IN" to="V1.in"/>
+            <DvLine from="V1.out" to="OUT"/>
+            <DvInstrument name="A" tag="TIC" number="1" on="V1" x="150" y="100"/>
+            <DvInstrument name="B" tag="TY" number="1" on="V1" x="650" y="100"/>
+            <DvSignal from="A" to="B" {attrs}/>
+          </DvProcess>
+        </DvStack>
+        """;
+
+    private static SKBitmap Draw(string markup, DvTheme theme) => SKBitmap.Decode(DvRenderer.RenderToPng(markup, null, 800, 500, theme));
+
+    private static double Luminance(SKColor c)
+    {
+        static double Lin(byte v) => v / 255.0 <= 0.03928 ? v / 255.0 / 12.92 : Math.Pow((v / 255.0 + 0.055) / 1.055, 2.4);
+        return 0.2126 * Lin(c.Red) + 0.7152 * Lin(c.Green) + 0.0722 * Lin(c.Blue);
+    }
+
+    private static double Contrast(SKColor a, SKColor b)
+    {
+        var (x, y) = (Luminance(a), Luminance(b));
+        return (Math.Max(x, y) + 0.05) / (Math.Min(x, y) + 0.05);
+    }
+
+    private static bool IsBackground(SKColor c, SKColor bg) =>
+        Math.Abs(c.Red - bg.Red) + Math.Abs(c.Green - bg.Green) + Math.Abs(c.Blue - bg.Blue) < 12;
+
+    [Theory]
+    [InlineData("plain", false)]
+    [InlineData("plain", true)]
+    [InlineData("rich", false)]
+    [InlineData("rich", true)]
+    public void Signal_StandsOutFromTheBackground_InEveryLookAndTheme(string look, bool dark)
+    {
+        foreach (var kind in new[] { "", "kind=\"pneumatic\"" })
+        {
+            using var bmp = Draw(SignalScene(kind, look), dark ? DvTheme.Dark : DvTheme.Light);
+            var bg = bmp.GetPixel(400, 60);
+            var best = Enumerable.Range(200, 400).SelectMany(x => new[] { bmp.GetPixel(x, 99), bmp.GetPixel(x, 100) }).Max(c => Contrast(c, bg));
+            Assert.True(best >= 3, $"{look} dark={dark} {kind}: 대비 {best:0.00}");
+        }
+    }
+
+    [Fact]
+    public void Kind_Electric_IsDashed_Pneumatic_IsSolidWithSlashes()
+    {
+        static (double Gaps, int Slash) Measure(SKBitmap b)
+        {
+            var bg = b.GetPixel(400, 60);
+            var xs = Enumerable.Range(200, 400).ToList();
+            var gaps = xs.Count(x => IsBackground(b.GetPixel(x, 99), bg) && IsBackground(b.GetPixel(x, 100), bg));
+            return ((double)gaps / xs.Count, xs.Count(x => !IsBackground(b.GetPixel(x, 95), bg) || !IsBackground(b.GetPixel(x, 104), bg)));
+        }
+
+        using var plain = Draw(SignalScene(""), DvTheme.Light);
+        using var electric = Draw(SignalScene("kind=\"electric\""), DvTheme.Light);
+        using var pneumatic = Draw(SignalScene("kind=\"pneumatic\""), DvTheme.Light);
+
+        Assert.Equal(plain.Bytes, electric.Bytes); // 기본 = 전기
+        var (dashGaps, dashSlash) = Measure(electric);
+        var (solidGaps, solidSlash) = Measure(pneumatic);
+        Assert.True(dashGaps > 0.2, $"점선 틈 {dashGaps:0.00}");
+        Assert.Equal(0, dashSlash);
+        Assert.True(solidGaps < 0.01, $"실선인데 틈 {solidGaps:0.00}");
+        Assert.True(solidSlash > 0, "빗금 없음");
+    }
+
+    [Fact]
+    public void Kind_DoesNotChangeTheRoute_OrAnyLayout()
+    {
+        var (_, a) = ProcessTests.Start(Loop);
+        var (_, b) = ProcessTests.Start(Loop.Replace("""<DvSignal from="FIC1" to="V1"/>""", """<DvSignal from="FIC1" to="V1" kind="pneumatic"/>"""));
+        Assert.DoesNotContain(a.Signals, s => s.Pneumatic);
+        Assert.True(b.Signals.Single(s => s.ToRef == "V1").Pneumatic);
+        Assert.False(b.Signals.Single(s => s.ToRef == "FIC1").Pneumatic);
+        Assert.Equal(a.Signals.Select(s => s.G!.Points.ToList()), b.Signals.Select(s => s.G!.Points.ToList()));
+        Assert.Equal(a.Nodes.Select(n => (n.G.X, n.G.Y)), b.Nodes.Select(n => (n.G.X, n.G.Y)));
+    }
+
+    [Fact]
+    public void Kind_Unknown_Warns_AndDrawsAsElectric()
+    {
+        var lines = new List<string>();
+        var listener = new DelegateListener(m => { if (m.Contains("kind='wireless'")) lock (lines) lines.Add(m); });
+        System.Diagnostics.Trace.Listeners.Add(listener);
+        try
+        {
+            using var bad = Draw(SignalScene("kind=\"wireless\""), DvTheme.Light);
+            using var plain = Draw(SignalScene(""), DvTheme.Light);
+            Assert.Equal(plain.Bytes, bad.Bytes);
+        }
+        finally
+        {
+            System.Diagnostics.Trace.Listeners.Remove(listener);
+        }
+
+        Assert.NotEmpty(lines);
+    }
+
+    private sealed class DelegateListener(Action<string> write) : System.Diagnostics.TraceListener
+    {
+        public override void Write(string? message) { }
+        public override void WriteLine(string? message) => write(message ?? "");
+        public override void TraceEvent(System.Diagnostics.TraceEventCache? c, string source, System.Diagnostics.TraceEventType type, int id, string? message) => write(message ?? "");
+    }
+
+    // ── 색·두께(color·width) — 안 쓰면 테마 글자색·기본 두께 ──
+
+    private static bool Near(SKColor c, SKColor want) =>
+        Math.Abs(c.Red - want.Red) + Math.Abs(c.Green - want.Green) + Math.Abs(c.Blue - want.Blue) < 40;
+
+    // 신호선 위(가로줄 y=100) 픽셀 중 그 색에 가까운 것이 있나
+    private static bool LineHasColor(SKBitmap b, SKColor want) =>
+        Enumerable.Range(200, 400).Any(x => Near(b.GetPixel(x, 99), want) || Near(b.GetPixel(x, 100), want));
+
+    // 실선 신호선의 굵기 — 가운데 세로로 배경이 아닌 픽셀 수(빗금 없는 자리)
+    private static int LineThickness(SKBitmap b, int x)
+    {
+        var bg = b.GetPixel(400, 60);
+        return Enumerable.Range(85, 30).Count(y => !IsBackground(b.GetPixel(x, y), bg));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("kind=\"pneumatic\"")]
+    public void Color_PaintsTheLine_InBothKinds(string kind)
+    {
+        // 굵게 — 가는 선은 안티앨리어싱으로 지정한 색 그대로 찍힌 픽셀이 없다
+        using var bmp = Draw(SignalScene($"{kind} color=\"#D32F2F\" width=\"4\""), DvTheme.Light);
+        Assert.True(LineHasColor(bmp, new SKColor(0xD3, 0x2F, 0x2F)));
+    }
+
+    [Fact]
+    public void Color_AcceptsAThemeToken_UnknownTokenIsMagenta()
+    {
+        using var token = Draw(SignalScene("color=\"token(text)\" width=\"4\""), DvTheme.Light);
+        Assert.False(LineHasColor(token, new SKColor(0xFF, 0x00, 0xFF)));
+
+        using var unknown = Draw(SignalScene("color=\"token(no-such-token)\" width=\"4\""), DvTheme.Light);
+        Assert.True(LineHasColor(unknown, new SKColor(0xFF, 0x00, 0xFF)));
+    }
+
+    [Fact]
+    public void Width_MakesTheLineThicker()
+    {
+        // 공압(실선)으로 재서 점선 틈의 영향을 뺀다. x=390 은 빗금 사이가 아니다 — 빗금 자리면 다른 x
+        using var thin = Draw(SignalScene("kind=\"pneumatic\""), DvTheme.Light);
+        using var thick = Draw(SignalScene("kind=\"pneumatic\" width=\"6\""), DvTheme.Light);
+        var marks = Painter.SignalMarks([new SKPoint(170, 100), new SKPoint(630, 100)]).Select(m => (int)m.At.X).ToList();
+        var x = Enumerable.Range(200, 400).First(v => marks.All(m => Math.Abs(v - m) > 16));
+        Assert.True(LineThickness(thick, x) >= LineThickness(thin, x) + 3, $"{LineThickness(thin, x)} → {LineThickness(thick, x)}");
+    }
+
+    [Fact]
+    public void ColorAndWidth_Omitted_AreTheDefaults_AndChangeNoLayout()
+    {
+        var (_, a) = ProcessTests.Start(Loop);
+        var (_, b) = ProcessTests.Start(Loop.Replace("""<DvSignal from="FIC1" to="V1"/>""", """<DvSignal from="FIC1" to="V1" color="#D32F2F" width="4"/>"""));
+        Assert.All(a.Signals, s => Assert.Null(s.Color));
+        Assert.All(a.Signals, s => Assert.Null(s.Width));
+        var set = b.Signals.Single(s => s.ToRef == "V1");
+        Assert.Equal(new SKColor(0xD3, 0x2F, 0x2F), set.Color);
+        Assert.Equal(4f, set.Width);
+        Assert.Equal(a.Signals.Select(s => s.G!.Points.ToList()), b.Signals.Select(s => s.G!.Points.ToList()));
+    }
+
+    [Theory]
+    [InlineData("color=\"crimson\"", "color='crimson'")]
+    [InlineData("width=\"0\"", "width='0'")]
+    [InlineData("width=\"thick\"", "width='thick'")]
+    public void BadColorOrWidth_Warns_AndUsesTheDefault(string attr, string marker)
+    {
+        var lines = new List<string>();
+        var listener = new DelegateListener(m => { if (m.Contains(marker)) lock (lines) lines.Add(m); });
+        System.Diagnostics.Trace.Listeners.Add(listener);
+        try
+        {
+            using var bad = Draw(SignalScene(attr), DvTheme.Light);
+            using var plain = Draw(SignalScene(""), DvTheme.Light);
+            Assert.Equal(plain.Bytes, bad.Bytes);
+        }
+        finally
+        {
+            System.Diagnostics.Trace.Listeners.Remove(listener);
+        }
+
+        Assert.NotEmpty(lines);
+    }
+
+    public sealed class SignalVm
+    {
+        public string Tone { get; set; } = "#D32F2F";
+        public string Thick { get; set; } = "4";
+    }
+
+    [Fact]
+    public void ColorAndWidth_CanBeBound()
+    {
+        var vm = new SignalVm();
+        var (s, d) = ProcessTests.Start(Loop.Replace("""<DvSignal from="FIC1" to="V1"/>""", """<DvSignal from="FIC1" to="V1" color="{Tone}" width="{Thick}"/>"""), vm: vm);
+        Assert.Equal(new SKColor(0xD3, 0x2F, 0x2F), d.Signals.Single(x => x.ToRef == "V1").Color);
+
+        vm.Tone = "#1976D2";
+        vm.Thick = "2";
+        s.Invalidate();
+        s.Layout(1100, 700);
+        var now = ProcessTests.Diagram(s).Signals.Single(x => x.ToRef == "V1");
+        Assert.Equal(new SKColor(0x19, 0x76, 0xD2), now.Color);
+        Assert.Equal(2f, now.Width);
+    }
+
+    [Fact]
+    public void Marks_LongSegmentGetsSeveral_NoneAtTheEnds()
+    {
+        var marks = Painter.SignalMarks([new SKPoint(0, 100), new SKPoint(400, 100)]);
+        Assert.True(marks.Count >= 4, $"{marks.Count}개");
+        Assert.All(marks, m =>
+        {
+            Assert.True(m.Flat);
+            Assert.Equal(100, m.At.Y, 0.01);
+            Assert.InRange(m.At.X, 12, 388);
+        });
+    }
+
+    [Fact]
+    public void Marks_FollowEachSegment_AndAShortLineStillGetsOne()
+    {
+        var corner = Painter.SignalMarks([new SKPoint(0, 0), new SKPoint(200, 0), new SKPoint(200, 200)]);
+        Assert.Contains(corner, m => m.Flat);
+        Assert.Contains(corner, m => !m.Flat);
+
+        var shortLine = Painter.SignalMarks([new SKPoint(0, 0), new SKPoint(20, 0)]);
+        var one = Assert.Single(shortLine);
+        Assert.Equal(10, one.At.X, 0.01);
     }
 
     [Fact]

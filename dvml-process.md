@@ -502,7 +502,7 @@ Draws field instruments (flow transmitter FT, level transmitter LT …) and cont
 
 ### 7.4 `DvSignal` — signal line
 
-Connects signals (electrical or control signals) between instruments, or between an instrument and equipment, with a **thin dashed line**.
+Connects signals between instruments, or between an instrument and equipment, with a **thin line**: dashed for an electric signal (default), solid with slashes (`//`) for a pneumatic one (ISA-5.1).
 
 ```xml
 <DvSignal from="FT1" to="FIC1"/>
@@ -512,9 +512,13 @@ Connects signals (electrical or control signals) between instruments, or between
 | Attribute | Description |
 |---|---|
 | `from` · `to` | Instrument name (`DvInstrument name`) or equipment name. Write **the name only, with no port** (writing it like `V1.in` is an error) |
+| `kind` | `electric` (default, dashed) · `pneumatic` (solid with `//`). Only the drawing differs: route, placement and flow are the same. Bindable. Another value → `electric` + Trace warning |
+| `color` | `#RRGGBB` or `token(name)`. Line, slashes and arrowhead. If omitted, the theme text color. Bindable. Not a color → default + Trace warning; an unknown token is magenta (as everywhere) |
+| `width` | Thickness in px, greater than 0. If omitted, 1.6. Dashes grow with it. Bindable. Otherwise → default + Trace warning |
 | `arrow` | `end` · `start` · `both` · `none` (default). Small arrowhead at that end |
 | `label` | Small text beside the `from` end (`SH`, `SL` …), on the side away from the line's first bend — or the other side if that spot touches a pipe, a signal line or a bubble. Bindable |
 
+- By default, signal lines and instrument connection lines (`tap`) take the **theme text color**, not the `look` palette, so they read on a light and on a dark background in both looks. Leave them that way unless a drawing or a site standard says otherwise: `color` is for that, and a fixed `#color` does not follow the theme, so check it on the dark theme too. `tap` connection lines have no `color`·`width`. Pipe color is `medium` only (12.2).
 - It is a different tag from pipes (`DvLine`). Signal lines are drawn **after all pipes are drawn**, and have **no effect** on equipment placement, flow judgment or flow animation. Adding or removing signal lines leaves equipment positions unchanged.
 - Lines are orthogonal (horizontal and vertical) and avoid equipment bodies, name tags, attached cells and other instruments. Where they cross pipes they pass straight through **without a jump** (ISA convention). Paths running right alongside a pipe are avoided.
 - Where the ends land: for an instrument, the center of the bubble face toward the counterpart (avoiding the face with the value text, the face toward its attached equipment, and faces already used by other signal lines); for a control valve (`DvValve kind="control"`), **the top of the actuator**; for other equipment, the center of the body's face toward the counterpart (the body includes accessories, so a pump with a `DvMotor` is reached at the motor).
@@ -1061,6 +1065,8 @@ Process diagram problems are reported through `System.Diagnostics.Trace`. Keep a
 | `'…' is not a face (top·bottom·left·right)` · `'@…' is not a position` · `position … is outside 0–1` | Error (last: Warning, clamped) | Face position typo in `DvLine` `from`/`to` or `tap` | `left@0.85` form |
 | `<DvInstrument> has no name` · `Name 'X' is used twice (equipment and instrument names must be unique …)` | Error | Instrument name missing, or clashing with equipment or another instrument | A unique `name` |
 | `DvSignal '…': no instrument or equipment named 'X'` | Error | Signal line end name typo, a terminal / unit port, or an instrument that is not drawn | Check instrument / equipment names |
+| `DvSignal '…' kind='…' is not a known kind` | Warning | `kind` typo (drawn as electric) | `electric`·`pneumatic` |
+| `DvSignal '…' color='…' is not a color` · `width='…' must be a number greater than 0` | Warning | Value typo (default drawn) | `#RRGGBB`·`token(name)`; a number greater than 0 |
 | `DvSignal '…': signal lines use names only, without ports` | Error | Port appended, as in `to="V1.in"` | Name only |
 | `Signal line '…': no free path, so it is drawn across equipment` | Warning | No route for the signal line | Attach the instrument to other equipment, or enlarge the area |
 | `<X name='N'>: placement="fixed" needs both x and y …; not drawn` | Error | Coordinate placement, but the equipment has no (or an invalid) `x`/`y`. Lines to it then also report "no equipment named" | Give both `x` and `y` |
@@ -1431,7 +1437,7 @@ Why: automatic placement puts equipment in columns along the flow. Every line th
 2. **Size**: set `base-size` to the size of the drawing image in px (e.g. `1600 900`), so the coordinates can be read straight off the image.
 3. **Coordinates**: for each piece of equipment, read the **center of its symbol** on the image (not of its label) and write it as `x`·`y`. Small offsets of up to 16px between connected ports are straightened automatically (20.4).
 4. **Nozzles**: where the drawing shows a line entering a vessel at a particular point, measure it along that face: position = (distance from the top of the face) ÷ (face height) — for the left and right faces from the top, for the top and bottom faces from the left. Write it as `T1.left@0.15`.
-5. **Instruments**: read each bubble's center off the image as `x`·`y` (20.5). A bubble joined to a pipe or nozzle by a solid line → `tap` at that pipe's port (`tap="CV1.in"`) or at that point of the face (`tap="T1.left@0.85"`). A bubble with only signal lines → `on` the equipment it belongs to (controllers: the valve they move). Signal arrows and switch actions on signal lines are `DvSignal arrow`·`label` (7.4); line numbers are `DvLine label`.
+5. **Instruments**: read each bubble's center off the image as `x`·`y` (20.5). A bubble joined to a pipe or nozzle by a solid line → `tap` at that pipe's port (`tap="CV1.in"`) or at that point of the face (`tap="T1.left@0.85"`). A bubble with only signal lines → `on` the equipment it belongs to (controllers: the valve they move). A line with slashes is `DvSignal kind="pneumatic"`; a dashed line is the default. A colored or heavier signal line is `color`·`width`. Signal arrows and switch actions on signal lines are `DvSignal arrow`·`label` (7.4); line numbers are `DvLine label`.
 6. **Media**: color the main lines with `medium` (water, steam, gas, oil …) on the first line of each run, as the drawing's legend says.
 7. **Compare**: render at the image size and look at it next to the drawing. Fix differences by moving equipment (`x`·`y`) — the library routes the pipes, so a pipe that runs differently from the drawing usually means a nozzle position or a piece of equipment is off. If the positions are right and the pipe still runs differently, write its route with `via` (20.6).
 8. Then add `fit="contain"` and follow the sizing procedure (chapter 4) for the real screen sizes.

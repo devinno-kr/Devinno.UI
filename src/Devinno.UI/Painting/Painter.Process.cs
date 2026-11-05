@@ -178,7 +178,7 @@ public sealed partial class Painter
             }
 
             // 계기 연결선(tap) — 배관·장비 밑에. 면 위 자리는 몸통 안쪽까지 그어 심볼 테두리 안쪽 여백(둥근 머리 등)에서도 끊겨 보이지 않게(장비 그림이 덮는다)
-            using (var tap = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.2f, Color = look.TagStroke })
+            using (var tap = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = SignalWidth, Color = SignalColor(text) })
             {
                 foreach (var inst in d.Instruments)
                 {
@@ -248,26 +248,84 @@ public sealed partial class Painter
         }
     }
 
-    // 신호선 — 가는 점선 직교(ISA-5.1 전기 신호), 점프 없음. 배관 위에 긋는다(엇갈리는 곳에서 끊겨 보이지 않게)
+    /// <summary>Stroke width of signal lines and instrument connection lines.</summary>
+    private const float SignalWidth = 1.6f;
+
+    // 신호선·연결선 색 — 테마 글자색(모양에 고정하면 plain + 어두운 테마, rich + 밝은 테마에서 배경에 묻힌다). 배관보다 한 단계 약하게
+    private static SKColor SignalColor(SKColor text) => text.WithAlpha(0xD9);
+
+    /// <summary>Where the slash pairs of a pneumatic signal go: along each straight segment, away from its ends, about every <see cref="SignalMarkPitch"/> px. A line too short for that still gets one, in the middle of its longest segment.</summary>
+    internal static List<(SKPoint At, bool Flat)> SignalMarks(IReadOnlyList<SKPoint> pts)
+    {
+        var marks = new List<(SKPoint At, bool Flat)>();
+        for (var k = 0; k + 1 < pts.Count; k++)
+        {
+            var (a, b) = (pts[k], pts[k + 1]);
+            var len = SKPoint.Distance(a, b);
+            var usable = len - 2 * SignalMarkMargin;
+            var count = (int)(usable / SignalMarkPitch);
+            if (usable >= SignalMarkMin && count == 0)
+                count = 1;
+            for (var i = 0; i < count; i++)
+            {
+                var t = (SignalMarkMargin + usable * (i + 0.5f) / count) / len;
+                marks.Add((new SKPoint(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t), MathF.Abs(a.Y - b.Y) < 0.5f));
+            }
+        }
+
+        if (marks.Count == 0 && pts.Count >= 2)
+        {
+            var k = Enumerable.Range(0, pts.Count - 1).MaxBy(i => SKPoint.Distance(pts[i], pts[i + 1]));
+            var (a, b) = (pts[k], pts[k + 1]);
+            marks.Add((new SKPoint((a.X + b.X) / 2, (a.Y + b.Y) / 2), MathF.Abs(a.Y - b.Y) < 0.5f));
+        }
+
+        return marks;
+    }
+
+    // 짧은 구간(양 끝 빼고 80 미만)에는 넣지 않는다 — 장비에 바짝 돌아가는 곳에서 이름표·배관과 엉겨 어수선해진다
+    private const float SignalMarkPitch = 60f, SignalMarkMargin = 12f, SignalMarkMin = 80f;
+
+    // 공압 표시 // — 선을 가로지르는 짧은 빗금 두 개. 기울기는 선 방향과 상관없이 같은 쪽
+    private static void DrawSignalMark(SKCanvas canvas, SKPoint at, bool flat, SKPaint paint)
+    {
+        const float gap = 3f, along = 3f, across = 6f;
+        foreach (var o in new[] { -gap, gap })
+        {
+            if (flat)
+                canvas.DrawLine(at.X + o - along, at.Y + across, at.X + o + along, at.Y - across, paint);
+            else
+                canvas.DrawLine(at.X - across, at.Y + o + along, at.X + across, at.Y + o - along, paint);
+        }
+    }
+
+    // 신호선 — 직교, 점프 없음. 전기(기본) = 점선, 공압 = 실선 + //(ISA-5.1). 배관 위에 긋는다(엇갈리는 곳에서 끊겨 보이지 않게)
     private static void PaintSignals(SKCanvas canvas, ProcessDiagram d, ProcessLook look, SKColor text, string? family)
     {
-        using var paint = new SKPaint
-        {
-            IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.2f, Color = look.Arrow,
-            PathEffect = SKPathEffect.CreateDash([5, 3], 0),
-        };
         foreach (var s in d.Signals)
         {
             if (s.G is not { Points.Count: >= 2 } g)
                 continue;
+            var color = s.Color ?? SignalColor(text);
+            var width = s.Width ?? SignalWidth;
+            var k = MathF.Max(1f, width / SignalWidth); // 굵을수록 점선도 길게 — 점으로 뭉치지 않게
+            using var dashed = new SKPaint
+            {
+                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = width, Color = color,
+                PathEffect = SKPathEffect.CreateDash([6 * k, 4 * k], 0),
+            };
+            using var solid = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = width, Color = color };
             using var path = new SKPath();
             path.MoveTo(g.Points[0]);
             for (var i = 1; i < g.Points.Count; i++)
                 path.LineTo(g.Points[i]);
-            canvas.DrawPath(path, paint);
+            canvas.DrawPath(path, s.Pneumatic ? solid : dashed);
+            if (s.Pneumatic)
+                foreach (var (at, flat) in SignalMarks(g.Points))
+                    DrawSignalMark(canvas, at, flat, solid);
 
             // 화살표(작게) · 라벨(from 끝 옆)
-            using var fill = new SKPaint { IsAntialias = true, Color = look.Arrow };
+            using var fill = new SKPaint { IsAntialias = true, Color = color };
             if (s.ArrowEnd)
                 DrawArrow(canvas, g.To, look, fill, 8, 4);
             if (s.ArrowStart)

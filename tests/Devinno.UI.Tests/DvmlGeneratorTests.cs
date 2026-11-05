@@ -382,6 +382,11 @@ public class DvmlGeneratorTests
             <DvLine from="V3.b" to="E1.in"/>
             <DvLine from="V3.c" to="OUT"/>
             <DvSignal from="FIC" to="V1"/>
+            <DvSignal from="FIC" to="P1" kind="pneumatic"/>
+            <DvSignal from="FIC" to="T1" kind="{K}"/>
+            <DvSignal from="FIC" to="E1" color="#D32F2F" width="2.5"/>
+            <DvSignal from="FIC" to="V3" color="token(text)" width="{W}"/>
+            <DvSignal from="P1" to="T1" color="{C}"/>
             <DvInstrument name="PI1" tag="PI" on="P1" x="120" y="40.5"/>
             <DvInstrument name="PI2" tag="PI" on="P1" x="{X}" y="{Y}"/>
             <DvLine from="V3.b" to="OUT" via="10,20 30,20"/>
@@ -421,6 +426,10 @@ public class DvmlGeneratorTests
     [InlineData("<DvPump name=\"P9\" kind=\"turbo\"/>", "DVML011", "turbo")]
     [InlineData("<DvPump name=\"P9\" rotate=\"45\"/>", "DVML011", "45")]
     [InlineData("<DvLine from=\"P1.out\" to=\"V1.in\" medium=\"lava\"/>", "DVML011", "lava")]
+    [InlineData("<DvSignal from=\"FIC\" to=\"V1\" kind=\"wireless\"/>", "DVML011", "wireless")]
+    [InlineData("<DvSignal from=\"FIC\" to=\"V1\" color=\"crimson\"/>", "DVML011", "crimson")]
+    [InlineData("<DvSignal from=\"FIC\" to=\"V1\" width=\"0\"/>", "DVML011", "width")]
+    [InlineData("<DvSignal from=\"FIC\" to=\"V1\" width=\"thick\"/>", "DVML011", "thick")]
     [InlineData("<DvLine from=\"P1.out\" to=\"V1.in\" via=\"10,20 30\"/>", "DVML011", "10,20 30")]
     [InlineData("<DvInstrument name=\"X\" tag=\"PI\" on=\"P1\" x=\"abc\"/>", "DVML011", "abc")]
     public void Process_Errors_Reported(string extra, string id, string text)

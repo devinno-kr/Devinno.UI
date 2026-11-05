@@ -232,6 +232,15 @@ internal sealed class ProcessSignal
     public bool ArrowEnd, ArrowStart;
     public string? Label;
     public bool Error;
+
+    /// <summary><c>kind="pneumatic"</c>: drawn as a solid line with pairs of slashes (ISA-5.1). Otherwise electric: a dashed line. Only the drawing differs; the route is the same.</summary>
+    public bool Pneumatic;
+
+    /// <summary><c>color</c> and <c>width</c>: the line's color and thickness. <see langword="null"/> = the default (theme text color, default thickness). Only the drawing differs.</summary>
+    public SKColor? Color;
+
+    /// <inheritdoc cref="Color"/>
+    public float? Width;
     internal GraphSignal? G;
 }
 
@@ -268,7 +277,8 @@ internal static class ProcessBuilder
     internal sealed record Builders(
         Func<ElementNode, object?, LayoutBox> Self,
         Func<ElementNode, object?, LayoutBox?> Child,
-        Func<ElementNode, object?, (ElementNode Unit, object? Scope)?> ExpandUnit);
+        Func<ElementNode, object?, (ElementNode Unit, object? Scope)?> ExpandUnit,
+        Func<string?, SKColor?> Color);
 
     /// <summary>
     /// Builds the model from the children of <c>DvProcess</c>. Creates a box for each piece of equipment and adds it as a child of <paramref name="box"/> (so presses and onclick work like a normal control),
@@ -392,6 +402,39 @@ internal static class ProcessBuilder
         return false;
     }
 
+    // 신호 종류(kind) — electric(기본) · pneumatic. 틀리면 알리고 전기로
+    private static bool SignalKind(ElementNode ch, object? vm)
+    {
+        var kind = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("kind"));
+        if (kind is not (null or "" or "electric" or "pneumatic"))
+            Warn($"DvSignal '{ch.Attributes.GetValueOrDefault("from")}'→'{ch.Attributes.GetValueOrDefault("to")}' kind='{kind}' is not a known kind (electric, pneumatic); drawing as electric");
+        return kind is "pneumatic";
+    }
+
+    // 신호선 색(color) — #색 또는 token(이름). 안 쓰면 기본(테마 글자색), 틀리면 알리고 기본으로
+    private static SKColor? SignalColor(ElementNode ch, object? vm, Builders b)
+    {
+        var text = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("color"));
+        if (string.IsNullOrWhiteSpace(text))
+            return null;
+        if (b.Color(text) is { } color)
+            return color;
+        Warn($"DvSignal '{ch.Attributes.GetValueOrDefault("from")}'→'{ch.Attributes.GetValueOrDefault("to")}' color='{text}' is not a color (#RRGGBB or token(name)); drawing with the default color");
+        return null;
+    }
+
+    // 신호선 두께(width) — 0 보다 큰 px. 안 쓰면 기본, 틀리면 알리고 기본으로
+    private static float? SignalWidth(ElementNode ch, object? vm)
+    {
+        var text = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("width"));
+        if (string.IsNullOrWhiteSpace(text))
+            return null;
+        if (TryCoord(text, out var width) && width > 0)
+            return width;
+        Warn($"DvSignal '{ch.Attributes.GetValueOrDefault("from")}'→'{ch.Attributes.GetValueOrDefault("to")}' width='{text}' must be a number greater than 0; drawing with the default width");
+        return null;
+    }
+
     // 계기 좌표(x·y) — 좌표 배치에서 둘 다 있을 때만. 아니면 알리고 장비 옆 자동 자리로(계기는 좌표가 없어도 그린다)
     private static SKPoint? InstrumentPos(ProcessDiagram d, ElementNode ch, object? vm)
     {
@@ -483,6 +526,9 @@ internal static class ProcessBuilder
                     ArrowEnd = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("arrow")) is "end" or "both",
                     ArrowStart = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("arrow")) is "start" or "both",
                     Label = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("label")),
+                    Pneumatic = SignalKind(ch, vm),
+                    Color = SignalColor(ch, vm, b),
+                    Width = SignalWidth(ch, vm),
                 });
                 continue;
             }
