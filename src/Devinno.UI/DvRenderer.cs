@@ -197,6 +197,8 @@ public static class DvRenderer
     {
         var info = new SKImageInfo(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
         using var sk = SKSurface.Create(info);
+        var partial = surface.PartialRender;
+        surface.PartialRender = false; // 새 비트맵엔 지난 그림이 없다 — 창이 켜 둔 부분 다시 그리기로는 움직이는 곳만 그려진다
         surface.SettleMotion = true; // 시각 0 으로만 그리므로 — 움직임을 끝내지 않으면 시작점(바뀌기 전 모습)에 멈춘 그림이 된다
         try
         {
@@ -205,6 +207,7 @@ public static class DvRenderer
         finally
         {
             surface.SettleMotion = false;
+            surface.PartialRender = partial;
         }
         sk.Canvas.Flush();
 

@@ -195,6 +195,40 @@ public class PartialRenderTests
     }
 
     [Fact]
+    public void RenderToFile_DrawsTheWholeScreen_WhilePartialRenderIsOn()
+    {
+        // 캡처는 새 비트맵이다 — 창이 켜 둔 부분 다시 그리기와 상관없이 화면 전체가 나온다(움직이는 게 없어도)
+        foreach (var markup in new[] { Screen, "<DvScreen><DvLabel text=\"정적\"/></DvScreen>" })
+        {
+            var s = Make(markup);
+            s.PartialRender = true;
+            using (var window = new SKBitmap(W, H))
+            using (var c = new SKCanvas(window))
+            {
+                s.RenderTo(c, W, H, 0);
+                s.RenderTo(c, W, H, 50);
+            }
+
+            var shot = Path.Combine(Path.GetTempPath(), $"dv-partial-{Guid.NewGuid():N}.png");
+            var whole = Path.Combine(Path.GetTempPath(), $"dv-partial-{Guid.NewGuid():N}.png");
+            try
+            {
+                DvRenderer.RenderToFile(s, W, H, shot);
+                Assert.True(s.PartialRender); // 창의 설정은 그대로
+                DvRenderer.RenderToFile(Make(markup), W, H, whole);
+                using var a = SKBitmap.Decode(shot);
+                using var b = SKBitmap.Decode(whole);
+                Assert.True(Same(a, b), $"전체 다시 그리기와 다름 — 다른 곳 {Diff(a, b)}");
+            }
+            finally
+            {
+                File.Delete(shot);
+                File.Delete(whole);
+            }
+        }
+    }
+
+    [Fact]
     public void Off_ByDefault()
     {
         var s = Make();
