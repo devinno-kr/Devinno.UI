@@ -162,6 +162,9 @@ internal sealed class ProcessLine
     public bool ArrowEnd, ArrowStart;
     public bool Error;
 
+    /// <summary><c>via</c> (coordinate placement only): the points the pipe runs through, in the same space as equipment coordinates. <see langword="null"/> = routed automatically.</summary>
+    public List<SKPoint>? Via;
+
     /// <summary><c>label</c>: small text beside the pipe (line number such as <c>01-100-PE-N</c>), at the middle of its longest segment.</summary>
     public string? Label;
 
@@ -194,6 +197,19 @@ internal sealed class ProcessInstrument
 
     /// <summary>Connection line ends, relative to the equipment's footprint: on the equipment (or pipe) and on the bubble.</summary>
     public SKPoint TapFrom, TapTo;
+
+    /// <summary><c>x</c>·<c>y</c> (coordinate placement only): the bubble center, in the same space as equipment coordinates. <see langword="null"/> = placed beside <see cref="Host"/>.</summary>
+    public SKPoint? Pos;
+
+    /// <summary>With <see cref="Pos"/>: the bubble's own layout node, so its position does not depend on the host's footprint (pipes and the overlap check treat it like equipment). It comes after the equipment in the graph.</summary>
+    public GraphNode? Free;
+
+    /// <summary>Index of <see cref="Free"/> among the free instruments of this diagram.</summary>
+    public int FreeIndex;
+
+    /// <summary>With <see cref="Pos"/>: the value text relative to the bubble's top-left.</summary>
+    public SKRect FreeValue;
+
     public LayoutBox Box = null!;
     public ProcessDiagram Owner = null!;
 
@@ -376,6 +392,55 @@ internal static class ProcessBuilder
         return false;
     }
 
+    // 계기 좌표(x·y) — 좌표 배치에서 둘 다 있을 때만. 아니면 알리고 장비 옆 자동 자리로(계기는 좌표가 없어도 그린다)
+    private static SKPoint? InstrumentPos(ProcessDiagram d, ElementNode ch, object? vm)
+    {
+        var xs = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("x"));
+        var ys = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("y"));
+        if (string.IsNullOrEmpty(xs) && string.IsNullOrEmpty(ys))
+            return null;
+        var name = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("name"));
+        if (!d.Fixed)
+        {
+            Warn($"<DvInstrument name='{name}'>: x/y are used only with <DvProcess placement=\"fixed\">; ignored");
+            return null;
+        }
+
+        if (TryCoord(xs, out var x) && TryCoord(ys, out var y))
+            return new SKPoint(x, y);
+        Warn($"<DvInstrument name='{name}'>: needs both x and y (bubble center, px); placed automatically");
+        return null;
+    }
+
+    // 배관 꺾임점(via) — "x,y x,y …". 좌표 배치 전용, 틀리면 알리고 자동 경로로
+    private static List<SKPoint>? Via(ProcessDiagram d, ElementNode ch, object? vm)
+    {
+        var text = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("via"));
+        if (string.IsNullOrWhiteSpace(text))
+            return null;
+        var where = $"DvLine '{ch.Attributes.GetValueOrDefault("from")}'→'{ch.Attributes.GetValueOrDefault("to")}' via='{text}'";
+        if (!d.Fixed)
+        {
+            Warn($"{where}: via is used only with <DvProcess placement=\"fixed\">; ignored");
+            return null;
+        }
+
+        var points = new List<SKPoint>();
+        foreach (var part in text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var xy = part.Split(',');
+            if (xy.Length != 2 || !TryCoord(xy[0], out var x) || !TryCoord(xy[1], out var y))
+            {
+                Warn($"{where}: write points as x,y separated by spaces (\"230,190 230,74\"); routed automatically");
+                return null;
+            }
+
+            points.Add(new SKPoint(x, y));
+        }
+
+        return points;
+    }
+
     private static bool Direction(ElementNode node, object? vm)
     {
         var dir = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("direction"));
@@ -404,6 +469,7 @@ internal static class ProcessBuilder
                         : null,
                     MediumSet = Medium(BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("medium"))),
                     Label = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("label")),
+                    Via = Via(d, ch, vm),
                 });
                 continue;
             }
@@ -436,6 +502,7 @@ internal static class ProcessBuilder
                     OnRef = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("on")),
                     TapRef = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("tap")),
                     Panel = BindingResolver.ResolveValueOrLiteral(vm, ch.Attributes.GetValueOrDefault("panel")) is { } pv && ProcessNode.Truthy(pv),
+                    Pos = InstrumentPos(d, ch, vm),
                 }, ch));
                 continue;
             }
@@ -1127,7 +1194,7 @@ internal static class ProcessBuilder
             n.AccessoryRects[i] = (Move(n.AccessoryRects[i].Rect), n.AccessoryRects[i].Def, n.AccessoryRects[i].Running);
         for (var i = 0; i < n.AttachRects.Count; i++)
             n.AttachRects[i] = Move(n.AttachRects[i]);
-        foreach (var inst in n.Instruments)
+        foreach (var inst in n.Instruments.Where(x => x.Pos is null))
         {
             inst.Rect = Move(inst.Rect);
             inst.ValueRect = Move(inst.ValueRect);
@@ -1147,7 +1214,7 @@ internal static class ProcessBuilder
         if (!n.LabelRect.IsEmpty)
             g.Extras.Add(n.LabelRect);
         g.Extras.AddRange(n.AttachRects);
-        foreach (var inst in n.Instruments)
+        foreach (var inst in n.Instruments.Where(x => x.Pos is null))
         {
             g.Extras.Add(inst.Rect);
             if (!inst.ValueRect.IsEmpty)
@@ -1236,42 +1303,135 @@ internal static class ProcessBuilder
         return MathF.Max(d.Text(BubbleMin), MathF.Max(tf.MeasureText(inst.Letters ?? ""), nf.MeasureText(inst.Number ?? "")) + d.Text(14));
     }
 
+    // 값 글자는 배치에 끼지 않는다 — 버블 자리·차지 영역은 지름만으로(값이 바뀌어도 아무것도 움직이지 않게)
+    private static (float D, SKSize V) InstrumentSize(ProcessDiagram d, ProcessInstrument inst, string? family)
+    {
+        var dia = BubbleSize(inst, family);
+        SKSize v = SKSize.Empty;
+        if (!string.IsNullOrEmpty(inst.Value))
+        {
+            using var vf = TextFont.Create(inst.Value, d.Text(ValueSize), false, family);
+            v = new SKSize(vf.MeasureText(inst.Value), vf.Spacing);
+        }
+
+        return (dia, v);
+    }
+
+    // 값 글자 = 버블의 valueSide 쪽(장비 반대쪽). below = 오른쪽이되 아래 절반(오른쪽으로 나가는 연결선을 가리지 않게)
+    private static SKRect ValueBox(ProcessDiagram d, SKRect bubble, SKSize v, PortSide valueSide, bool below)
+    {
+        var gap = d.Text(ValueGap);
+        return v.Width <= 0 ? SKRect.Empty : valueSide switch
+        {
+            PortSide.Left => SKRect.Create(bubble.Left - gap - v.Width, bubble.MidY - v.Height / 2, v.Width, v.Height),
+            PortSide.Top => SKRect.Create(bubble.MidX - v.Width / 2, bubble.Top - gap - v.Height, v.Width, v.Height),
+            PortSide.Bottom => SKRect.Create(bubble.MidX - v.Width / 2, bubble.Bottom + gap, v.Width, v.Height),
+            _ => SKRect.Create(bubble.Right + gap, below ? bubble.MidY + 2 : bubble.MidY - v.Height / 2, v.Width, v.Height),
+        };
+    }
+
+    // 좌표(x·y)를 받은 계기 — 장비 차지 영역에 넣지 않고 자기 배치 노드로(차지 영역이 배율 따라 변하면 기준 크기 모양 늘이기가 어긋난다).
+    // 몸통 = 버블이라 배관은 돌아가고 겹침은 장비처럼 알린다
+    private static void FreeGeometry(ProcessDiagram d, ProcessInstrument inst, string? family, float spacing)
+    {
+        var (dia, v) = InstrumentSize(d, inst, family);
+        var bubble = SKRect.Create(0, 0, dia, dia);
+        var pos = inst.Pos!.Value;
+        // 연결선이 버블 오른쪽으로 나갈 듯하면 값 글자는 아래 절반으로
+        var below = inst.TapPort is not null && inst.Host!.Pos is { } host && host.X > pos.X;
+        inst.ValueSide = PortSide.Right;
+        inst.FreeValue = ValueBox(d, bubble, v, PortSide.Right, below);
+        var g = new GraphNode { W = dia, H = dia, Body = bubble, Name = inst.Name, Pos = new SKPoint(pos.X * spacing, pos.Y * spacing) };
+        if (!inst.FreeValue.IsEmpty)
+            g.SignalExtras.Add(inst.FreeValue);
+        inst.Free = g;
+    }
+
+    // 좌표 계기의 결과 — 버블·값 글자·연결선을 장비 기준으로(그리기·점검은 다른 계기와 같은 값을 읽는다)
+    private static void PlaceFree(ProcessInstrument inst, ProcessNode host, GraphNode node, ProcessGraph g)
+    {
+        var (ox, oy) = (node.X - host.G.X, node.Y - host.G.Y);
+        var (w, h) = (node.Body.Width, node.Body.Height);
+        inst.Rect = SKRect.Create(ox, oy, w, h);
+        var v = inst.FreeValue;
+        inst.ValueRect = v.IsEmpty ? SKRect.Empty : SKRect.Create(ox + v.Left, oy + v.Top, v.Width, v.Height);
+        if (inst.TapPort is null)
+            return;
+
+        var c = new SKPoint(node.X + w / 2, node.Y + h / 2);
+        var tap = FreeTapPoint(inst, host, c, g);
+        var (dx, dy) = (tap.X - c.X, tap.Y - c.Y);
+        var len = MathF.Max(0.01f, MathF.Sqrt(dx * dx + dy * dy));
+        inst.TapFrom = new SKPoint(tap.X - host.G.X, tap.Y - host.G.Y);
+        inst.TapTo = new SKPoint(c.X + dx / len * w / 2 - host.G.X, c.Y + dy / len * h / 2 - host.G.Y);
+    }
+
+    /// <summary>A face position this close across the line out of the bubble is lined up with the bubble, so the connection line stays straight despite small offsets.</summary>
+    private const float TapAlignTolerance = 16f;
+
+    // 좌표 계기의 연결선이 닿는 점 — 면 위 자리는 그 점(조금 어긋나면 버블 줄로), 고정 포트는 그 포트의 배관에 수직으로 내린 가장 가까운 점
+    private static SKPoint FreeTapPoint(ProcessInstrument inst, ProcessNode host, SKPoint c, ProcessGraph g)
+    {
+        var sym = host.G.Abs(host.Sym);
+        if (IsFaceAt(inst.TapPort, out var side, out var at))
+        {
+            var p = OnFace(sym, side, at);
+            if (side is PortSide.Top or PortSide.Bottom)
+                return MathF.Abs(c.X - p.X) <= TapAlignTolerance && c.X >= sym.Left && c.X <= sym.Right ? new SKPoint(c.X, p.Y) : p;
+            return MathF.Abs(c.Y - p.Y) <= TapAlignTolerance && c.Y >= sym.Top && c.Y <= sym.Bottom ? new SKPoint(p.X, c.Y) : p;
+        }
+
+        var key = $"{host.Name}.{inst.TapPort}";
+        SKPoint? best = null;
+        var bestDist = float.PositiveInfinity;
+        foreach (var l in g.Lines.Where(l => l.From.Key == key || l.To.Key == key))
+        {
+            for (var k = 0; k + 1 < l.Points.Count; k++)
+            {
+                var (a, b) = (l.Points[k], l.Points[k + 1]);
+                var flat = MathF.Abs(a.Y - b.Y) < 0.01f;
+                var (cAlong, lo, hi) = flat ? (c.X, MathF.Min(a.X, b.X), MathF.Max(a.X, b.X)) : (c.Y, MathF.Min(a.Y, b.Y), MathF.Max(a.Y, b.Y));
+                if (cAlong < lo || cAlong > hi)
+                    continue;
+                var foot = flat ? new SKPoint(c.X, a.Y) : new SKPoint(a.X, c.Y);
+                var dist = flat ? MathF.Abs(c.Y - a.Y) : MathF.Abs(c.X - a.X);
+                if (dist < bestDist)
+                    (best, bestDist) = (foot, dist);
+            }
+        }
+
+        if (best is { } onPipe)
+            return onPipe;
+
+        // 버블이 배관 옆에 없다 — 포트에서 조금 나간 자리
+        var port = host.Def!.Port(inst.TapPort!)!;
+        var pd = Dir(MapSide(port.Side, host));
+        var pt = host.Transform.MapPoint(port.Side switch
+        {
+            PortSide.Left => new SKPoint(0, host.Def.Height * port.At),
+            PortSide.Right => new SKPoint(host.Def.Width, host.Def.Height * port.At),
+            PortSide.Top => new SKPoint(host.Def.Width * port.At, 0),
+            _ => new SKPoint(host.Def.Width * port.At, host.Def.Height),
+        });
+        return new SKPoint(host.G.X + pt.X + pd.X * TapAlong, host.G.Y + pt.Y + pd.Y * TapAlong);
+    }
+
     // 계기 — 선·붙은 칸·이름표가 가장 적은 면(같으면 위 → 오른쪽 → 아래 → 왼쪽)에, 그 면 바깥 것(이름표·붙은 칸) 너머로 나란히.
     // 버블 하나면 장비 가운데 줄에 맞춘다(조절 밸브 구동부로 가는 신호선이 곧게). 값 글자는 버블 오른쪽
     private static void PlaceInstruments(ProcessDiagram d, ProcessNode n, SKRect sym, SKRect body, PortSide? labelSide, List<SKRect> extras, string? family)
     {
-        // 값 글자는 배치에 끼지 않는다 — 버블 자리·차지 영역은 지름만으로(값이 바뀌어도 아무것도 움직이지 않게)
-        (float D, SKSize V) Size(ProcessInstrument inst)
-        {
-            var dia = BubbleSize(inst, family);
-            SKSize v = SKSize.Empty;
-            if (!string.IsNullOrEmpty(inst.Value))
-            {
-                using var vf = TextFont.Create(inst.Value, d.Text(ValueSize), false, family);
-                v = new SKSize(vf.MeasureText(inst.Value), vf.Spacing);
-            }
+        (float D, SKSize V) Size(ProcessInstrument inst) => InstrumentSize(d, inst, family);
 
-            return (dia, v);
-        }
-
-        // 값 글자 = 버블의 valueSide 쪽(장비 반대쪽). below = 오른쪽이되 아래 절반(오른쪽으로 나가는 연결선을 가리지 않게)
         void Put(ProcessInstrument inst, SKRect bubble, SKSize v, PortSide valueSide = PortSide.Right, bool below = false)
         {
             inst.Rect = bubble;
             inst.ValueSide = valueSide;
-            var gap = d.Text(ValueGap);
-            inst.ValueRect = v.Width <= 0 ? SKRect.Empty : valueSide switch
-            {
-                PortSide.Left => SKRect.Create(bubble.Left - gap - v.Width, bubble.MidY - v.Height / 2, v.Width, v.Height),
-                PortSide.Top => SKRect.Create(bubble.MidX - v.Width / 2, bubble.Top - gap - v.Height, v.Width, v.Height),
-                PortSide.Bottom => SKRect.Create(bubble.MidX - v.Width / 2, bubble.Bottom + gap, v.Width, v.Height),
-                _ => SKRect.Create(bubble.Right + gap, below ? bubble.MidY + 2 : bubble.MidY - v.Height / 2, v.Width, v.Height),
-            };
+            inst.ValueRect = ValueBox(d, bubble, v, valueSide, below);
             extras.Add(inst.Rect);
         }
 
         // 연결선(tap) 계기 — 면 위 자리면 그 면 바깥쪽으로, 고정 포트면 포트에서 배관으로 조금 나간 자리에서 배관 위(세로 배관이면 오른쪽)로 TapLength 띄운다
-        foreach (var inst in n.Instruments.Where(x => x.TapPort is not null))
+        foreach (var inst in n.Instruments.Where(x => x.TapPort is not null && x.Pos is null))
         {
             SKPoint tap, dir;
             if (IsFaceAt(inst.TapPort, out var tapSide, out var tapAt))
@@ -1301,7 +1461,7 @@ internal static class ProcessBuilder
             inst.TapTo = new SKPoint(c.X - dir.X * dia / 2, c.Y - dir.Y * dia / 2);
         }
 
-        var auto = n.Instruments.Where(x => x.TapPort is null).ToList();
+        var auto = n.Instruments.Where(x => x.TapPort is null && x.Pos is null).ToList();
         if (auto.Count == 0)
             return;
 
@@ -1517,6 +1677,13 @@ internal static class ProcessBuilder
         foreach (var n in d.Nodes)
             Geometry(d, n, family, shape is not null && !d.Fixed ? 1f : spacing, align); // 자동 배치 모양 줄이기: 크기는 자연 크기 그대로
 
+        var free = d.Instruments.Where(x => x.Host is not null && x.Pos is not null).ToList();
+        for (var k = 0; k < free.Count; k++)
+        {
+            free[k].FreeIndex = k;
+            FreeGeometry(d, free[k], family, spacing);
+        }
+
         var lines = new List<(ProcessLine l, int i)>();
         for (var i = 0; i < d.Lines.Count; i++)
         {
@@ -1539,8 +1706,13 @@ internal static class ProcessBuilder
 
         var graph = new ProcessGraph
         {
-            Nodes = d.Nodes.Select(n => n.G).ToList(),
-            Lines = lines.Select(x => new GraphLine { From = MakeEnd(d, x.l, x.i, true), To = MakeEnd(d, x.l, x.i, false) }).ToList(),
+            Nodes = d.Nodes.Select(n => n.G).Concat(free.Select(x => x.Free!)).ToList(),
+            Lines = lines.Select(x => new GraphLine
+            {
+                From = MakeEnd(d, x.l, x.i, true),
+                To = MakeEnd(d, x.l, x.i, false),
+                Via = x.l.Via?.Select(p => new SKPoint(p.X * spacing, p.Y * spacing)).ToList(),
+            }).ToList(),
             Signals = signals.Select(s => new GraphSignal { From = SignalEnd(d, s.FromRef), To = SignalEnd(d, s.ToRef) }).ToList(),
             Vertical = d.Vertical,
             Spacing = spacing,
@@ -1581,6 +1753,8 @@ internal static class ProcessBuilder
     {
         switch (SignalTarget(d, name))
         {
+            case ProcessInstrument { Free: { } free } inst:
+                return new GraphEnd { Node = d.Nodes.Count + inst.FreeIndex, Key = name, Pick = free.Body, PickBlocked = string.IsNullOrEmpty(inst.Value) ? null : inst.ValueSide };
             case ProcessInstrument inst:
                 return new GraphEnd { Node = d.Nodes.IndexOf(inst.Host!), Key = name, Pick = inst.Rect, PickBlocked = string.IsNullOrEmpty(inst.Value) ? null : inst.ValueSide };
             case ProcessNode n when HasActuator(n):
@@ -1605,6 +1779,9 @@ internal static class ProcessBuilder
 
         for (var k = 0; k < lines.Count; k++)
             lines[k].l.G = g.Lines[k];
+
+        foreach (var inst in d.Instruments.Where(x => x.Free is not null))
+            PlaceFree(inst, inst.Host!, g.Nodes[d.Nodes.Count + inst.FreeIndex], g);
     }
 
     private static string Signature(ProcessDiagram d, IEnumerable<ProcessLine> lines, IEnumerable<ProcessSignal> signals, float spacing)
@@ -1622,7 +1799,13 @@ internal static class ProcessBuilder
             foreach (var r in n.AttachRects)
                 sb.Append(r.ToString());
             foreach (var inst in n.Instruments)
-                sb.Append('I').Append(inst.Name).Append(inst.Rect.ToString()).Append(inst.ValueRect.ToString()).Append(inst.ValueSide); // 값 글자는 신호선 경로에만 영향
+            {
+                if (inst.Free is { } free) // 자리는 배치가 끝나야 정해진다 — 입력만
+                    sb.Append('X').Append(inst.Name).Append('@').Append(inst.Pos.ToString()).Append(free.Body.ToString()).Append(inst.FreeValue.ToString());
+                else
+                    sb.Append('I').Append(inst.Name).Append(inst.Rect.ToString()).Append(inst.ValueRect.ToString()).Append(inst.ValueSide); // 값 글자는 신호선 경로에만 영향
+            }
+
             sb.Append(n.Accessories.Count);
             if (n.Pos is { } pos)
                 sb.Append('@').Append(pos.X.ToString(CultureInfo.InvariantCulture)).Append(',').Append(pos.Y.ToString(CultureInfo.InvariantCulture));
@@ -1635,7 +1818,14 @@ internal static class ProcessBuilder
         }
 
         foreach (var l in lines)
-            sb.Append(l.FromRef).Append('>').Append(l.ToRef).Append(';');
+        {
+            sb.Append(l.FromRef).Append('>').Append(l.ToRef);
+            if (l.Via is { } via)
+                foreach (var p in via)
+                    sb.Append('~').Append(p.X.ToString(CultureInfo.InvariantCulture)).Append(',').Append(p.Y.ToString(CultureInfo.InvariantCulture));
+            sb.Append(';');
+        }
+
         foreach (var s in signals)
             sb.Append('S').Append(s.FromRef).Append('>').Append(s.ToRef).Append(';');
         return sb.ToString();

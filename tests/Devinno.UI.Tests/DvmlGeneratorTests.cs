@@ -382,6 +382,10 @@ public class DvmlGeneratorTests
             <DvLine from="V3.b" to="E1.in"/>
             <DvLine from="V3.c" to="OUT"/>
             <DvSignal from="FIC" to="V1"/>
+            <DvInstrument name="PI1" tag="PI" on="P1" x="120" y="40.5"/>
+            <DvInstrument name="PI2" tag="PI" on="P1" x="{X}" y="{Y}"/>
+            <DvLine from="V3.b" to="OUT" via="10,20 30,20"/>
+            <DvLine from="P1.out" to="V3.a" via="{Route}"/>
             """, "direction=\"lr\" look=\"rich\" align=\"auto\""));
     }
 
@@ -417,6 +421,8 @@ public class DvmlGeneratorTests
     [InlineData("<DvPump name=\"P9\" kind=\"turbo\"/>", "DVML011", "turbo")]
     [InlineData("<DvPump name=\"P9\" rotate=\"45\"/>", "DVML011", "45")]
     [InlineData("<DvLine from=\"P1.out\" to=\"V1.in\" medium=\"lava\"/>", "DVML011", "lava")]
+    [InlineData("<DvLine from=\"P1.out\" to=\"V1.in\" via=\"10,20 30\"/>", "DVML011", "10,20 30")]
+    [InlineData("<DvInstrument name=\"X\" tag=\"PI\" on=\"P1\" x=\"abc\"/>", "DVML011", "abc")]
     public void Process_Errors_Reported(string extra, string id, string text)
     {
         var d = Assert.Single(Process(Plant + extra));

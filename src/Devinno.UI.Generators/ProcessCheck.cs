@@ -91,6 +91,33 @@ internal static class ProcessCheck
         report(Diagnostics.ProcessUnknownValue, a, [$"<{e.Name.LocalName}> {attr}", a.Value, string.Join("·", allowed)]);
     }
 
+    private static bool IsNumber(string s) =>
+        double.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out _);
+
+    // 좌표 한 개(계기 x·y)
+    private static void Coordinate(XElement e, string attr, Action<DiagnosticDescriptor, XObject, object[]> report)
+    {
+        var a = e.Attribute(attr);
+        if (a is null || a.Value.Length == 0 || Dynamic(a.Value) || IsNumber(a.Value))
+            return;
+        report(Diagnostics.ProcessUnknownValue, a, [$"<{e.Name.LocalName}> {attr}", a.Value, "px"]);
+    }
+
+    // 배관 꺾임점 — "x,y x,y …"
+    private static void Via(XElement line, Action<DiagnosticDescriptor, XObject, object[]> report)
+    {
+        var a = line.Attribute("via");
+        if (a is null || a.Value.Trim().Length == 0 || Dynamic(a.Value))
+            return;
+        var ok = a.Value.Split([' '], StringSplitOptions.RemoveEmptyEntries).All(part =>
+        {
+            var xy = part.Split(',');
+            return xy.Length == 2 && IsNumber(xy[0]) && IsNumber(xy[1]);
+        });
+        if (!ok)
+            report(Diagnostics.ProcessUnknownValue, a, ["<DvLine> via", a.Value, "x,y x,y …"]);
+    }
+
     // 한 공정도(바깥 또는 유닛 안) — 이름은 이 범위 안에서만 보인다
     private static void Scope(XElement container, Action<DiagnosticDescriptor, XObject, object[]> report)
     {
@@ -142,6 +169,7 @@ internal static class ProcessCheck
                     LineEnd(ch, "from", items, dynamicNames, report);
                     LineEnd(ch, "to", items, dynamicNames, report);
                     Value(ch, "medium", Media, report);
+                    Via(ch, report);
                     break;
                 case "DvSignal":
                     SignalEnd(ch, "from", items, dynamicNames, report);
@@ -156,6 +184,8 @@ internal static class ProcessCheck
                         report(Diagnostics.ProcessNameNotFound, (XObject?)ch.Attribute("name") ?? ch, ["<DvInstrument>", "on", Diagnostics.Text("Proc_InstrumentOnRequired")]);
                     else if (!Dynamic(on.Value) && !dynamicNames && (!items.TryGetValue(on.Value, out var host) || host.Port || host.Instrument))
                         report(Diagnostics.ProcessNameNotFound, on, ["<DvInstrument on>", on.Value, Diagnostics.Text("Proc_InstrumentOnEquipment")]);
+                    Coordinate(ch, "x", report);
+                    Coordinate(ch, "y", report);
                     break;
                 }
             }

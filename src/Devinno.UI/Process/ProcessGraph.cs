@@ -95,6 +95,9 @@ internal sealed class GraphLine
     public required GraphEnd From, To;
     public int Net;
 
+    /// <summary>Coordinate placement: the points this pipe runs through (px, already scaled). <see langword="null"/> = routed automatically.</summary>
+    public List<SKPoint>? Via;
+
     /// <summary>Result: orthogonal polyline from port point to port point.</summary>
     public List<SKPoint> Points { get; } = new();
 
@@ -1098,6 +1101,20 @@ internal sealed class ProcessGraph
         }
         var specialX = new SortedSet<float>();
         var specialY = new SortedSet<float>();
+
+        // 지정한 경로 — 격자에 정확히 올려야 다른 배관이 피한다(Occupy 는 격자 줄로 찾는다)
+        foreach (var l in Lines.Where(l => l.Via is not null))
+        {
+            var pts = ViaPoints(l);
+            ReportVia(l, pts);
+            foreach (var p in pts)
+            {
+                specialX.Add(p.X);
+                specialY.Add(p.Y);
+                area = SKRect.Union(area, new SKRect(p.X - Lattice, p.Y - Lattice, p.X + Lattice, p.Y + Lattice));
+            }
+        }
+
         foreach (var e in Lines.SelectMany(l => new[] { l.From, l.To }).Concat(Signals.SelectMany(s => new[] { s.From, s.To })))
         {
             {
@@ -1118,9 +1135,9 @@ internal sealed class ProcessGraph
                 _blocked[V(i, j)] = Inside(_xs[i], _ys[j]);
         }
 
-        // 긋는 순서 — 먼저 그은 선이 좋은 길(안쪽 레일)을 차지한다. 묶음 선언 순서로 긋고, 겹침·교차가 남으면
-        // 거꾸로 한 번 더 그어 더 나은 쪽을 쓴다(같은 입력이면 같은 결과)
-        var order = Lines.Select((l, i) => (l, i)).OrderBy(x => x.l.Net).ThenBy(x => x.i).Select(x => x.l).ToList();
+        // 긋는 순서 — 먼저 그은 선이 좋은 길(안쪽 레일)을 차지한다. 지정한 경로를 먼저(나머지가 피하게), 그다음 묶음 선언 순서로 긋고,
+        // 겹침·교차가 남으면 나머지를 거꾸로 한 번 더 그어 더 나은 쪽을 쓴다(같은 입력이면 같은 결과)
+        var order = Lines.Select((l, i) => (l, i)).OrderBy(x => x.l.Via is null).ThenBy(x => x.l.Net).ThenBy(x => x.i).Select(x => x.l).ToList();
         RouteAll(order);
         FindHops();
         var score = Score();
@@ -1128,7 +1145,7 @@ internal sealed class ProcessGraph
         {
             var first = Snapshot();
             ResetRoutes();
-            order.Reverse();
+            order = order.Where(l => l.Via is not null).Concat(order.Where(l => l.Via is null).Reverse()).ToList();
             RouteAll(order);
             FindHops();
             if (Score() >= score)
@@ -1172,15 +1189,16 @@ internal sealed class ProcessGraph
                 var t = Center(other);
                 var len = MathF.Max(1, MathF.Sqrt((t.X - r.MidX) * (t.X - r.MidX) + (t.Y - r.MidY) * (t.Y - r.MidY)));
                 var (dx, dy) = ((t.X - r.MidX) / len, (t.Y - r.MidY) / len);
-                // 붙은 장비 쪽 면 — 상대가 그 장비 자신이 아니면 피한다(장비를 돌아 나가야 한다)
+                // 붙은 장비 쪽 면 — 상대가 그 장비 자신이 아니면 피한다(장비를 돌아 나가야 한다). 좌표 계기는 자기 노드라 붙은 면이 없다
                 var body = node.Abs(node.Body);
                 var (bx, by) = (body.MidX - r.MidX, body.MidY - r.MidY);
+                var attached = MathF.Abs(bx) + MathF.Abs(by) > 0.01f;
                 var hostSide = MathF.Abs(bx) >= MathF.Abs(by) ? (bx >= 0 ? PortSide.Right : PortSide.Left) : (by >= 0 ? PortSide.Bottom : PortSide.Top);
                 float Score(PortSide sd)
                 {
                     var o = Dir(sd);
                     var score = o.X * dx + o.Y * dy;
-                    if (sd == hostSide && other.Node != e.Node)
+                    if (attached && sd == hostSide && other.Node != e.Node)
                         score -= 2;
                     if (sd == e.PickBlocked)
                         score -= 10; // 값 글자 쪽
@@ -1403,7 +1421,13 @@ internal sealed class ProcessGraph
     {
         foreach (var line in order)
         {
-            if (!RouteLine(line, strict: true))
+            if (line.Via is not null)
+            {
+                line.Points.Clear();
+                line.Points.AddRange(ViaPoints(line));
+                line.Bends = Math.Max(0, line.Points.Count - 2);
+            }
+            else if (!RouteLine(line, strict: true))
             {
                 line.Forced = true;
                 if (!RouteLine(line, strict: false))
@@ -1583,6 +1607,81 @@ internal sealed class ProcessGraph
         AddPoint(line.Points, b.Point);
         line.Bends = Math.Max(0, line.Points.Count - 2);
         return true;
+    }
+
+    // 지정한 경로(via) — 포트 → 지정한 점들 → 포트. 포트 줄에서 SnapTolerance 이내로 어긋난 끝 점은(같은 줄의 이웃과 함께) 줄에 맞춘다:
+    // 포트 높이는 장비마다 달라 좌표로 정확히 적기 어렵다. 한 줄에 없는 점끼리는 ㄱ자로 잇는다
+    private static List<SKPoint> ViaPoints(GraphLine line)
+    {
+        var (a, b) = (line.From, line.To);
+        var via = line.Via!.ToList();
+
+        void Align(GraphEnd e, int start, int step)
+        {
+            var flat = e.Out is PortSide.Left or PortSide.Right; // 포트에서 가로로 나간다 → y 를 맞춘다
+            var from = flat ? via[start].Y : via[start].X;
+            var to = flat ? e.Point.Y : e.Point.X;
+            if (MathF.Abs(from - to) > SnapTolerance)
+                return;
+            for (var k = start; k >= 0 && k < via.Count && (flat ? via[k].Y : via[k].X) == from; k += step)
+                via[k] = flat ? new SKPoint(via[k].X, to) : new SKPoint(to, via[k].Y);
+        }
+
+        Align(a, 0, 1);
+        Align(b, via.Count - 1, -1);
+
+        // 그 점이 포트에서 곧게 나간 줄 위(포트 앞쪽)에 있나 — 그러면 곧은 끝을 따로 거치지 않는다
+        static bool OnPortLine(GraphEnd e, SKPoint p)
+        {
+            var d = Dir(e.Out);
+            var along = (p.X - e.Point.X) * d.X + (p.Y - e.Point.Y) * d.Y;
+            var across = MathF.Abs((p.X - e.Point.X) * d.Y) + MathF.Abs((p.Y - e.Point.Y) * d.X);
+            return along > 0 && across < 0.01f;
+        }
+
+        var pts = new List<SKPoint> { a.Point };
+        if (!OnPortLine(a, via[0]))
+            AddPoint(pts, a.StubEnd);
+        foreach (var p in via)
+        {
+            var cur = pts[^1];
+            if (MathF.Abs(cur.X - p.X) >= 0.01f && MathF.Abs(cur.Y - p.Y) >= 0.01f)
+            {
+                var flat = pts.Count >= 2 ? MathF.Abs(pts[^2].Y - cur.Y) < 0.01f : a.Out is PortSide.Left or PortSide.Right;
+                AddPoint(pts, flat ? new SKPoint(cur.X, p.Y) : new SKPoint(p.X, cur.Y)); // 지금 방향에서 바로 꺾는다
+            }
+
+            AddPoint(pts, p);
+        }
+
+        if (!OnPortLine(b, via[^1]))
+        {
+            var (cur, stub) = (pts[^1], b.StubEnd);
+            if (MathF.Abs(cur.X - stub.X) >= 0.01f && MathF.Abs(cur.Y - stub.Y) >= 0.01f)
+                AddPoint(pts, b.Out is PortSide.Left or PortSide.Right ? new SKPoint(cur.X, stub.Y) : new SKPoint(stub.X, cur.Y)); // 포트 줄을 따라 들어간다
+            AddPoint(pts, stub);
+        }
+
+        AddPoint(pts, b.Point);
+        return pts;
+    }
+
+    // 지정한 경로가 다른 장비·좌표 계기를 지나면 알린다(경로는 적은 대로 그린다)
+    private void ReportVia(GraphLine line, List<SKPoint> pts)
+    {
+        for (var i = 0; i < Nodes.Count; i++)
+        {
+            var node = Nodes[i];
+            if (node.Pinned || i == line.From.Node || i == line.To.Node)
+                continue;
+            var r = node.Abs(node.Body);
+            r.Inflate(-1, -1);
+            if (!pts.Zip(pts.Skip(1)).Any(s => MathF.Min(s.First.X, s.Second.X) < r.Right && MathF.Max(s.First.X, s.Second.X) > r.Left && MathF.Min(s.First.Y, s.Second.Y) < r.Bottom && MathF.Max(s.First.Y, s.Second.Y) > r.Top))
+                continue;
+            var message = $"'{Nodes[line.From.Node].Name}'→'{Nodes[line.To.Node].Name}': via runs through '{node.Name}'; change the via points or move it (x/y)";
+            if (!Warnings.Contains(message))
+                Warnings.Add(message);
+        }
     }
 
     private float H(int i, int j, int ti, int tj) => MathF.Abs(_xs[i] - _xs[ti]) + MathF.Abs(_ys[j] - _ys[tj]);
@@ -1809,7 +1908,7 @@ internal sealed class ProcessGraph
             dst.Net = src.Net;
             dst.Bends = src.Bends;
             dst.Forced = src.Forced;
-            dst.Points.AddRange(Map(src.Points, dst.From.Point, dst.To.Point));
+            dst.Points.AddRange(dst.Via is null ? Map(src.Points, dst.From.Point, dst.To.Point) : ViaPoints(dst)); // 지정한 경로는 좌표 그대로(비율로 늘이지 않는다)
         }
 
         for (var k = 0; k < Signals.Count; k++)

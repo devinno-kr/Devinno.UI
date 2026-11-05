@@ -377,6 +377,7 @@ The heights of `a`·`b` match `in`·`out` of `DvValve` (in line with ordinary va
 | `arrow` | `end` (arrow into the `to` port) · `start` (into the `from` port) · `both` · `none` (default) |
 | `flow` | The app decides this line's flow (true/false, bindable). If omitted, judged automatically (12.1) |
 | `medium` | Medium color `water`·`steam`·`air`·`gas`·`oil`·`acid` (12.2). Propagates in the flow direction. If omitted, gray |
+| `via` | Only with `placement="fixed"`: the points the pipe runs through, `"x,y x,y …"`, in the same space as equipment `x`·`y` (chapter 20.6). If omitted, routed automatically |
 | `label` | Small text beside the pipe — the line number from the drawing (`01-100-PE-N`). Placed at the middle of the pipe's longest straight segment (below it if horizontal, to the right if vertical), in the theme text color. Does not affect layout, so give the pipe a segment long enough for the text |
 
 **Rules**
@@ -387,7 +388,7 @@ The heights of `a`·`b` match `in`·`out` of `DvValve` (in line with ordinary va
   - Several lines on a fixed port (`bottom`, `in`, `out`, etc.) → they split from that single point.
   - Several lines on a face port (`top`, `side`) → lines in the same direction (incoming with incoming, outgoing with outgoing) merge into one nozzle and gather into a T or cross in front of the tank. Incoming and outgoing lines are not merged (merging would make the inlet and outlet look connected outside the tank). To show separate nozzles, split the connections between `top` and `side`.
 - Pipes of different groups never overlap, and when running in parallel they keep a minimum spacing (plain 12px, rich 16px). Where they must cross, a semicircular jump is drawn on one of them.
-- There are **no** attributes for bend points. Change the shape with the hints in chapter 11. (Equipment coordinates exist only in coordinate placement, chapter 20 — and even there, pipe routes are automatic.)
+- In automatic placement there are **no** attributes for bend points: change the shape with the hints in chapter 11. Bend points exist only in coordinate placement, as `via` (chapter 20.6), where the equipment does not move on its own.
 - `DvLine` has no `visible`·`class`·`style` (ignored).
 
 **Invalid connections**
@@ -487,12 +488,14 @@ Draws field instruments (flow transmitter FT, level transmitter LT …) and cont
 | `number` | — | Text in the bottom of the bubble (loop number: `101`, `1001` …) |
 | `panel` | — | If true, a horizontal line across the middle of the bubble (central control room instrument). Default false = no line (field instrument) |
 | `value` | — | Small text beside the bubble (current value, etc.), on the side away from the equipment (see below). Bindable |
+| `x` · `y` | — | Only with `placement="fixed"`: the bubble center, in the same space as equipment `x`·`y` (chapter 20.5). If omitted, the bubble goes beside its equipment as below. Bindable |
 | `onclick` · `style` · `visible` | — | Same as an ordinary box |
 
 - **Always write `on` (or `tap`).** Instruments do not take part in the pipe-flow placement (columns and layers); they go into the footprint of the `on` equipment and are placed on a free face beside it. So when the equipment moves, the instrument follows, and **pipes avoid the instrument.**
 - The face is chosen automatically: the face of that equipment with the fewest lines, attached cells and name tags; on a tie, top → right → bottom → left. It is placed 20px outside the name tag and attached cells on that face. Pumps, valves and inline equipment usually get the **top**; vessels using both top and bottom ports usually get the **side**.
 - If one piece of equipment has several instruments, they sit side by side on that face (horizontally on top/bottom, vertically on a side). A single instrument is aligned to the equipment's center line (a controller above a control valve → the signal line drops straight down to the actuator).
 - **A controller not attached to equipment** (control room instruments such as FIC, LIC) is attached with `on` to **the valve (or pump) that controller drives**. Like `FIC1` in the example above.
+- **With `x`·`y`** (coordinate placement only): the bubble stands exactly there, however far from its equipment; `on` or `tap` still names the equipment it belongs to. Chapter 20.5.
 - **With `tap`** (to match a drawing): a face position puts the bubble 24px outside that point, on the line out of the face (`left@…` → to the left, `top@…` → above). A fixed port taps the pipe 12px out of the port and puts the bubble 24px above it (to the right of a vertical pipe). Several instruments with `tap` on the same equipment are each placed at their own point; instruments without `tap` keep the automatic face. When the connection line leaves the bubble to the right, the `value` text goes below the line. Pipes do not cross the connection line (they go around the bubble rather than between it and its equipment).
 - The bubble diameter is 40px (wider if the text is long); text sizes are `tag` 12px, `number` 11px, `value` 11px (all × `font-size` / 14, chapter 4). The color follows `look` (same fill as terminals).
 - The `value` text is **not part of the layout**: it does not widen the equipment's footprint and pipes do not avoid it, so a changing value never moves equipment, bubbles or pipes (signal lines still go around it). It sits on the bubble's outer side: to the right of a single bubble or of a column on the right face, to the left of a column on the left face, and above (top face) or below (bottom face) when several bubbles share a row. Keep it short — a long value can cover neighboring equipment, and that is reported with the Trace warning `'X' value text overlaps 'Y'`. Large or long values are better shown with `DvAttach`.
@@ -1065,6 +1068,9 @@ Process diagram problems are reported through `System.Diagnostics.Trace`. Keep a
 | `Not enough space: equipment reaches W×H, area is W×H …` | Warning | Coordinate placement: equipment goes past the area | Use `base-size` + `fit="contain"` (20.3) |
 | `Equipment reaches W×H, outside base-size W×H …` | Warning | `fit="contain"`: equipment is placed beyond `base-size`, so it sticks out of the scaled picture | Move equipment (x/y) or enlarge `base-size` |
 | `The area is smaller than base-size and the piping no longer fits its base-size shape, so it is routed again …` | Warning | Coordinate placement: the pipes were routed again for this smaller area and may look different from base-size (20.3) | Set `base-size` to the smallest area the screen is shown at |
+| `<DvInstrument name='X'>: needs both x and y` | Warning | Only one of them, or not a number (placed beside its equipment) | Give both |
+| `DvLine '…' via='…': write points as x,y separated by spaces` · `via is used only with <DvProcess placement="fixed">` | Warning | `via` typo, or `via` in automatic placement (routed automatically) | `via="230,190 230,74"` in a `fixed` diagram |
+| `'A'→'B': via runs through 'X'` | Warning | The written route crosses a piece of equipment or a bubble (it is drawn as written) | Change the points, or move `X` |
 | `<X name='N'>: x/y are used only with <DvProcess placement="fixed">` · `row`/`rank`/`align … is not used with placement="fixed"` · `placement='…'` · `base-size …` | Warning | Attribute for the other placement mode, or a value typo | Remove it, or switch the mode |
 
 On screen, invalid connections show as a **red dashed line**, and equipment with a wrong port shows a **red border**.
@@ -1181,7 +1187,7 @@ The recirculation pipe branching from `P1.out` routes back into the tank's side.
 **NEVER**
 
 - Do not put `DvTank` (level widget), `DvLabel`·`DvButton` directly in a process diagram (→ `DvVessel`, `DvAttach`).
-- Do not invent bend-point attributes such as `points`·`via`. They do not exist. Do not put `x`·`y` on equipment in automatic placement (they work only with `placement="fixed"`, chapter 20), and do not mix: in a `fixed` diagram every piece of equipment needs `x`·`y`.
+- Do not invent bend-point attributes. The only one is `via`, and it works only with `placement="fixed"` (chapter 20.6). Do not put `x`·`y` on equipment in automatic placement (they work only with `placement="fixed"`, chapter 20), and do not mix: in a `fixed` diagram every piece of equipment needs `x`·`y`.
 - Do not overlay absolutely positioned boxes on the process diagram to draw values or lines (pipes cannot avoid them).
 - Do not invent junction equipment (`DvTee`, `DvJunction`, etc.). Connect several lines to the same port.
 - Do not use dots (`.`) in names.
@@ -1192,7 +1198,7 @@ The recirculation pipe branching from `P1.out` routes back into the tank's side.
 - Do not put a unit inside a unit. Do not bind screen VM properties directly inside a unit component template (only parameters are visible).
 - Do not compute flow per line as VM properties — leave it to the automatic decision, and bind `flow` only on lines with real measurements.
 - Do not draw signal lines as `DvLine` (pipes) (they interfere with flow and layout). Use `DvSignal`.
-- Do not invent attributes that set an instrument's position or side (`side`·`x`·`y`). They do not exist — the position is automatic, next to the `on` equipment.
+- Do not invent attributes that set an instrument's face (`side`). In automatic placement the position is automatic, next to the `on` equipment; only `placement="fixed"` takes `x`·`y` on instruments (chapter 20.5).
 - Do not try to set pipe color via `style` or color values. Medium colors exist only as the 6 names of `medium`.
 - In automatic placement, do not add `fit="shrink"` before a render has shown `Not enough space`. In coordinate placement, do not use `base-size` without `fit="contain"` to show a drawing. Do not judge a shrunk diagram from the picture — use the `X px` in its warning.
 - Do not put `font-size` on a parent box for the diagram, and do not enlarge attached boxes one by one — `DvProcess`'s own `font-size` scales every diagram text, attached boxes included.
@@ -1208,7 +1214,7 @@ Planned for later stages. Do not use them now (they are silently ignored or draw
 |---|---|
 | On hold | `exit` hint (specifying the outgoing direction) — when a real screen needs it |
 
-Other items not planned: specifying bend points directly, zooming in or enlarging (`fit="shrink"` only shrinks an overflowing diagram), pipe click events, dragging equipment.
+Other items not planned: specifying bend points in automatic placement, zooming in or enlarging (`fit="shrink"` only shrinks an overflowing diagram), pipe click events, dragging equipment.
 
 ---
 
@@ -1242,7 +1248,7 @@ Define a unit component once and use it like `<Blender name="BL1" U="{BL1}"/>` (
 Not possible. Put `<DvPort name="in2" side="left"/>` on the unit, connect `<DvLine from="in2" to="T.side"/>` inside, and connect with `to="BL1.in2"` from outside.
 
 **The screen must look exactly like the customer's drawing.**
-Use coordinate placement (chapter 20): `placement="fixed"`, and the symbol center of each piece of equipment from the drawing as `x`·`y`. Pipes are still routed for you.
+Use coordinate placement (chapter 20): `placement="fixed"`, and the symbol center of each piece of equipment from the drawing as `x`·`y`. Pipes are still routed for you. Give instrument bubbles `x`·`y` too (20.5), and write `via` on a pipe that runs differently from the drawing (20.6).
 
 **Can I give process diagram equipment an `id` to get it from code?**
 A code handle (`id`) for process diagram equipment is not a confirmed usage. Handle equipment state through VM binding and actions through `onclick`.
@@ -1254,7 +1260,7 @@ A code handle (`id`) for process diagram equipment is not a confirmed usage. Han
 Automatic placement (chapters 1–19) lays equipment out in flow order so that it looks right. It cannot reproduce a specific drawing. When a customer hands you a P&ID and the screen must look **the same as that drawing**, place the equipment by coordinates instead.
 
 - **One mode per diagram.** A `DvProcess` is either automatic or coordinate-placed. In a `fixed` diagram, every piece of equipment (and every unit) has `x`·`y`; there is no mixing.
-- **Only equipment gets coordinates.** Pipes, branches, merges, crossing jumps, instruments and signal lines are still placed and routed automatically, exactly as in chapters 6–10. Moving a piece of equipment moves its pipes with it.
+- **Equipment gets coordinates; instruments and pipes can.** Pipes, branches, merges, crossing jumps and signal lines are still routed automatically, exactly as in chapters 6–10, and moving a piece of equipment moves its pipes with it. Instruments without coordinates sit beside their equipment. To match a drawing further, give a bubble `x`·`y` (20.5) and a pipe `via` (20.6).
 - **Text and equipment are never scaled.** Only the distances between equipment change with the area (20.3).
 
 ### 20.1 At a glance
@@ -1287,8 +1293,8 @@ Automatic placement (chapters 1–19) lays equipment out in flow order so that i
 | `base-size="W H"` | `DvProcess` | Optional. The size the coordinates were taken at (20.3) |
 
 - The origin `(0, 0)` is the top-left of the inside of the `DvProcess` (inside its `padding`).
-- Labels, `DvAttach` boxes, instruments and accessories go where they would in automatic placement, relative to their equipment.
-- To match the drawing's nozzles and instruments, connect at face positions (`to="T1.left@0.15"`, 6.1) and give instruments `tap` (`tap="T1.left@0.85"`, `tap="CV1.in"`, 7.3) — the bubble then stands where the drawing has it, joined by a connection line.
+- Labels, `DvAttach` boxes and accessories go where they would in automatic placement, relative to their equipment. So do instruments, unless they have their own `x`·`y` (20.5).
+- To match the drawing's nozzles and instruments, connect at face positions (`to="T1.left@0.15"`, 6.1), give instruments that are joined to the process `tap` (`tap="T1.left@0.85"`, `tap="CV1.in"`, 7.3) and give bubbles `x`·`y` (20.5).
 - `direction` still matters (terminal shape, which faces are "front" and "back"). `row`, `rank` and `align` are ignored with a Trace warning.
 - Equipment without both `x` and `y` is **not drawn** (Trace error).
 - A unit (`DvUnit` or a unit component) is placed as a whole: `x`·`y` is the center of the unit's frame. The inside of a unit is always placed automatically (`placement` on a unit is ignored with a warning).
@@ -1309,7 +1315,62 @@ Equipment has its ports at different heights — a valve's inlet is below its sy
 
 So the coordinates you wrote may move by up to 16px. A larger offset is kept as written and gets a bend.
 
-### 20.5 Checking
+### 20.5 Instrument coordinates
+
+In a `fixed` diagram, `x`·`y` on a `DvInstrument` is the bubble center, in the same space as equipment coordinates (scaled the same way by `base-size`). Read it straight off the drawing. Instruments without `x`·`y` stay beside their equipment, in the same diagram.
+
+```xml
+<DvProcess placement="fixed" base-size="900 420" fit="contain">
+  <DvTerminal name="IN" text="FEED" x="80" y="300"/>
+  <DvInline name="FE1" kind="orifice" x="240" y="300"/>
+  <DvValve name="FV1" kind="control" open="true" label="FV-1" x="420" y="292"/>
+  <DvTerminal name="OUT" text="PRODUCT" x="780" y="300"/>
+  <DvLine from="IN" to="FE1.in"/>
+  <DvLine from="FE1.out" to="FV1.in"/>
+  <DvLine from="FV1.out" to="OUT"/>
+
+  <!-- joined to the process: tap + x·y. Only a signal line: on + x·y -->
+  <DvInstrument name="FT1" tag="FT" number="101" tap="FE1.top@0.5" x="240" y="150"/>
+  <DvInstrument name="TT1" tag="TT" number="102" tap="FV1.out" x="600" y="200"/>
+  <DvInstrument name="FIC1" tag="FIC" number="101" on="FV1" panel="true" x="420" y="60"/>
+  <DvSignal from="FT1" to="FIC1"/>
+  <DvSignal from="FIC1" to="FV1"/>
+</DvProcess>
+```
+
+- **`on` or `tap` is still required.** It names the equipment the instrument belongs to; the bubble does not have to be near it.
+- The bubble does not widen its equipment's footprint and does not move when small offsets (20.4) move the equipment.
+- Pipes go around the bubble, and a bubble over a piece of equipment or another free bubble gets the `overlap` warning. Signal lines end on the bubble as usual.
+- **With `tap`** the connection line runs from the tap point to the bubble:
+  - a fixed port (`tap="FV1.out"`) means **that pipe**: the line drops straight onto the nearest part of it, anywhere along its length. If no part of the pipe is level with the bubble, it goes to the spot 12px out of the port, and may be diagonal.
+  - a face position (`tap="FE1.top@0.5"`) is that point, slid along the face to line up with the bubble when it is within 16px, so small offsets stay straight. Further off, the line is diagonal: line the bubble up with the point.
+  - Other pipes avoid the bubble but not this line, so keep it clear of them.
+- Only one of `x`·`y`, or a value that is not a number: Trace warning, and the bubble goes beside its equipment. In automatic placement and inside units they are ignored with a Trace warning.
+
+### 20.6 Pipe bend points (`via`)
+
+`via` on a `DvLine` is the route, written as the points it runs through, in the same space as equipment coordinates:
+
+```xml
+<DvProcess placement="fixed" base-size="800 360" fit="contain">
+  <DvTerminal name="IN" text="FEED" x="80" y="300"/>
+  <DvPump name="P1" running="true" label="P-101" x="420" y="100"/>
+  <DvTerminal name="OUT" text="OUT" x="700" y="88"/>
+  <DvLine from="IN" to="P1.in" via="230,300 230,104"/>
+  <DvLine from="P1.out" to="OUT"/>
+</DvProcess>
+```
+
+- The pipe leaves its port, runs through the points in order and enters the other port. Everything else about it (color, flow, arrows, `label`, jumps at crossings) is the same as a routed pipe. Other pipes are routed after it and keep clear of it.
+- **Use it only where the automatic route differs from the drawing.** Moving equipment does not move the points, so a `via` has to be rewritten when its equipment moves.
+- You do not need the exact height of a port: a first or last point within 16px of the port's line is moved onto it, together with its neighbors on the same line.
+- Points that are not on one line are joined by a right-angle elbow, so `via="230,200"` alone is a valid route. Pipes stay orthogonal.
+- It is drawn as written: a route through equipment or a bubble is reported (`via runs through`), and overlapping another pipe is not prevented.
+- With `base-size`, the points scale like the coordinates. Bindable (`via="{Route}"`).
+- A typo, or `via` in automatic placement or inside a unit, gives a Trace warning and the pipe is routed automatically.
+- Signal lines (`DvSignal`) have no `via`.
+
+### 20.7 Checking
 
 Render to PNG and check Trace, as in chapter 15. In coordinate placement, also watch for:
 
@@ -1360,7 +1421,7 @@ Why: automatic placement puts equipment in columns along the flow. Every line th
 5. **Terminals cannot be turned.** A terminal that receives a line (a product, `TO FLARE`, `CWR`) is drawn as an arrow pointing right and takes its line on its left side; one that supplies a line takes it on its right. Put receiving terminals **downstream (to the right)** of the equipment that feeds them, and supplying terminals upstream (to the left). A receiving terminal placed to the left makes the pipe loop around it.
 6. **Equipment that must flow right → left** (a reflux valve returning to the column, a reboiler fed from its right side) is mirrored with `flip="h"`: its `in` is then on the right.
 7. **Several lines on one face of a vessel**: do not connect them all to `side` (lines on the same face in the same direction merge into one nozzle). Give each its own point with a face position (6.1): feed `T201.left@0.5`, reflux return `T201.right@0.3`, reboiler return `T201.left@0.9`, relief `T201.right@0.1`.
-8. **Instruments**: `on` (`on="FV101"`) puts the bubble on the least busy face automatically — fine for valves and flowmeters. Where the position means something (a level transmitter at the column base, a temperature at a tray, a temperature on a product line), use `tap`: `tap="T201.right@0.82"`, `tap="E203.out"`. A bubble placed with `on` can also sit in front of a nozzle and block a pipe (a `no free path` on that equipment's line) — `tap` fixes that too.
+8. **Instruments**: `on` (`on="FV101"`) puts the bubble on the least busy face automatically — fine for valves and flowmeters. Where the position means something (a level transmitter at the column base, a temperature at a tray, a temperature on a product line), use `tap`: `tap="T201.right@0.82"`, `tap="E203.out"`. A bubble placed with `on` can also sit in front of a nozzle and block a pipe (a `no free path` on that equipment's line) — `tap` fixes that too. When it has to be somewhere else entirely, give it `x`·`y` (20.5).
 9. **Value text** (`value`) is not part of the layout. Keep it short (`96.4 °C`, `38.2 m³/h`) and watch for `'X' value text overlaps …`.
 10. **Render at the base size** and fix every `overlap` and `no free path` by moving equipment. One or two crossings are normal on a real P&ID and are drawn with jumps. Then follow the sizing procedure (chapter 4) at the smallest real screen size.
 
@@ -1370,9 +1431,9 @@ Why: automatic placement puts equipment in columns along the flow. Every line th
 2. **Size**: set `base-size` to the size of the drawing image in px (e.g. `1600 900`), so the coordinates can be read straight off the image.
 3. **Coordinates**: for each piece of equipment, read the **center of its symbol** on the image (not of its label) and write it as `x`·`y`. Small offsets of up to 16px between connected ports are straightened automatically (20.4).
 4. **Nozzles**: where the drawing shows a line entering a vessel at a particular point, measure it along that face: position = (distance from the top of the face) ÷ (face height) — for the left and right faces from the top, for the top and bottom faces from the left. Write it as `T1.left@0.15`.
-5. **Instruments**: a bubble drawn next to a piece of equipment → `on`; a bubble drawn on a pipe or at a nozzle with a short connecting line → `tap` at that pipe's port (`tap="CV1.in"`) or at that point of the face (`tap="T1.left@0.85"`). Controllers drawn on their own go `on` the valve they move. Signal arrows and switch actions on signal lines are `DvSignal arrow`·`label` (7.4); line numbers are `DvLine label`.
+5. **Instruments**: read each bubble's center off the image as `x`·`y` (20.5). A bubble joined to a pipe or nozzle by a solid line → `tap` at that pipe's port (`tap="CV1.in"`) or at that point of the face (`tap="T1.left@0.85"`). A bubble with only signal lines → `on` the equipment it belongs to (controllers: the valve they move). Signal arrows and switch actions on signal lines are `DvSignal arrow`·`label` (7.4); line numbers are `DvLine label`.
 6. **Media**: color the main lines with `medium` (water, steam, gas, oil …) on the first line of each run, as the drawing's legend says.
-7. **Compare**: render at the image size and look at it next to the drawing. Fix differences by moving equipment (`x`·`y`) — the library routes the pipes, so a pipe that runs differently from the drawing usually means a nozzle position or a piece of equipment is off.
+7. **Compare**: render at the image size and look at it next to the drawing. Fix differences by moving equipment (`x`·`y`) — the library routes the pipes, so a pipe that runs differently from the drawing usually means a nozzle position or a piece of equipment is off. If the positions are right and the pipe still runs differently, write its route with `via` (20.6).
 8. Then add `fit="contain"` and follow the sizing procedure (chapter 4) for the real screen sizes.
 
 ### 21.5 Full example — distillation unit
