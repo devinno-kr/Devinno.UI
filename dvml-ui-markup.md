@@ -542,7 +542,7 @@ Example: `style="background: token(surface); border: 1 token(border); padding: t
 |---|---|
 | `text="{Temperature}"` | Value of a public VM property (one-way) |
 | `text="{Motor.Speed}"` | Dot path. Empty if an intermediate value is null |
-| `{Data.X}` | Same as `{X}` (the `Data.` prefix is ignored) |
+| `{Data.X}` | Same as `{X}` (the `Data.` prefix is ignored). So a VM property named `Data` cannot be reached this way: `{Data.X}` reads `X` on the VM itself and shows nothing, with no warning. Give such a property another name |
 | `text="펌프 #{No} — {State}"` | Interpolation inside text. Braces are always interpreted as bindings |
 | `style="color:{StatusColor}"` | Interpolation inside a style |
 | `style="color: token(tone-{Tone}-fg)"` | The binding is resolved first, then the token |
@@ -2642,8 +2642,8 @@ registry.Register(cycloneMarkup);   // 컴포넌트와 같은 ComponentRegistry.
 |---|---|
 | `vessel` | Body (no state) |
 | `state` | Body, running/stopped color according to the `when` parameter |
-| `accent` | Flanges·supports·handles (dark color) |
-| `detail` · `dash` | Stroke only (dashed) |
+| `accent` | Flanges·supports·handles (mid gray; a metal gradient in `rich`) |
+| `detail` · `dash` | Stroke only (`dash` is dashed) |
 | `screen` · `glass` | Display window · glass |
 
 - Ports are written as **side + position**, not coordinates. This is because the side determines which direction the pipe must leave in.
