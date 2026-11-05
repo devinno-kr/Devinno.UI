@@ -635,7 +635,9 @@ public sealed partial class Painter
         {
             IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = look.StrokeW, Color = look.Stroke, StrokeJoin = SKStrokeJoin.Round,
         };
-        var anyStateOn = def.Layers.Any(l => l.Class == "state" && on(l.When));
+        using var onBody = new SKPath(); // 켜진 state 층 — 어두운 몸통 위의 detail 만 밝게 그린다
+        foreach (var l in def.Layers.Where(l => l.Class == "state" && on(l.When)))
+            onBody.AddPath(l.Path);
         var liquidDone = false;
         foreach (var l in def.Layers)
         {
@@ -675,12 +677,27 @@ public sealed partial class Painter
                     using (var dp = new SKPaint
                            {
                                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.6f, StrokeCap = SKStrokeCap.Round,
-                               Color = anyStateOn ? look.DetailOn : look.Detail,
+                               Color = look.Detail,
                            })
                     {
                         if (l.Class == "dash")
                             dp.PathEffect = SKPathEffect.CreateDash([4, 3], 0);
+                        if (onBody.IsEmpty)
+                        {
+                            canvas.DrawPath(l.Path, dp);
+                            break;
+                        }
+
+                        // 몸통 밖(밸브 줄기 등)은 바탕 위라 평소 색이어야 보인다
+                        canvas.Save();
+                        canvas.ClipPath(onBody, SKClipOperation.Difference, true);
                         canvas.DrawPath(l.Path, dp);
+                        canvas.Restore();
+                        canvas.Save();
+                        canvas.ClipPath(onBody, SKClipOperation.Intersect, true);
+                        dp.Color = look.DetailOn;
+                        canvas.DrawPath(l.Path, dp);
+                        canvas.Restore();
                     }
 
                     break;

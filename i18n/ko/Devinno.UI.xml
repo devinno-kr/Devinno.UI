@@ -3972,12 +3972,12 @@
             <summary>자동 배치: 축마다 장비 묶음이 퍼진 정도 — 위치 배율 한 단위마다 크기가 바뀌는 양.</summary>
         </member><member name="F:Devinno.UI.Process.ProcessGraph.SignalStub" en-hash="b3c0d9a917c10b3a">
             <summary>신호선 끝에서 곧게 나오는 길이 — 짧게(계기 줄과 장비 사이 <c>20px</c> 안에서 곧게 잇게).</summary>
-        </member><member name="T:Devinno.UI.Process.ProcessMedium" en-hash="1b38f27f8c6ae68a">
+        </member><member name="T:Devinno.UI.Process.ProcessMedium" en-hash="33f74b9817febb01">
             <summary>
             매체 색 — <c>DvLine medium</c> 을 흐름 방향으로 퍼뜨린다(색만, 배치·흐름 판단과 무관).
             </summary>
             <remarks>
-            <para>매체를 적은 선부터 <c>from</c> → <c>to</c> 방향으로, 장비 안은 심볼의 모든 <c>DvPass</c>(상태와 상관없이 — 닫힌 밸브 뒤도 같은 배관이다),
+            <para>매체를 적은 선부터 같은 포트에서 나가는 다른 선으로, 그리고 <c>from</c> → <c>to</c> 방향으로, 장비 안은 심볼의 모든 <c>DvPass</c>(상태와 상관없이 — 닫힌 밸브 뒤도 같은 배관이다),
             유닛 포트는 안팎으로 이어진다. 용기(안에서 섞임)·끝점·자기 매체를 적은 선에서 멈춘다.</para>
             <para>매체를 적은 선 순서(선언 순)대로 퍼뜨리고, 이미 다른 매체가 닿은 선은 그대로 둔다(먼저 적은 것) + Trace 경고.</para>
             </remarks>

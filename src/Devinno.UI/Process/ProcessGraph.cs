@@ -215,7 +215,7 @@ internal sealed class ProcessGraph
                 return;
             }
 
-            // 영역이 기준 크기보다 작아 그 모양이 안 들어간다(구간이 거꾸로 접힘) — 이 크기에서 길을 다시 찾는다
+            // 이 크기엔 기준 모양이 안 들어간다(구간이 접히거나 장비를 지남 — 장비 크기는 그대로라 영역이 커져도 생긴다) — 길을 다시 찾는다
             foreach (var l in Lines)
             {
                 l.Points.Clear();
@@ -225,7 +225,7 @@ internal sealed class ProcessGraph
 
             foreach (var s in Signals)
                 s.Points.Clear();
-            Warnings.Add("The area is smaller than base-size and the piping no longer fits its base-size shape, so it is routed again and may look different; set base-size to the smallest area the screen is shown at");
+            Warnings.Add("The piping no longer fits its base-size shape at this size, so it is routed again and may look different; use fit=\"contain\" to keep the shape at every size");
         }
 
         AssignNets();
@@ -1172,6 +1172,7 @@ internal sealed class ProcessGraph
         }
 
         var used = new HashSet<(int, SKRect, PortSide)>();
+        var obstacles = SignalObstacles();
         foreach (var s in Signals)
         {
             foreach (var (e, other) in new[] { (s.From, s.To), (s.To, s.From) })
@@ -1204,28 +1205,30 @@ internal sealed class ProcessGraph
                         score -= 10; // 값 글자 쪽
                     if (used.Contains((e.Node, pick, sd)))
                         score -= 4; // 같은 면을 다른 신호선이 이미 쓴다
+                    var at = FaceCenter(r, sd);
+                    if (InObstacle(obstacles, at.X + o.X * SignalStub, at.Y + o.Y * SignalStub) || InObstacle(obstacles, at.X + o.X * SignalStub / 2, at.Y + o.Y * SignalStub / 2))
+                        score -= 20; // 앞이 막혔다 — 이 면으로 나가면 길이 없다
                     return score;
                 }
 
                 e.Out = new[] { PortSide.Top, PortSide.Right, PortSide.Bottom, PortSide.Left }.OrderByDescending(Score).First();
                 used.Add((e.Node, pick, e.Out));
-                e.Point = e.Out switch
-                {
-                    PortSide.Left => new SKPoint(r.Left, r.MidY),
-                    PortSide.Right => new SKPoint(r.Right, r.MidY),
-                    PortSide.Top => new SKPoint(r.MidX, r.Top),
-                    _ => new SKPoint(r.MidX, r.Bottom),
-                };
+                e.Point = FaceCenter(r, e.Out);
             }
         }
     }
 
-    // 배관을 다 그은 뒤 — 몸통·이름표·붙은 칸·계기를 피하고, 배관·다른 신호선과 나란히 겹치는 길은 비싸게. 엇갈림은 그대로
-    private void RouteSignals()
+    private static SKPoint FaceCenter(SKRect r, PortSide side) => side switch
     {
-        if (Signals.Count == 0)
-            return;
+        PortSide.Left => new SKPoint(r.Left, r.MidY),
+        PortSide.Right => new SKPoint(r.Right, r.MidY),
+        PortSide.Top => new SKPoint(r.MidX, r.Top),
+        _ => new SKPoint(r.MidX, r.Bottom),
+    };
 
+    // 신호선이 피하는 것 — 몸통·이름표·붙은 칸·계기
+    private List<SKRect> SignalObstacles()
+    {
         var obstacles = new List<SKRect>();
         foreach (var node in Nodes)
         {
@@ -1242,8 +1245,20 @@ internal sealed class ProcessGraph
             }
         }
 
-        bool Inside(float x, float y) =>
-            obstacles.Any(r => x > r.Left + 0.01f && x < r.Right - 0.01f && y > r.Top + 0.01f && y < r.Bottom - 0.01f);
+        return obstacles;
+    }
+
+    private static bool InObstacle(List<SKRect> obstacles, float x, float y) =>
+        obstacles.Any(r => x > r.Left + 0.01f && x < r.Right - 0.01f && y > r.Top + 0.01f && y < r.Bottom - 0.01f);
+
+    // 배관을 다 그은 뒤 — 몸통·이름표·붙은 칸·계기를 피하고, 배관·다른 신호선과 나란히 겹치는 길은 비싸게. 엇갈림은 그대로
+    private void RouteSignals()
+    {
+        if (Signals.Count == 0)
+            return;
+
+        var obstacles = SignalObstacles();
+        bool Inside(float x, float y) => InObstacle(obstacles, x, y);
 
         var blocked = new bool[_xs.Length * _ys.Length];
         for (var i = 0; i < _xs.Length; i++)

@@ -6,7 +6,7 @@ namespace Devinno.UI.Process;
 /// Medium color: propagates <c>DvLine medium</c> along the flow direction (color only; unrelated to layout or flow decisions).
 /// </summary>
 /// <remarks>
-/// <para>Starting from the lines that specify a medium, it spreads in the <c>from</c> → <c>to</c> direction; inside equipment it goes through every <c>DvPass</c> of the symbol (regardless of state, since the pipe behind a closed valve is still the same pipe),
+/// <para>Starting from the lines that specify a medium, it spreads to the other lines leaving the same port and in the <c>from</c> → <c>to</c> direction; inside equipment it goes through every <c>DvPass</c> of the symbol (regardless of state, since the pipe behind a closed valve is still the same pipe),
 /// and unit ports connect inside and outside. It stops at vessels (where contents mix), end points, and lines that specify their own medium.</para>
 /// <para>Media are propagated in the order of the lines that specify them (declaration order); a line already reached by another medium keeps it (the earlier one wins) and a Trace warning is written.</para>
 /// </remarks>
@@ -19,6 +19,7 @@ internal static class ProcessMedium
     {
         var next = new Dictionary<string, List<string>>(StringComparer.Ordinal); // 포트 → 포트(장비 안·유닛 포트)
         var outgoing = new Dictionary<string, List<ProcessLine>>(StringComparer.Ordinal); // 포트 → 그 포트에서 나가는 선
+        var starts = new Dictionary<ProcessLine, string>();
         var ends = new Dictionary<ProcessLine, string>();
         var seeds = new List<ProcessLine>();
 
@@ -63,6 +64,7 @@ internal static class ProcessMedium
                 if (l.Error || l.FromNode < 0 || l.ToNode < 0 || l.FromPort is null || l.ToPort is null)
                     continue;
                 Add(outgoing, K(d, l.FromNode, l.FromPort), l);
+                starts[l] = K(d, l.FromNode, l.FromPort);
                 ends[l] = K(d, l.ToNode, l.ToPort);
                 if (l.MediumSet is not null)
                     seeds.Add(l);
@@ -77,21 +79,11 @@ internal static class ProcessMedium
             seed.Medium = medium;
             var seen = new HashSet<string>(StringComparer.Ordinal);
             var queue = new Queue<string>();
-            if (ends.TryGetValue(seed, out var first))
-                queue.Enqueue(first);
-            while (queue.Count > 0)
-            {
-                var port = queue.Dequeue();
-                if (!seen.Add(port))
-                    continue;
-                if (next.TryGetValue(port, out var inside))
-                {
-                    foreach (var p in inside)
-                        queue.Enqueue(p);
-                }
 
+            void PaintLeaving(string port)
+            {
                 if (!outgoing.TryGetValue(port, out var lines))
-                    continue;
+                    return;
                 foreach (var l in lines)
                 {
                     if (l.MediumSet is not null)
@@ -107,6 +99,24 @@ internal static class ProcessMedium
                     if (ends.TryGetValue(l, out var e))
                         queue.Enqueue(e);
                 }
+            }
+
+            if (starts.TryGetValue(seed, out var start))
+                PaintLeaving(start); // 같은 포트에서 갈라지는 가지에도 같은 것이 흐른다
+            if (ends.TryGetValue(seed, out var first))
+                queue.Enqueue(first);
+            while (queue.Count > 0)
+            {
+                var port = queue.Dequeue();
+                if (!seen.Add(port))
+                    continue;
+                if (next.TryGetValue(port, out var inside))
+                {
+                    foreach (var p in inside)
+                        queue.Enqueue(p);
+                }
+
+                PaintLeaving(port);
             }
         }
     }

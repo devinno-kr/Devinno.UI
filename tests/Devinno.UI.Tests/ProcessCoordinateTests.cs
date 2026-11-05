@@ -312,7 +312,7 @@ public class ProcessCoordinateTests
         List<string> w = [];
         ProcessDiagram d = null!;
         w = Warnings("base-size", () => d = Render(Drawing, "placement=\"fixed\" base-size=\"718 410\" style=\"width:620;height:360\"", 2000, 1200));
-        Assert.Contains(w, m => m.Contains("smaller than base-size"));
+        Assert.Contains(w, m => m.Contains("no longer fits its base-size shape") && !m.Contains("smaller"));
         foreach (var l in d.Lines)
             Turns(l.G!.Points); // 비스듬한 구간 없음
         Turns(d.Signals.Single().G!.Points);

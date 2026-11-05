@@ -1189,6 +1189,8 @@ internal static class ProcessBuilder
             var lw = f.MeasureText(n.Label);
             var lh = f.Spacing;
             var used = n.Unit is not null ? new HashSet<PortSide> { PortSide.Bottom } : UsedSides(d, n); // 유닛 이름은 제목(위)
+            if (HasActuator(n))
+                used.Add(MapSide(PortSide.Top, n)); // 구동부 쪽은 신호선이 닿는 자리
             var side = new[] { PortSide.Bottom, PortSide.Top, PortSide.Right, PortSide.Left }.FirstOrDefault(sd => !used.Contains(sd), PortSide.Bottom);
             labelSide = side;
             n.LabelRect = side switch
@@ -1927,8 +1929,8 @@ internal static class ProcessBuilder
                 continue;
             if (gl.Forced)
                 Warn(d.Fixed
-                    ? $"'{l.FromRef}'→'{l.ToRef}': no free path, so it overlaps other piping; move equipment (x/y) to open a gap"
-                    : $"'{l.FromRef}'→'{l.ToRef}': no free path, so it overlaps other piping; move equipment with row/rank hints or enlarge the area", scope: d.Source);
+                    ? $"'{l.FromRef}'→'{l.ToRef}': no free path, so it overlaps other piping; move equipment (x/y) to open a gap, or move an attached box (DvAttach) standing in front of a port to another face"
+                    : $"'{l.FromRef}'→'{l.ToRef}': no free path, so it overlaps other piping; move equipment with row/rank hints, move an attached box (DvAttach) standing in front of a port to another face, or enlarge the area", scope: d.Source);
             else if (gl.Crossings > 0)
                 Warn(d.Fixed
                     ? $"'{l.FromRef}'→'{l.ToRef}': crosses other piping {gl.Crossings} time(s); moving equipment (x/y) can reduce this"

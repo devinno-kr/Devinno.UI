@@ -81,6 +81,48 @@ public class ProcessMediumTests
         Assert.Equal("water", Line(m, "E2.out", "OUT").Medium);
     }
 
+    // 같은 포트에서 갈라지는 가지 — 같은 것이 흐른다(같은 소스에서 나가는 두 펌프)
+    private const string Branches = """
+        <DvTerminal name="IN" text="IN"/>
+        <DvPump name="P1"/>
+        <DvPump name="P2"/>
+        <DvTerminal name="OUT" text="OUT"/>
+        <DvLine from="IN" to="P1.in" medium="water"/>
+        <DvLine from="IN" to="P2.in"/>
+        <DvLine from="P1.out" to="OUT"/>
+        <DvLine from="P2.out" to="OUT"/>
+        """;
+
+    [Fact]
+    public void Spreads_ToOtherLinesLeavingTheSamePort()
+    {
+        var (_, d) = ProcessTests.Start(Branches);
+        Assert.Equal("water", Line(d, "IN", "P2.in").Medium);
+        Assert.Equal("water", Line(d, "P2.out", "OUT").Medium); // 그 가지를 따라 계속
+        Assert.Equal("water", Line(d, "P1.out", "OUT").Medium);
+    }
+
+    [Fact]
+    public void Branch_WithItsOwnMedium_KeepsIt()
+    {
+        var (_, d) = ProcessTests.Start(Branches.Replace("""<DvLine from="IN" to="P2.in"/>""", """<DvLine from="IN" to="P2.in" medium="oil"/>"""));
+        Assert.Equal("water", Line(d, "IN", "P1.in").Medium);
+        Assert.Equal("oil", Line(d, "IN", "P2.in").Medium);
+    }
+
+    [Fact]
+    public void DoesNotSpreadUpstream()
+    {
+        var (_, d) = ProcessTests.Start("""
+            <DvTerminal name="IN" text="IN"/>
+            <DvValve name="V"/>
+            <DvTerminal name="OUT" text="OUT"/>
+            <DvLine from="IN" to="V.in"/>
+            <DvLine from="V.out" to="OUT" medium="water"/>
+            """);
+        Assert.Null(Line(d, "IN", "V.in").Medium);
+    }
+
     [Fact]
     public void UnknownMedium_IsGray()
     {
