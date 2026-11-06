@@ -5,8 +5,7 @@ This is the **document to read first** when building screens with Devinno.UI. It
 - This document: principles, pitfalls, how to verify.
 - Full list of tags, attributes and style keys: [`dvml-ui-markup.md`](dvml-ui-markup.md)
 - Process diagram (P&ID, `DvProcess`) authoring guide: [`dvml-process.md`](dvml-process.md) — always read it first when building a process screen
-- Building a screen from a picture (a mockup, screenshot or design to reproduce, image files): [`dvml-image.md`](dvml-image.md) — always read it first when given a look to match
-- **MUST** when a picture comes with a request ("make it like this"), ask the user before any work: is it a sketch/wireframe or a finished design, and for a design, composition only, the look with image files, or the look with style only (`dvml-image.md` 1.1). **NEVER** decide this yourself. A sketch is composition only: no coordinates, no image files.
+- Building a screen whose look comes from a picture, with image files (a mockup, screenshot or design to reproduce): [`dvml-image.md`](dvml-image.md) — read it first when a screen is to be made from the picture as it is
 - C# API (ViewWindow, DvApp, DvPage, DvBar, DvDialog, DvSurface, AlarmLog, TrendBuffer, DvStrings, etc.): the XML doc comments on each type. View them via IntelliSense in the IDE, or in `Devinno.UI.xml`, which ships in the NuGet package.
 
 Devinno.UI is a .NET 9 UI library that draws directly with SkiaSharp. Screens are written as XML markup with a CSS-like inline `style` and bound to a C# view model (VM). It is not a browser, so **even where it looks like HTML/CSS, it is not the same engine.** Knowing the differences below avoids most mistakes.
