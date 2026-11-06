@@ -53,7 +53,7 @@ Knowing how mistakes show up helps you find the cause quickly when looking at th
 
 | Mistake | Result |
 |---|---|
-| Unknown style key (`margin-top`, `line-height`, `font-style`, `row-gap`, etc.) | Ignored. (`background-color` is supported as a solid-color alias of `background`. Use `background` for gradients. `background-image: url(…)` and `background-size: cover|contain|fill` are supported; `background-position` and `background-repeat` are not.) |
+| Unknown style key (`margin-top`, `line-height`, `font-style`, `row-gap`, etc.) | Ignored. (`background-color` is supported as a solid-color alias of `background`. Use `background` for gradients. `background-image: url(…)`, `background-size: cover|contain|fill|natural` and `background-image-offset` are supported; `background-position` and `background-repeat` are not.) |
 | Unknown or misspelled attribute (`onClick`, `Text`) | Ignored. Tag names and attribute names are **case-sensitive**. |
 | `id`, root `vm` | No longer ignored. The source generator reads them and creates VM fields (duplicates and invalid names are compile errors, see 4.1 below). In hosts that use markup only without the generator (`DvRenderer` etc.), they have no effect on the screen. |
 | Unknown tag (`DvPanel`, `div`) | Treated as a plain box (`DvBox`). No error. |

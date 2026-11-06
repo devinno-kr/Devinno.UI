@@ -65,12 +65,13 @@ public class BackgroundImageTests : IDisposable
     public void Parse_Url(string decl, string? expected) => Assert.Equal(expected, StyleParser.Parse(decl).BackgroundImage);
 
     [Theory]
-    [InlineData("", ImageFit.Cover)]
-    [InlineData("background-size: contain", ImageFit.Contain)]
-    [InlineData("background-size: fill", ImageFit.Fill)]
-    [InlineData("background-size: 100% 100%", ImageFit.Fill)]
-    [InlineData("background-size: contain; background-size: auto", ImageFit.Contain)] // 모르는 값은 무시
-    public void Parse_Size(string decl, ImageFit expected) => Assert.Equal(expected, StyleParser.Parse(decl).BackgroundSize);
+    [InlineData("", BackgroundFit.Cover)]
+    [InlineData("background-size: contain", BackgroundFit.Contain)]
+    [InlineData("background-size: fill", BackgroundFit.Fill)]
+    [InlineData("background-size: 100% 100%", BackgroundFit.Fill)]
+    [InlineData("background-size: natural", BackgroundFit.Natural)]
+    [InlineData("background-size: contain; background-size: auto", BackgroundFit.Contain)] // 모르는 값은 무시
+    public void Parse_Size(string decl, BackgroundFit expected) => Assert.Equal(expected, StyleParser.Parse(decl).BackgroundSize);
 
     [Fact]
     public void Shorthand_ReplacesLikeCss()
@@ -160,5 +161,62 @@ public class BackgroundImageTests : IDisposable
         Assert.Equal(1, vm.Clicks);
         using (var bmp = Render(s, 60, 40))
             Assert.Equal(SKColors.Red, bmp.GetPixel(30, 20));
+    }
+    // ── natural·background-image-offset — 판 밖으로 번지는 글로우·그림자 여백이 있는 그림 ──
+
+    [Theory]
+    [InlineData("background-image-offset: -16 -12", -16f, -12f)]
+    [InlineData("background-image-offset: -8", -8f, -8f)]
+    [InlineData("background-image-offset: -4px 6px", -4f, 6f)]
+    public void Parse_Offset(string decl, float x, float y) => Assert.Equal((x, y), StyleParser.Parse("background-size:natural; " + decl).BackgroundOffset);
+
+    [Fact]
+    public void Natural_Centered_NotCutAtTheBox()
+    {
+        // 상자 20×20, 그림 40×10 → 가운데에 원래 크기로, 상자 밖(좌우 10px)까지 그린다. border-radius 로도 자르지 않는다
+        var s = Screen($"<DvBox style=\"position:absolute; left:40; top:40; width:20; height:20; border-radius:10; background-image:url({_wide}); background-size:natural\"/>");
+        using var bmp = Render(s, 100, 100);
+        Assert.Equal(SKColors.Lime, bmp.GetPixel(32, 50));  // 상자 왼쪽 밖
+        Assert.Equal(SKColors.Lime, bmp.GetPixel(68, 50));  // 상자 오른쪽 밖
+        Assert.Equal(SKColors.Lime, bmp.GetPixel(41, 46));  // 둥근 모서리 자리
+        Assert.Equal(SKColors.White, bmp.GetPixel(50, 43)); // 그림(높이 10) 위
+    }
+
+    [Fact]
+    public void Natural_Offset_PlacesTheTopLeftCorner()
+    {
+        // 비대칭 여백 — 그림 왼쪽 위 = 상자 왼쪽 위 + (-30, 5)
+        var s = Screen($"<DvBox style=\"position:absolute; left:40; top:40; width:20; height:20; background-image:url({_wide}); background-size:natural; background-image-offset:-30 5\"/>");
+        using var bmp = Render(s, 100, 100);
+        Assert.Equal(SKColors.Lime, bmp.GetPixel(11, 46));  // x 10..50, y 45..55
+        Assert.Equal(SKColors.White, bmp.GetPixel(8, 50));
+        Assert.Equal(SKColors.White, bmp.GetPixel(30, 43));
+        Assert.Equal(SKColors.White, bmp.GetPixel(55, 50)); // 그림 오른쪽 끝(50) 밖
+    }
+
+    [Fact]
+    public void Natural_PressAreaStaysTheBox()
+    {
+        // 그림이 넘쳐도 누름은 상자만 — 그림자 여백을 눌러도 클릭 아님
+        var vm = new Vm();
+        var s = Screen($"<DvButton onclick=\"Hit\" style=\"position:absolute; left:40; top:40; width:20; height:20; padding:0; background-image:url({_wide}); background-size:natural\"/>", vm);
+        Render(s, 100, 100).Dispose();
+        s.PointerDown(new SKPoint(33, 50));
+        s.PointerUp(new SKPoint(33, 50));
+        Assert.Equal(0, vm.Clicks);
+        s.PointerDown(new SKPoint(50, 50));
+        s.PointerUp(new SKPoint(50, 50));
+        Assert.Equal(1, vm.Clicks);
+    }
+
+    [Fact]
+    public void Offset_WithOtherSizes_Ignored()
+    {
+        var s = StyleParser.Parse("background-size: fill; background-image-offset: -10 -10");
+        Assert.Equal(BackgroundFit.Fill, s.BackgroundSize);
+        var pic = Screen($"<DvBox style=\"position:absolute; left:0; top:0; width:40; height:40; background-image:url({_red}); background-size:fill; background-image-offset:-10 -10\"/>");
+        using var bmp = Render(pic, 60, 60);
+        Assert.Equal(SKColors.Red, bmp.GetPixel(38, 38));   // 상자 안 그대로(옮기지 않음)
+        Assert.Equal(SKColors.White, bmp.GetPixel(45, 20));
     }
 }

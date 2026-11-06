@@ -167,10 +167,18 @@ public sealed class ComputedStyle
     public string? BackgroundImage { get; set; }
 
     /// <summary>
-    /// How <see cref="BackgroundImage"/> fills the box: style key <c>background-size</c> = <c>cover</c> (default: fills the box keeping the proportions; overflow is cut off, centered),
-    /// <c>contain</c> (the whole picture inside the box, centered) or <c>fill</c> (stretched to the box; <c>100% 100%</c> is the same).
+    /// How <see cref="BackgroundImage"/> meets the box: style key <c>background-size</c> = <c>cover</c> (default: fills the box keeping the proportions; overflow is cut off, centered),
+    /// <c>contain</c> (the whole picture inside the box, centered), <c>fill</c> (stretched to the box; <c>100% 100%</c> is the same)
+    /// or <c>natural</c> (its own size, not cut off at the box edge; see <see cref="BackgroundOffset"/>).
     /// </summary>
-    public Widgets.ImageFit BackgroundSize { get; set; } = Widgets.ImageFit.Cover;
+    public BackgroundFit BackgroundSize { get; set; } = BackgroundFit.Cover;
+
+    /// <summary>
+    /// With <c>background-size: natural</c>: where the picture's top-left corner goes, in px from the box's top-left corner. Style key <c>background-image-offset: X Y</c>
+    /// (one value = both). For a picture with a margin of 16 px left and 12 px top around the plate, <c>-16 -12</c>. Default <see langword="null"/> = the picture is centered on the box.
+    /// Ignored with the other <c>background-size</c> values (with a Trace warning).
+    /// </summary>
+    public (float X, float Y)? BackgroundOffset { get; set; }
 
     /// <summary>
     /// Text color (icon color for icons). Style key <c>color</c>. Default <c>#222222</c> (opaque).

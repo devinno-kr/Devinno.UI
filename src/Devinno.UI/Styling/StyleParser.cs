@@ -42,8 +42,15 @@ public static class StyleParser
             Apply(s, key, val);
         }
 
+        // offset 은 natural 에서만 — 다른 맞춤과 함께면 쓰지 않는다(선언 순서와 무관하게 다 읽은 뒤 판단)
+        if (s.BackgroundOffset is not null && s.BackgroundSize != BackgroundFit.Natural)
+            WarnOnce($"Devinno.UI: background-image-offset is used only with background-size: natural; ignored (style: {style.Trim()})");
+
         return s;
     }
+
+    private static bool TryNumber(string v, out float f) =>
+        float.TryParse(v.Replace("px", "").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out f) && float.IsFinite(f);
 
     private static readonly HashSet<string> Warned = new();
 
@@ -111,11 +118,19 @@ public static class StyleParser
                 // CSS 의 늘이기(100% 100%)도 fill 로. 그 밖 값(auto·길이)은 무시
                 var size = v.Trim().ToLowerInvariant();
                 if (size is "cover")
-                    s.BackgroundSize = Widgets.ImageFit.Cover;
+                    s.BackgroundSize = BackgroundFit.Cover;
                 else if (size is "contain")
-                    s.BackgroundSize = Widgets.ImageFit.Contain;
+                    s.BackgroundSize = BackgroundFit.Contain;
                 else if (size is "fill" || System.Text.RegularExpressions.Regex.IsMatch(size, @"^100%\s+100%$"))
-                    s.BackgroundSize = Widgets.ImageFit.Fill;
+                    s.BackgroundSize = BackgroundFit.Fill;
+                else if (size is "natural")
+                    s.BackgroundSize = BackgroundFit.Natural;
+                break;
+            case "background-image-offset":
+                // X Y(px) — 값 하나면 둘 다. 숫자가 아니면 무시
+                var parts = v.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length is 1 or 2 && TryNumber(parts[0], out var ox) && TryNumber(parts[^1], out var oy))
+                    s.BackgroundOffset = (ox, oy);
                 break;
             case "background-color":
                 // background 의 단색 별칭 — 그라디언트는 받지 않음. 선언 순서상 뒤가 이김

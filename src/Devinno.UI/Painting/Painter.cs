@@ -151,14 +151,18 @@ public sealed partial class Painter
             canvas.DrawRoundRect(rect, r, r, p);
         }
 
-        // 배경 그림 — 단색·그라디언트 위, 테두리 아래. padding 영역까지, 상자 모양(border-radius)으로 자른다
+        // 배경 그림 — 단색·그라디언트 위, 테두리 아래. padding 영역까지, 상자 모양(border-radius)으로 자른다(natural 은 자르지 않음 — 판 밖 글로우·그림자)
         if (st.BackgroundImage is { Length: > 0 } bgSrc && Widgets.ImageCache.Get(bgSrc) is { } bgImage)
         {
             canvas.Save();
-            using (var bgClip = new SKRoundRect(rect, r, r))
+            if (st.BackgroundSize != BackgroundFit.Natural)
+            {
+                using var bgClip = new SKRoundRect(rect, r, r);
                 canvas.ClipRoundRect(bgClip, antialias: true);
+            }
+
             using var bgPaint = new SKPaint { IsAntialias = true };
-            canvas.DrawImage(bgImage, FitRect(bgImage, rect, st.BackgroundSize), new SKSamplingOptions(SKFilterMode.Linear), bgPaint);
+            canvas.DrawImage(bgImage, BackgroundRect(bgImage, rect, st), new SKSamplingOptions(SKFilterMode.Linear), bgPaint);
             canvas.Restore();
         }
 
@@ -592,6 +596,21 @@ public sealed partial class Painter
             PaintScrollBars(canvas, box);
             canvas.Restore();
         }
+    }
+
+    // 배경 그림이 그려지는 자리 — natural 은 원래 크기로 가운데(또는 offset 자리), 그 밖은 상자에 맞춤
+    internal static SKRect BackgroundRect(SKImage image, SKRect rect, ComputedStyle st)
+    {
+        if (st.BackgroundSize != BackgroundFit.Natural)
+            return FitRect(image, rect, st.BackgroundSize switch
+            {
+                BackgroundFit.Contain => Widgets.ImageFit.Contain,
+                BackgroundFit.Fill => Widgets.ImageFit.Fill,
+                _ => Widgets.ImageFit.Cover,
+            });
+        var (w, h) = ((float)image.Width, (float)image.Height);
+        var (x, y) = st.BackgroundOffset is { } o ? (rect.Left + o.X, rect.Top + o.Y) : (rect.MidX - w / 2, rect.MidY - h / 2);
+        return SKRect.Create(x, y, w, h);
     }
 
     // 그림을 상자에 맞춘 자리 — fill = 상자 그대로, cover·contain = 비율 유지(덮기·담기) 가운데. DvImage·background-image 공통

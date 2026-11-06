@@ -346,7 +346,8 @@ Differences from CSS:
 | `background` | Color, `linear-gradient(...)` or `url(path)` | None (transparent). Like CSS, it sets all of the background: a color clears a gradient and a picture, `url(…)` clears the color and gradient |
 | `background-color` | Color only (solid-color alias of `background`) | Does not accept gradients. When used together with `background`, the later declaration wins. Keeps `background-image` |
 | `background-image` | `url(path)` (quotes optional) or `none` | None. A picture file behind the content — see **Background picture** below |
-| `background-size` | `cover` · `contain` · `fill` (`100% 100%` = `fill`) | `cover` |
+| `background-size` | `cover` · `contain` · `fill` (`100% 100%` = `fill`) · `natural` | `cover` |
+| `background-image-offset` | `X Y` in px (one value = both) | With `natural` only: where the picture's top-left corner goes, from the box's top-left corner. Without it, the picture is centered |
 | `color` | Color | `#222222` (theme-independent, not inherited) |
 | `font-size` | Number | 14 |
 | `font-family` | Comma list | First installed font that has all the characters; otherwise per-character fallback. **Inherited by children** |
@@ -410,9 +411,10 @@ Differences from CSS:
 
 **Background picture:** `background-image: url(Assets/panel.png); background-size: cover`.
 - The path is a file path read like `DvImage src` (relative to the current directory, cached, a missing file draws nothing; see `DvImage`). Bindable: `background-image: url({PanelImg})`; an empty `url()` means no picture.
-- It covers the whole box, **padding included**, over the solid or gradient background and under the border and the content. It is cut to the box shape (`border-radius`) — a shadow or glow drawn in the picture's margin is cut too, so a picture with such a margin belongs in a `DvImage` larger than the box.
-- `cover` (default) fills the box keeping the proportions and cuts the overflow, centered; `contain` shows the whole picture, centered, leaving bands; `fill` stretches it to the box. There is no `background-position` or `background-repeat`: the picture is drawn once, centered.
-- It is part of the box, not a child, so it never covers a press. In a state style it changes the picture while pressed or hovered: `press-style="background-image:url(Assets/key_on.png)"`.
+- It covers the whole box, **padding included**, over the solid or gradient background and under the border and the content. With `cover`, `contain` and `fill` it is cut to the box shape (`border-radius`).
+- `cover` (default) fills the box keeping the proportions and cuts the overflow, centered; `contain` shows the whole picture, centered, leaving bands; `fill` stretches it to the box. There is no `background-position` or `background-repeat`: the picture is drawn once.
+- **`natural` — a plate with a glow or shadow around it.** The picture is drawn at its own pixel size and **not cut** at the box edge or by `border-radius`, centered on the box. Make the box the size of the plate (the part that should be pressed) and let the PNG's margin spread outside it: `width:250; height:160; background-image:url(card.png); background-size:natural` for a 282×192 PNG with a 16 px margin. When the margin is not the same on all sides, place the picture with `background-image-offset: -left -top` (the margins, e.g. `-16 -12`). The part outside the box is drawn only — presses there do not reach the box — and elements drawn later lie on top of it. `background-image-offset` with another `background-size` is ignored with a Trace warning.
+- It is part of the box, not a child, so it never covers a press. In a state style it changes the picture while pressed or hovered: `press-style="background-image:url(Assets/key_on.png)"`. A state style's `background` color does **not** darken it (the color is drawn under the picture, as in CSS); show a press with another picture, `transform` or `opacity`.
 - One picture per box. Use it on any element: a `DvScreen` or `DvPage` root for the screen background, a `DvBox`/`DvStack` for a panel, a `DvButton` for an image button.
 
 ### 4.4 content-align

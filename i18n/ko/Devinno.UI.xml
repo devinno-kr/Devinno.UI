@@ -4241,7 +4241,10 @@
             <summary><c>sm</c>: 작은 버튼(글자 12, 여백 7·12).</summary>
         </member><member name="F:Devinno.UI.Styles.ButtonSize.Lg" en-hash="62034d5725f04806">
             <summary><c>lg</c>: 큰 버튼(글자 16, 여백 14·26).</summary>
-        </member><member name="T:Devinno.UI.Styling.BuiltInStyles" en-hash="5acc7d6479126bf3">
+        </member><member name="T:Devinno.UI.Styling.BackgroundFit" en-hash="69b6ed0a3b25b169"><summary>배경 그림(<c>background-image</c>)을 상자에 맞추는 방식: 스타일 키 <c>background-size</c>.</summary></member><member name="F:Devinno.UI.Styling.BackgroundFit.Cover" en-hash="2ad7c14c3ed8cb06"><summary><c>cover</c>(기본). 비율 유지로 상자를 채우고 넘치는 부분은 잘라 가운데.</summary></member><member name="F:Devinno.UI.Styling.BackgroundFit.Contain" en-hash="2bdc1c748fdae886"><summary><c>contain</c>. 비율 유지로 그림 전체를 상자 안에, 가운데. 나머지는 빈 채로.</summary></member><member name="F:Devinno.UI.Styling.BackgroundFit.Fill" en-hash="691a3b1ec324bd2f"><summary><c>fill</c>(<c>100% 100%</c> 도 같음). 상자에 맞춰 늘인다.</summary></member><member name="F:Devinno.UI.Styling.BackgroundFit.Natural" en-hash="f738c043c7c7b041"><summary>
+            <c>natural</c>. 그림을 원래 픽셀 크기로, 상자 경계(그리고 <c>border-radius</c>)에서 <b>자르지 않고</b> 그린다 — 상자 가운데,
+            또는 왼쪽 위 모서리를 <c>background-image-offset</c> 자리에. 상자 크기의 판 둘레에 글로우·그림자 여백이 있는 그림용.
+            </summary></member><member name="T:Devinno.UI.Styling.BuiltInStyles" en-hash="5acc7d6479126bf3">
             <summary>
             내장 테마가 기본으로 제공하는 클래스 스타일시트입니다. 값이 모두 테마 토큰이라 <see cref="F:Devinno.UI.Styling.DvTheme.Light" />/<see cref="F:Devinno.UI.Styling.DvTheme.Dark" /> 에 공통으로 쓰입니다.
             </summary>
@@ -4412,9 +4415,14 @@
             (따옴표 선택, <c>none</c> 이면 지움), 또는 <c>background: url(path)</c> — CSS 처럼 <see cref="P:Devinno.UI.Styling.ComputedStyle.Background" /> 와 <see cref="P:Devinno.UI.Styling.ComputedStyle.Gradient" /> 도 지운다.
             단색·그라디언트 배경 위, 테두리 아래에 그리고, padding 영역까지 덮으며, 상자 모양(<c>border-radius</c>)으로 자른다.
             자식이 아니라 상자의 일부라 누름을 가로막지 않는다. 없는 파일이면 아무것도 그리지 않는다. 기본 <see langword="null" />.
-            </summary></member><member name="P:Devinno.UI.Styling.ComputedStyle.BackgroundSize" en-hash="de16f47553297170"><summary>
+            </summary></member><member name="P:Devinno.UI.Styling.ComputedStyle.BackgroundSize" en-hash="48a52a35bc681d93"><summary>
             <see cref="P:Devinno.UI.Styling.ComputedStyle.BackgroundImage" /> 를 상자에 맞추는 방식: 스타일 키 <c>background-size</c> = <c>cover</c>(기본: 비율 유지로 상자를 채우고 넘치는 부분은 잘라 가운데),
-            <c>contain</c>(그림 전체를 상자 안에, 가운데) 또는 <c>fill</c>(상자에 맞춰 늘임; <c>100% 100%</c> 도 같음).
+            <c>contain</c>(그림 전체를 상자 안에, 가운데), <c>fill</c>(상자에 맞춰 늘임; <c>100% 100%</c> 도 같음)
+            또는 <c>natural</c>(원래 크기, 상자 경계에서 자르지 않음; <see cref="P:Devinno.UI.Styling.ComputedStyle.BackgroundOffset" /> 참고).
+            </summary></member><member name="P:Devinno.UI.Styling.ComputedStyle.BackgroundOffset" en-hash="77e9ca991e35b698"><summary>
+            <c>background-size: natural</c> 일 때 그림의 왼쪽 위 모서리 자리 — 상자 왼쪽 위에서 px. 스타일 키 <c>background-image-offset: X Y</c>
+            (값 하나면 둘 다). 판 둘레 여백이 왼쪽 16, 위 12 px 인 그림이면 <c>-16 -12</c>. 기본 <see langword="null" /> = 그림을 상자 가운데에.
+            다른 <c>background-size</c> 값과 함께면 무시한다(Trace 경고).
             </summary></member><member name="P:Devinno.UI.Styling.ComputedStyle.Color" en-hash="ead12d73a26dab7e">
             <summary>
             글자색(아이콘은 아이콘 색). 스타일 키 <c>color</c>. 기본값 <c>#222222</c>(불투명).

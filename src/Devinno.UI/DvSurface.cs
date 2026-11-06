@@ -1042,6 +1042,8 @@ public sealed partial class DvSurface
             if (BlinkInterval(b) > 0)
             {
                 var r = map.Map(b.Rect);
+                if (b.Style is { BackgroundSize: BackgroundFit.Natural, BackgroundImage: { Length: > 0 } src } && Widgets.ImageCache.Get(src) is { } image)
+                    r = SKRect.Union(r, map.Map(Painter.BackgroundRect(image, b.Rect, b.Style))); // 상자 밖으로 넘친 배경 그림(natural)
                 if (b.Process is { Graph: { } g } d)
                     r = SKRect.Union(r, inner.Map(SKRect.Create(d.Origin.X, d.Origin.Y, g.Size.Width, g.Size.Height))); // 영역이 모자라 넘친 배관(줄여 그렸으면 그 배율로)
                 r.Inflate(AnimationBleed, AnimationBleed);
