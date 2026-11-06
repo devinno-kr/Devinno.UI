@@ -159,6 +159,20 @@ public sealed class ComputedStyle
     public LinearGradient? Gradient { get; set; }
 
     /// <summary>
+    /// Background picture: a file path, resolved like <c>DvImage src</c> (a relative path is relative to the current directory). Style key <c>background-image: url(path)</c>
+    /// (quotes optional, <c>none</c> clears it), or <c>background: url(path)</c>, which like CSS also clears <see cref="Background"/> and <see cref="Gradient"/>.
+    /// It is drawn over the solid or gradient background and under the border, covers the padding area, and is clipped to the box shape (<c>border-radius</c>).
+    /// It is part of the box, not a child, so it never takes presses. A missing file draws nothing. Default <see langword="null"/>.
+    /// </summary>
+    public string? BackgroundImage { get; set; }
+
+    /// <summary>
+    /// How <see cref="BackgroundImage"/> fills the box: style key <c>background-size</c> = <c>cover</c> (default: fills the box keeping the proportions; overflow is cut off, centered),
+    /// <c>contain</c> (the whole picture inside the box, centered) or <c>fill</c> (stretched to the box; <c>100% 100%</c> is the same).
+    /// </summary>
+    public Widgets.ImageFit BackgroundSize { get; set; } = Widgets.ImageFit.Cover;
+
+    /// <summary>
     /// Text color (icon color for icons). Style key <c>color</c>. Default <c>#222222</c> (opaque).
     /// If the color cannot be parsed, the declaration is ignored and the previous value remains.
     /// </summary>

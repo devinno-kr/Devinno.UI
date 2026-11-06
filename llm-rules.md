@@ -53,7 +53,7 @@ Knowing how mistakes show up helps you find the cause quickly when looking at th
 
 | Mistake | Result |
 |---|---|
-| Unknown style key (`margin-top`, `line-height`, `font-style`, `row-gap`, etc.) | Ignored. (`background-color` is supported as a solid-color alias of `background`. Use `background` for gradients.) |
+| Unknown style key (`margin-top`, `line-height`, `font-style`, `row-gap`, etc.) | Ignored. (`background-color` is supported as a solid-color alias of `background`. Use `background` for gradients. `background-image: url(…)` and `background-size: cover|contain|fill` are supported; `background-position` and `background-repeat` are not.) |
 | Unknown or misspelled attribute (`onClick`, `Text`) | Ignored. Tag names and attribute names are **case-sensitive**. |
 | `id`, root `vm` | No longer ignored. The source generator reads them and creates VM fields (duplicates and invalid names are compile errors, see 4.1 below). In hosts that use markup only without the generator (`DvRenderer` etc.), they have no effect on the screen. |
 | Unknown tag (`DvPanel`, `div`) | Treated as a plain box (`DvBox`). No error. |
@@ -64,7 +64,7 @@ Knowing how mistakes show up helps you find the cause quickly when looking at th
 | Handler method not on the VM (`onclick="Strat"`) | Build error DVML018 in a dvml with `vm`. Where it is not checked (inside a `DvComponent` definition), nothing happens at runtime. (With a code handle's `Click`, a typo is a compile error.) |
 | `hover-style`, `content-align`, etc. on a component instance | Ignored. Only parameters and `style`, `class`, `grow`, `width`, `height`, `visible`, `onclick`, `disabled` are passed through. (See section 4) |
 | Unknown icon name | The icon is not drawn (one Trace warning). |
-| `DvImage src` file missing | Empty box. |
+| `DvImage src` or `background-image: url(…)` file missing | Empty box / no picture. |
 
 ### 3.2 Shows as magenta (`#FF00FF`)
 

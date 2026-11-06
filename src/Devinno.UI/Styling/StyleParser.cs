@@ -78,20 +78,44 @@ public static class StyleParser
         switch (key)
         {
             case "background":
-                // 뒤 선언이 앞 선언을 대체(클래스 그라디언트를 inline 단색으로 덮을 수 있게)
+                // 뒤 선언이 앞 선언을 대체(클래스 그라디언트를 inline 단색으로 덮을 수 있게). CSS 처럼 묶음 표기는 그림까지 바꾼다
                 if (v.StartsWith("linear-gradient", StringComparison.OrdinalIgnoreCase))
                 {
                     if (LinearGradient.TryParse(v) is { } g)
                     {
                         s.Gradient = g;
                         s.Background = null;
+                        s.BackgroundImage = null;
                     }
+                }
+                else if (TryUrl(v, out var url))
+                {
+                    s.BackgroundImage = url;
+                    s.Background = null;
+                    s.Gradient = null;
                 }
                 else if (DvColor.TryParse(v, out var bg))
                 {
                     s.Background = bg;
                     s.Gradient = null;
+                    s.BackgroundImage = null;
                 }
+                break;
+            case "background-image":
+                if (v.Trim().Equals("none", StringComparison.OrdinalIgnoreCase))
+                    s.BackgroundImage = null;
+                else if (TryUrl(v, out var image))
+                    s.BackgroundImage = image;
+                break;
+            case "background-size":
+                // CSS 의 늘이기(100% 100%)도 fill 로. 그 밖 값(auto·길이)은 무시
+                var size = v.Trim().ToLowerInvariant();
+                if (size is "cover")
+                    s.BackgroundSize = Widgets.ImageFit.Cover;
+                else if (size is "contain")
+                    s.BackgroundSize = Widgets.ImageFit.Contain;
+                else if (size is "fill" || System.Text.RegularExpressions.Regex.IsMatch(size, @"^100%\s+100%$"))
+                    s.BackgroundSize = Widgets.ImageFit.Fill;
                 break;
             case "background-color":
                 // background 의 단색 별칭 — 그라디언트는 받지 않음. 선언 순서상 뒤가 이김
@@ -324,6 +348,20 @@ public static class StyleParser
         var w = F(p[0]);
         var h = p.Length > 1 ? F(p[1]) : 1f;
         return w > 0 && h > 0 ? w / h : null;
+    }
+
+    // url(경로) — 따옴표는 선택. 빈 url() 은 그림 없음(바인딩이 빈 문자열일 때)
+    private static bool TryUrl(string v, out string? path)
+    {
+        path = null;
+        var t = v.Trim();
+        if (!t.StartsWith("url(", StringComparison.OrdinalIgnoreCase) || !t.EndsWith(')'))
+            return false;
+        var inner = t[4..^1].Trim();
+        if (inner.Length >= 2 && (inner[0] == '"' || inner[0] == '\'') && inner[^1] == inner[0])
+            inner = inner[1..^1];
+        path = inner.Length > 0 ? inner : null;
+        return true;
     }
 
     private static void ParseShadow(ComputedStyle s, string v)

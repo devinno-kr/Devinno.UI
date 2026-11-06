@@ -17,7 +17,7 @@ internal static class StyleCheck
     /// <summary>스타일 속성 이름 — 라이브러리 <c>StyleParser</c> 와 같아야 한다(테스트가 비교).</summary>
     internal static readonly string[] Keys =
     {
-        "background", "background-color", "color", "opacity", "border-radius", "padding",
+        "background", "background-color", "background-image", "background-size", "color", "opacity", "border-radius", "padding",
         "margin", "font-size", "font-family", "font-weight", "text-align", "white-space",
         "content-align", "gap", "display", "grid-template-columns", "grid-template-rows", "aspect-ratio",
         "flex-direction", "justify-content", "align-items", "align-self", "overflow", "width",

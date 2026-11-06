@@ -343,8 +343,10 @@ Differences from CSS:
 
 | Key | Value | Default / notes |
 |---|---|---|
-| `background` | Color or `linear-gradient(...)` | None (transparent) |
-| `background-color` | Color only (solid-color alias of `background`) | Does not accept gradients. When used together with `background`, the later declaration wins |
+| `background` | Color, `linear-gradient(...)` or `url(path)` | None (transparent). Like CSS, it sets all of the background: a color clears a gradient and a picture, `url(…)` clears the color and gradient |
+| `background-color` | Color only (solid-color alias of `background`) | Does not accept gradients. When used together with `background`, the later declaration wins. Keeps `background-image` |
+| `background-image` | `url(path)` (quotes optional) or `none` | None. A picture file behind the content — see **Background picture** below |
+| `background-size` | `cover` · `contain` · `fill` (`100% 100%` = `fill`) | `cover` |
 | `color` | Color | `#222222` (theme-independent, not inherited) |
 | `font-size` | Number | 14 |
 | `font-family` | Comma list | First installed font that has all the characters; otherwise per-character fallback. **Inherited by children** |
@@ -405,6 +407,13 @@ Differences from CSS:
 - The angle is `<number>deg` or `to right` `to left` `to top` `to bottom` (case-insensitive). If omitted, top→bottom.
 - 2 or more colors. Position values after a color (`#fff 30%`) are ignored and the colors are spread evenly.
 - A later solid `background` (or `background-color`) replaces an earlier gradient, and vice versa.
+
+**Background picture:** `background-image: url(Assets/panel.png); background-size: cover`.
+- The path is a file path read like `DvImage src` (relative to the current directory, cached, a missing file draws nothing; see `DvImage`). Bindable: `background-image: url({PanelImg})`; an empty `url()` means no picture.
+- It covers the whole box, **padding included**, over the solid or gradient background and under the border and the content. It is cut to the box shape (`border-radius`) — a shadow or glow drawn in the picture's margin is cut too, so a picture with such a margin belongs in a `DvImage` larger than the box.
+- `cover` (default) fills the box keeping the proportions and cuts the overflow, centered; `contain` shows the whole picture, centered, leaving bands; `fill` stretches it to the box. There is no `background-position` or `background-repeat`: the picture is drawn once, centered.
+- It is part of the box, not a child, so it never covers a press. In a state style it changes the picture while pressed or hovered: `press-style="background-image:url(Assets/key_on.png)"`.
+- One picture per box. Use it on any element: a `DvScreen` or `DvPage` root for the screen background, a `DvBox`/`DvStack` for a panel, a `DvButton` for an image button.
 
 ### 4.4 content-align
 

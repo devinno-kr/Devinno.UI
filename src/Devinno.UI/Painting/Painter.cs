@@ -151,6 +151,17 @@ public sealed partial class Painter
             canvas.DrawRoundRect(rect, r, r, p);
         }
 
+        // 배경 그림 — 단색·그라디언트 위, 테두리 아래. padding 영역까지, 상자 모양(border-radius)으로 자른다
+        if (st.BackgroundImage is { Length: > 0 } bgSrc && Widgets.ImageCache.Get(bgSrc) is { } bgImage)
+        {
+            canvas.Save();
+            using (var bgClip = new SKRoundRect(rect, r, r))
+                canvas.ClipRoundRect(bgClip, antialias: true);
+            using var bgPaint = new SKPaint { IsAntialias = true };
+            canvas.DrawImage(bgImage, FitRect(bgImage, rect, st.BackgroundSize), new SKSamplingOptions(SKFilterMode.Linear), bgPaint);
+            canvas.Restore();
+        }
+
         // 길게 누르기(hold) 진행 — 배경 위·글자 아래에 왼쪽부터 차오르는 띠(글자색 반투명), 상자 모양으로 자른다
         if (state is not null && ReferenceEquals(state.HoldBox, box) && state.HoldProgress > 0)
         {
@@ -316,24 +327,7 @@ public sealed partial class Painter
             var image = Widgets.ImageCache.Get(box.ImageSrc);
             if (image is not null)
             {
-                var iw = (float)image.Width;
-                var ih = (float)image.Height;
-                SKRect dest;
-                if (box.ImageFit == Widgets.ImageFit.Fill || iw <= 0 || ih <= 0)
-                {
-                    dest = rect;
-                }
-                else
-                {
-                    var scale = box.ImageFit == Widgets.ImageFit.Cover
-                        ? MathF.Max(rect.Width / iw, rect.Height / ih)
-                        : MathF.Min(rect.Width / iw, rect.Height / ih);
-                    var dw = iw * scale;
-                    var dh = ih * scale;
-                    var dx = rect.Left + (rect.Width - dw) / 2f;
-                    var dy = rect.Top + (rect.Height - dh) / 2f;
-                    dest = new SKRect(dx, dy, dx + dw, dy + dh);
-                }
+                var dest = FitRect(image, rect, box.ImageFit);
 
                 canvas.Save();
                 canvas.ClipRect(rect);
@@ -598,6 +592,23 @@ public sealed partial class Painter
             PaintScrollBars(canvas, box);
             canvas.Restore();
         }
+    }
+
+    // 그림을 상자에 맞춘 자리 — fill = 상자 그대로, cover·contain = 비율 유지(덮기·담기) 가운데. DvImage·background-image 공통
+    private static SKRect FitRect(SKImage image, SKRect rect, Widgets.ImageFit fit)
+    {
+        var iw = (float)image.Width;
+        var ih = (float)image.Height;
+        if (fit == Widgets.ImageFit.Fill || iw <= 0 || ih <= 0)
+            return rect;
+        var scale = fit == Widgets.ImageFit.Cover
+            ? MathF.Max(rect.Width / iw, rect.Height / ih)
+            : MathF.Min(rect.Width / iw, rect.Height / ih);
+        var dw = iw * scale;
+        var dh = ih * scale;
+        var dx = rect.Left + (rect.Width - dw) / 2f;
+        var dy = rect.Top + (rect.Height - dh) / 2f;
+        return new SKRect(dx, dy, dx + dw, dy + dh);
     }
 
     // 내용 배율(공정도 fit="shrink") — 자식·배관을 그 배율로. 없으면 -1(아무것도 안 함), 돌려준 값을 EndContent 에
