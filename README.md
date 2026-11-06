@@ -149,6 +149,7 @@ These documents ship in the package's `docs/` folder (after a build they are als
 - `llm-rules.md`: authoring rules (principles, differences from CSS, common mistakes, how to check a screen). Read this first.
 - `dvml-ui-markup.md`: markup reference with every tag, attribute, style key and theme token.
 - `dvml-process.md`: guide to process diagrams (P&ID) with `DvProcess`: equipment, connections, layout rules and user symbols.
+- `dvml-image.md`: guide to building a screen from a picture (a mockup or design to reproduce): deciding how to build each part, image files, touch areas, verification.
 - `llms.txt`: entry point for AI tools (reading order of the files above)
 - C# API: XML doc comments (IntelliSense, `Devinno.UI.xml` in the package)
 

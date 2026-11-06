@@ -5,6 +5,7 @@ This document collects every tag, attribute, style key, value, default, binding 
 - **Read [`llm-rules.md`](llm-rules.md) first.** The principles and pitfalls (how it differs from CSS, what is silently ignored) are there.
 - Assume any tag, attribute or value not in this document is not supported.
 - The process diagram (`DvProcess`) is covered in detail in a separate document, [`dvml-process.md`](dvml-process.md).
+- Building a screen from a picture (a mockup to reproduce, image files) is covered in [`dvml-image.md`](dvml-image.md).
 - On the C# side, only the minimum that connects to the markup is described here. For detailed C# usage, see the XML doc comments of each type (IntelliSense, `Devinno.UI.xml` in the package).
 
 ## Contents
@@ -415,7 +416,7 @@ Differences from CSS:
 - `cover` (default) fills the box keeping the proportions and cuts the overflow, centered; `contain` shows the whole picture, centered, leaving bands; `fill` stretches it to the box. There is no `background-position` or `background-repeat`: the picture is drawn once.
 - **`natural` — a plate with a glow or shadow around it.** The picture is drawn at its own pixel size and **not cut** at the box edge or by `border-radius`, centered on the box. Make the box the size of the plate (the part that should be pressed) and let the PNG's margin spread outside it: `width:250; height:160; background-image:url(card.png); background-size:natural` for a 282×192 PNG with a 16 px margin. When the margin is not the same on all sides, place the picture with `background-image-offset: -left -top` (the margins, e.g. `-16 -12`). The part outside the box is drawn only — presses there do not reach the box — and elements drawn later lie on top of it. `background-image-offset` with another `background-size` is ignored with a Trace warning.
 - It is part of the box, not a child, so it never covers a press. In a state style it changes the picture while pressed or hovered: `press-style="background-image:url(Assets/key_on.png)"`. A state style's `background` color does **not** darken it (the color is drawn under the picture, as in CSS); show a press with another picture, `transform` or `opacity`.
-- One picture per box. Use it on any element: a `DvScreen` or `DvPage` root for the screen background, a `DvBox`/`DvStack` for a panel, a `DvButton` for an image button.
+- One picture per box. Use it on any element: a `DvScreen` or `DvPage` root for the screen background, a `DvBox`/`DvStack` for a panel, a `DvButton` for an image button. Building a whole screen from pictures: [`dvml-image.md`](dvml-image.md).
 
 ### 4.4 content-align
 

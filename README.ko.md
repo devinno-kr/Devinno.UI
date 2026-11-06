@@ -150,13 +150,14 @@ dotnet run --project samples/Devinno.UI.Demo
 작은 시뮬레이션이 값을 움직이는 정수장 쇼케이스가 뜹니다. 운영 대시보드, 흐름 표시가 켜진 P&ID, 기능별 페이지를 모은 Widgets 페이지(그리드, 트렌드, 알람, 다이얼로그, 입력, 공정도 등)로 이루어져 있습니다. `-- shot <폴더>` 를 붙이면 창 없이 모든 화면을 PNG 로 저장합니다.
 
 ## 문서
-<!-- en-hash: b72cfb2c203b9adc -->
+<!-- en-hash: 3225b9b292182cbe -->
 
 아래 문서는 패키지의 `docs/` 폴더에 들어 있습니다(빌드하면 프로젝트의 `.devinno/Devinno.UI/` 에도 복사됩니다 — 아래 참고). 영어로만 제공됩니다.
 
 - [`llm-rules.md`](llm-rules.md): 작성 규칙 — 원칙, CSS 와 다른 점, 자주 하는 실수, 화면 확인 방법 (먼저 읽기)
 - [`dvml-ui-markup.md`](dvml-ui-markup.md): 마크업 레퍼런스 — 태그·속성·스타일 키·테마 토큰
 - [`dvml-process.md`](dvml-process.md): 공정도(P&ID) 작성 가이드 — `DvProcess` 장비·연결·배치 규칙·사용자 심볼
+- [`dvml-image.md`](dvml-image.md): 그림(시안·재현할 디자인)에서 화면 만들기 가이드 — 부분별 구현 방식, 이미지 파일, 터치 영역, 검증
 - [`llms.txt`](llms.txt): AI 도구용 진입점 (위 문서들의 읽는 순서)
 - C# API: XML 문서 주석 (IntelliSense, 패키지의 `Devinno.UI.xml`. 한국어 Visual Studio 에서는 한국어 설명이 보입니다)
 
