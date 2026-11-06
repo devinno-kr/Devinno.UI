@@ -10,7 +10,7 @@ It is a method, not a template. Every screen needs its own answers. Numbers and 
 
 ## The method
 
-1. Understand the request
+1. Understand the request — **always ask first** what the picture is and how closely to follow it (1.1)
 2. Inventory the picture
 3. Decide how to build each element
 4. Fix the design size
@@ -27,18 +27,43 @@ It is a method, not a template. Every screen needs its own answers. Numbers and 
 
 A picture shows one moment: shapes and colors. It does not show behavior, and a wrong guess looks correct on screen, so it is found late.
 
+### 1.1 Always ask first: what the picture is, and how closely to follow it
+
+**MUST** ask the user these questions whenever a picture comes with the request, **before any other work**, even when you think you know the answer. **NEVER** answer them yourself: the answer decides the whole build (image files or not, coordinates or a flexible layout, the touch structure), and a wrong guess is found only after most of the work is done. Put your own reading into the question so the user only has to confirm or correct it.
+
+1. **What is the picture?**
+   - **A sketch or wireframe**: a hand drawing, boxes and lines, gray placeholder blocks, placeholder text. It shows composition only, never a look.
+   - **A finished design**: a mockup, a screenshot of a real screen, an AI-generated design. It shows a look.
+2. **For a finished design, how closely should the screen follow it?**
+   - **Composition only**: the layout and the contents from the picture, built with standard components and theme tokens. No image files.
+   - **The look, with picture files**: the plates, buttons and backgrounds are image files. Ask also whether designer files or a layered source exist; without them you make temporary images (chapter 5).
+   - **The look, with style only**: gradients, shadows and rounded corners as close as style can draw, no image files. What style cannot draw is reported as a difference (chapter 10).
+
+Ask the two together. For example:
+
+```text
+This looks like a hand sketch. Shall I take only its layout and contents and build it with the standard components and theme?
+
+This looks like a finished design. How closely should I follow it?
+(a) layout and contents only, standard components and theme
+(b) the same look, using image files — do you have the designer's files?
+(c) as close as style can get, without image files
+```
+
+**Composition only** (every sketch, and a design used as a reference): follow `llm-rules.md` with standard components and theme tokens. **Do not measure coordinates**: read the order of the areas and their rough proportions and lay them out with `DvStack`, `DvRow` and `grow`, so the screen follows the window. Text in a sketch is a placeholder: ask for the real text or list it in your final message. From this guide, use chapters 1, 2 (what is on the screen, not where to the pixel), 9 and 10.
+
+### 1.2 What else to find out
+
 **MUST** find out whatever the request does not say:
 
 | Find out | Why it matters |
 |---|---|
-| Is the picture a reference, or the look to reproduce? | A reference needs no image files. Follow `llm-rules.md` with standard components and theme tokens, and use this guide only for chapters 1, 2, 9 and 10 |
 | How is each control operated, and what does it change? | The shape does not say |
 | Range, unit, initial value and source of each value | The position of a control does not say |
 | Which other states exist? | Each state may need its own appearance |
 | Panel resolution, OS and host | Chapter 4 |
-| Do separated image files or a layered source exist? | Chapter 5 |
 
-If nobody can answer, choose the simplest reading and list it in your final message (chapter 10).
+If nobody can answer these, choose the simplest reading and list it in your final message (chapter 10). This does not apply to 1.1, which is always asked.
 
 **Build only what the picture or the user shows.** Do not add behavior, limits, animation, states or controls because they seem natural for that kind of device. What you add looks intentional, and the next reader will treat it as required.
 
@@ -56,7 +81,7 @@ Do not copy a third-party logo or brand name without confirmation that the user 
 
 **Separate the design from everything else.** Captures often include things that are not part of the screen: buttons and watermarks added by a browser or search engine, cursors, and the page or frame around the screen. The values shown are sample data.
 
-**Convert coordinates.** Measure from the top-left corner of the screen itself, then:
+**Convert coordinates** (only when reproducing a look; a sketch or a composition-only build is not measured, 1.1). Measure from the top-left corner of the screen itself, then:
 
 ```text
 design coordinate = measured pixels × (design width ÷ screen width in the picture)
@@ -289,6 +314,7 @@ Follow `llm-rules.md` section 5, then derive your checks from your own inventory
 
 Your final message must state:
 
+- what the user answered in 1.1 (sketch or design, and how closely it is followed);
 - everything you assumed because nobody could answer;
 - what you added because the screen needed it, and which controls have no effect yet (chapter 1);
 - which images are temporary, and which files are still needed;
