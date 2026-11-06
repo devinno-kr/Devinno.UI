@@ -1234,7 +1234,7 @@ Planned for later stages. Do not use them now (they are silently ignored or draw
 |---|---|
 | On hold | `exit` hint (specifying the outgoing direction) — when a real screen needs it |
 
-Other items not planned: specifying bend points in automatic placement, zooming in or enlarging (`fit="shrink"` only shrinks an overflowing diagram), pipe click events, dragging equipment.
+Other items not planned: specifying bend points in automatic placement, zooming in or enlarging an automatically placed diagram (`fit="shrink"` only shrinks an overflowing one; a coordinate-placed drawing scales both ways with `fit="contain"`, 20.3), pipe click events, dragging equipment.
 
 ---
 
@@ -1458,7 +1458,7 @@ Why: automatic placement puts equipment in columns along the flow. Every line th
 7. **Several lines on one face of a vessel**: do not connect them all to `side` (lines on the same face in the same direction merge into one nozzle). Give each its own point with a face position (6.1): feed `T201.left@0.5`, reflux return `T201.right@0.3`, reboiler return `T201.left@0.9`, relief `T201.right@0.1`.
 8. **Instruments**: `on` (`on="FV101"`) puts the bubble on the least busy face automatically — fine for valves and flowmeters. Where the position means something (a level transmitter at the column base, a temperature at a tray, a temperature on a product line), use `tap`: `tap="T201.right@0.82"`, `tap="E203.out"`. A bubble placed with `on` can also sit in front of a nozzle and block a pipe (a `no free path` on that equipment's line) — `tap` fixes that too. When it has to be somewhere else entirely, give it `x`·`y` (20.5).
 9. **Value text** (`value`) is not part of the layout. Keep it short (`96.4 °C`, `38.2 m³/h`) and watch for `'X' value text overlaps …`.
-10. **Render at the base size** and fix every `overlap` and `no free path` by moving equipment. One or two crossings are normal on a real P&ID and are drawn with jumps. Then follow the sizing procedure (chapter 4) at the smallest real screen size.
+10. **Render at the base size** and fix every `overlap` and `no free path` by moving equipment. One or two crossings are normal on a real P&ID and are drawn with jumps. A pipe that still runs where you do not want it (around the wrong side, or across a busy area) gets its route with `via` — the points it runs through (20.6). Then follow the sizing procedure (chapter 4) at the smallest real screen size.
 
 ### 21.4 Reading a given drawing and copying it
 
