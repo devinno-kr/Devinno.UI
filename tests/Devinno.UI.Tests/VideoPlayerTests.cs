@@ -168,6 +168,49 @@ public class VideoPlayerTests
         Assert.Contains("not found", box.VideoError);
     }
 
+    public sealed class ListVm
+    {
+        public List<string> Clips { get; set; } = [Clip, Clip, Clip];
+    }
+
+    [Fact]
+    public void InsideRepeat_EachItemHasItsOwnPlayer_ByPosition()
+    {
+        if (!Ready())
+            return;
+        var vm = new ListVm();
+        var s = new DvSurface("<DvScreen><DvRepeat items=\"{Clips}\"><DvVideo src=\"{Item}\" style=\"width:160; height:90\"/></DvRepeat></DvScreen>", vm, DvTheme.Light);
+        s.Layout(600, 400);
+        var first = Flatten(s.Root!).Where(b => b.Node.Tag == "DvVideo").Select(b => b.VideoSource).ToList();
+        Assert.Equal(3, first.Count);
+        Assert.Equal(3, first.Distinct().Count()); // 항목마다 따로
+
+        vm.Clips = [Clip, Clip]; // 마지막 항목 사라짐
+        s.Invalidate();
+        s.Layout(600, 400);
+        var second = Flatten(s.Root!).Where(b => b.Node.Tag == "DvVideo").Select(b => b.VideoSource).ToList();
+        Assert.Equal(first.Take(2), second); // 앞 두 개는 같은 재생기
+        Assert.False(first[2]!.UseFrame(_ => { })); // 사라진 항목의 재생기는 닫힘
+    }
+
+    [Fact]
+    public void HotReload_ClosesThePlayersOfTheOldMarkup()
+    {
+        if (!Ready())
+            return;
+        var vm = new Vm();
+        var s = new DvSurface("<DvScreen><DvVideo src=\"{Path}\"/></DvScreen>", vm, DvTheme.Light);
+        s.Layout(600, 400);
+        var old = Flatten(s.Root!).First(b => b.Node.Tag == "DvVideo").VideoSource!;
+
+        Assert.Null(s.ReloadMarkup("<DvScreen><DvLabel text=\"no video\"/><DvVideo src=\"{Path}\" loop=\"true\"/></DvScreen>"));
+        s.Layout(600, 400);
+        var now = Flatten(s.Root!).First(b => b.Node.Tag == "DvVideo").VideoSource!;
+        Assert.NotSame(old, now);
+        Assert.False(old.UseFrame(_ => { }));
+        Assert.True(now.UseFrame(_ => { }));
+    }
+
     [Fact]
     public void OneOffRender_ShowsTheFirstFrame()
     {
