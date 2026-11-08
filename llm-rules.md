@@ -66,6 +66,8 @@ Knowing how mistakes show up helps you find the cause quickly when looking at th
 | `hover-style`, `content-align`, etc. on a component instance | Ignored. Only parameters and `style`, `class`, `grow`, `width`, `height`, `visible`, `onclick`, `disabled` are passed through. (See section 4) |
 | Unknown icon name | The icon is not drawn (one Trace warning). |
 | `DvImage src` or `background-image: url(…)` file missing | Empty box / no picture. |
+| `DvVideo src` file missing or unreadable, or FFmpeg 8 shared libraries not found | A one-line reason in the box instead of the picture (one Trace warning). FFmpeg is not in the package — see `DvVideo` in dvml-ui-markup.md. |
+| `DvVideo source="{X}"` where X is not an `IFrameSource` (a path string, an `SKImage`) | Empty box (Trace warning). A file path goes in `src`; frames from code go through a `FrameSource`. |
 
 ### 3.2 Shows as magenta (`#FF00FF`)
 

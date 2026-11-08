@@ -15,7 +15,13 @@
 
   <ItemGroup>
     <PackageReference Include="SkiaSharp" Version="3.119.4" />
+    <!-- DvVideo src 재생: FFmpeg 8.x 바인딩(MIT, 관리 코드만). FFmpeg 네이티브(avcodec-62 등)는 담지 않는다 — 앱 폴더·PATH·OS 패키지 -->
+    <PackageReference Include="FFmpeg.AutoGen" Version="8.1.0" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
 
   <!-- 패키지 문서: AI·사람용 작성 규칙과 마크업 레퍼런스(C# API 설명은 Devinno.UI.xml, README·아이콘·제3자 고지는 ../Directory.Build.props) -->
   <ItemGroup>

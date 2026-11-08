@@ -8,6 +8,6 @@ The documents below sit in the same folder as this file (the package's `docs/`, 
 2. [dvml-ui-markup.md](dvml-ui-markup.md): markup reference. Full list of tags, attributes, style keys, values, defaults, binding syntax, handler signatures and theme tokens, with examples. Assume anything not listed there does not exist.
 3. [dvml-process.md](dvml-process.md): process diagram (P&ID, `DvProcess`) authoring guide. Read it before building a process screen.
 4. [dvml-image.md](dvml-image.md): building a screen from a picture (a mockup, screenshot or AI-generated design, often with image files). Read it before reproducing a given look.
-5. Devinno.UI.xml: C# API reference (XML doc comments, the same text IntelliSense shows). Detailed usage of DvApp, DvPage, DvBar, DvDialog, DvSurface, DvRenderer, DvTheme, AlarmLog, TrendBuffer, DvStrings, ComponentRegistry, DvWidget (custom widgets drawn in C#) and others.
+5. Devinno.UI.xml: C# API reference (XML doc comments, the same text IntelliSense shows). Detailed usage of DvApp, DvPage, DvBar, DvDialog, DvSurface, DvRenderer, DvTheme, AlarmLog, TrendBuffer, DvStrings, ComponentRegistry, DvWidget (custom widgets drawn in C#), FrameSource and VideoPlayer (frames and video files for `DvVideo`) and others.
 
 To show screens in a window, an app also references one host adapter package, each with its own `llms.txt`: Devinno.UI.OpenTK (`ViewWindow`) or Devinno.UI.WinForms (`ViewControl`).

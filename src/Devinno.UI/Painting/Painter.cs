@@ -341,6 +341,9 @@ public sealed partial class Painter
             }
         }
 
+        if (box.Node.Tag == "DvVideo")
+            PaintVideo(canvas, box, rect);
+
         if (box.Node.Tag == "DvSparkline")
             PaintSparkline(canvas, box);
 
@@ -614,6 +617,59 @@ public sealed partial class Painter
     }
 
     // 그림을 상자에 맞춘 자리 — fill = 상자 그대로, cover·contain = 비율 유지(덮기·담기) 가운데. DvImage·background-image 공통
+    // DvVideo — 소스의 현재 프레임(소스가 잠금 안에서 넘겨줌 — 그리는 동안 해제되지 않는다). 프레임 없으면 배경만, 오류면 가운데 글자
+    private void PaintVideo(SKCanvas canvas, LayoutBox box, SKRect rect)
+    {
+        if (box.VideoError is { Length: > 0 } error)
+        {
+            using var font = TextFont.Create(error, 13f, bold: false);
+            using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted", new SKColor(0x64, 0x74, 0x8b)) };
+            canvas.Save();
+            canvas.ClipRect(rect);
+            var lines = WrapError(error, font, rect.Width - 16);
+            var y = rect.MidY - (lines.Count - 1) * font.Spacing / 2 + font.Size * 0.35f;
+            for (var i = 0; i < lines.Count; i++)
+                canvas.DrawText(lines[i], rect.MidX, y + i * font.Spacing, SKTextAlign.Center, font, tp);
+            canvas.Restore();
+            return;
+        }
+
+        if (box.VideoSource is not { } source)
+            return;
+        var version = source.FrameVersion;
+        source.UseFrame(image =>
+        {
+            var dest = FitRect(image, rect, box.ImageFit);
+            canvas.Save();
+            canvas.ClipRect(rect);
+            using var paint = new SKPaint();
+            canvas.DrawImage(image, dest, new SKSamplingOptions(SKFilterMode.Linear), paint);
+            canvas.Restore();
+        });
+        box.VideoPainted = version;
+    }
+
+    // 오류 글자를 폭에 맞춰 단어 단위로 나눈다
+    private static List<string> WrapError(string text, SKFont font, float width)
+    {
+        var lines = new List<string>();
+        var line = "";
+        foreach (var word in text.Split(' '))
+        {
+            var next = line.Length == 0 ? word : line + " " + word;
+            if (line.Length > 0 && font.MeasureText(next) > width)
+            {
+                lines.Add(line);
+                line = word;
+            }
+            else
+                line = next;
+        }
+        if (line.Length > 0)
+            lines.Add(line);
+        return lines;
+    }
+
     private static SKRect FitRect(SKImage image, SKRect rect, Widgets.ImageFit fit)
     {
         var iw = (float)image.Width;

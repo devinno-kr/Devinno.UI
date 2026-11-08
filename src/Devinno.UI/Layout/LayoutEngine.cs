@@ -95,9 +95,12 @@ public sealed class LayoutEngine
         try
         {
             _widgets = WidgetStore ?? new Widgets.WidgetStore(); // 서피스가 없으면(직접 호출·DvRenderer) 이번 배치만 쓰는 새 인스턴스
+            _videos = VideoStore ?? new Video.VideoStore(); // 서피스가 없으면 첫 프레임만 만든 재생기(바로 닫힘)
             _widgets.Begin();
+            _videos.Begin();
             var box = Build(root, vm, registry, 0) ?? new LayoutBox { Node = root, Style = new ComputedStyle() };
             _widgets.End();
+            _videos.End();
 
             // 루트 font-lang-{언어} = font-family 를 지정하지 않은 요소의 기본 폰트, 이후 자식에게 상속
             var langFont = _strings is { } s ? root.Attributes.GetValueOrDefault("font-lang-" + s.Language) : null;
@@ -230,6 +233,11 @@ public sealed class LayoutEngine
     internal Widgets.WidgetStore? WidgetStore { get; set; }
 
     private Widgets.WidgetStore _widgets = null!;
+
+    /// <summary>Keeps the players of <c>&lt;DvVideo src&gt;</c> between builds (set by the surface). If <see langword="null"/>, only the first frame is decoded (one-off render).</summary>
+    internal Video.VideoStore? VideoStore { get; set; }
+
+    private Video.VideoStore _videos = null!;
 
     // 커스텀 위젯 — 상자(스타일·onclick 등은 보통 요소와 같음) + 인스턴스(재빌드에도 같은 것) + 모든 속성을 바인딩 푼 값. 자식은 쓰지 않는다
     private LayoutBox BuildWidget(ElementNode node, object? vm, Func<Widgets.DvWidget> create)
@@ -802,6 +810,9 @@ public sealed class LayoutEngine
             box.ImageFit = Widgets.ImageFitParser.Parse(
                 BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("fit")));
         }
+
+        if (node.Tag == "DvVideo")
+            BuildVideo(node, box, vm);
 
         if (node.Tag is "DvKnob" or "DvSlider")
         {
@@ -1469,6 +1480,34 @@ public sealed class LayoutEngine
     // 알림의 Member — 바인딩이면 경로, 아니면 값 그대로
     private static string? PathOf(string? raw) => raw is not null && BindingResolver.IsBinding(raw) ? BindingResolver.ExtractPath(raw) : raw;
 
+    // DvVideo — source(앱이 만든 IFrameSource) 가 우선, 없으면 src 파일을 요소가 가진 재생기로
+    private void BuildVideo(ElementNode node, LayoutBox box, object? vm)
+    {
+        box.ImageFit = Widgets.ImageFitParser.Parse(BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("fit")));
+        var srcExpr = node.Attributes.GetValueOrDefault("src");
+        if (node.Attributes.TryGetValue("source", out var sourceExpr))
+        {
+            var value = BindingResolver.ResolveValueOrLiteral(vm, sourceExpr);
+            box.VideoSource = value as Video.IFrameSource;
+            if (value is not null && box.VideoSource is null)
+                System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvVideo source='{sourceExpr}' is a {value.GetType().Name}, not an IFrameSource; nothing is shown");
+            if (srcExpr is not null)
+                System.Diagnostics.Trace.TraceWarning("Devinno.UI: DvVideo has both source and src; src is ignored");
+            return;
+        }
+
+        var path = BindingResolver.ResolveText(vm, srcExpr);
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+        var playing = !node.Attributes.TryGetValue("playing", out var p) || ToBool(BindingResolver.ResolveValueOrLiteral(vm, p));
+        var loop = node.Attributes.TryGetValue("loop", out var l) && ToBool(BindingResolver.ResolveValueOrLiteral(vm, l));
+        var player = _videos.Get(node, path, VideoStore is not null);
+        player.Playing = playing;
+        player.Loop = loop;
+        box.VideoSource = player;
+        box.VideoError = player.Error;
+    }
+
     private static bool ToBool(object? v)
         => v is bool b ? b : string.Equals(BindingResolver.ToText(v, null), "true", StringComparison.OrdinalIgnoreCase);
 
@@ -1645,6 +1684,9 @@ public sealed class LayoutEngine
 
         if (box.Node.Tag == "DvImage")
             return (st.Width ?? 100f, st.Height ?? 100f);
+
+        if (box.Node.Tag == "DvVideo")
+            return (st.Width ?? 320f, st.Height ?? 180f);
 
         if (box.Node.Tag == "DvTank")
             return (st.Width ?? 80f, st.Height ?? 160f);

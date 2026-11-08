@@ -21,6 +21,11 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!-- DvVideo 재생 테스트용 동영상(빨강 1초 → 파랑 1초, 160×90 H.264) — 실행에는 FFmpeg 8 공유 라이브러리(DEVINNO_FFMPEG_DIR)가 필요, 없으면 그 테스트는 건너뛴다 -->
+  <ItemGroup>
+    <None Include="Assets\redblue.mp4" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\Devinno.UI\Devinno.UI.csproj" />
     <ProjectReference Include="..\..\src\Devinno.UI.Generators\Devinno.UI.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />

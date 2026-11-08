@@ -268,6 +268,12 @@ public sealed class LayoutBox
     public string? ImageSrc { get; set; }
     /// <summary>Fit mode of a <c>DvImage</c> (<c>fit</c>, default <see cref="Widgets.ImageFit.Contain"/>).</summary>
     public ImageFit ImageFit { get; set; } = ImageFit.Contain;
+    /// <summary>The frame source a <c>DvVideo</c> shows (<c>source</c>, or the player made for <c>src</c>). <see langword="null"/> if none.</summary>
+    internal Video.IFrameSource? VideoSource { get; set; }
+    /// <summary>A message a <c>DvVideo</c> paints instead of a frame (e.g. FFmpeg missing). <see langword="null"/> if none.</summary>
+    internal string? VideoError { get; set; }
+    // 마지막으로 그린 프레임 번호 — 부분 다시 그리기가 새 프레임이 있는 상자만 고르는 데 쓴다(그리기 스레드만)
+    internal long VideoPainted { get; set; } = long.MinValue;
     // DvGauge·DvRing·DvProgress·DvTank 값 글자의 format 속성(.NET 형식). null = 기본 규칙
     internal string? ValueFormat { get; set; }
     /// <summary>Current value of a <c>DvTank</c> (<c>value</c>, default 0).</summary>

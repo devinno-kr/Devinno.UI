@@ -94,6 +94,7 @@ public sealed partial class DvSurface
     // DvKnob 회전 드래그 — 미리보기 값은 LayoutBox 에만, VM 은 pointer-up 에서 1회 커밋
     private IValueDrag? _knobDrag; // 노브·슬라이더 끌기
     private readonly Widgets.WidgetStore _widgetStore = new(); // 커스텀 위젯 인스턴스 — 재빌드에도 같은 것
+    private readonly Video.VideoStore _videoStore = new(); // DvVideo src 재생기 — 재빌드에도 같은 것, 빠지면 닫힘
     private LayoutBox? _widgetDrag; // 누름을 잡은 커스텀 위젯(뗌·취소까지 이동을 받는다)
     private SKPoint _widgetShift;   // 화면 점 → 위젯 상자 좌표(스크롤 보정), 노브의 _knobShift 와 같음
 
@@ -448,9 +449,13 @@ public sealed partial class DvSurface
         "DvAlarmBanner" or "DvAlarmList"
             when !string.IsNullOrEmpty(box.CommAlarm) || box.AlarmItems.Any(a => !a.Acked) => Painter.AlarmBlinkMs,
         "DvProcess" when box.Process is { FlowAnimation: true } p && p.AnyFlowing => Painter.FlowFrameMs, // 흐름 애니메이션(초당 20프레임 상한)
+        "DvVideo" when box.VideoSource is { IsLive: true } => VideoPollMs, // 새 프레임이 왔는지 이 주기로 본다 — 그릴 것이 없으면 부분 영역이 비어 아무것도 안 그린다
         _ when box.Widget is { } w => WidgetFrameMs(box, w),
         _ => 0
     };
+
+    // DvVideo 새 프레임 확인 주기(ms) — 화면 주사율 한 프레임
+    private const int VideoPollMs = 16;
 
     // 커스텀 위젯이 원하는 프레임 간격(최소 16ms). 예외는 알리고 정지 그림으로
     private static int WidgetFrameMs(LayoutBox box, Widgets.DvWidget widget)
@@ -550,7 +555,7 @@ public sealed partial class DvSurface
             _dirty = false;
             _reads.Seen.Clear(); // 재빌드 — 같은 VM 읽기 예외도 다시 한 번 알린다
             var old = _box;
-            var engine = new LayoutEngine(_theme, _strings) { WidgetStore = _widgetStore };
+            var engine = new LayoutEngine(_theme, _strings) { WidgetStore = _widgetStore, VideoStore = _videoStore };
             if (_controlsByNode.Count > 0)
                 engine.ControlOf = n => _controlsByNode.GetValueOrDefault(n);
             if (_tabIndex.Count > 0)
@@ -1039,7 +1044,8 @@ public sealed partial class DvSurface
         void Walk(LayoutBox b, ScreenMap map, SKRect cl)
         {
             var inner = map.Into(b);
-            if (BlinkInterval(b) > 0)
+            // 동영상은 그린 뒤 새 프레임이 왔을 때만 — 같은 프레임을 다시 그리지 않는다
+            if (BlinkInterval(b) > 0 && (b.VideoSource is not { } video || video.FrameVersion != b.VideoPainted))
             {
                 var r = map.Map(b.Rect);
                 if (b.Style is { BackgroundSize: BackgroundFit.Natural, BackgroundImage: { Length: > 0 } src } && Widgets.ImageCache.Get(src) is { } image)

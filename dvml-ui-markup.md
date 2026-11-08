@@ -722,6 +722,7 @@ Built-in components whose appearance is defined by the theme. You rarely need `s
 | `DvTabs` | `value` (two-way, optional) `onbeforecommit` + `DvTab` children (`value` `text` `disabled`) | Header + content of the selected tab |
 | `DvExpander` | `header` `expanded` (two-way, optional) `disabled` + content children | Header row 44 (+ content when expanded) |
 | `DvImage` | `src` `fit`(contain) | 100×100 |
+| `DvVideo` | `src` or `source`, `fit`(contain) `playing`(true) `loop`(false) | 320×180 |
 | `DvStepBar` | `steps` `current`(0) | 96 width per step (min 200)×64 |
 
 **DvLabel** — text. Wraps if longer than the width it is given (3.8; force a single line with `white-space:nowrap`). The default text color is `#222222`, so give a typography class (`class="body"` etc.) or `color`. Align the text with `content-align`/`text-align`.
@@ -844,6 +845,19 @@ public sealed class Section(string title, List<Section> all)
 - Appearance: equal-width cell per step, a circle in the middle (diameter 28) + name below (ellipsis if longer than the cell). Done = `primary` fill + ✓, in progress = `primary` border + bold number and name, waiting = `border-strong` border + dimmed number and name. The lines between circles are `primary` only for passed segments.
 
 **DvImage** — `src` = file path (bindable). `fit` = `contain` (keep ratio, fit inside) `cover` (keep ratio, fill and crop) `fill` (stretch). Case is ignored. If the file is missing or unreadable (permissions, locked, format error), it is an empty box (read errors are Trace warnings). A path once read is decoded to pixels and cached (the same path is not re-read even if the file changes), and a failed path is retried after about 2 seconds (files created later are also shown). The cache is shared by the whole app and, when it exceeds **about 128MB of decoded pixels or 256 images**, evicts the least recently used images first — even if paths keep changing on a 24-hour screen (snapshots, equipment photos), memory does not accumulate. Images currently visible (drawn within about the last 2 seconds) are not evicted, and reusing an evicted path re-reads the file.
+
+**DvVideo** — a picture that changes: a video file, or frames your C# code produces (camera, decoder, generated images). Video only — no sound.
+```xml
+<DvVideo src="videos/guide.mp4" loop="true" fit="cover" style="height:300"/>
+<DvVideo src="{GuidePath}" playing="{IsPlaying}"/>
+<DvVideo source="{Preview}" fit="contain"/>
+```
+- `src` = video file path (bindable; relative to the current directory like `DvImage src`). The element plays it itself with FFmpeg: `playing` (default `true`, bindable — `false` pauses on the current frame), `loop` (default `false` — stops on the last frame). Changing `src` closes the old file and opens the new one; the player is closed when the element disappears.
+- `source` = a binding to an `IFrameSource` object in the view model (namespace `Devinno.UI.Video`): a `FrameSource` that your code `Publish`es pictures to from any thread, or a `VideoPlayer` you created for code control (`Seek`, `Position`, `Duration`, `Ended`). `playing`/`loop` are then not used — control the object. When both `source` and `src` are given, `source` wins (Trace warning).
+- `fit` = `contain` (default) `cover` `fill`, as in `DvImage`. The picture is clipped to the box; for rounded corners add `overflow:hidden` with `border-radius`. Background and border come from `style` (e.g. `background:#000000` for letterbox bars).
+- **FFmpeg 8 is needed for `src` (and `VideoPlayer`)** and is not part of the package. On Windows put the DLLs of an FFmpeg 8 *shared* build (`avcodec-62.dll`, `avformat-62.dll`, `avutil-60.dll`, `swscale-9.dll`, `swresample-6.dll`) next to the app or in an `ffmpeg` subfolder, or set `VideoPlayer.FFmpegDirectory` at startup; on Linux install FFmpeg 8 from the OS (`libavcodec.so.62`). If FFmpeg is missing or a different major version, or the file cannot be read, the box shows a one-line reason instead of the picture (and one Trace warning). `source` with your own frames needs no FFmpeg.
+- Repainting: while playing, only the video box is repainted, and only when a new frame has arrived — the rest of the screen is untouched, so a video costs little on a busy screen. A paused or ended video does not repaint at all. When no screen shows the video for about half a second (its page is hidden), playback time stops and continues when shown again.
+- In a one-off render without a surface (`DvRenderer.RenderToPng(markup, …)`), `src` shows the first frame.
 
 ---
 
