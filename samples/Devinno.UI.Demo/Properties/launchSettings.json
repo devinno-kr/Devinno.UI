@@ -12,6 +12,7 @@
     "Trend (fast)": { "commandName": "Project", "commandLineArgs": "trend fast" },
     "Knob": { "commandName": "Project", "commandLineArgs": "knob" },
     "Neon": { "commandName": "Project", "commandLineArgs": "neon" },
-    "Localization": { "commandName": "Project", "commandLineArgs": "lang" }
+    "Localization": { "commandName": "Project", "commandLineArgs": "lang" },
+    "Video": { "commandName": "Project", "commandLineArgs": "video" }
   }
 }

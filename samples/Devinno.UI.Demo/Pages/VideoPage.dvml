@@ -1,0 +1,29 @@
+<DvPageFrame vm="VideoPage">
+  <DvRow align="start">
+    <DvStack gap="none" grow="1" style="width:0">
+      <DvLabel class="heading" text="Video"/>
+      <DvLabel class="label muted" text="DvVideo plays a file with FFmpeg 8 (src) or shows frames your code publishes (source). Only the video area is repainted when a new frame arrives"/>
+    </DvStack>
+    <DvButton variant="secondary" icon="fa-arrow-left" text="Back" onclick="Back" visible="{ShowBack}"/>
+  </DvRow>
+  <DvGrid columns="2">
+    <DvCard title="Video file" badge="src">
+      <DvStack gap="md">
+        <DvVideo src="{Clip}" playing="{Playing}" loop="true" fit="contain" style="height:300; background:#000000; border-radius:8; overflow:hidden"/>
+        <DvRow align="center">
+          <DvButton variant="primary" icon="{PlayIcon}" text="{PlayText}" onclick="TogglePlay"/>
+          <DvLabel class="caption muted" grow="1" style="width:0" text="Assets/demo-clip.mp4, loop. Needs the FFmpeg 8 shared DLLs; without them the box shows a message"/>
+        </DvRow>
+      </DvStack>
+    </DvCard>
+    <DvCard title="Frames from code" badge="source">
+      <DvStack gap="md">
+        <DvVideo source="{Camera}" fit="cover" style="height:300; background:#000000; border-radius:8; overflow:hidden"/>
+        <DvRow align="center">
+          <DvToggle value="{Bind CameraOn}"/>
+          <DvLabel class="caption muted" grow="1" style="width:0" text="A FrameSource fed by a background thread at 30 frames per second, like a camera"/>
+        </DvRow>
+      </DvStack>
+    </DvCard>
+  </DvGrid>
+</DvPageFrame>

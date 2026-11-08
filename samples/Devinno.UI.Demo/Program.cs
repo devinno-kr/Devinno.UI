@@ -14,7 +14,7 @@ internal static class Program
     private static void Main(string[] args)
     {
         var theme = args.Contains("light") ? DvTheme.Light : DvTheme.Dark;
-        string[] scenarios = ["top", "nav", "dialog", "lang", "control", "equipment", "grid", "trend", "alarm", "input", "knob", "basic", "process", "neon", "v2", "dashboard", "custom"];
+        string[] scenarios = ["top", "nav", "dialog", "lang", "control", "equipment", "grid", "trend", "alarm", "input", "knob", "basic", "process", "neon", "v2", "dashboard", "custom", "video"];
         var showcase = !args.Any(scenarios.Contains);
         // 데모 화면은 모두 영어 — 언어 전환 페이지(lang)가 ko·en·ja 를 바꿀 수 있게 그 페이지의 표를 앱 전체에 쓰고, 영어로 시작한다
         var strings = WithLanguage(LangPage.CreateStrings(), "en");
@@ -37,6 +37,7 @@ internal static class Program
         var basic = new BasicPage();
         var motionNext = new MotionNextPage();
         var custom = new CustomWidgetPage();
+        var video = new VideoPage();
 
         var sim = new PlantSim();
         var overview = new OverviewPage(sim);
@@ -58,7 +59,12 @@ internal static class Program
             new("fa-table-columns", "Semantic components", "Cards, stats, badges and status items from the theme", components),
             new("fa-palette", "Custom styling", "Gradients, glow shadows and absolute layout", neon),
             new("fa-paintbrush", "Custom widgets", "Your own C# classes painted with SkiaSharp, used as markup tags", custom),
+            new("fa-film", "Video", "Play a video file with FFmpeg 8, or show frames your code publishes", video),
         ]);
+
+        // 동영상 페이지 — FFmpeg 8 공유 DLL 폴더(없으면 앱 폴더·ffmpeg 하위 폴더·PATH 에서 찾고, 못 찾으면 상자에 안내 글자)
+        if (Environment.GetEnvironmentVariable("DEVINNO_FFMPEG_DIR") is { Length: > 0 } ffmpegDir)
+            Devinno.UI.Video.VideoPlayer.FFmpegDirectory = ffmpegDir;
 
         var registry = new Devinno.UI.Components.ComponentRegistry();
         ProcessPage.Register(registry); // 공정도 유닛 컴포넌트(Blender)
@@ -67,7 +73,7 @@ internal static class Program
 #if DEBUG
         app.HotReload = true; // 개발 중 — dvml 을 저장하면 실행 중인 화면에 바로 반영(배포 빌드에서는 꺼짐)
 #endif
-        foreach (var page in new DvPage[] { overview, plantProcess, widgets, home, dashboard, components, control, lang, equipment, grid, trend, fastTrend, alarm, input, knob, neon, dialog, process, basic, motionNext, custom })
+        foreach (var page in new DvPage[] { overview, plantProcess, widgets, home, dashboard, components, control, lang, equipment, grid, trend, fastTrend, alarm, input, knob, neon, dialog, process, basic, motionNext, custom, video })
             app.Pages.Add(page);
 
         // 시작 페이지 · 창 크기 · 제목 · 테마(null = 기본 테마)
@@ -91,6 +97,7 @@ internal static class Program
             : args.Contains("v2") ? (components, ComponentDashboardPage.Width, ComponentDashboardPage.Height, "Devinno.UI Demo — Components", theme)
             : args.Contains("dashboard") ? (dashboard, DashboardPage.Width, DashboardPage.Height, "Devinno.UI Demo — Dashboard", null)
             : args.Contains("custom") ? (custom, CustomWidgetPage.Width, CustomWidgetPage.Height, "Devinno.UI Demo — Custom widgets", theme)
+            : args.Contains("video") ? (video, VideoPage.Width, VideoPage.Height, "Devinno.UI Demo — Video", theme)
             : (overview, 1440, 900, "Devinno.UI Demo", theme);
 
         if (args.Contains("top"))
