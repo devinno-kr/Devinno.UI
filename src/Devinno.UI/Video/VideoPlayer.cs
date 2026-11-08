@@ -62,6 +62,7 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
     private double _clockBase;
     private double _position;
     private double? _seekTo;
+    private volatile bool _seeking;
 
     /// <summary>
     /// The folder that holds the FFmpeg 8 shared libraries. <see langword="null"/> (default) = search the app folder, then its <c>ffmpeg</c> subfolder, then the OS default search (PATH, system libraries).
@@ -144,7 +145,7 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
     /// <summary>The length of the video, or <see cref="TimeSpan.Zero"/> if unknown.</summary>
     public TimeSpan Duration => TimeSpan.FromSeconds(_duration);
 
-    /// <summary>The timestamp of the frame on screen.</summary>
+    /// <summary>The timestamp of the frame on screen. Right after <see cref="Seek"/> it is the target time, before that frame is decoded.</summary>
     public TimeSpan Position
     {
         get { lock (_gate) return TimeSpan.FromSeconds(Math.Max(0, _position)); }
@@ -157,10 +158,16 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
         lock (_gate)
         {
             _seekTo = Math.Max(0, position.TotalSeconds);
+            _position = _seekTo.Value; // Position 은 바로 목표 시각 — 화면 바인딩이 옛 위치를 되써 넣지 않게
             _ended = false;
         }
         Wake();
     }
+
+    // DvVideo position·duration 바인딩 상태(UI 스레드만) — 상자는 재빌드마다 새로 만들어지므로 재생기에 둔다
+    internal double BoundPosition = double.NaN; // 뷰모델에 있는 값(마지막으로 읽거나 쓴 값). NaN = 아직 안 봄
+    internal long PositionWrittenAt;
+    internal double WrittenDuration = double.NaN;
 
     /// <inheritdoc/>
     public long FrameVersion
@@ -178,7 +185,7 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
         get
         {
             Seen();
-            return !_disposed && !_poster && _error is null && (_playing && !_ended || _seekTo is not null);
+            return !_disposed && !_poster && _error is null && (_playing && !_ended || _seekTo is not null || _seeking);
         }
     }
 
@@ -232,13 +239,21 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
                 {
                     seek = _seekTo;
                     _seekTo = null;
+                    _seeking = seek is not null; // 그 위치 그림을 내놓을 때까지 IsLive — 화면이 확인을 멈추지 않게
                 }
 
                 if (seek is { } target)
                 {
                     next?.Dispose();
                     next = null;
-                    SeekTo(target);
+                    try
+                    {
+                        SeekTo(target);
+                    }
+                    finally
+                    {
+                        _seeking = false;
+                    }
                     continue;
                 }
 

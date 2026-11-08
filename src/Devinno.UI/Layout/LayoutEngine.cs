@@ -1493,6 +1493,8 @@ public sealed class LayoutEngine
                 System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvVideo source='{sourceExpr}' is a {value.GetType().Name}, not an IFrameSource; nothing is shown");
             if (srcExpr is not null)
                 System.Diagnostics.Trace.TraceWarning("Devinno.UI: DvVideo has both source and src; src is ignored");
+            if (box.VideoSource is Video.VideoPlayer own)
+                BindVideoTime(node, box, vm, own);
             return;
         }
 
@@ -1506,6 +1508,50 @@ public sealed class LayoutEngine
         player.Loop = loop;
         box.VideoSource = player;
         box.VideoError = player.Error;
+        BindVideoTime(node, box, vm, player);
+    }
+
+    /// <summary>The DvVideo boxes of this build that write <c>position</c>/<c>duration</c> to the view model; the surface syncs them every frame.</summary>
+    internal List<LayoutBox> BoundVideos { get; } = new();
+
+    // position = 뷰모델 값이 바뀌었으면 그 위치로 이동(처음 본 재생기는 처음부터 — 뷰모델에 0 이 써진다). {Bind} 면 재생 위치를 되써 넣는다.
+    // duration = {Bind} 일 때만 의미(길이를 써 넣음)
+    private void BindVideoTime(ElementNode node, LayoutBox box, object? vm, Video.VideoPlayer player)
+    {
+        if (node.Attributes.TryGetValue("position", out var posExpr))
+        {
+            var v = ToSeconds(BindingResolver.ResolveValueOrLiteral(vm, posExpr));
+            if (double.IsNaN(player.BoundPosition))
+                player.BoundPosition = v;
+            else if (Math.Abs(v - player.BoundPosition) > 0.0005)
+            {
+                player.Seek(TimeSpan.FromSeconds(Math.Max(0, v)));
+                player.BoundPosition = v;
+            }
+            if (BindingResolver.IsTwoWay(posExpr))
+                box.VideoPositionPath = BindingResolver.ExtractPath(posExpr);
+        }
+        if (node.Attributes.TryGetValue("duration", out var durExpr) && BindingResolver.IsTwoWay(durExpr))
+            box.VideoDurationPath = BindingResolver.ExtractPath(durExpr);
+        if (box.VideoPositionPath is not null || box.VideoDurationPath is not null)
+            BoundVideos.Add(box);
+    }
+
+    private static double ToSeconds(object? v)
+    {
+        try
+        {
+            return v switch
+            {
+                null => 0,
+                string s => double.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d) ? d : 0,
+                _ => Convert.ToDouble(v, System.Globalization.CultureInfo.InvariantCulture)
+            };
+        }
+        catch (Exception)
+        {
+            return 0;
+        }
     }
 
     private static bool ToBool(object? v)

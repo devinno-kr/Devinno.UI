@@ -274,6 +274,9 @@ public sealed class LayoutBox
     internal string? VideoError { get; set; }
     // 마지막으로 그린 프레임 번호 — 부분 다시 그리기가 새 프레임이 있는 상자만 고르는 데 쓴다(그리기 스레드만)
     internal long VideoPainted { get; set; } = long.MinValue;
+    // DvVideo position="{Bind P}"·duration="{Bind D}" 의 쓰기 경로(초). 단방향·없음 = null
+    internal string? VideoPositionPath { get; set; }
+    internal string? VideoDurationPath { get; set; }
     // DvGauge·DvRing·DvProgress·DvTank 값 글자의 format 속성(.NET 형식). null = 기본 규칙
     internal string? ValueFormat { get; set; }
     /// <summary>Current value of a <c>DvTank</c> (<c>value</c>, default 0).</summary>

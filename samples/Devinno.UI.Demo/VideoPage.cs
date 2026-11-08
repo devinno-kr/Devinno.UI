@@ -32,6 +32,11 @@ public sealed partial class VideoPage : DemoPage
 
     public void TogglePlay() => Playing = !Playing;
 
+    // DvVideo 가 재생 위치·길이(초)를 써 넣고, 슬라이더가 Position 을 바꾸면 그 위치로 이동
+    public double Position { get; set; }
+    public double Duration { get; set; }
+    public string TimeText => $"{Position:0.0} / {Duration:0.0} s";
+
     public FrameSource Camera { get; } = new();
 
     public bool CameraOn

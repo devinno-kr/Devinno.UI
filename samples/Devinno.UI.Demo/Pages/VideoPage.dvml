@@ -9,11 +9,13 @@
   <DvGrid columns="2">
     <DvCard title="Video file" badge="src">
       <DvStack gap="md">
-        <DvVideo src="{Clip}" playing="{Playing}" loop="true" fit="contain" style="height:300; background:#000000; border-radius:8; overflow:hidden"/>
+        <DvVideo src="{Clip}" playing="{Playing}" loop="true" position="{Bind Position}" duration="{Bind Duration}" fit="contain" style="height:300; background:#000000; border-radius:8; overflow:hidden"/>
         <DvRow align="center">
           <DvButton variant="primary" icon="{PlayIcon}" text="{PlayText}" onclick="TogglePlay"/>
-          <DvLabel class="caption muted" grow="1" style="width:0" text="Assets/demo-clip.mp4, loop. Needs the FFmpeg 8 shared DLLs; without them the box shows a message"/>
+          <DvSlider value="{Bind Position}" max="{Duration}" step="0.1" grow="1" style="width:0"/>
+          <DvLabel class="caption" text="{TimeText}"/>
         </DvRow>
+        <DvLabel class="caption muted" text="Assets/demo-clip.mp4, loop. Drag the slider to jump. Needs the FFmpeg 8 shared DLLs; without them the box shows a message"/>
       </DvStack>
     </DvCard>
     <DvCard title="Frames from code" badge="source">

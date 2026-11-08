@@ -211,6 +211,107 @@ public class VideoPlayerTests
         Assert.True(now.UseFrame(_ => { }));
     }
 
+    public sealed class TimeVm
+    {
+        public string Path { get; set; } = Clip;
+        public double Pos { get; set; }
+        public double Len { get; set; }
+        public bool Play { get; set; } = true;
+    }
+
+    // 화면이 프레임을 돌리는 것처럼 — 레이아웃(바인딩 맞춤) + 프레임 확인
+    private static bool Pump(DvSurface s, Func<bool> cond, int ms)
+    {
+        var until = Environment.TickCount64 + ms;
+        while (Environment.TickCount64 < until)
+        {
+            s.Layout(600, 400);
+            foreach (var b in Flatten(s.Root!).Where(b => b.Node.Tag == "DvVideo"))
+                _ = b.VideoSource?.FrameVersion;
+            if (cond())
+                return true;
+            Thread.Sleep(20);
+        }
+        return cond();
+    }
+
+    [Fact]
+    public void PositionAndDuration_AreWrittenToTheViewModel_UntilTheEnd()
+    {
+        if (!Ready())
+            return;
+        var vm = new TimeVm();
+        var s = new DvSurface("<DvScreen><DvVideo src=\"{Path}\" position=\"{Bind Pos}\" duration=\"{Bind Len}\"/></DvScreen>", vm, DvTheme.Light);
+        Assert.True(Pump(s, () => vm.Len > 0, 1000), "길이가 써짐");
+        Assert.InRange(vm.Len, 1.9, 2.1);
+        Assert.True(Pump(s, () => vm.Pos is > 0.5 and < 1.5, 2000), $"재생 중 위치 {vm.Pos}");
+        Assert.True(Pump(s, () => vm.Pos > 1.9, 3000), $"끝난 위치까지 {vm.Pos}");
+    }
+
+    [Fact]
+    public void ChangingPositionInTheViewModel_Seeks()
+    {
+        if (!Ready())
+            return;
+        var vm = new TimeVm { Play = false };
+        var s = new DvSurface("<DvScreen><DvVideo src=\"{Path}\" playing=\"{Play}\" position=\"{Bind Pos}\"/></DvScreen>", vm, DvTheme.Light);
+        s.Layout(600, 400);
+        var player = (VideoPlayer)Flatten(s.Root!).First(b => b.Node.Tag == "DvVideo").VideoSource!;
+
+        vm.Pos = 1.5; // 슬라이더가 쓴 것처럼
+        s.Invalidate();
+        s.Layout(600, 400);
+        Assert.InRange(player.Position.TotalSeconds, 1.4, 1.6);
+        Assert.True(WaitFor(player, () => IsBlue(Center(player)), 2000), "1.5초 = 파랑");
+        Pump(s, () => false, 300);
+        Assert.InRange(vm.Pos, 1.4, 1.6); // 옛 위치(0)를 되써 넣지 않는다
+    }
+
+    // 실제 호스트처럼: 그리고, 다음 시각까지 쉬고, 할 일이 없으면 멈춘다. 멈췄을 때 화면 가운데 색을 돌려준다
+    private static SKColor HostUntilIdle(DvSurface s, int w, int h, int ms)
+    {
+        using var bmp = new SKBitmap(w, h);
+        using var canvas = new SKCanvas(bmp);
+        var until = Environment.TickCount64 + ms;
+        while (Environment.TickCount64 < until)
+        {
+            var now = Environment.TickCount64;
+            s.RenderTo(canvas, w, h, now);
+            var due = s.NextAnimationDue(now);
+            if (due is null && !s.NeedsRender)
+                break; // 호스트가 잠듦 — 이 뒤로는 아무도 다시 그리지 않는다
+            Thread.Sleep((int)Math.Clamp((due ?? now + 16) - Environment.TickCount64, 1, 50));
+        }
+        return bmp.GetPixel(w / 2, h / 2);
+    }
+
+    [Fact]
+    public void SeekWhilePaused_TheHostKeepsPollingUntilTheNewFrameIsPainted()
+    {
+        if (!Ready())
+            return;
+        var vm = new TimeVm { Play = false };
+        var s = new DvSurface("<DvScreen style=\"padding:0\"><DvVideo src=\"{Path}\" playing=\"{Play}\" position=\"{Bind Pos}\" style=\"width:160; height:90\"/></DvScreen>", vm, DvTheme.Light);
+        Assert.True(IsRed(HostUntilIdle(s, 160, 90, 2000)));
+
+        vm.Pos = 1.5; // 슬라이더를 놓은 것처럼
+        s.Invalidate();
+        var c = HostUntilIdle(s, 160, 90, 3000);
+        Assert.True(IsBlue(c), c.ToString());
+    }
+
+    [Fact]
+    public void NewSrc_StartsFromTheBeginning_AndWritesZero()
+    {
+        if (!Ready())
+            return;
+        var vm = new TimeVm { Pos = 1.5, Play = false };
+        var s = new DvSurface("<DvScreen><DvVideo src=\"{Path}\" playing=\"{Play}\" position=\"{Bind Pos}\"/></DvScreen>", vm, DvTheme.Light);
+        Assert.True(Pump(s, () => vm.Pos == 0, 1000), $"pos {vm.Pos}");
+        var player = (VideoPlayer)Flatten(s.Root!).First(b => b.Node.Tag == "DvVideo").VideoSource!;
+        Assert.True(IsRed(Center(player)));
+    }
+
     [Fact]
     public void OneOffRender_ShowsTheFirstFrame()
     {

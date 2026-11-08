@@ -449,13 +449,55 @@ public sealed partial class DvSurface
         "DvAlarmBanner" or "DvAlarmList"
             when !string.IsNullOrEmpty(box.CommAlarm) || box.AlarmItems.Any(a => !a.Acked) => Painter.AlarmBlinkMs,
         "DvProcess" when box.Process is { FlowAnimation: true } p && p.AnyFlowing => Painter.FlowFrameMs, // 흐름 애니메이션(초당 20프레임 상한)
-        "DvVideo" when box.VideoSource is { IsLive: true } => VideoPollMs, // 새 프레임이 왔는지 이 주기로 본다 — 그릴 것이 없으면 부분 영역이 비어 아무것도 안 그린다
+        "DvVideo" when box.VideoSource is { } v && (v.IsLive || v.FrameVersion != box.VideoPainted) || VideoTimePending(box) => VideoPollMs, // 멈춘 뒤 마지막 그림(이동 결과 등)도 그릴 때까지 // 새 프레임이 왔는지 이 주기로 본다 — 그릴 것이 없으면 부분 영역이 비어 아무것도 안 그린다
         _ when box.Widget is { } w => WidgetFrameMs(box, w),
         _ => 0
     };
 
     // DvVideo 새 프레임 확인 주기(ms) — 화면 주사율 한 프레임
     private const int VideoPollMs = 16;
+
+    // DvVideo position·duration 을 뷰모델에 쓰는 간격(ms)과 무시하는 차이(초). 쓰면 화면을 다시 빌드한다(슬라이더 등이 따라옴)
+    private const int VideoTimeWriteMs = 250;
+    private const double VideoTimeEpsilon = 0.05;
+
+    private List<LayoutBox>? _boundVideos;
+
+    // 뷰모델에 써야 할 재생 위치·길이가 남았는가 — 남았으면 재생이 멈췄어도 한 프레임 더 돈다(끝난 위치도 써 넣는다)
+    private static bool VideoTimePending(LayoutBox box)
+        => box.VideoSource is Video.VideoPlayer p && p.Error is null &&
+           (box.VideoPositionPath is not null && !(Math.Abs(p.Position.TotalSeconds - p.BoundPosition) < VideoTimeEpsilon) ||
+            box.VideoDurationPath is not null && p.Duration.TotalSeconds != p.WrittenDuration);
+
+    // 재생 위치·길이를 뷰모델에 써 넣는다(UI 스레드, 레이아웃 전). 썼으면 다시 빌드
+    private void SyncVideoTimes()
+    {
+        if (_boundVideos is not { Count: > 0 } videos)
+            return;
+        var now = Environment.TickCount64;
+        foreach (var box in videos)
+        {
+            if (box.VideoSource is not Video.VideoPlayer p || p.Error is not null || box.ValueContext(_vm) is not { } ctx)
+                continue;
+            if (box.VideoDurationPath is { } dp && p.Duration.TotalSeconds != p.WrittenDuration)
+            {
+                p.WrittenDuration = p.Duration.TotalSeconds; // 실패해도 다시 시도하지 않는다(알림은 한 번)
+                HandlerErrors.TrySet(this, "DvVideo", ctx, dp, p.WrittenDuration);
+                _dirty = true;
+            }
+            if (box.VideoPositionPath is { } pp)
+            {
+                var pos = Math.Round(p.Position.TotalSeconds, 3);
+                if (!(Math.Abs(pos - p.BoundPosition) < VideoTimeEpsilon) && (now - p.PositionWrittenAt >= VideoTimeWriteMs || !p.IsLive))
+                {
+                    p.BoundPosition = pos;
+                    p.PositionWrittenAt = now;
+                    HandlerErrors.TrySet(this, "DvVideo", ctx, pp, pos);
+                    _dirty = true;
+                }
+            }
+        }
+    }
 
     // 커스텀 위젯이 원하는 프레임 간격(최소 16ms). 예외는 알리고 정지 그림으로
     private static int WidgetFrameMs(LayoutBox box, Widgets.DvWidget widget)
@@ -530,6 +572,7 @@ public sealed partial class DvSurface
 
     private void LayoutCore(float w, float h)
     {
+        SyncVideoTimes();
         if (!_dirty && _box is not null && _w == w && _h == h)
         {
             if (Composer is not null)
@@ -566,6 +609,7 @@ public sealed partial class DvSurface
             _expSeen.Clear();
             engine.TreeExpandedOf = TreeExpanded;
             _box = engine.Layout(_root, _vm, w, h, _registry);
+            _boundVideos = engine.BoundVideos;
             PruneExpanderState();
             Remap(old);
         }

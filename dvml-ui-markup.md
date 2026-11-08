@@ -567,7 +567,7 @@ Example: `style="background: token(surface); border: 1 token(border); padding: t
 
 ### 6.2 Where two-way binding is accepted
 
-`value="{Bind …}"` is meaningful only on: `DvToggle`, `DvCheckBox`, `DvRadio`, `DvSwitch`, `DvKnob`, `DvSlider`, `DvInput`, `DvSelect`, `DvListBox` (including `selected-items`), `DvExpander` (`expanded`), `DvTreeView`, `DvSegment`, `DvTabs`, `DvButton` (latching), `DvDateTimeInput`, `DvColorInput`, and the `selection` of `DvDataGrid`. On any other attribute, `{Bind X}` is read-only, like `{X}`. Giving an input widget a one-way `{X}` or a literal makes it **read-only**.
+`value="{Bind …}"` is meaningful only on: `DvToggle`, `DvCheckBox`, `DvRadio`, `DvSwitch`, `DvKnob`, `DvSlider`, `DvInput`, `DvSelect`, `DvListBox` (including `selected-items`), `DvExpander` (`expanded`), `DvTreeView`, `DvSegment`, `DvTabs`, `DvButton` (latching), `DvDateTimeInput`, `DvColorInput`, the `selection` of `DvDataGrid`, and `position`/`duration` of `DvVideo`. On any other attribute, `{Bind X}` is read-only, like `{X}`. Giving an input widget a one-way `{X}` or a literal makes it **read-only**.
 
 ### 6.3 Attributes that are not bound
 
@@ -722,7 +722,7 @@ Built-in components whose appearance is defined by the theme. You rarely need `s
 | `DvTabs` | `value` (two-way, optional) `onbeforecommit` + `DvTab` children (`value` `text` `disabled`) | Header + content of the selected tab |
 | `DvExpander` | `header` `expanded` (two-way, optional) `disabled` + content children | Header row 44 (+ content when expanded) |
 | `DvImage` | `src` `fit`(contain) | 100×100 |
-| `DvVideo` | `src` or `source`, `fit`(contain) `playing`(true) `loop`(false) | 320×180 |
+| `DvVideo` | `src` or `source`, `fit`(contain) `playing`(true) `loop`(false) `position`(two-way, s) `duration`(written, s) | 320×180 |
 | `DvStepBar` | `steps` `current`(0) | 96 width per step (min 200)×64 |
 
 **DvLabel** — text. Wraps if longer than the width it is given (3.8; force a single line with `white-space:nowrap`). The default text color is `#222222`, so give a typography class (`class="body"` etc.) or `color`. Align the text with `content-align`/`text-align`.
@@ -851,9 +851,14 @@ public sealed class Section(string title, List<Section> all)
 <DvVideo src="videos/guide.mp4" loop="true" fit="cover" style="height:300"/>
 <DvVideo src="{GuidePath}" playing="{IsPlaying}"/>
 <DvVideo source="{Preview}" fit="contain"/>
+
+<!-- seek bar: the video writes Pos/Len, the slider writes Pos back -->
+<DvVideo src="videos/guide.mp4" position="{Bind Pos}" duration="{Bind Len}"/>
+<DvSlider value="{Bind Pos}" max="{Len}" step="0.1"/>
 ```
 - `src` = video file path (bindable; relative to the current directory like `DvImage src`). The element plays it itself with FFmpeg: `playing` (default `true`, bindable — `false` pauses on the current frame), `loop` (default `false` — stops on the last frame). Changing `src` closes the old file and opens the new one; the player is closed when the element disappears.
 - `source` = a binding to an `IFrameSource` object in the view model (namespace `Devinno.UI.Video`): a `FrameSource` that your code `Publish`es pictures to from any thread, or a `VideoPlayer` you created for code control (`Seek`, `Position`, `Duration`, `Ended`). `playing`/`loop` are then not used — control the object. When both `source` and `src` are given, `source` wins (Trace warning).
+- `position` = playback position in seconds (a number property in the view model). With `{Bind P}` the video writes its position to `P` about 4 times a second while playing (and once when it stops or ends); when `P` changes from anywhere else (a slider, code + `Invalidate`), the video jumps there. A one-way `{P}` only jumps. `duration="{Bind D}"` writes the length in seconds to `D` once the file is open. Both work with `src`, and with `source` when it is a `VideoPlayer`. A newly opened file (first build, or `src` changed) starts from 0 and writes 0 to `P` — it does not jump to the old value. Each write rebuilds the screen so bound widgets follow, so a bound video repaints the whole screen about 4 times a second instead of only its box.
 - `fit` = `contain` (default) `cover` `fill`, as in `DvImage`. The picture is clipped to the box; for rounded corners add `overflow:hidden` with `border-radius`. Background and border come from `style` (e.g. `background:#000000` for letterbox bars).
 - **FFmpeg 8 is needed for `src` (and `VideoPlayer`)** and is not part of the package. On Windows put the DLLs of an FFmpeg 8 *shared* build (`avcodec-62.dll`, `avformat-62.dll`, `avutil-60.dll`, `swscale-9.dll`, `swresample-6.dll`) next to the app or in an `ffmpeg` subfolder, or set `VideoPlayer.FFmpegDirectory` at startup; on Linux install FFmpeg 8 from the OS (`libavcodec.so.62`). If FFmpeg is missing or a different major version, or the file cannot be read, the box shows a one-line reason instead of the picture (and one Trace warning). `source` with your own frames needs no FFmpeg.
 - Repainting: while playing, only the video box is repainted, and only when a new frame has arrived — the rest of the screen is untouched, so a video costs little on a busy screen. A paused or ended video does not repaint at all. When no screen shows the video for about half a second (its page is hidden), playback time stops and continues when shown again.
