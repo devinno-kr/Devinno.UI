@@ -1607,13 +1607,17 @@ public sealed partial class LayoutEngine
         return size;
     }
 
+    // 칸을 차지하는 자식 — position:absolute 자식은 다른 상자와 같이 흐름 밖(칸·크기에 들지 않고 오프셋으로 놓인다)
+    private static List<LayoutBox> GridItems(LayoutBox box) =>
+        box.Children.Where(c => c.Style.Position != Position.Absolute).ToList();
+
     // 행별 최대 내용 높이 — 칸은 열 폭으로 잰다(글자가 열 폭에 맞춰 줄바꿈)
-    private static float[] GridRowContent(LayoutBox box, float[] colW, int cols)
+    private static float[] GridRowContent(List<LayoutBox> items, float[] colW, int cols)
     {
-        var n = box.Children.Count;
+        var n = items.Count;
         var rowContent = new float[(n + cols - 1) / cols];
         for (var i = 0; i < n; i++)
-            rowContent[i / cols] = MathF.Max(rowContent[i / cols], Measure(box.Children[i], colW[i % cols]).h);
+            rowContent[i / cols] = MathF.Max(rowContent[i / cols], Measure(items[i], colW[i % cols]).h);
         return rowContent;
     }
 
@@ -1626,7 +1630,8 @@ public sealed partial class LayoutEngine
         var cols = GridColumnCount(st);
         var tracks = ColumnTracks(st);
         var gaps = st.Gap * Math.Max(0, cols - 1);
-        var sizes = box.Children.Select(c => Measure(c)).ToArray();
+        var items = GridItems(box);
+        var sizes = items.Select(c => Measure(c)).ToArray();
         var colContent = GridColContent(sizes, cols);
         var natural = ResolveTracks(tracks, colContent, 0, st.Gap, measuring: true);
         FrMaxContent(tracks, colContent, natural);
@@ -1636,7 +1641,7 @@ public sealed partial class LayoutEngine
         if (InnerLimit(box, avail) is { } limit && (FixedWidth(box) is not null || box.WidthOverridden || inner > limit + TextWrap.Tolerance))
             inner = limit;
         var colW = ResolveTracks(tracks, colContent, inner, st.Gap, measuring: false);
-        var rowContent = GridRowContent(box, colW, cols);
+        var rowContent = GridRowContent(items, colW, cols);
         var rowH = ResolveTracks(st.GridRows, rowContent, 0, st.Gap, measuring: true);
 
         var contentH = rowH.Sum() + st.Gap * Math.Max(0, rowH.Length - 1);
@@ -1666,7 +1671,7 @@ public sealed partial class LayoutEngine
             : null;
     }
 
-    // 자식은 칸(열 폭 × 행 높이)을 채운다
+    // 자식은 칸(열 폭 × 행 높이)을 채운다. position:absolute 자식은 칸 없이 오프셋으로
     private static void ArrangeGrid(LayoutBox box, float x, float y, float w, float h)
     {
         var st = box.Style;
@@ -1678,23 +1683,26 @@ public sealed partial class LayoutEngine
         var gap = st.Gap;
 
         // 열 폭을 먼저 정하고 그 칸 폭으로 행 높이를 잰다
-        var sizes = box.Children.Select(c => Measure(c)).ToArray();
+        var items = GridItems(box);
+        var sizes = items.Select(c => Measure(c)).ToArray();
         var colContent = GridColContent(sizes, cols);
         var colW = ResolveTracks(ColumnTracks(st), colContent, innerW, gap, measuring: false);
-        var rowContent = GridRowContent(box, colW, cols);
+        var rowContent = GridRowContent(items, colW, cols);
         var rowH = ResolveTracks(st.GridRows, rowContent, innerH, gap, measuring: false);
 
         var rowY = innerY;
         for (var r = 0; r < rowH.Length; r++)
         {
             var cx = innerX;
-            for (var c = 0; c < cols && r * cols + c < box.Children.Count; c++)
+            for (var c = 0; c < cols && r * cols + c < items.Count; c++)
             {
-                Arrange(box.Children[r * cols + c], cx, rowY, colW[c], rowH[r]);
+                Arrange(items[r * cols + c], cx, rowY, colW[c], rowH[r]);
                 cx += colW[c] + gap;
             }
 
             rowY += rowH[r] + gap;
         }
+
+        ArrangeAbsoluteChildren(box);
     }
 }

@@ -169,4 +169,29 @@ public class GridTrackTests
         Assert.Null(b.Children[0].Style.Shadow);
         Assert.NotNull(b.Children[1].Style.Shadow);
     }
+
+    // ── position:absolute 자식은 칸을 차지하지 않는다(다른 상자와 같이 흐름 밖, 오프셋으로 놓인다)
+    [Fact]
+    public void Absolute_child_takes_no_cell_and_is_placed_by_its_offsets()
+    {
+        var b = Lay("<DvScreen style=\"padding:0\"><DvGrid columns=\"2\" style=\"padding:10; gap:0; width:400\">" +
+                    "<DvBox style=\"position:absolute; left:5; top:7; width:30; height:300\"/>" +
+                    "<DvBox style=\"height:20\"/><DvBox style=\"height:20\"/><DvBox style=\"height:40\"/></DvGrid></DvScreen>");
+        var g = b.Children[0];
+        var abs = g.Children[0].Rect;
+        Assert.Equal(g.Rect.Left + 10 + 5, abs.Left, 3);
+        Assert.Equal(g.Rect.Top + 10 + 7, abs.Top, 3);
+        Assert.Equal(30, abs.Width, 3);
+        Assert.Equal(300, abs.Height, 3);
+        // 다음 보통 자식이 칸 0(첫 행 첫 열), 그 다음이 칸 1, 넷째 자식이 둘째 행
+        Assert.Equal(g.Rect.Left + 10, g.Children[1].Rect.Left, 3);
+        Assert.Equal(g.Rect.Top + 10, g.Children[1].Rect.Top, 3);
+        Assert.Equal(190, g.Children[1].Rect.Width, 3);
+        Assert.Equal(g.Rect.Left + 200, g.Children[2].Rect.Left, 3);
+        Assert.Equal(g.Rect.Top + 10, g.Children[2].Rect.Top, 3);
+        Assert.Equal(g.Rect.Left + 10, g.Children[3].Rect.Left, 3);
+        Assert.Equal(g.Rect.Top + 30, g.Children[3].Rect.Top, 3);
+        // 크기에도 들어가지 않는다 — 행 높이 = 20 + 40, 위아래 패딩 10
+        Assert.Equal(80, g.Rect.Height, 3);
+    }
 }
