@@ -40,7 +40,7 @@ public class TagSchemaGridTests
           <DvColumnGroup header="G">
             <DvColumn header="H" field="Kind" width="100" align="center" format="0.0" frozen="false" sortable="true" sort="asc" cell-class="Cls"
                       cell-type="select" filter="values" readonly="false" onbeforecommit="Before" on-color="#00ff00" blink="true" text="Go" icon="fa-play"
-                      variant="danger" onclick="Click" enabled="Ok" min="0" max="10" unit="kg" mode="date" show-seconds="true"
+                      variant="danger" onclick="Click" cell-disabled="Ok" min="0" max="10" unit="kg" mode="date" show-seconds="true"
                       items="{Opts}" item-value="V" item-text="T" item-icon="I"/>
           </DvColumnGroup>
           <DvColumn field="Qty"/>
@@ -75,6 +75,17 @@ public class TagSchemaGridTests
     {
         Assert.True(TagSchema.Tags.TryGetValue(tag, out var defs), $"{tag} has no TagSchema entry");
         return defs!;
+    }
+
+    // 4단계 검토 M3 — 모든 속성을 채운 이 픽스처도 새 이름만 쓴다(옛 이름은 읽히지 않아 읽기 비교에 안 걸린다)
+    [Fact]
+    public void Fixture_UsesNoRenamedAttributes()
+    {
+        static IEnumerable<ElementNode> All(ElementNode n) => new[] { n }.Concat(n.Children.SelectMany(All));
+        var old = All(MarkupParser.Parse($"<DvScreen>{Markup}</DvScreen>"))
+            .SelectMany(n => n.Attributes.Keys.Where(k => TagSchema.Renamed.ContainsKey((n.Tag, k))).Select(k => $"{n.Tag} {k}"))
+            .ToList();
+        Assert.True(old.Count == 0, "renamed attributes in the fixture: " + string.Join(", ", old));
     }
 
     [Theory]

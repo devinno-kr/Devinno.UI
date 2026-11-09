@@ -186,4 +186,34 @@ public class Stage4NameTests
         var w = Warnings(() => Surface("<DvExpander title=\"A\"/><DvLamp on=\"true\" blink=\"true\"/><DvDataGrid selection-mode=\"multi\" selected-items=\"{Bind Picked}\"><DvColumn field=\"A\" cell-type=\"button\" cell-disabled=\"X\"/><DvSummaryRow label=\"T\" fn=\"sum\"/></DvDataGrid>"));
         Assert.DoesNotContain(w, x => x.Contains("was renamed"));
     }
+
+    // 4단계 검토 M6 — cell-disabled 는 행 항목 값이 true 일 때만 끈다. null·bool 아닌 값·없는 속성·예외 내는 getter = 켜짐(옛 enabled 의 "false 일 때만 끔" 과 같은 쪽)
+    public sealed class EdgeRow
+    {
+        public string Name { get; set; } = "a";
+        public bool? Maybe { get; set; }
+        public string Word { get; set; } = "true";
+        public int One { get; set; } = 1;
+        public bool Throws => throw new InvalidOperationException("getter");
+    }
+
+    public sealed class EdgeVm
+    {
+        public List<EdgeRow> Rows { get; } = [new()];
+    }
+
+    [Theory]
+    [InlineData("Maybe")]
+    [InlineData("Word")]
+    [InlineData("One")]
+    [InlineData("Nope")]
+    [InlineData("Throws")]
+    public void ButtonColumn_CellDisabled_NotTrue_IsEnabled(string path)
+    {
+        var vm = new EdgeVm();
+        var s = new DvSurface(GridLayoutBuildTests.Screen("items=\"{Rows}\"", $"<DvColumn field=\"Name\"/><DvColumn cell-type=\"button\" text=\"Go\" cell-disabled=\"{path}\"/>"),
+            vm, DvTheme.Light);
+        s.Layout(400, 300);
+        Assert.False(s.Root!.Children[0].Grid!.Columns[1].IsButtonDisabled(vm.Rows[0]));
+    }
 }
