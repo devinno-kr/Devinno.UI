@@ -760,7 +760,7 @@ A component cannot be registered under the name of a built-in tag (`DvGauge`, `D
 | `DvRadio` | `text` `value` (two-way, group value) `option` `group` `readonly`(false) `onbeforecommit` `disabled` | Circle 24 + gap 10 + text, height 40 or more |
 | `DvSegment` | `value` (two-way) `readonly` `disabled` `onbeforecommit` + `DvOption` children | Sum of item text sizes + padding |
 | `DvTabs` | `value` (two-way, optional) `readonly`(false) `onbeforecommit` + `DvTab` children (`value` `text` `disabled`) | Header + content of the selected tab |
-| `DvExpander` | `title` `expanded` (two-way, optional) `disabled` + content children | Header row 44 (+ content when expanded) |
+| `DvExpander` | `title` (it was `header` before 0.x stage 4) `expanded` (two-way, optional) `disabled` + content children | Header row 44 (+ content when expanded) |
 | `DvImage` | `src` `fit`(contain) | 100×100 |
 | `DvVideo` | `src` or `source`, `fit`(contain) `playing`(true) `loop`(false) `position`(two-way, s) `duration`(written, s) | 320×180 |
 | `DvStepBar` | `steps` `current`(0) | 96 width per step (min 200)×64 |
@@ -1085,7 +1085,7 @@ Expand and collapse hierarchical data (plant → line → equipment) and pick on
 | `row-height` | Row height (48) — all rows are the same |
 | `header-height` | Height of one header tier (40) |
 | `selection-mode` | `none` (default) `single` `multi` (multi = each tap toggles) |
-| `selected-items` | Selection binding (11.4) — the same name and meaning as `DvListBox selected-items` (it was `selection` before 0.x stage 4) |
+| `selected-items` | Selection binding (11.4) — the same role as `DvListBox selected-items` (a bound list of picked items); grid elements are row objects, single mode also takes one T (it was `selection` before 0.x stage 4) |
 | `row-key` | Property path that identifies a row. Keeps selection and editing even when row objects are replaced |
 | `onrowclick` | Row click method — `M(Row row)` if it exists, otherwise `M()` (called after the selection is updated) |
 | `row-class` | Property path on the row item. Its value = class name applied to the row (11.6) |
@@ -1131,7 +1131,7 @@ Default size 480 × (header + 5 rows + summary rows). Rounded corners and border
 ### 11.6 Header groups, summary rows, conditional colors
 
 - **`DvColumnGroup header`** creates a header tier grouping columns. Nesting adds tiers, and each tier's height is `header-height`. A group spanning the frozen-column boundary is drawn split in two (warning).
-- **`DvSummaryRow label fn`** = summary band at the bottom. `fn` = `sum` `avg` `min` `max` `count`. The row's `fn` applies to all numeric columns, and `label` is shown in the first column. Place `DvSummaryRow` directly under `DvDataGrid`.
+- **`DvSummaryRow label fn`** = summary band at the bottom. `fn` = `sum` `avg` `min` `max` `count`. The row's `fn` applies to all numeric columns, and `label` is shown in the first column (it was `title` before 0.x stage 4). Place `DvSummaryRow` directly under `DvDataGrid`.
 - **`DvSummary field fn format`** sets one column's cell individually (`field` is exactly the same path as `DvColumn field`). With `value="{X}"`, that value is shown instead of a computed one (server totals, etc.). Non-numeric values and nulls are excluded from computation, and `count` is the number of non-null values. Summaries are recomputed after `Invalidate()`/`Repaint()`.
 - **Conditional colors:** `row-class="RowClass"` (grid) and `cell-class="ValueClass"` (column) are property names on the row item. That property's value is a class name (space-separated, later wins, null = none). The condition is app code.
 

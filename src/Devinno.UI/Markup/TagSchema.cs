@@ -344,7 +344,7 @@ internal static class TagSchema
             new("row-height", AttrKind.Number, "48", Note: "px; <= 0 = 48, silently; " + NumberRule),
             new("header-height", AttrKind.Number, "40", Note: "px; <= 0 = 40, silently; " + NumberRule),
             new("selection-mode", AttrKind.Enum, "none", Values: ["none", "single", "multi"], Note: EnumRule),
-            new("selected-items", AttrKind.Expr, Note: "read as written; {Bind X} = two-way list, otherwise resolved one-way; a single object = one row; applied only when selection-mode is not none (stage 4 N14: was selection; same name and meaning as DvListBox selected-items)"),
+            new("selected-items", AttrKind.Expr, Note: "read as written; {Bind X} = two-way list, otherwise resolved one-way; a single object = one row; applied only when selection-mode is not none (stage 4 N14: was selection; same role as DvListBox selected-items (a bound list of picked items); grid elements are row objects, single mode also takes one T)"),
             new("row-key", AttrKind.Path, Bindable: false, Note: "read raw; absent = the item reference"),
             new("row-class", AttrKind.Path, Bindable: false, Note: "read raw; the item property value is a class name (background, color, font-weight only)"),
             new("onrowclick", AttrKind.Expr, Bindable: false, Note: "M(row) when the row fits, otherwise M(); a missing method is silent at run time"),

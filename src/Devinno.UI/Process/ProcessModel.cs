@@ -231,7 +231,7 @@ internal sealed class ProcessSignal
     /// <summary><c>kind="pneumatic"</c>: drawn as a solid line with pairs of slashes (ISA-5.1). Otherwise electric: a dashed line. Only the drawing differs; the route is the same.</summary>
     public bool Pneumatic;
 
-    /// <summary><c>color</c> and <c>width</c>: the line's color and thickness. <see langword="null"/> = the default (theme text color, default thickness). Only the drawing differs.</summary>
+    /// <summary><c>color</c> and <c>thickness</c>: the line's color and thickness. <see langword="null"/> = the default (theme text color, default thickness). Only the drawing differs.</summary>
     public SKColor? Color;
 
     /// <inheritdoc cref="Color"/>
