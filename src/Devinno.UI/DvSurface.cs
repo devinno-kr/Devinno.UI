@@ -1831,7 +1831,9 @@ public sealed partial class DvSurface
         if (segment.Disabled || segment.ReadOnly || segment.ValueBindExpr is not { } ve || !Binding.BindingResolver.IsTwoWay(ve) ||
             index < 0 || index >= segment.SelectOptions.Count)
             return;
-        new BoxSlot(this, segment).Write(segment.SelectOptions[index].Value);
+        // DvSelect 와 같이 바인딩 속성 타입으로 바꿔서 쓴다(enum 등). 바꿀 수 없으면 쓰지 않는다.
+        if (SelectValue.TryConvert(segment.SelectOptions[index].Value, segment.SelectValueType, out var value))
+            new BoxSlot(this, segment).Write(value);
     }
 
     // 일반 클릭: (래칭 버튼이면 값 뒤집기) + onclick 처리기 + 코드 핸들 Click. 예외는 HandlerError 로.

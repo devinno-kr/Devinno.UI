@@ -1,4 +1,4 @@
-using Devinno.UI;
+﻿using Devinno.UI;
 using Devinno.UI.Layout;
 using Devinno.UI.Styling;
 using SkiaSharp;
@@ -8,6 +8,8 @@ using Xunit;
 public class SegmentLatchTests
 {
     private const float W = 600, H = 300;
+
+    public enum RunMode { Auto, Manual, Stop }
 
     public sealed class Vm
     {
@@ -19,6 +21,8 @@ public class SegmentLatchTests
 
         public bool GateBool(bool proposed) => Allow;
         public bool GateText(string proposed) => Allow;
+        public RunMode Run { get; set; } = RunMode.Auto;
+        public bool GateRun(RunMode proposed) => Allow;
         public void Hit() => Clicks++;
     }
 
@@ -168,6 +172,48 @@ public class SegmentLatchTests
         vm.Allow = false;
         Tap(s, Items(s)[1]);
         Assert.Equal("auto", vm.Mode);
+    }
+
+    private const string RunSeg = """
+        <DvSegment value="{Bind Run}" onbeforecommit="GateRun">
+          <DvOption value="Auto" text="자동"/>
+          <DvOption value="Manual" text="수동"/>
+          <DvOption value="Stop" text="정지"/>
+        </DvSegment>
+        """;
+
+    // 옵션 값(글자)을 바인딩 속성 타입으로 바꿔서 쓴다 — DvSelect 와 같은 규칙
+    [Fact]
+    public void Segment_TapWritesEnum()
+    {
+        var (s, vm) = Start(RunSeg);
+        Tap(s, Items(s)[2]);
+        Assert.Equal(RunMode.Stop, vm.Run);
+    }
+
+    [Fact]
+    public void Segment_TapWritesInt()
+    {
+        var (s, vm) = Start("""
+            <DvSegment value="{Bind Level}">
+              <DvOption value="1" text="저"/>
+              <DvOption value="2" text="중"/>
+            </DvSegment>
+            """);
+        Tap(s, Items(s)[1]);
+        Assert.Equal(2, vm.Level);
+    }
+
+    [Fact]
+    public void Segment_BeforeCommitGetsEnum()
+    {
+        var (s, vm) = Start(RunSeg);
+        vm.Allow = false;
+        Tap(s, Items(s)[1]);
+        Assert.Equal(RunMode.Auto, vm.Run);
+        vm.Allow = true;
+        Tap(s, Items(s)[1]);
+        Assert.Equal(RunMode.Manual, vm.Run);
     }
 
     [Theory]
