@@ -8,8 +8,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
 
-// dvml-ui-markup.md 21장(다이얼로그)의 C#·dvml 예제가 생성기와 함께 실제로 컴파일되는지 — 문서가 API 와 어긋나면 실패.
-// (xml 블록의 파싱·렌더는 MarkupDocTests 가, 16.1 샘플의 동작은 AppSampleDocTests 가 본다.)
+// dvml-dialogs.md 의 C#·dvml 예제가 생성기와 함께 실제로 컴파일되는지 — 문서가 API 와 어긋나면 실패.
+// (xml 블록의 파싱·렌더는 MarkupDocTests 가, dvml-app.md 전체 예제의 동작은 AppSampleDocTests 가 본다.)
 public class DialogDocTests
 {
     private sealed class DvmlText(string path, string text) : AdditionalText
@@ -29,11 +29,11 @@ public class DialogDocTests
         """;
 
     [Fact]
-    public void Dialog_chapter_examples_compile_with_generator()
+    public void Dialog_page_examples_compile_with_generator()
     {
-        var chapter = Chapter21();
-        var cs = Blocks(chapter, "csharp");
-        var xml = Blocks(chapter, "xml");
+        var page = File.ReadAllText(DocPath("dvml-dialogs.md")).Replace("\r\n", "\n");
+        var cs = Blocks(page, "csharp");
+        var xml = Blocks(page, "xml");
         Assert.True(cs.Length >= 6, $"C# 예제 {cs.Length}개");
         Assert.True(xml.Length >= 4, $"dvml 예제 {xml.Length}개");
 
@@ -65,15 +65,6 @@ public class DialogDocTests
         var generated = driver.GetRunResult().Results.SelectMany(r => r.GeneratedSources).Select(g => g.HintName).ToArray();
         foreach (var vm in new[] { "RecipeEditDialog", "RecipePage", "AlarmDialog", "ValveDialog" })
             Assert.Contains(generated, h => h.Contains(vm, StringComparison.Ordinal));
-    }
-
-    private static string Chapter21()
-    {
-        var text = File.ReadAllText(DocPath("dvml-ui-markup.md")).Replace("\r\n", "\n");
-        var start = text.IndexOf("\n## 21.", StringComparison.Ordinal);
-        Assert.True(start >= 0, "21장이 없습니다");
-        var end = text.IndexOf("\n## ", start + 1, StringComparison.Ordinal);
-        return end < 0 ? text[start..] : text[start..end];
     }
 
     private static string[] Blocks(string text, string lang)

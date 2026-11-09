@@ -13,54 +13,64 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
 
-// dvml-process.md 의 예제가 코드와 맞는지 — xml 은 파싱·렌더, 공정도 예제는 겹침·오류·교차 없이 배치, 페이지 예제(C#+dvml)는 생성기와 함께 컴파일.
+// 공정도 페이지(dvml-process*.md: 본문·장비·배치·예제)의 예제가 코드와 맞는지 — xml 은 파싱·렌더, 공정도 예제는 겹침·오류·교차 없이 배치, 페이지 예제(C#+dvml)는 생성기와 함께 컴파일.
 public class ProcessDocTests
 {
-    private static string Doc() => File.ReadAllText(DocPath("dvml-process.md")).Replace("\r\n", "\n");
+    // 공정도 페이지 — 정의(DvSymbol·DvComponent)와 그 사용, 페이지 vm 마크업과 그 partial class 는 같은 페이지에 둔다
+    private static readonly string[] Pages = ["dvml-process.md", "dvml-process-equipment.md", "dvml-process-layout.md", "dvml-process-examples.md"];
 
-    private static string[] Blocks(string lang) =>
-        Regex.Matches(Doc(), $"```{lang}\\n(.*?)```", RegexOptions.Singleline).Select(m => m.Groups[1].Value).ToArray();
+    private static string Doc(string page) => File.ReadAllText(DocPath(page)).Replace("\r\n", "\n");
+
+    private static string[] Blocks(string page, string lang) =>
+        Regex.Matches(Doc(page), $"```{lang}\\n(.*?)```", RegexOptions.Singleline).Select(m => m.Groups[1].Value).ToArray();
 
     private static bool IsDefinition(string block) =>
         block.TrimStart().StartsWith("<DvSymbol", StringComparison.Ordinal) || block.TrimStart().StartsWith("<DvComponent", StringComparison.Ordinal);
 
-    // 문서에 정의된 사용자 심볼·유닛 컴포넌트(DvSymbol·DvComponent 블록)를 등록한 레지스트리
-    private static ComponentRegistry Registry()
+    // 그 페이지에 정의된 사용자 심볼·유닛 컴포넌트(DvSymbol·DvComponent 블록)를 등록한 레지스트리
+    private static ComponentRegistry Registry(string page)
     {
         var r = new ComponentRegistry();
-        foreach (var b in Blocks("xml").Where(IsDefinition))
+        foreach (var b in Blocks(page, "xml").Where(IsDefinition))
             r.Register(b);
         return r;
     }
 
-    public static TheoryData<int, string> XmlBlocks()
+    public static TheoryData<string, int, string> XmlBlocks()
     {
-        var data = new TheoryData<int, string>();
-        var i = 0;
-        foreach (var b in Blocks("xml"))
-            data.Add(++i, b);
+        var data = new TheoryData<string, int, string>();
+        foreach (var page in Pages)
+        {
+            var i = 0;
+            foreach (var b in Blocks(page, "xml"))
+                data.Add(page, ++i, b);
+        }
+
         return data;
     }
 
     [Theory]
     [MemberData(nameof(XmlBlocks))]
-    public void Xml_example_parses_and_renders(int index, string block)
+    public void Xml_example_parses_and_renders(string page, int index, string block)
     {
         var markup = IsDefinition(block) ? "<DvBox/>" : $"<DvBox>{block}</DvBox>";
         MarkupParser.Parse(markup);
-        var png = DvRenderer.RenderToPng(markup, null, 1000, 800, Registry());
-        Assert.True(png.Length > 0, $"block #{index}");
+        var png = DvRenderer.RenderToPng(markup, null, 1000, 800, Registry(page));
+        Assert.True(png.Length > 0, $"{page} block #{index}");
     }
 
-    public static TheoryData<int, string> ProcessBlocks()
+    public static TheoryData<string, int, string> ProcessBlocks()
     {
-        var data = new TheoryData<int, string>();
-        var i = 0;
-        foreach (var b in Blocks("xml"))
+        var data = new TheoryData<string, int, string>();
+        foreach (var page in Pages)
         {
-            i++;
-            if (b.Contains("<DvProcess", StringComparison.Ordinal))
-                data.Add(i, b);
+            var i = 0;
+            foreach (var b in Blocks(page, "xml"))
+            {
+                i++;
+                if (b.Contains("<DvProcess", StringComparison.Ordinal))
+                    data.Add(page, i, b);
+            }
         }
 
         return data;
@@ -68,21 +78,21 @@ public class ProcessDocTests
 
     [Theory]
     [MemberData(nameof(ProcessBlocks))]
-    public void Process_example_lays_out_clean(int index, string block)
+    public void Process_example_lays_out_clean(string page, int index, string block)
     {
         // 페이지 예제의 vm 속성(생성기용)은 렌더에는 필요 없다
         var markup = Regex.Replace(block, "\\svm=\"[^\"]*\"", "");
-        var s = new DvSurface(markup, new DocVm(), DvTheme.Light, Registry());
+        var s = new DvSurface(markup, new DocVm(), DvTheme.Light, Registry(page));
         s.Layout(1600, 1200);
         var outer = Flatten(s.Root!).Where(b => b.Process is not null).Select(b => b.Process!).ToList();
         Assert.NotEmpty(outer);
         var diagrams = outer.Concat(outer.SelectMany(o => o.Nodes).Where(n => n.Unit is not null).Select(n => n.Unit!)).ToList();
         foreach (var d in diagrams)
         {
-            Assert.All(d.Lines, l => Assert.False(l.Error, $"block #{index}: {l.FromRef}->{l.ToRef} error"));
-            Assert.All(d.Nodes, n => Assert.False(n.Error, $"block #{index}: {n.Name} error"));
+            Assert.All(d.Lines, l => Assert.False(l.Error, $"{page} block #{index}: {l.FromRef}->{l.ToRef} error"));
+            Assert.All(d.Nodes, n => Assert.False(n.Error, $"{page} block #{index}: {n.Name} error"));
             var bad = ProcessTests.Violations(d);
-            Assert.True(bad.Count == 0, $"block #{index}: " + string.Join(" / ", bad) + " :: " + string.Join(" | ", d.Lines.Select(l => $"{l.FromRef}->{l.ToRef} " + string.Join(" ", l.G?.Points.Select(p => $"({p.X:0},{p.Y:0})") ?? []))) + " :: " + string.Join(" | ", d.Nodes.Select(n => $"{n.Name}@({n.G.X:0},{n.G.Y:0}) sym={n.Sym}")));
+            Assert.True(bad.Count == 0, $"{page} block #{index}: " + string.Join(" / ", bad) + " :: " + string.Join(" | ", d.Lines.Select(l => $"{l.FromRef}->{l.ToRef} " + string.Join(" ", l.G?.Points.Select(p => $"({p.X:0},{p.Y:0})") ?? []))) + " :: " + string.Join(" | ", d.Nodes.Select(n => $"{n.Name}@({n.G.X:0},{n.G.Y:0}) sym={n.Sym}")));
             // 예제가 교차를 허용한다고 적은 경우(실제 도면처럼 피할 수 없는 교차 — 문서에 이유를 함께 쓴다)만 교차 검사를 건너뛴다
             if (!block.Contains("doc-test: crossings-allowed", StringComparison.Ordinal))
                 Assert.All(d.Lines, l => Assert.Equal(0, l.G!.Crossings));
@@ -107,10 +117,23 @@ public class ProcessDocTests
     [Fact]
     public void Page_example_compiles_with_generator()
     {
-        var cs = Blocks("csharp").Where(b => b.Contains("partial class", StringComparison.Ordinal)).ToArray();
-        var xml = Blocks("xml").Where(b => b.Contains(" vm=\"", StringComparison.Ordinal)).ToArray();
-        Assert.NotEmpty(cs);
-        Assert.NotEmpty(xml);
+        var generated = new List<string>();
+        foreach (var page in Pages)
+        {
+            var cs = Blocks(page, "csharp").Where(b => b.Contains("partial class", StringComparison.Ordinal)).ToArray();
+            var xml = Blocks(page, "xml").Where(b => b.Contains(" vm=\"", StringComparison.Ordinal)).ToArray();
+            if (xml.Length == 0)
+                continue;
+            Assert.True(cs.Length > 0, $"{page}: vm= markup without its partial class on the same page");
+            generated.AddRange(CompilePage(page, cs, xml));
+        }
+
+        Assert.Contains(generated, h => h.Contains("WaterPage", StringComparison.Ordinal));
+        Assert.Contains(generated, h => h.Contains("BlendPage", StringComparison.Ordinal));
+    }
+
+    private static string[] CompilePage(string page, string[] cs, string[] xml)
+    {
 
         var parse = new CSharpParseOptions(LanguageVersion.Latest);
         var trees = cs.Select((c, i) => CSharpSyntaxTree.ParseText(c, parse, path: $"doc{i}.cs"))
@@ -129,11 +152,10 @@ public class ProcessDocTests
             parse);
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var genDiags);
 
-        Assert.Empty(genDiags.Select(d => d.ToString()));
-        Assert.Empty(output.GetDiagnostics().Where(d => d.Severity >= DiagnosticSeverity.Warning).Select(d => d.ToString()));
-        var generated = driver.GetRunResult().Results.SelectMany(r => r.GeneratedSources).Select(g => g.HintName).ToArray();
-        Assert.Contains(generated, h => h.Contains("WaterPage", StringComparison.Ordinal));
-        Assert.Contains(generated, h => h.Contains("BlendPage", StringComparison.Ordinal));
+        Assert.True(genDiags.IsEmpty, page + ": " + string.Join(" / ", genDiags.Select(d => d.ToString())));
+        var problems = output.GetDiagnostics().Where(d => d.Severity >= DiagnosticSeverity.Warning).Select(d => d.ToString()).ToArray();
+        Assert.True(problems.Length == 0, page + ": " + string.Join(" / ", problems));
+        return driver.GetRunResult().Results.SelectMany(r => r.GeneratedSources).Select(g => g.HintName).ToArray();
     }
 
     // 문서의 수치 표가 내장 심볼과 같은지(크기·포트)

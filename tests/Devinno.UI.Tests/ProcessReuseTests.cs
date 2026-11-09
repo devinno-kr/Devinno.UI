@@ -6,7 +6,7 @@ using Devinno.UI.Styling;
 using Xunit;
 using Xunit.Abstractions;
 
-// 값만 바뀐 갱신(Invalidate → Layout)은 공정도 배치를 다시 계산하지 않고 재사용한다(dvml-process.md 13장 "Updates and cost")
+// 값만 바뀐 갱신(Invalidate → Layout)은 공정도 배치를 다시 계산하지 않고 재사용한다(dvml-process.md#process-vm)
 public class ProcessReuseTests(ITestOutputHelper output)
 {
     public sealed class Vm

@@ -1,13 +1,44 @@
 # Devinno.UI {{VERSION}}
 
-> SkiaSharp-based .NET 9 UI library for industrial HMI touch panels and general apps. A screen = XML markup (.dvml) + CSS-like inline `style` + C# view-model binding.
+> SkiaSharp-based .NET 9 UI library for industrial HMI touch panels and general apps. It draws directly with SkiaSharp; a screen = XML markup (.dvml) + CSS-like inline `style` + C# view-model (VM) binding.
 
-The documents below sit in the same folder as this file (the package's `docs/`, or `.devinno/Devinno.UI/` in your project after a build). Read them in this order.
+The documents below sit in the same folder as this file (the package's `docs/`, or `.devinno/Devinno.UI/` in your project after a build). Assume anything not listed in them does not exist.
 
-1. [llm-rules.md](llm-rules.md): authoring rules. **Read first.** Principles, differences from CSS, what is silently ignored and what shows up as magenta or an exception, common mistakes, how to check a screen by rendering a PNG, known limits.
-2. [dvml-ui-markup.md](dvml-ui-markup.md): markup reference. Full list of tags, attributes, style keys, values, defaults, binding syntax, handler signatures and theme tokens, with examples. Assume anything not listed there does not exist.
-3. [dvml-process.md](dvml-process.md): process diagram (P&ID, `DvProcess`) authoring guide. Read it before building a process screen.
-4. [dvml-image.md](dvml-image.md): building a screen from a picture (a mockup, screenshot or AI-generated design, often with image files). Read it before reproducing a given look.
-5. Devinno.UI.xml: C# API reference (XML doc comments, the same text IntelliSense shows). Detailed usage of DvApp, DvPage, DvBar, DvDialog, DvSurface, DvRenderer, DvTheme, AlarmLog, TrendBuffer, DvStrings, ComponentRegistry, DvWidget (custom widgets drawn in C#), FrameSource and VideoPlayer (frames and video files for `DvVideo`) and others.
+## Always read (in this order)
 
-To show screens in a window, an app also references one host adapter package, each with its own `llms.txt`: Devinno.UI.OpenTK (`ViewWindow`) or Devinno.UI.WinForms (`ViewControl`).
+1. [llm-rules.md](llm-rules.md): authoring rules. The shape of a screen, principles, choosing the built-in widget for the job, layout differences from CSS, symptom → cause → fix, code-side MUST/NEVER rules (handles, dialogs), which redraw call to make, how to verify (build, PNG, driving the app without a window), what is not supported.
+2. [dvml-language.md](dvml-language.md): the markup language. Getting started, markup basics, common attributes, value rules, binding, value widgets, click/hold/disabled, `onbeforecommit`, `HandlerError`, naming, glossary.
+
+## Read when needed (question → page)
+
+| Question | Page |
+|---|---|
+| How do I set up the project and the source generator? | [dvml-language.md#project-setup](dvml-language.md#project-setup) |
+| Layout: stack/row/grid, sizes, absolute position, scrolling, text wrapping | [dvml-layout.md#layout-sugar](dvml-layout.md#layout-sugar), [#scroll](dvml-layout.md#scroll) |
+| Which style keys exist, value formats, classes, state styles, priority, transitions | [dvml-style.md#style-keys](dvml-style.md#style-keys) |
+| Theme tokens and the built-in themes | [dvml-style.md#theme-tokens](dvml-style.md#theme-tokens) |
+| Page frame, cards, badges, stats, labels, buttons, icons, images, video, toggles, check boxes, radios, knobs, sliders, tabs, expanders, step bars | [dvml-widgets.md#semantic-components](dvml-widgets.md#semantic-components) |
+| Text/number inputs, selects, segments, date/time and color inputs, list boxes, trees | [dvml-inputs.md#input-common](dvml-inputs.md#input-common) |
+| Gauges, rings, progress, lamps, tanks, charts, trends, alarms | [dvml-instruments.md#instrument-common](dvml-instruments.md#instrument-common) |
+| Data grid (`DvDataGrid`): columns, selection, sorting, editing, filters | [dvml-grid.md#dvdatagrid](dvml-grid.md#dvdatagrid) |
+| Repeating items, user components, custom widgets drawn in C# | [dvml-components.md#dvrepeat](dvml-components.md#dvrepeat), [#dvcomponent](dvml-components.md#dvcomponent), [#dvwidget](dvml-components.md#dvwidget) |
+| App, pages, bars, threads, hot reload, localization, icons, hosts | [dvml-app.md#app-example](dvml-app.md#app-example), [#threads](dvml-app.md#threads) |
+| Working with controls from code (`id`, `vm`, handles) | [dvml-code.md#code-id-vm](dvml-code.md#code-id-vm) |
+| Dialogs, message boxes, input boxes, screen lock | [dvml-dialogs.md#dialog-flow](dvml-dialogs.md#dialog-flow) |
+| What does build diagnostic DVML0xx mean? What does a Trace warning mean? Why magenta? | [dvml-diagnostics.md#build-diagnostics](dvml-diagnostics.md#build-diagnostics), [#trace-warnings](dvml-diagnostics.md#trace-warnings), [#magenta](dvml-diagnostics.md#magenta) |
+| Process diagram (P&ID, `DvProcess`) — read the whole page first when building a process screen | [dvml-process.md#process-overview](dvml-process.md#process-overview) |
+| Complete process examples; copying a given drawing | [dvml-process-examples.md#process-examples](dvml-process-examples.md#process-examples), [#copy-drawing](dvml-process-examples.md#copy-drawing) |
+| Process equipment ports, sizes, states; user symbols (`DvSymbol`) | [dvml-process-equipment.md#equipment](dvml-process-equipment.md#equipment), [#dvsymbol](dvml-process-equipment.md#dvsymbol) |
+| Process diagram size and fit, automatic layout, coordinate placement, process diagnostics | [dvml-process-layout.md#size-fit](dvml-process-layout.md#size-fit) |
+| Building a screen from a picture (a mockup, screenshot or AI-generated design, often with image files) — read it first when reproducing a given look | [dvml-image.md#image-method](dvml-image.md#image-method) |
+
+## Choose a host
+
+To show screens, an app also references one host adapter package; each has its own `llms.txt`.
+
+- **Devinno.UI.OpenTK** (`ViewWindow`): the app in its own window. For kiosk panels (`fullscreen: true`), boards without desktop OpenGL 3.3 such as Raspberry Pi (`gles: true`), and scaling a fixed design size to the window (`fit: true`).
+- **Devinno.UI.WinForms** (`ViewControl`): the app inside a WinForms form, Windows only. The app must target `net9.0-windows10.0.19041.0` or later.
+
+## C# API
+
+Devinno.UI.xml (`lib/net9.0/` in the package; the same folder as this file in `.devinno/Devinno.UI/`): C# API reference (XML doc comments, the same text IntelliSense shows). Detailed usage of DvApp, DvPage, DvBar, DvDialog, DvSurface, DvRenderer, DvTheme, AlarmLog, TrendBuffer, DvStrings, ComponentRegistry, DvWidget (custom widgets drawn in C#), FrameSource and VideoPlayer (frames and video files for `DvVideo`) and others.

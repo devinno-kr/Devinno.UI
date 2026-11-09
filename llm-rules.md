@@ -1,221 +1,300 @@
 # Devinno.UI Authoring Rules
 
-This is the **document to read first** when building screens with Devinno.UI. It is for both humans and AI.
+Covers: the shape of a screen, core principles, choosing the built-in widget for the job, layout differences from CSS, symptom → cause → fix, code-side MUST/NEVER rules (handles, dialogs), which redraw call to make, how to verify a screen (build, PNG, driving the app without a window), what is not supported, where the C# API is. This is the page to read first when building screens; it is for both humans and AI.
+Read first: [the document map in llms.txt](llms.txt) — then this page, then [markup basics, values and binding](dvml-language.md#markup-basics).
+Not here: [style keys](dvml-style.md#style-keys) · [theme tokens](dvml-style.md#theme-tokens) · [widget reference](dvml-widgets.md#semantic-components) · [input widget reference](dvml-inputs.md#input-common) · [build diagnostics DVML001–021](dvml-diagnostics.md#build-diagnostics) · [thread contract](dvml-app.md#threads) · [dialog reference](dvml-dialogs.md#dialog-flow) · [process diagrams](dvml-process.md#process-overview) · [screens from a picture](dvml-image.md#image-method)
 
-- This document: principles, pitfalls, how to verify.
-- Full list of tags, attributes and style keys: [`dvml-ui-markup.md`](dvml-ui-markup.md)
-- Process diagram (P&ID, `DvProcess`) authoring guide: [`dvml-process.md`](dvml-process.md) — always read it first when building a process screen
-- Building a screen whose look comes from a picture, with image files (a mockup, screenshot or design to reproduce): [`dvml-image.md`](dvml-image.md) — read it first when a screen is to be made from the picture as it is
-- C# API (ViewWindow, DvApp, DvPage, DvBar, DvDialog, DvSurface, AlarmLog, TrendBuffer, DvStrings, etc.): the XML doc comments on each type. View them via IntelliSense in the IDE, or in `Devinno.UI.xml`, which ships in the NuGet package.
+Devinno.UI is a .NET 9 UI library that draws directly with SkiaSharp. Screens are written as XML markup with a CSS-like inline `style` and bound to a C# view model (VM). It is not a browser: **even where it looks like HTML/CSS, it is not the same engine.** Knowing the differences below avoids most mistakes.
 
-Devinno.UI is a .NET 9 UI library that draws directly with SkiaSharp. Screens are written as XML markup with a CSS-like inline `style` and bound to a C# view model (VM). It is not a browser, so **even where it looks like HTML/CSS, it is not the same engine.** Knowing the differences below avoids most mistakes.
+<a id="screen-shape"></a>
+## Shape of a screen
 
----
+One screen is a `partial` class deriving from `DvPage` (it doubles as the VM) plus a dvml file whose root `vm="…"` names that class. `DvApp` holds the pages, and a host shows the app (here the OpenTK `ViewWindow`).
 
-## 1. Core principles
+```csharp
+using Devinno.UI.App;
+using Devinno.UI.OpenTK;
+using Devinno.UI.Styling;
 
-1. **Assume any feature not in the docs does not exist.** Tags, attributes, style keys and values not listed in `dvml-ui-markup.md` are not supported. Features that "should obviously work" in CSS or other UI frameworks (`margin`, `%` widths, ellipsis, `display:none`, animations, etc.) do not work either unless documented. If the docs and the code disagree, the code is right. The one exception is the project's own tags: components (`DvComponent`) and custom widgets (classes registered with `RegisterWidget`, `dvml-ui-markup.md` 15.1) exist when the app registers them — use them with the parameters/attributes their definition or class reads. **NEVER** invent such a tag, and write a new `DvWidget` class only when the user asks for one or no built-in widget/component can show it.
-2. **Use semantic components first.** `DvPageFrame`, `DvCard`, `DvStat`, `DvBadge`, `DvStatusItem`, `DvSwitch` and `DvButton variant="…"` get their look from the theme. Build layout with `DvStack`, `DvRow`, `DvGrid` and `DvSpacer`. Use `DvBox` + `style` only for special shapes these cannot produce.
-3. **Use theme tokens for colors and spacing.** Writing `token(surface)`, `token(text-muted)`, `token(spacing.lg)`, `token(radius.md)` makes the screen adapt correctly when switching between the built-in themes (Dark, Light, Graphite, Carbon). Hardcoded colors like `#1e293b` break the theme, so use them only when a color truly must be fixed, such as a brand color.
-4. **Always give text a color.** The default text color of `DvLabel` is `#222222` regardless of theme, and it is **not inherited from the parent.** In the dark theme (the default), a bare `<DvLabel text="…"/>` without a class is almost invisible. Add a typography class such as `class="body"`, `class="label muted"`, `class="title"`, or `style="color: token(text)"`. (The only inherited styles are `font-family` and `white-space`.)
-5. **Data and logic are the app's (VM's) responsibility.** Widgets draw VM values and write user input to the VM once, nothing more. Things like alarm storage/ACK and the conditions for conditional colors are written in VM code. Filters that reduce the app data itself go in VM code; column filters the user picks on screen use `DvColumn filter`.
-6. **When values change, you must request a redraw.** Clicks, toggles, knobs and input commits redraw automatically. When the VM changes anywhere else (timers, incoming communication, etc.), call `App.Invalidate()`, or `App.Surface.Repaint()` if you only changed grid cell values, for the screen to update. (section 6 — which object to call it on)
-7. **Verify the result visually.** After writing markup, render a PNG with `DvRenderer` and look at it yourself, because most errors are silently ignored. (section 5)
+var app = new DvApp { Theme = DvTheme.Dark };
+app.Pages.Add(new MainPage());                  // the first page added is the start page
+using var window = new ViewWindow(app, 1280, 800, "My HMI");
+window.Run();
 
----
+public sealed partial class MainPage : DvPage   // the VM of MainPage.dvml; the source generator connects them
+{
+    public double Temperature { get; set; } = 21.5;
+    public bool AutoMode { get; set; }
+    public string ModeText => AutoMode ? "Auto" : "Manual";
+    public void Reset() => Temperature = 0;
+}
+```
 
-## 2. Layout defaults that differ from CSS
+`MainPage.dvml`:
+
+```xml
+<DvPageFrame vm="MainPage" title="Line 2" subtitle="Live">
+  <DvCard title="Reactor R-101">
+    <DvRow>
+      <DvLabel class="label muted" text="Temperature"/>
+      <DvLabel class="title" text="{Temperature}"/>
+      <DvSpacer/>
+      <DvLabel class="body" text="{ModeText}"/>
+      <DvToggle value="{Bind AutoMode}"/>
+      <DvButton variant="danger" text="Reset" onclick="Reset" hold="1500"/>
+    </DvRow>
+  </DvCard>
+</DvPageFrame>
+```
+
+- `vm` is the full class name including the namespace (`vm="MyApp.Pages.MainPage"`); the samples declare classes without a namespace, so they use the bare name.
+- `{X}` reads a VM property; `{Bind X}` on a value widget also writes user input back; `onclick` names a public VM method. Details: [binding](dvml-language.md#binding), [click](dvml-language.md#click).
+- Project setup and the generator: [getting started](dvml-language.md#getting-started). A full app with bars and a dialog: [app example](dvml-app.md#app-example). Choosing the host package: [llms.txt](llms.txt) and [hosts](dvml-app.md#hosts).
+
+<a id="principles"></a>
+## Core principles
+
+1. **Not in the docs = does not exist.** Tags, attributes, style keys and values not listed in these pages are not supported. Features that "should obviously work" in CSS or other UI frameworks (`margin`, `%` widths, ellipsis, `display:none`, animations, etc.) do not work unless documented. If the docs and the code disagree, the code is right.
+2. **Project tags exist only when registered.** Components (`DvComponent`) and custom widgets (classes registered with `RegisterWidget`, see [DvWidget](dvml-components.md#dvwidget)) exist when the app registers them — use them with the parameters/attributes their definition or class reads. **NEVER** invent such a tag. Write a new `DvWidget` class only when the user asks for one or no built-in widget/component can show it.
+3. **Use semantic components first.** `DvPageFrame`, `DvCard`, `DvStat`, `DvBadge`, `DvStatusItem`, `DvSwitch` and `DvButton variant="…"` get their look from the theme. Build layout with `DvStack`, `DvRow`, `DvGrid` and `DvSpacer`. Use `DvBox` + `style` only for special shapes these cannot produce.
+4. **Use theme tokens for colors and spacing.** `token(surface)`, `token(text-muted)`, `token(spacing.lg)`, `token(radius.md)` make the screen adapt across the built-in themes Dark, Light, Graphite and Carbon ([token list](dvml-style.md#theme-tokens)). Hardcoded colors like `#1e293b` break the theme; use them only when a color truly must be fixed, such as a brand color.
+5. **Always give text a color.** The default text color of `DvLabel` is `#222222` regardless of theme, and it is **not inherited from the parent**. In the dark theme (the default), a bare `<DvLabel text="…"/>` without a class is almost invisible. Add a typography class (`class="body"`, `class="label muted"`, `class="title"`) or `style="color: token(text)"`.
+6. **Data and logic are the app's (VM's) responsibility.** Widgets draw VM values and write user input to the VM once, nothing more. Alarm storage/ACK and the conditions for conditional colors are written in VM code. Filters that reduce the app data itself go in VM code; column filters the user picks on screen use `DvColumn filter` ([grid filters](dvml-grid.md#grid-filters)).
+7. **When values change outside input, request a redraw.** Clicks, toggles, knobs and input commits redraw automatically; changes from timers or communication need `App.Invalidate()` (or `App.Surface.Repaint()` when only grid cell values changed). Which call on which object: [updates and threads](#updates-threads).
+8. **Verify the result visually.** Most errors are silently ignored, so after writing markup build, render a PNG with `DvRenderer` and look at it yourself: [verify](#verify).
+
+<a id="choose-widget"></a>
+## Choosing the built-in for the job
+
+| Need | Use | NEVER |
+|---|---|---|
+| Page, card, number tile, status chip, on/off switch | `DvPageFrame`, `DvCard`, `DvStat`, `DvBadge`, `DvStatusItem`, `DvSwitch`, `DvButton variant="…"` | style plain boxes to imitate them |
+| Layout | `DvStack`, `DvRow`, `DvGrid`, `DvSpacer`; `DvBox` + `style` only for special shapes | |
+| On/off | switch look `DvToggle`/`DvSwitch`; box next to text `DvCheckBox`; button look = latching button `<DvButton value="{Bind X}"/>` | |
+| One of 3–5 options | `DvSegment` (+`DvOption`) | imitate selection with several buttons' `onclick` and class bindings |
+| One of several with long descriptions | vertical `DvRadio` — the same `value="{Bind X}"` + each its own `option`; the group is defined by the value, not by placement | |
+| One of many | `DvSelect` (collapsed) or `DvListBox` (expanded list; multi-select with `selection-mode="multi"` + `selected-items`) | |
+| Pick from a hierarchy (plant → line → equipment) | `DvTreeView items="{Roots}" item-children="Kids" item-text="Name" value="{Bind Picked}"` — the app objects as-is | create tree-only node types |
+| Step a numeric setpoint up/down | `<DvInput keyboard-type="numeric" step="…" show-stepper="true"/>` | build it from two −/+ buttons and handlers (misses range, validation and formatting) |
+| Drag a value within a range (opening, brightness) | `<DvSlider value="{Bind X}" step="…"/>` (orientation via `direction`, as on `DvProgress`); round handle `DvKnob` | |
+| Show a value without letting the user change it | one-way `{X}`, a literal, or `readonly="true"` on the value widget ([value widgets](dvml-language.md#value-widgets)) | |
+| Equipment state numbers as lamps | bind VM computed properties (`StateKey` → `state-*` token key, `StateText`, `IsFault`) to `state`/`status`/`blink` of `DvStatusItem`/[`DvLamp`](dvml-instruments.md#dvlamp); there is no state table widget | |
+| Current step of a process/batch sequence | `<DvStepBar steps="{Steps}" current="{Step}"/>` (`current` starts at 1, 0 = not started) | |
+| Small trend · per-item comparison · proportions | `DvSparkline values="{List}"` · `DvBarChart` · `DvPieChart` (`items` + `item-value` + `item-text`, a single series) | |
+| Time-axis data | `DvTrend` ([trend](dvml-instruments.md#dvtrend)) | |
+| Switch content groups within one page | `DvTabs`/`DvTab` (same VM) | put a page inside a tab (no pages inside pages) |
+| Expand/collapse a section | `DvExpander` (`expanded="{Bind X}"`; omitted → the screen remembers it); only one open at a time = `DvRepeat` + `DvExpander` + an item setter ([DvExpander](dvml-widgets.md#dvexpander)) | |
+| Change the whole screen | page switch `App.Show<T>()` | |
+| Guard a dangerous command (start, stop, reset) | `hold="1500"` (`onclick` fires after it is held that many ms, [hold](dvml-language.md#hold)) or a confirmation box `App.MessageBox` | build long-press with a timer |
+| Confirm an alarm ACK | inside the `onack` handler ([code dialogs](#code-dialogs)) | an `ack-confirm` attribute (it does not exist) |
+| Ask for one text, one number, one list item | `App.InputBox`, `App.InputNumber`, `App.SelectBox` ([code dialogs](#code-dialogs)) | a new dialog class + dvml for a single question |
+| Lock the screen while the operator is away | `App.Lock<LockDialog>(…)` ([lock and idle](dvml-dialogs.md#lock-idle)) | a lock screen shown with `ShowDialog` |
+
+<a id="css-differences"></a>
+## Layout differences from CSS
 
 | Item | Devinno.UI | Difference from CSS |
 |---|---|---|
-| `DvBox` layout | Without `display:flex`, it **only stacks children vertically**. `gap`, `justify-content` and `align-items` apply, but `grow` (stretching) does not work. | Similar to CSS block flow, but without stretching |
-| `align-items` default | `stretch` — children without a size fill the parent. Children with `width`/`height` get that size. Widgets with a fixed shape, such as knobs and toggles, are drawn centered at their own size, and only the area inside that shape is pressable | Same as CSS |
-| `flex-shrink` default | `0` — elements do not shrink even when overflowing. To let them shrink, use `flex-shrink:1` or `flex:1`. Exception: an `overflow:scroll` box defaults to `1` if unspecified. | CSS is `1` |
-| `DvStack` | Vertical flex, `align-items:stretch`, `gap` 12 | Children fill the width |
-| `DvRow` | Horizontal flex, `align-items:center`, `gap` 12 | Children are vertically centered |
-| Root element | Always fills the window. The root's `width`/`height` are ignored. | |
-| Units | All numbers are px. `16`, `16px` and `16dp` are the same. | No `%`, `em`, `rem`, `vw`, `auto` (only exception: `%` in grid tracks and grid column widths) |
-| Unsupported length values | `width:50%`, `width:auto`, `height:2em` become **0, not ignored** (the element disappears). Only `font-size` falls back to 14 when it cannot be parsed. | |
-| Text | Text longer than its available width wraps at spaces (or at characters if there are none) and grows in height. Force a single line with `white-space:nowrap` (inherited). `\n` always breaks the line. **`DvRow` children do not receive a wrap width, so they stay on one line** — to wrap, give that child `width`/`max-width`. Buttons and chips with icons are single-line. | In CSS, row children also shrink and wrap, and `\n` is treated as whitespace |
-| Hiding | Remove the element with `visible="false"`. `display:none` does not hide. | |
-| Spacing | `margin` (and `margin-top` etc.) is **not applied.** Use the parent's `gap` and the element's own `padding`. To space one side only, use a single-side key such as `padding-left` (same as CSS). | |
-| Opacity and motion | Use `opacity` (0–1), `transform` (translate, scale; drawing only) and `transition` (CSS syntax). Animate state changes with `transition` — do not step values with a timer. | |
-| State styles | State styles such as `hover-style` and `:hover` change **drawing only**. Changing size, position or padding leaves the layout unchanged. | |
-| Scroll box | The height of an `overflow:scroll` box is its content height, as in CSS, capped by `max-height`. Inside a flex parent (`DvStack`, `DvRow`) with a fixed height, it shrinks when space runs short (down to `min-height`; with `flex-shrink:0` it does not shrink). **To get scrolling you must constrain its size**: `max-height`, `height`, or `grow="1"` inside a parent with a fixed height. If the parent's height is its content size, the scroll box also fully expands. Inside a non-flex `DvBox` or `DvScreen` parent it does not shrink and overflows. A flex box that contains a scroll box (`DvCard` etc.) also shrinks when space runs short — `<DvCard grow="1"><DvStack grow="1" style="overflow:scroll">` scrolls as-is (usage and troubleshooting order: markup 3.7). | Space left after `grow` by `max-*`, and the share not shrunk due to `min-*` when shrinking, are not redistributed to siblings. The containing box shrinking along with it differs from CSS (CSS needs `min-height:0`) |
-| Widget size | Gauge and input widgets have a fixed default size (e.g. `DvGauge` 120×120). For other sizes, give numbers or stretch with `grow`/stretch. | |
+| `DvBox` layout | Without `display:flex` it **only stacks children vertically**. `gap`, `justify-content`, `align-items` apply; `grow` (stretching) does not work. [DvBox](dvml-layout.md#dvbox) | Like block flow, without stretching |
+| `align-items` default | `stretch` — children without a size fill the parent; children with `width`/`height` get that size. Fixed-shape widgets (knobs, toggles) are drawn centered at their own size; only the area inside the shape is pressable. | Same as CSS |
+| `flex-shrink` default | `0` — elements do not shrink even when overflowing; use `flex-shrink:1` or `flex:1`. An `overflow:scroll` box defaults to `1` if unspecified. [size](dvml-layout.md#size) | CSS default is `1` |
+| `DvStack` | Vertical flex, `align-items:stretch`, `gap` 12 — children fill the width. [layout sugar](dvml-layout.md#layout-sugar) | |
+| `DvRow` | Horizontal flex, `align-items:center`, `gap` 12 — children vertically centered. | |
+| Root element | Always fills the window; the root's `width`/`height` are ignored. | |
+| Units | All numbers are px; `16`, `16px`, `16dp` are the same. No `%`, `em`, `rem`, `vw`, `auto` — the only exception is `%` in grid tracks and grid column widths. [lengths](dvml-language.md#value-length) | |
+| Unsupported length | `width:50%`, `width:auto`, `height:2em` become **0, not ignored** — the element disappears. Only `font-size` falls back to 14 when it cannot be parsed. | |
+| Text | Longer than the available width → wraps at spaces (at characters if there are none) and grows in height. `white-space:nowrap` (inherited) forces one line; `\n` always breaks. **`DvRow` children get no wrap width and stay on one line** — give that child `width`/`max-width` to wrap. Buttons and chips with icons are single-line. [text wrap](dvml-layout.md#text-wrap) | In CSS row children shrink and wrap, and `\n` is whitespace |
+| Hiding | `visible="false"` removes the element; `display:none` does not hide. | |
+| Spacing | `margin` (and `margin-top` etc.) is **not applied**; use the parent's `gap` and the element's own `padding`. One side only: a single-side key such as `padding-left` (as in CSS). | |
+| Opacity and motion | `opacity` (0–1), `transform` (translate, scale; drawing only), `transition` (CSS syntax). Animate state changes with `transition` — do not step values with a timer. [transition](dvml-style.md#transition) | |
+| State styles | `hover-style`, `:hover` etc. change **drawing only**; changing size, position or padding leaves the layout unchanged. [state styles](dvml-style.md#state-styles) | |
+| Scroll box | Scrolls only when its size is constrained: `max-height`, `height`, or `grow="1"` in a fixed-height flex chain. [scroll](dvml-layout.md#scroll) | |
+| Widget size | Gauge and input widgets have a fixed default size (`DvGauge` 120×120); for other sizes give numbers or stretch with `grow`/stretch. | |
 
----
+Only `font-family` and `white-space` are inherited.
 
-## 3. What is silently ignored, what fails visibly
+<a id="symptoms"></a>
+## Symptom → cause → fix
 
-Knowing how mistakes show up helps you find the cause quickly when looking at the result PNG.
+Knowing how mistakes show up finds the cause quickly when you look at the result PNG. "Build" names the build diagnostic that catches it ([all codes](dvml-diagnostics.md#build-diagnostics)); "—" means nothing reports it at build time.
 
-### 3.1 Ignored without any indication (most common)
+**Nothing on the screen, or wrong look**
 
-| Mistake | Result |
-|---|---|
-| Unknown style key (`margin-top`, `line-height`, `font-style`, `row-gap`, etc.) | Ignored. (`background-color` is supported as a solid-color alias of `background`. Use `background` for gradients. `background-image: url(…)`, `background-size: cover|contain|fill|natural` and `background-image-offset` are supported; `background-position` and `background-repeat` are not.) |
-| Unknown or misspelled attribute (`onClick`, `Text`) | Ignored. Tag names and attribute names are **case-sensitive**. |
-| `id`, root `vm` | No longer ignored. The source generator reads them and creates VM fields (duplicates and invalid names are compile errors, see 4.1 below). In hosts that use markup only without the generator (`DvRenderer` etc.), they have no effect on the screen. |
-| Unknown tag (`DvPanel`, `div`) | Treated as a plain box (`DvBox`). No error. |
-| Unparseable color (`red`, `rgb(…)`, `hsl(…)`) | Only that declaration is ignored (previous value kept). |
-| Unsupported value (`justify-content:space-around`, `align-items:baseline`, `text-align:justify`) | Treated as the default (start / left). |
-| 5 or more `padding` values | Ignored. Only 1–4 values work (3 = top, left/right, bottom — same as CSS). |
-| Property path not on the VM (`{Temprature}`) | Empty value (null). Text is blank. |
-| Handler method not on the VM (`onclick="Strat"`) | Build error DVML018 in a dvml with `vm`. Where it is not checked (inside a `DvComponent` definition), nothing happens at runtime. (With a code handle's `Click`, a typo is a compile error.) |
-| `hover-style`, `content-align`, etc. on a component instance | Ignored. Only parameters and `style`, `class`, `grow`, `width`, `height`, `visible`, `onclick`, `disabled` are passed through. (See section 4) |
-| `style`, `class`, `onclick`… on a child element that is not a box (`DvOption`, `DvColumn`, `DvTrendChannel`, `DvSummary`, process `DvPort`, `DvMotor`, `DvLine`, `DvSignal` …), or an attribute another tag of the family uses (`sweep` on `DvGauge`, `placeholder` on `DvTabs`) | Ignored; build warning DVML019. A tag has only the attributes it uses (only `id` of the common ones on non-box children). |
-| Unknown icon name | The icon is not drawn (one Trace warning). |
-| `DvImage src` or `background-image: url(…)` file missing | Empty box / no picture. |
-| `DvVideo src` file missing or unreadable, or FFmpeg 8 shared libraries not found | A one-line reason in the box instead of the picture (one Trace warning). FFmpeg is not in the package — see `DvVideo` in dvml-ui-markup.md. |
-| `DvVideo source="{X}"` where X is not an `IFrameSource` (a path string, an `SKImage`) | Empty box (Trace warning). A file path goes in `src`; frames from code go through a `FrameSource`. |
+| Symptom | Cause | Build | Fix |
+|---|---|---|---|
+| Text is invisible | `DvLabel` text color defaults to `#222222`, not inherited ([principles](#principles)) | — | Typography class or `style="color: token(text)"` |
+| An element disappeared | Unsupported length (`width:100%`, `auto`, `2em`) becomes 0 | — | `DvStack` (stretch) or `grow="1"`; numbers in px |
+| Magenta (`#FF00FF`) area | Unknown theme token (typo such as `token(surface-2)`), unknown `tone` on `DvBadge`/`DvStat`, or a theme made from scratch that lacks a token a widget uses | DVML013 (literal tokens) | Fix the name; derive themes with `DvTheme.Dark.With(...)` — [magenta rules](dvml-diagnostics.md#magenta) |
+| A style key has no effect | Unknown style key (`margin-top`, `line-height`, `font-style`, `row-gap`, …) is ignored | DVML012 | Use a [supported key](dvml-style.md#style-keys) |
+| An attribute has no effect | Unknown or misspelled attribute (`onClick`, `Text`) — tag and attribute names are **case-sensitive**; or an attribute this tag does not have even if a similar tag has it (`sweep` is `DvRing` only; `placeholder` is not on `DvTabs`); or `style`, `class`, `onclick`… on a child element that is not a box (`DvOption`, `DvColumn`, `DvTrendChannel`, `DvSummary`, process `DvPort`, `DvMotor`, `DvLine`, `DvSignal` …) | DVML019 | A tag has only the attributes it uses; of the common ones, non-box children take only `id` — [which tag takes what](dvml-language.md#common-attribute-matrix) |
+| A tag draws as a plain box | Unknown tag (`DvPanel`, `div`) is treated as `DvBox`, no error | — | Use a listed tag |
+| Markup root `<DvPage>` shows no page frame | The markup page root is `<DvPageFrame>`; the C# `DvPage` is a different thing — the screen class the app holds | — | Root `<DvPageFrame vm="…">` |
+| A style color does nothing | Unparseable color in a style (`red`, `rgb(…)`, `hsl(…)`): only that declaration is ignored (previous value kept) | — | `#hex` or `token(name)` — [colors](dvml-language.md#value-color) |
+| Alignment ignored | Unsupported value (`justify-content:space-around`, `align-items:baseline`, `text-align:justify`) is treated as the default (start / left) | — | Use a listed value |
+| `padding` ignored | 5 or more values; only 1–4 work (3 = top, left/right, bottom — as in CSS) | — | [value formats](dvml-style.md#style-values) |
+| Bound text is blank | Property path not on the VM (`{Temprature}`) gives an empty value (null) | — | Fix the path — [binding](dvml-language.md#binding) |
+| Icon missing | Unknown icon name: not drawn (one Trace warning) | — | [icons](dvml-app.md#icons) |
+| Picture missing | `DvImage src` or `background-image: url(…)` file missing: empty box / no picture | — | Check the file path |
+| Video box shows a one-line reason | `DvVideo src` file missing or unreadable, or FFmpeg 8 shared libraries not found (one Trace warning); FFmpeg is not in the package | — | [DvVideo](dvml-widgets.md#dvvideo) |
+| Video box empty | `DvVideo source="{X}"` where X is not an `IFrameSource` (a path string, an `SKImage`); Trace warning | — | A file path goes in `src`; frames from code go through a `FrameSource` |
+| Screen is dark though a light one is wanted | No theme given → `DvTheme.Default` (= `DvTheme.Dark`): style tokens and widget-internal colors (toggles, gauge tracks, tanks, grids, virtual keyboard) are all dark | — | Set `DvTheme.Light` (`DvTheme.Graphite` = ISA-101 style gray for bright control rooms, `DvTheme.Carbon` = dim warm dark for night control rooms) — [built-in themes](dvml-style.md#built-in-themes) |
+| Built-in widget text is English on a Korean screen (alarm columns, input errors, dialog and picker buttons) | Built-in text is English by default | — | Korean: `app.Strings = new DvStrings { Language = "ko" }`; other languages: add the `dv.` keys to your table — [localization](dvml-app.md#localization) |
 
-### 3.2 Shows as magenta (`#FF00FF`)
+**Layout**
 
-**Unknown theme tokens** inside style strings such as `style`, `class` and `hover-style` turn magenta. The same applies to unknown tokens in color-taking attributes (`DvLamp color`, `DvTrendChannel color`, `DvSignal color`, zone colors in `alarm-zones`). If you see magenta, suspect a misspelled token name (`token(surface-2)`) or an invalid `tone`/`state` value (`DvBadge tone="ok"` → `token(tone-ok-fg)`). Built-in widgets draw their own parts from theme tokens too (lamp off color `lamp-off`, tank liquid `tank-fill`, chart colors `chart-1`…`chart-6`, keyboard, grid …), so a theme made from scratch with `new DvTheme(...)` that lacks one of them shows magenta there — derive custom themes with `DvTheme.Dark.With(...)` / `DvTheme.Light.With(...)`.
+| Symptom | Cause | Build | Fix |
+|---|---|---|---|
+| `grow="1"` has no effect | The parent is a non-flex `DvBox` | — | Parent `DvStack`/`DvRow` or `style="display:flex"`; the parent also needs spare space in that direction (height, for a vertical stack) |
+| A widget stretches to the parent's width | `align-items` default `stretch`, as in CSS | — | Parent `align-items:start`, child `align-self:start`, or a `width`. `DvRow` uses `align-items:center`, so no vertical stretch |
+| Spacing with `margin` does nothing | `margin` is not applied | — | Parent `gap` or `padding`, or an empty box `<DvBox style="height:12"/>` |
+| Long text inside `DvRow` pushes its neighbors | `DvRow` children neither wrap nor shrink | — | Give that text `width`/`max-width` (it wraps at that width), or move it into a `DvStack` |
+| Long text split into one label per line | Not needed: **long text is one label**; the engine wraps it to the available width (window size, theme font size) and re-wraps it | — | One label; `white-space:nowrap` for one line |
+| A scroll list does not scroll and fully expands | The scroll box size is not constrained, or `grow="1"` is given but a non-flex box (`DvBox`, `DvScreen`) sits in the parent chain | — | `style="max-height:320; overflow:scroll"`, or connect from `DvPageFrame` down with `DvStack`/`DvCard` and `grow="1"` — [scroll checklist](dvml-layout.md#scroll-checklist) |
+| Attribute `width="100"` has no effect | A class on the same element with `width` wins: the attributes `width`, `height`, `grow` and layout sugar attributes have the lowest priority | — | Write it in the inline `style` — [priority](dvml-style.md#priority) |
+| A class's `:hover` does not show | The same property in the inline `style` beats even class state styles | — | Give per-state values with the `hover-style` attribute |
+| A disabled button shows no hover/press look | Normal: when disabled (including inherited) hover/press styles are not used; only `disabled-style` (or the default look) | — | [disabled](dvml-language.md#disabled) |
+| XML parse error on `&` or `<` | XML special characters | DVML001 | In text write `&amp;` and `&lt;`; in attributes `"` as `&quot;` — [markup basics](dvml-language.md#markup-basics) |
 
-This includes `DvDataGrid`'s `*-color` attributes and `DvColumn on-color` (they also write a Trace warning). A `tone`/`state` on a built-in tag that the theme has no `tone-*`/`state-*` token for (`DvRing tone="ok"`, `DvLamp state="go"`) is not magenta: it uses the default (`info` / no state color) with a Trace warning. A custom theme's own words work (`state-idle` token → `state="idle"`).
+**Behavior**
 
-### 3.3 Throws an exception (the screen does not appear)
+| Symptom | Cause | Build | Fix |
+|---|---|---|---|
+| A click does nothing | Handler method not on the VM (`onclick="Strat"`); where it is not checked (inside a `DvComponent` definition) nothing happens at runtime; a typo in a code handle's `Click` is a compile error | DVML018 (dvml with `vm`) | Fix the name |
+| A click does nothing, no build error | The handler threw: VM exceptions do not stop the screen; they are logged to Trace and reported via `HandlerError` | — | Subscribe `DvApp.HandlerError` or watch Trace — [HandlerError](dvml-language.md#handler-error) |
+| A typed or toggled value does not change | Misspelled `onbeforecommit` name, wrong signature, or a throwing setter: the value is rejected | DVML018 (misspelled name) | Check Trace; signature: [onbeforecommit](dvml-language.md#onbeforecommit) |
+| A button click inside a box with `hover-style` does not reach the outer `onclick` | A click stops at the **first** ancestor with `onclick` or a hover/press style, and at disabled elements (including inherited), so pressing a disabled area does not call the outer `onclick` | — | [click](dvml-language.md#click) |
+| A whole card is not pressable | — | — | Give the instance `onclick`: `<DvCard title="Pump" onclick="OpenPump"/>`. It is passed to the template root (the card box); the method is looked up on the screen VM (inside `DvRepeat`, `OpenPump(item)` takes priority); the instance's `onclick` wins over the template root's. `disabled` is passed to the root box the same way and, being inherited, disables every widget inside the template — [component instances](dvml-components.md#component-instances) |
+| Changed a value from a timer, the screen does not update | No redraw is requested; pages have no `Invalidate()` of their own | — | `App.Invalidate()` (`App.Surface.Repaint()` for grid cell values) — [updates and threads](#updates-threads) |
+| `vm="MainPage"` works in samples but not in my project | `vm` is the **full class name including the namespace**; the doc samples declare classes without a namespace, the only case where the bare name is correct | DVML005 | `vm="MyApp.Pages.MainPage"` |
+| Page switching seems not to work | `Show` applies on the next frame: right after `App.Show<T>()`, `App.CurrentPage` is the previous page. `Show<T>()` throws when no page of that type is in `Pages` (added with `Pages.Add`) or more than one of that type is | — | Use the instance `Show(page)` for several of one type — [DvPage](dvml-app.md#dvpage) |
+| The current-page highlight on a bar button does not change | The highlight comes from a class binding | — | Bind `class="{X}"` to a computed property that reads `App.CurrentPage` — [current page](dvml-app.md#current-page) |
+| Reading `App` in a page constructor throws `InvalidOperationException` | There is no app until `Pages.Add` (for bars, until the area assignment) | — | Use `App` in handlers, `OnLoaded`, `OnShown` — [page lifecycle](dvml-app.md#page-lifecycle) |
+| Changed values in existing grid rows, the order did not update | Sorting is re-applied only on a header tap, a different `items` list, a change in row count, or (while a filter is active) every `Repaint()`/`Invalidate()` | — | To re-sort after values change, assign a new list and call `Invalidate()` — [sorting](dvml-grid.md#grid-sorting) |
+| A grid filter on a string column opens as an input box instead of a list | `filter="auto"` on a string column is `text` | — | `filter="values"` to pick from a fixed set — [filters](dvml-grid.md#grid-filters) |
 
-| Cause | Exception |
-|---|---|
-| XML syntax error (unclosed tag, `&` not written as `&amp;`, missing attribute quotes) | Parse exception |
-| Component expanding itself recursively (depth over 64) | `InvalidOperationException` |
-| Missing `name` or template root when registering a `DvComponent` | `ArgumentException` |
+**The screen does not appear (exception)**
 
-Conversely, **exceptions thrown by VM code do not stop the screen.** Exceptions thrown by handlers (`onclick`, `onrowclick`, `onack`, `onbeforecommit`) and by setters of properties that widgets write to are caught by the library, which logs a Trace error and reports them via the `HandlerError` event (`ViewWindow`, `ViewControl`, `DvSurface`). If a click seems to "do nothing", check this event or Trace. The same applies to exceptions raised **while reading VM values** during screen build and drawing (property getters, `ToString()`/formatting of values, enumerating `items` of `DvRepeat`, grids etc., grid sort comparisons). That value is treated as empty (null) and drawing continues (grid cell blank, sort ranks it as null, summaries exclude it, a list whose enumeration failed becomes an empty list), and the same target is reported only once until rebuilt with `Invalidate()`.
+| Cause | Exception | Build |
+|---|---|---|
+| XML syntax error (unclosed tag, `&` not written as `&amp;`, missing attribute quotes) | Parse exception | [DVML001](dvml-diagnostics.md#dvml001) |
+| Component expanding itself recursively (depth over 64) | `InvalidOperationException` | — |
+| Missing `name` or template root when registering a `DvComponent` | `ArgumentException` | — |
 
-### 3.4 Other diagnostics
+Other problems are reported only as `System.Diagnostics.Trace` warnings (value rules and their warnings: [value rules](dvml-language.md#value-rules); message index: [Trace warnings](dvml-diagnostics.md#trace-warnings)).
 
-Some problems are reported only as `System.Diagnostics.Trace` warnings (unknown icons, unparsed `content-align`, unsupported selectors, DvDataGrid column path/type mismatches, a true/false attribute with other text such as `yes`, a number attribute that is not a number, a word attribute with a word not in its list (`direction="sideways"`, `variant="foo"`), a color that cannot be read (`color="red"` — only `#hex` and `token(name)`), an `alarm-zones` zone that cannot be read (only that zone is dropped), etc.). Keep a Trace listener on during development. True/false attributes take only `true`/`false` (or a number: non-zero = true; empty = false); anything else is the default. Numbers are invariant culture (`1.5`). Word attributes ignore case and surrounding spaces; any other word is the default. Process names and references (`name`, `from`/`to`, `DvInstrument on`/`tap`) are never bound — write them literally.
+<a id="code-rules"></a>
+## Code-side rules
 
-If the `onbeforecommit` method is missing from the VM (a misspelled name is build error DVML018 in a dvml with `vm`) or has a different signature (including a return type other than `bool`), **the value is not written** (rejected). A Trace warning is logged once per screen for each method name and signature. If the method throws, the value is also rejected and a Trace error is logged (also reported via `HandlerError`). If, after passing the check, **the VM property's setter throws**, it is handled the same as a rejection (`DvInput` keeps editing + shows the message "Could not save the value", picker popups stay open, toggles, knobs and check cells keep their value). This is the same for all widgets (DvToggle, DvKnob, DvInput, DvSelect, pickers) and DvDataGrid cells. A misspelled name makes the value look like it "does not change", so check Trace. Signature: `dvml-ui-markup.md` section 6.
+- **NEVER** attach two `DvApp`s to windows/controls in one process (the second throws `InvalidOperationException`). There is one app ([DvApp](dvml-app.md#dvapp)).
+- The thread rules for VM code are in [threads](dvml-app.md#threads); the redraw calls are in [updates and threads](#updates-threads).
 
----
+<a id="code-handles"></a>
+### Controls from code (`id`, `vm`)
 
-## 4. Common mistakes
+Full usage: [id and vm](dvml-code.md#code-id-vm). Only the principles to follow are listed here.
 
-- **Text is invisible** → section 1, item 4. Give the label a typography class or `color`.
-- **`grow="1"` has no effect** → the parent is a non-flex `DvBox`. Change the parent to `DvStack`/`DvRow` or give it `style="display:flex"`. The parent must also have spare space in that direction (height, for a vertical stack) for the child to grow.
-- **A widget stretches to the parent's width** → the `align-items` default is `stretch`, as in CSS. To keep the default size, give the parent `align-items:start` (or the child `align-self:start`) or a `width`. `DvRow` uses `align-items:center`, so it does not stretch vertically.
-- **`width:100%`** → becomes 0 and disappears. Use `DvStack` (stretch) or `grow="1"`.
-- **Spacing with `margin`** → not applied. Use the parent's `gap` or `padding`, or an empty box such as `<DvBox style="height:12"/>`.
-- **To make a whole card pressable**, give the instance `onclick`, as in `<DvCard title="펌프" onclick="OpenPump"/>`. It is passed to the template root (the card box), and the method is looked up on the screen VM (inside `DvRepeat`, `OpenPump(항목)` takes priority). Even if the template root already has `onclick`, the instance's wins. `disabled` is passed to the root box the same way, and since disabled state is inherited downward, every widget inside the template is disabled.
-- **Changed a value from a timer but the screen did not update** → `App.Invalidate()` (`App.Surface.Repaint()` for grid cell values). Pages have no `Invalidate()` of their own (section 6).
-- **`vm="MainPage"` works in the samples but not in my project** → `vm` is the **full class name including the namespace** (`vm="MyApp.Pages.MainPage"`). The doc samples declare their classes without a namespace, which is the only case where the bare class name is correct. The build reports a wrong name (DVML005).
-- **Page switching seems not to work** → `Show` applies on the next frame. Right after `App.Show<T>()`, `App.CurrentPage` is still the previous page. If `Show<T>()` throws, either no page of that type was added with `Pages.Add` (none), or there is more than one of that type (use the instance: `Show(page)`).
-- **The current-page highlight on a bar button does not change** → check that you bound `class="{X}"` to a computed property that reads `App.CurrentPage`. `:selected` and `selected-style` have been removed.
-- **Reading `App` in a page constructor throws `InvalidOperationException`** → there is no app before `Pages.Add` (for bars, before the area assignment). Use `App` in handlers, `OnLoaded` and `OnShown`.
-- **Markup root tag `<DvPage>` does not work** → it was renamed to `<DvPageFrame>`. The C# `DvPage` is a different thing: the screen class the app holds.
-- **Added rows to the grid list but sorting did not update** → sorting is re-applied only on a header tap, a different `items` list, or a change in row count (when no filter condition is active). Assign a new list and call `Invalidate()`.
-- **A button click inside a box with `hover-style` does not reach the outer `onclick`** → a click stops at the **first** ancestor that has `onclick` or a hover/press style. It also stops at disabled elements (including inherited from above), so pressing a disabled area does not call the outer `onclick`.
-- **A disabled button shows no hover/press look** → this is normal. When disabled (including inherited from above), hover/press styles are not used; only `disabled-style` (or the default look if absent) applies.
-- **Attribute `width="100"` has no effect** → if a class on the same element has `width`, the class wins. The attributes `width`, `height`, `grow` and layout sugar attributes have the lowest priority. To be sure, write it in the inline `style`.
-- **A class's `:hover` does not show** → if the same property is written in the inline `style`, the inline value beats even the class state styles. Give per-state values with the `hover-style` attribute.
-- **A grid filter on a string column opens as an input box instead of a list** → `filter="auto"` on a string column is `text`. To pick from a fixed set of states, use `filter="values"`.
-- **Long text inside `DvRow` pushes its neighbors** → `DvRow` children neither wrap nor shrink. Give that text `width`/`max-width` and it wraps at that width. Or move the text into a `DvStack`.
-- **Splitting long text into one label per line** → don't. **Long text is one label.** The engine wraps it to the available width (window size, theme font size) and re-wraps it. To keep it on one line, use `white-space:nowrap`.
-- **A scroll list does not scroll and fully expands** → you did not constrain the scroll box's size, or you gave `grow="1"` but a non-flex box (`DvBox`, `DvScreen`) sits somewhere in the parent chain. Give a `max-height`, as in `style="max-height:320; overflow:scroll"`, or connect from the page (`DvPageFrame`) down to the scroll box with `DvStack`/`DvCard` and give `grow="1"`. Troubleshooting order: markup 3.7.5.
-- **Built-in widget text appears in English on a Korean screen** (alarm columns, input errors, dialog and picker buttons) → the library's built-in text is English by default. For Korean set `app.Strings = new DvStrings { Language = "ko" }`; for other languages add the `dv.` keys to your table (`dvml-ui-markup.md` chapter 17).
-- **XML special characters** → in text, write `&` and `<` as `&amp;` and `&lt;`. In attributes, write `"` as `&quot;`.
-- **No theme given** → `DvTheme.Default` (= `DvTheme.Dark`) is used. Style tokens and widget-internal colors (toggles, gauge tracks, tanks, grids, virtual keyboard, etc.) are all drawn in the dark theme. If you need a light screen, specify `DvTheme.Light` explicitly (`DvTheme.Graphite` = ISA-101 style gray for bright control rooms, `DvTheme.Carbon` = dim warm dark for night control rooms).
+- **`id` and root `vm` are read by the source generator**, which creates VM fields; duplicates and invalid names are compile errors. In hosts that use markup only without the generator (`DvRenderer` etc.) they have no effect on the screen.
+- **Bind state first.** Bind current state — value, enabled, visibility — with `text="{X}"`, `disabled="{Locked}"`, `visible="{Show}"`. `visible`/`disabled` take true/false: bind a `bool` property such as `HasError => Error != ""`, not the text itself.
+- A handle (`btn.Enabled = false`) is a tool for one-off actions or when you need a position (placing a popup with `Bounds`, subscribing to `Click`).
+- **When code writes, code is the owner.** Once you write `Enabled`, `Visible` or `Text` through a handle, that property's markup value (including bindings) is ignored from then on. Do not drive one property with both a binding and a handle. Revert with `ResetOverrides()` (text only: `Text = null`). [code writes](dvml-code.md#code-writes)
+- **Handle fields are `null` in the VM constructor.** Do setup such as subscribing to `Click` in `partial void OnLoaded()`, called after the first connection to the screen; it runs once per VM instance.
+- **Writes work from any thread, reads reflect the last layout.** `Enabled = false` is readable immediately; a write of `true` becomes readable after the next layout. Read `Bounds` on the UI thread. [code reads](dvml-code.md#code-reads)
+- **`id` inside `DvRepeat` or `DvComponent` templates has no handle** (warning DVML004). Use bindings and an `onclick` handler that takes the item: `onclick="Select"` → `public void Select(Item item)` — write only the method name; the item is passed automatically. [limits](dvml-code.md#code-limits)
+- `Click` fires only on the normal click path (not on toggle, input, select, grid and alarm widgets). Subscribing to `Click` alone makes that element take the click, so it does not leak to an outer `onclick`. [Click](dvml-code.md#code-click)
+- `Bounds` is in window coordinates; `left`/`top` of `position:absolute` are relative to the parent's content box, so to use `Bounds` as-is, place the element under a root without padding. [handles](dvml-code.md#handles)
+- If a class deriving from `DvPage` or `DvBar` is the VM, the generator also creates the markup wiring ([DvPage](dvml-app.md#dvpage)). Each page has its own class and its own dvml.
+- A VM is connected to only one dvml (`vm="…"`); two dvml files naming one VM is DVML007.
+- Value widgets, two-way binding, `readonly` and the handle members of each widget: [value widgets](dvml-language.md#value-widgets).
 
-### 4.1 Controlling controls from code in the VM (`id`, `vm`)
+<a id="code-dialogs"></a>
+### Dialogs (`DvDialog`, `ShowDialog`, `MessageBox`, `InputBox`, `InputNumber`, `SelectBox`)
 
-Full usage is in `dvml-ui-markup.md` section 20. Only the principles to follow are listed here.
-
-- **Bind state first.** Bind "current state" such as value, enabled and visibility to VM properties with `text="{X}"`, `disabled="{Locked}"`, `visible="{Show}"` (`visible`/`disabled` take true/false — bind a `bool` property such as `HasError => Error != ""`, not the text itself). A handle (`btn.Enabled = false`) is a tool for one-off actions or when you need a position (placing a popup with `Bounds`, subscribing to `Click`).
-- **A value widget's value has a single owner** (markup 20.9). With `value="{Bind X}"`, the VM property is the owner and the handle (`tg.Checked`) is a window that reads and writes that property. With only `id` and no `value`, the handle holds the value and it is still pressable on screen. Change notifications are `CheckedChanged`, `ValueChanged`, `TextChanged`, `SelectionChanged` (`e.ByUser` distinguishes screen vs. code). For MVVM use binding; for code-centric use `id` only — mixing both within one screen is fine. The built-in `DvSwitch` has the same handle (`Checked`). Every value widget is read-only when `readonly` is true or its `value` is one-way/literal: the value is shown as is with a dashed outline and taps/drags/keypad do not write it; `disabled` dims instead.
-- **When code writes, code is the owner.** Once you write `Enabled`, `Visible` or `Text` through a handle, that property's markup value (including bindings) is no longer used. Do not drive one property with both a binding and a handle. To revert, call `ResetOverrides()` (for text only, `Text = null`).
-- **Handle fields are `null` in the VM constructor.** Do setup such as subscribing to `Click` in `partial void OnLoaded()`, which is called after the first connection to the screen. `OnLoaded()` runs once per VM instance.
-- **Writes work from any thread, but reads reflect the last layout.** `Enabled = false` is readable immediately, but a write of `true` becomes readable after the next layout. Read `Bounds` on the UI thread.
-- **`id` inside `DvRepeat` or `DvComponent` templates has no handle** (warning DVML004). Handle such places with bindings and an `onclick` handler that takes the item as its parameter (`onclick="Select"` → `public void Select(Item item)`; write only the method name — the item is passed automatically).
-- `Click` fires only on the normal click path (excluding toggle, input, select, grid and alarm widgets). Subscribing to `Click` alone makes that element take the click so it does not leak to an outer `onclick`.
-- `Bounds` is in window coordinates. `left`/`top` of `position:absolute` are relative to the parent's content box, so to use `Bounds` values as-is, place the element under a root without padding.
-- If a class deriving from `DvPage` or `DvBar` is the VM, the generator also creates the markup wiring (`dvml-ui-markup.md` section 16). Each page has its own class and its own dvml.
-- A VM is connected to only one dvml (`vm="…"`). Diagnostics DVML001–021 appear in the build output (DVML018 = handler attribute that is not a public method of the VM, DVML019 = attribute that the built-in tag does not have, DVML020 = a literal value that does not fit the attribute: not a true/false value, a number, a word from its list or a color where the attribute needs one, DVML021 = a `DvComponent` named like a built-in tag). **MUST** build after editing markup and check there are no DVML012 (unknown style property), DVML013 (unknown token) or DVML014 (unknown class) warnings — at runtime these are only silently ignored or turn magenta, without any error.
-
-### 4.2 Dialogs (`DvDialog`, `ShowDialog`, `MessageBox`, `InputBox`, `InputNumber`, `SelectBox`)
-
-Full usage and examples are in `dvml-ui-markup.md` section 21 (the smallest example is `SetpointDialog` in 16.1). Like pages, dialogs are **created, held and closed by the app (`DvApp`).** Always follow the rules below.
+Full usage and examples: [dialog flow](dvml-dialogs.md#dialog-flow); the smallest example is `SetpointDialog` in the [app example](dvml-app.md#app-example). Like pages, dialogs are **created, held and closed by the app (`DvApp`)**. Always follow the rules below.
 
 **Showing**
-- **MUST** show dialogs only with `await App.ShowDialog<TDialog, TResult>(생성자 인자…)` (constructor arguments). The app creates the instance with the public constructor matching the arguments.
-- **NEVER** try to show an instance created with `new MyDialog(…)`. No such API exists. `ShowDialog` does not return the instance either; if you need the instance from outside, look it up in `App.Dialogs`.
-- Constructor arguments must be **directly assignable** by type. There is no numeric conversion (`int` → `double`) and no filling of optional parameters. If no constructor matches, or more than one does, `ShowDialog` throws `ArgumentException` at the call site.
-- Passing a single array (`string[] names`) makes that array one argument. **Wrap with `(object)items` only when passing a single `object[]`** (otherwise its elements expand into the argument list).
-- **NEVER** touch `App` or the UI in a dialog constructor. The constructor runs on the thread that called `ShowDialog` (possibly a communication thread), and at that time there is neither a screen nor an `App` (reading `App` throws `InvalidOperationException`). Only store the received values; do setup in `partial void OnLoaded()`.
+- **MUST** show dialogs only with `await App.ShowDialog<TDialog, TResult>(constructor args…)`. The app creates the instance with the public constructor matching the arguments.
+- **NEVER** try to show an instance created with `new MyDialog(…)` — no such API exists. `ShowDialog` does not return the instance; to reach it from outside, look it up in `App.Dialogs`.
+- Constructor arguments must be **directly assignable** by type: no numeric conversion (`int` → `double`), no filling of optional parameters. No match, or more than one → `ShowDialog` throws `ArgumentException` at the call site. [show](dvml-dialogs.md#dialog-show)
+- A single array argument (`string[] names`) is one argument. **Wrap with `(object)items` only when passing a single `object[]`** (otherwise its elements expand into the argument list).
+- **NEVER** touch `App` or the UI in a dialog constructor. It runs on the thread that called `ShowDialog` (possibly a communication thread), and there is neither a screen nor an `App` at that time (reading `App` throws `InvalidOperationException`). Store the received values only; do setup in `partial void OnLoaded()`. [lifecycle](dvml-dialogs.md#dialog-lifecycle)
 
 **Definition**
-- Dialog = a `partial class` deriving from `DvDialog<TResult>` + a dvml whose root is `<DvDialogFrame vm="네임스페이스.클래스" title="…">` (namespace.class). **Write `vm` including the namespace** (otherwise DVML005).
-- Use `DvDialogFrame` as the root. If you use another tag as the root and give it no background, it is transparent and the page below shows through.
-- Size comes from `width`/`height` in the root `style` (otherwise the content size, with text wrapping within window width − 32). It never exceeds the window − 16 (per side) and is clipped when overflowing, so put long content in an `overflow:scroll` box (e.g. `max-height:320`) — when the window is short, that box shrinks and the buttons stay inside the frame.
+- Dialog = a `partial class` deriving from `DvDialog<TResult>` + a dvml whose root is `<DvDialogFrame vm="Namespace.Class" title="…">`. **Write `vm` including the namespace** (otherwise DVML005). [define](dvml-dialogs.md#dialog-define)
+- Use `DvDialogFrame` as the root. Another root tag without a background is transparent, and the page below shows through.
+- Size comes from `width`/`height` in the root `style` (otherwise the content size, with text wrapping within window width − 32). It never exceeds the window − 16 per side and is clipped when overflowing, so put long content in an `overflow:scroll` box (e.g. `max-height:320`) — when the window is short that box shrinks and the buttons stay inside the frame.
 
 **Result**
-- **MUST** use a result type distinguishable from cancel (`default`): reference types (`Recipe`, `string`), `bool?`, `int?`, `double?`, `DvDialogResult`. **NEVER** value types such as `bool`, `int`, `double` — when closed from outside you get `false`/`0`, indistinguishable from "No" or "0".
-- Inside the dialog, `Close(result)` sets the result; `Close()` is cancel (`default`). Whichever way it closes (button, `CloseDialogs`, the dialog below closing, window closing), the result arrives exactly once. However, since the result is delivered on a frame, for an **app never attached to a window** `await` waits until the first frame, and for a **detached app** (WinForms `ViewControl.App` replaced with another app) it waits until reattached. `ShowDialog` called on an already **closed app** completes immediately with a cancel result on the calling thread.
-- An edit dialog edits a **copy** and returns the new value as the result; applying it to the original is done by the caller (data is the app's responsibility).
-- A message box is `await App.MessageBox(글, 제목, DvMessageButtons.YesNo)` (text, title); when closed from outside it returns `DvDialogResult.Cancel` regardless of the button set. Check "Yes" with `== DvDialogResult.Yes` (do not use `!= No`).
-- For on/off: a switch look uses `DvToggle`/`DvSwitch`, a box next to text uses `DvCheckBox`, a button look uses the latching button `<DvButton value="{Bind X}"/>`. For choosing one of several: 3–5 joined buttons use `DvSegment` (+`DvOption`); items with long descriptions laid out vertically use `DvRadio` (the same `value="{Bind X}"` + each its own `option` — the group is defined by the value, not by placement); many items use `DvSelect` (collapsed) or `DvListBox` (expanded list; multi-select with `selection-mode="multi"` + `selected-items`). Choosing from a hierarchy (plant → line → equipment) uses `DvTreeView items="{Roots}" item-children="Kids" item-text="Name" value="{Bind Picked}"` (the app objects as-is; do not create tree-only node types). **NEVER** imitate selection state yourself with several buttons' `onclick` and class bindings.
-- Numeric input for stepping setpoints up and down is `<DvInput keyboard-type="numeric" step="…" show-stepper="true"/>`. Values dragged by hand within a range (opening, brightness) use `<DvSlider value="{Bind X}" step="…"/>` (orientation via `direction`, same as `DvProgress`); for a round handle, `DvKnob`. **NEVER** build it yourself from two −/+ buttons and handlers (you will miss range, validation and formatting rules).
-- To show equipment state numbers as lamps, bind VM computed properties (`StateKey` → `state-*` token key, `StateText`, `IsFault`) to the `state`/`status`/`blink` of `DvStatusItem`/`DvLamp` (`dvml-ui-markup.md` section 8, DvLamp). There is no state table widget. The current step of a process/batch sequence is `<DvStepBar steps="{Steps}" current="{Step}"/>` (`current` starts at 1, 0 = not started). Small trends use `DvSparkline values="{List}"`, per-item comparison uses `DvBarChart`, proportions use `DvPieChart` (`items` + `item-value` + `item-text`, a single series — time-axis data uses `DvTrend`).
-- Switching content groups within one page is `DvTabs`/`DvTab` (same VM). Expand/collapse sections use `DvExpander` (`expanded="{Bind X}"`; if omitted, the screen remembers it); a group where only one is open uses `DvRepeat` + `DvExpander` + an item setter (`dvml-ui-markup.md` section 8). Changing the whole screen is a page switch (`App.Show<T>()`). **NEVER** put a page inside a tab (no pages inside pages).
-- Prevent mis-operation of dangerous command buttons (start, stop, reset) with `hold="1500"` (must be held for that many ms before `onclick`) or a confirmation box (`App.MessageBox`). **NEVER** build long-press yourself with a timer.
-- Confirmation before alarm ACK (mis-operation prevention) is done in the `onack` handler, not via a widget attribute: `public async void Ack(AlarmRow r) { if (await App.MessageBox(…, DvMessageButtons.YesNo) == DvDialogResult.Yes) Log.Ack(r.Id); }`. **NEVER** use an attribute like `ack-confirm` (it does not exist — it is silently ignored). Example in `dvml-ui-markup.md` section 13.
-- Screen lock (operator away) is done with `App.Lock<LockDialog>(…)`. The app creates the lock dialog (`DvDialog<bool>`), and it calls **`Close(true)` only when authentication succeeds** — that is the unlock (`Close(false)` and `CloseDialogs` do not unlock). If authentication finished outside the dialog, call `App.Unlock()`. **NEVER** show a lock screen with `ShowDialog` — dialogs shown after it stack on top and bypass the lock. For automatic lock on no input, call `Lock` from `App.Idle` with `App.IdleTimeout` (`dvml-ui-markup.md` 21.8).
+- **MUST** use a result type distinguishable from cancel (`default`): reference types (`Recipe`, `string`), `bool?`, `int?`, `double?`, `DvDialogResult`. **NEVER** `bool`, `int`, `double` — closed from outside they give `false`/`0`, indistinguishable from "No" or "0".
+- Inside the dialog `Close(result)` sets the result; `Close()` is cancel (`default`). Whichever way it closes (button, `CloseDialogs`, the dialog below closing, window closing) the result arrives exactly once.
+- An edit dialog edits a **copy** and returns the new value as the result; applying it to the original is the caller's job (data is the app's responsibility). [patterns](dvml-dialogs.md#dialog-patterns)
+- Message box: `await App.MessageBox(text, title, DvMessageButtons.YesNo)`. Closed from outside it returns `DvDialogResult.Cancel` regardless of the button set; check "Yes" with `== DvDialogResult.Yes` (not `!= No`). [message box](dvml-dialogs.md#messagebox)
+- Confirmation of an alarm ACK goes in the `onack` handler, not in a widget attribute: `public async void Ack(AlarmRow r) { if (await App.MessageBox(…, DvMessageButtons.YesNo) == DvDialogResult.Yes) Log.Ack(r.Id); }`. **NEVER** write `ack-confirm` (it does not exist and is silently ignored). Example: [DvAlarmList](dvml-instruments.md#dvalarmlist).
 
-**Built-in boxes — one value, one choice** (`dvml-ui-markup.md` 21.5)
-- **MUST** use the built-in boxes when asking for one piece of text, one number, or one item from a list: `await App.InputBox(제목, 처음값)` (title, initial value) → `string?`, `await App.InputNumber(제목, 처음값, min, max)` → `double?`, `await App.SelectBox(제목, 항목들, 처음선택)` (title, items, initial selection) → `int?` (the chosen index). **NEVER** create a new dialog class and dvml for a single question like this. Build your own only when editing several values together or when validation or preview is needed.
-- **MUST** treat a `null` result as cancel (the cancel button, or `CloseDialogs`, the dialog below closing, window closing). Receive it as `if (await App.InputNumber(…) is { } v)`, and **NEVER** erase null with `?? 0`, `.Value` or `!` (cancel becomes 0 or an exception). For `InputBox`, `""` is empty input, not cancel.
-- `InputNumber` rejects out-of-range and non-numeric input, so the result is always within `min`–`max` (`null` means no limit on that side).
-- **MUST** pass `InputNumber`'s initial `value` as a finite number within `min`–`max`. NaN/infinity, `min >= max`, or an out-of-range `value` throws `ArgumentOutOfRangeException` at the call site (the box does not appear), so clamp values that may be out of range with `Math.Clamp(v, min, max)` before passing.
-- `SelectBox` picks only one. An empty `items` throws `ArgumentException` at the call site, so check first if the list may be empty. `items` is copied at call time, and if `selected` is -1 or out of range, it starts with no selection (confirm is disabled until then).
-- Input boxes start editing as soon as they appear (in touch mode the virtual keyboard appears immediately), and when the value is accepted with the keyboard's Done (Enter), it is confirmed directly. Pressing the confirm button while the virtual keyboard is open cancels the edit, as on other screens, and does not confirm — this is normal behavior, so do not build your own dialog because of it.
-- Button text uses the same `dv.dialog.ok` and `dv.dialog.cancel` keys as the message box; the width is fixed at 360.
+**Built-in boxes — one value, one choice** ([built-in boxes](dvml-dialogs.md#builtin-boxes))
+- **MUST** use the built-in boxes for one text, one number or one list item: `await App.InputBox(title, initialValue)` → `string?`, `await App.InputNumber(title, initialValue, min, max)` → `double?`, `await App.SelectBox(title, items, initialSelection)` → `int?` (the chosen index). **NEVER** create a new dialog class and dvml for a single question. Build your own only to edit several values together or when validation or preview is needed.
+- **MUST** treat a `null` result as cancel (the cancel button, `CloseDialogs`, the dialog below closing, window closing). Receive it as `if (await App.InputNumber(…) is { } v)`; **NEVER** erase null with `?? 0`, `.Value` or `!`. For `InputBox`, `""` is empty input, not cancel.
+- `InputNumber` rejects out-of-range and non-numeric input, so the result is always within `min`–`max` (`null` = no limit on that side).
+- **MUST** pass `InputNumber`'s initial `value` as a finite number within `min`–`max`. NaN/infinity, `min >= max`, or an out-of-range `value` throws `ArgumentOutOfRangeException` at the call site (the box does not appear); clamp with `Math.Clamp(v, min, max)`.
+- `SelectBox` picks only one. An empty `items` throws `ArgumentException` at the call site. `items` is copied at call time; `selected` -1 or out of range starts with no selection (confirm is disabled until one is picked).
+- Input boxes start editing as soon as they appear (in touch mode the virtual keyboard appears at once); the keyboard's Done (Enter) confirms directly. Pressing the confirm button while the virtual keyboard is open cancels the edit and does not confirm — this is normal; do not build your own dialog because of it.
 
 **After `await`**
-- Code in a handler (`onclick` etc.) that `await`s continues on the **input thread** in the frame the result arrives, so it may use the VM directly. Changed values are redrawn automatically in that frame, so `App.Invalidate()` is not needed (only values changed from timer or communication threads need `App.Invalidate()`).
-- Code that `await`s on a communication thread also continues on the input thread. Hand off heavy work after that (communication, files) with **`Task.Run`**. Otherwise the screen freezes meanwhile.
-- Exceptions from `async void` handlers arrive at `App.HandlerError` (`Kind` = `"async"`). Write async methods started from a communication thread to return `Task` and catch exceptions yourself.
+- Where `await` continues, which thread, and when `App.Invalidate()` is needed: [dialog lifecycle](dvml-dialogs.md#dialog-lifecycle) and [threads](dvml-app.md#threads).
 
 **Outside pages, duplicates, closing**
-- Outside pages (communication classes etc.), reach the app via **`DvApp.Current`**. It works from `new ViewWindow(app, …)` (or assigning `ViewControl.App`) on, and throws before that. `window.Run()` blocks until the window closes, so start communication between `new ViewWindow` and `Run()`, and stop it after `Run()` returns. After the window closes, `Current` still returns the last app, and that app's `ShowDialog` returns a cancel result immediately without even calling the constructor (messages arriving during shutdown end quietly).
-- **NEVER** attach two `DvApp`s to windows/controls in one process (the second throws `InvalidOperationException`). There is one app.
-- **Preventing duplicates**: to avoid showing the same dialog twice, give the dialog class **its own key property** (e.g. `public int AlarmId { get; }`) and check `App.Dialogs.OfType<AlarmDialog>().Any(d => d.AlarmId == id)` before showing. **NEVER** compare by title or text. The base class has no `Id` or `Title` property.
-- Showing several of the same dialog with different arguments is allowed. A double tap on a button is blocked by the library (input below is blocked from the moment of the request).
-- **Closing**: inside the dialog, `Close(…)`; to close all, `App.CloseDialogs()` (all results are cancel). `Close` is `protected`, so to close a specific dialog from outside, give the dialog a public method wrapping `Close` (`public void Dismiss() => Close(false);`), find it in `App.Dialogs` by key, and call it.
-- Pressing outside a dialog does not close it (the press is swallowed). Always put a close button inside the dialog. Dialogs remain when the page changes — if they must close, app code closes them.
-- When a dialog appears, a value being edited on the page is committed; when a dialog closes, a value being edited inside the dialog is discarded.
+- Reaching the app from outside pages (`DvApp.Current`): [threads](dvml-app.md#threads).
+- **Preventing duplicates**: give the dialog class its own key property (`public int AlarmId { get; }`) and check `App.Dialogs.OfType<AlarmDialog>().Any(d => d.AlarmId == id)` first. **NEVER** compare by title or text; the base class has no `Id` or `Title` property.
+- **Closing**: inside the dialog `Close(…)`; all dialogs `App.CloseDialogs()` (all results cancel). `Close` is `protected`, so to close a specific dialog from outside give it a public wrapper (`public void Dismiss() => Close(false);`), find it in `App.Dialogs` by key and call it.
 
-### 4.3 Process diagrams (`DvProcess`, `DvSymbol`)
+<a id="process-pointer"></a>
+## Process diagrams
 
-**MUST** read [`dvml-process.md`](dvml-process.md) to the end before writing a process screen (procedure, ports, values, diagnostics, checklist). Below are only the most frequent mistakes. A process diagram states **only equipment + connections**; the library does the layout.
+**MUST** read [the process diagram guide](dvml-process.md#process-overview) to the end first when writing a process screen (`DvProcess`, P&ID): procedure, equipment sizes and ports, layout and routing, hints, user symbols (`DvSymbol`), diagnostics and fixes, full examples, checklist. A process diagram states **only equipment + connections**; the library does the layout. Choose the placement mode with [placement mode](dvml-process.md#placement-mode) and size the diagram with [size and fit](dvml-process-layout.md#size-fit). Check the result against the [process checklist](dvml-process.md#process-checklist).
 
-- **NEVER** draw a process screen yourself with absolute coordinates (`position:absolute`), `DvImage` or line boxes. Place equipment (`DvVessel`, `DvPump`, `DvValve`, `DvValve3`, `DvExchanger`, `DvInline`, `DvTerminal`) inside `<DvProcess>` and connect them with `<DvLine from="장비.포트" to="장비.포트"/>` (equipment.port).
-- **MUST** give each piece of equipment a `name` and connect lines by that name (not `id`). Port names are fixed: vessels `top`, `bottom`, `side`; everything else `in`, `out`; terminals have no port, only `name`.
-- The process vessel is `DvVessel`. **NEVER** use the level widget `DvTank` inside a process diagram (it is not equipment and is not drawn).
-- Branches and merges connect several lines to the same port. There is no junction equipment. In automatic placement there are no bend-point attributes — change the shape only with the `row` (order within the same column) and `rank` (column number) hints. Equipment coordinates (`x`·`y`) exist only with `<DvProcess placement="fixed">`, which is **only** for matching a drawing the user gave you; then every piece of equipment needs `x`·`y` (`dvml-process.md` chapter 20). **NEVER** choose `fixed` on your own for a new screen.
-- Bind state: `running="{P1Run}"`, `open="{V1Open}"`, `level="{T1Level}"` (0–100 %). When only values change, the layout is not recomputed.
-- When several supply lines feed one tank, connect them all to `to="T.top"` (or `T.side`) — the library merges them into one nozzle. **NEVER** invent merge equipment. The drawing height is set to fit the area by `DvProcess align` (default `auto`), so you usually do not specify it.
-- Value displays and buttons beside equipment go inside `<DvAttach side="right">` as plain dvml (text uses `class="label"`, `caption`, `title` for theme colors). **NEVER** overlay them on the process diagram with absolute positioning (piping cannot route around them).
-- Equipment not in the list is defined with `<DvSymbol>` and registered with `registry.Register(…)`. Ports are written not as coordinates but as `side` (face) + `at` (0–1), and colors are not put in the path but set via `DvShape class` (`vessel`, `state`, `accent`, `detail`…).
-- **MUST** after editing a process diagram, build and check there are no DVML008–011 (name, port, duplicate, missing value), render a PNG (section 5) and check Trace warnings. If "crosses other piping" or "no free path" appears, fix `row`, `rank`, the area size, or an attached box standing in front of a port. For "Not enough space" or "Shrunk to N% … X px", follow the **sizing procedure in `dvml-process.md` chapter 4** exactly (render at the smallest real screen size → `fit="scale-down"` → if X < 10px, `font-size` × 11 / X → if still too small, split the screen); judge by X, not by the PNG. The pipe shape is decided once at the natural size (`base-size` for coordinate placement) and only stretched to the area; "no longer fits the … natural-size shape" means the drawing changed shape in that smaller area — enlarge the area. "no longer fits its base-size shape" is the same in coordinate placement without `fit="contain"`, in a much smaller or a much larger area — use `fit="contain"`. Red dashed lines and red borders mean invalid connections.
-- Multiple units of the same equipment (3 blenders) are defined once as a component whose template root is `<DvUnit>` and repeated with `<Blender name="BL1" U="{BL1}"/>`. Connections outside a unit go only through a `<DvPort name side>` placed on the unit, as `BL1.out` — **NEVER** connect directly into a unit like `BL1.T.top` (error). For a button inside the template to receive its own unit, use a VM method with one parameter, such as `Reset(BlenderVm unit)`.
-- Place instrument bubbles `<DvInstrument name tag number on="장비"/>` (equipment) directly under `DvProcess` and **always** write `on` (a controller goes on the valve it controls). Where the point on the equipment matters (a given drawing, a level transmitter at the column base), use `tap="장비.면@위치"` or `tap="장비.포트"` instead to stand the bubble at that point with a connection line, and `to="T1.left@0.15"` for nozzle positions fixed by a drawing (`dvml-process.md` 6.1·7.3·21.3). With `placement="fixed"`, also give bubbles `x`·`y` (with `on` or `tap`), and write `<DvLine via="x,y x,y"/>` only for a pipe that still runs differently from the drawing (20.5·20.6). Signal lines are `<DvSignal from="계기" to="계기·장비"/>` (instrument → instrument/equipment) — endpoints are names only; a pneumatic signal adds `kind="pneumatic"`; use `color`·`thickness` on it only when a drawing or site standard requires them (the default follows the theme, a fixed `#color` does not). **NEVER** draw signals with `DvLine` (piping) or invent instrument face attributes (`side`), or use `x`·`y` on instruments or `via` in automatic placement (they are ignored).
-- When a drawing is given, build the same form as far as the library allows (`dvml-process.md` 21.4). Use what the library already has before giving up on a detail: `<DvSignal kind="pneumatic"/>` for pneumatic signals, `<DvSignal arrow="end" label="SH"/>` for signal arrows and switch actions, `<DvLine label="01-100-PE-N"/>` for line numbers, `DvPump kind="isa"` + `DvMotor kind="isa"` for ISA pump and motor symbols, `DvVessel height`·`width` for a tall, wide or narrow tank, and the extra kinds in `dvml-process.md` 5.2–5.5 (globe·angle·relief valves, reducer·orifice·vent·blind, drum·column·open vessels). **NEVER** invent kinds that are not listed there — register a `DvSymbol` instead, also when a built-in kind looks different from the drawing's symbol. A corner or branch of a signal line is an empty symbol at that point (14.2).
-- **NEVER** add `<DvProcess fit="scale-down">` (automatic placement) before a render shows "Not enough space", and **NEVER** put the diagram's `font-size` on a parent (it is not inherited). Both belong to the sizing procedure above. **MUST** decide the placement mode first with `dvml-process.md` chapter 21: a process with many lines back to earlier equipment (reflux, reboiler, recirculation, heat recovery), about 25+ pieces of equipment, or a given drawing → coordinate placement; read a given drawing with 21.4. For coordinate placement (`placement="fixed"`), **always** use `base-size` (the size the coordinates were taken at) + `fit="contain"`: the drawing then scales as a whole, smaller or larger, centered.
-- Turn on flow indication with `<DvProcess flow-animation="true">` (off by default). The library decides which pipes are flowing, so **NEVER** compute flow per line in the VM and feed it in. Override with `<DvLine flow="{X}"/>` only for lines with real data, such as flowmeters.
-- Pipe color is given only by medium name (`water`, `steam`, `air`, `gas`, `oil`, `acid`) as in `<DvLine medium="water">`, written once on the first line of a segment (it propagates in the flow direction and to the other lines leaving the same port). **NEVER** give pipe color with color values or `style`.
-- Not yet available: units inside units. **NEVER** invent such attributes.
+<a id="updates-threads"></a>
+## Updates and threads
 
----
+Bindings are read at layout time. Clicks and other input rebuild the screen by themselves; after a timer or communication changes the VM, request a redraw.
 
-## 5. Verifying screens: render to PNG and look
+| Situation | Call |
+|---|---|
+| Click, toggle, knob, input/selection commit, ACK | Automatic (no call needed), also after a handler's `await` |
+| VM property changed from a timer or communication, a list newly assigned, a `visible` condition changed | `Invalidate()` — rebuilds the markup |
+| Only `DvDataGrid` cell values changed in place, rows added/removed in the same list | `Repaint()` — redraws without rebuilding |
+| `TrendBuffer.Add(...)` | Then `Invalidate()` |
+| `AlarmLog.Raise(...)`, `Ack(...)`, `AckAll()` | Then `Invalidate()` |
 
-To see changes directly in the running app, enable `app.HotReload = true` inside `#if DEBUG`; that screen is rebuilt every time you save the dvml (markup only — rebuild when C# changes, `dvml-ui-markup.md` 16.7).
+**Which object to call it on.** `DvPage`, `DvBar` and `DvDialog` have no `Invalidate()`/`Repaint()` of their own, and `DvApp` has no `Repaint()`:
 
-You can render a screen to a PNG file with `DvRenderer` without opening a window. Rendering and opening a PNG after every markup change is the most reliable verification. AI must also look at this image directly to verify.
+| Where the code runs | Rebuild | Redraw only |
+|---|---|---|
+| Inside a page, bar or dialog class (VM = the class) | `App.Invalidate()` | `App.Surface.Repaint()` |
+| Outside (Program.cs, a service holding the app) | `app.Invalidate()` (the `DvApp` instance) | `app.Surface.Repaint()` |
+| A host that uses `DvSurface` directly (no `DvApp`) | `surface.Invalidate()` | `surface.Repaint()` |
+| Host code holding the OpenTK window | `ViewWindow.Invalidate()` | `ViewWindow.Repaint()` |
+| Host code holding the WinForms control | `ViewControl.MarkUpdated()` | `ViewControl.MarkRepaint()` |
+
+- `App.Invalidate()` rebuilds the current page, the bars (fixed areas) and open dialogs. `App.Surface.Repaint()` redraws without rebuilding and is forwarded to all of them.
+- `ViewWindow.Invalidate()`/`Repaint()` and `ViewControl.MarkUpdated()`/`MarkRepaint()` do the same for the host's app, but code inside pages should not depend on the host.
+- Computed properties (`public string StatusText => …`) are recomputed on the next `Invalidate()`.
+- Which calls are safe from which thread, consistent multi-property updates, and the UI thread: [threads](dvml-app.md#threads).
+
+<a id="verify"></a>
+## Verify
+
+Most mistakes are silently ignored, so verify every change in this order: [build](#verify-build) → [render a PNG and look at it](#verify-png) → [drive the app and open the real window](#verify-app). Keep a Trace listener on during development: many problems show only as `System.Diagnostics.Trace` warnings. To see markup changes in a running app, use [hot reload](dvml-app.md#hot-reload).
+
+<a id="verify-build"></a>
+### Build
+
+- **MUST** build after editing markup and check there are no DVML012 (unknown style property), DVML013 (unknown token) or DVML014 (unknown class) warnings — at runtime these are only silently ignored or turn magenta.
+- **MUST** after editing a process diagram build and check there are no DVML008–011 (unknown name, bad port, duplicate name, invalid value), then render a PNG and check Trace warnings ([process diagnostics](dvml-process-layout.md#process-diagnostics)).
+- Every code with its meaning and fix: [build diagnostics](dvml-diagnostics.md#build-diagnostics).
+
+<a id="verify-png"></a>
+### Render a PNG and look at it
+
+`DvRenderer` renders a screen to a PNG file without opening a window. Rendering and opening a PNG after every markup change is the most reliable verification; an AI must look at the image itself.
 
 ```csharp
 using Devinno.UI;
@@ -224,68 +303,47 @@ using Devinno.UI.Styling;
 DvRenderer.RenderToFile(markup, vm, 1280, 800, "screen.png", DvTheme.Dark, registry: null);
 ```
 
-- It uses the same layout and drawing code as the real window. Bindings are read from the VM as-is.
-- There are overloads that take a `ComponentRegistry` if you use user components, and `DvStrings` if you use localization.
-- For blinking (lamps, alarms), the `timestampMs` argument selects the on/off moment.
-- Check: is text visible (color), is there no magenta (token typo), has no element disappeared (size 0), did what should stretch stretch (`grow`/stretch), does text not overflow its box.
-- If one image is not enough, change VM values (alarm state, empty list, long text, etc.) and render several images to compare.
+- It uses the same layout and drawing code as the real window; bindings are read from the VM as-is.
+- Overloads take a `ComponentRegistry` (user components) and `DvStrings` (localization).
+- For blinking (lamps, alarms) the `timestampMs` argument selects the on/off moment.
+- Check: text is visible (color), no magenta (token typo), no element disappeared (size 0), what should stretch stretched (`grow`/stretch), text does not overflow its box.
+- One image is rarely enough: set the VM to each state (alarm state, empty list, long text, pressed looks) and render one image per state to compare.
 
-To verify interaction too (clicks, input), send `PointerDown`/`PointerUp` to the `DvSurface` and then draw with `DvRenderer.RenderToFile(surface, w, h, path)`. It draws the state after the change: transitions (`transition`, page transitions, `DvExpander` height) are drawn finished, so one call is enough.
+<a id="verify-app"></a>
+### Drive the app without a window, then open the real window
 
----
+To test interaction (clicks, input, page switches, dialogs), drive the whole app in code; no window is needed.
 
-## 6. Updates and threads
+- Create the app as usual (`new DvApp`, `Pages.Add`, bars).
+- A **frame** is one call of `app.Surface.RenderTo(canvas, w, h, timestampMs)` (or `app.Surface.Layout(w, h)`). App requests — `Show`, bar assignments, `ShowDialog` (the dialog surface is built), dialog closing and result delivery, and the code after an `await` of a dialog — are applied at the start of a frame. Run one frame first so the screen has a layout to press.
+- Send `PointerDown`, `PointerMove` and `PointerUp` to `app.Surface`, in the same units as `w`/`h`, then run a frame.
+- `DvRenderer.RenderToFile(app.Surface, w, h, path)` runs one frame itself and draws the state after the change: motion in progress (`transition`, page transitions, `DvExpander` height) is drawn finished and blinking is drawn at time 0, so one call after a press is enough to see its result.
+- To see motion part-way, call `RenderTo` repeatedly with an advancing `timestampMs`; transitions, page transitions, expander height and blinking follow that timestamp.
+- The virtual keyboard (keypad) slide, `hold` presses and inertial scrolling follow the real clock (`Environment.TickCount64`), not the timestamp: wait real time after the keypad opens or closes, or while holding, then call `RenderTo` (a `hold` press fires inside `RenderTo`, not inside `Layout`).
+- After a test writes the VM directly, call `Invalidate()` ahead of the next press. A value widget compares a press with the value from the last rebuild, so otherwise the press may do nothing.
 
-| Situation | Call |
-|---|---|
-| Click, toggle, knob, input/selection commit, ACK | Automatic (no call needed) |
-| VM property changed from a timer or communication, a list newly assigned, a `visible` condition changed | `Invalidate()` — rebuilds the markup |
-| Only `DvDataGrid` cell values changed, rows added/removed in the same list | `Repaint()` — redraws only, without rebuilding |
-| `TrendBuffer.Add(...)` | Then `Invalidate()` |
-| `AlarmLog.Raise(...)`, `Ack(...)`, `AckAll()` | Then `Invalidate()` |
+Then **open the real window** (and, with `fit`, resize it and press something). The OpenTK window reads the real cursor position, so posted OS mouse messages are not a reliable test there.
 
-**Which object to call it on.** `DvPage`, `DvBar` and `DvDialog` have no `Invalidate()`/`Repaint()` of their own:
+<a id="not-supported"></a>
+## Not supported
 
-| Where the code runs | Rebuild | Redraw only |
-|---|---|---|
-| Inside a page, bar or dialog class (VM = the class) | `App.Invalidate()` | `App.Surface.Repaint()` |
-| Outside (Program.cs, a service holding the app) | `app.Invalidate()` (the `DvApp` instance) | `app.Surface.Repaint()` |
-| A host that uses `DvSurface` directly (no `DvApp`) | `surface.Invalidate()` | `surface.Repaint()` |
+Assume any tag, attribute or value not in these pages is not supported. The following are known gaps; work around them another way.
 
-`App.Invalidate()` rebuilds the current page, the bars and open dialogs. `App.Surface.Repaint()` is forwarded to all of them too. `ViewWindow.Invalidate()`/`Repaint()` do the same for the window's app, but code inside pages should not depend on the window.
-
-- **Keeping values consistent across threads.** Bindings are read on the UI thread during layout, possibly while a timer thread is writing. When several properties belong together (value + state text + color), update them as one unit: either write them under a `lock` that the getters also take, or put them in an immutable snapshot object and assign the whole object (`Live = new PlantData(...)`, bound as `{Live.Temp}`), then call `Invalidate()`. Do not name that property `Data`: the `Data.` prefix is ignored, so `{Data.Temp}` reads `Temp` on the VM itself and shows nothing, with no warning. A single `double`/`bool`/`string` property needs nothing extra.
-- `Invalidate()`, `Repaint()`, `TrendBuffer.Add`, `AlarmLog.Raise`/`Ack`/`AckAll` are safe to call from any thread (Raise/Ack then `Invalidate()` from a communication thread). All other UI work is done on the single UI thread only.
-- `DvApp`'s `Show`, `Top`/`Bottom`/`Left`/`Right` assignments, and `Theme`/`Strings`/`Registry` settings can also be called from any thread (queued and applied on the UI thread on the next frame). Calling `App.Show<AlarmPage>()` from a communication thread is fine.
-- Dialog `ShowDialog`, `MessageBox`, `CloseDialogs`, reading `Dialogs`, and `Close` inside a dialog also work from any thread. Screen creation/cleanup and result delivery happen on the UI thread on the next frame (4.2).
-- In pages and areas inside `DvApp`, writing handle values (`btn.Enabled = false` etc.) also wakes the window. Only in hosts that use `DvSurface` directly must you call `Invalidate()` separately after writing values.
-- `DvApp.Invalidate()` rebuilds the current page, fixed areas and open dialogs. When the page changes (even via `App.Show` from code), areas re-read `App.CurrentPage` on the next frame, so do the current-page highlight with a class binding that reads it.
-- Do not change the list from another thread while the grid is drawing.
-- VM handler and setter exceptions are caught within input processing (UI thread), and binding read exceptions (getter, `ToString`, enumeration) within layout/drawing, and arrive via `HandlerError` (3.3). All screen exceptions from `DvApp`'s areas and pages arrive at `DvApp.HandlerError`, so subscribing to that one is enough. Exceptions thrown inside subscribers are ignored (Trace).
-- Bindings are read once at layout. Computed properties (`public string StatusText => …`) are also recomputed on the next `Invalidate()`.
-
----
-
-## 7. Known limitations
-
-These are not in the current version. If you need them, work around them another way or wait.
-
-- Ellipsis (except grid cells), line count limits, `line-height`, `word-break`, hyphenation. Automatic wrapping of text children of `DvRow` (giving a width works).
-- `margin`, `%`/`em`/`auto` sizes (except grid tracks and grid column widths), keyframe animation (`@keyframes`, `animation`), `rotate`/`skew`, hit areas following `transform`.
-- Keyboard focus navigation and tab order (except Enter/Tab in grid edit cells), drag and drop.
-- Dialogs: closing by pressing outside, drag-moving, open/close animations, title bar X button, physical keyboard Esc/Enter handling (the only exception is the edit-completion Enter of built-in input boxes), multi-select box (`SelectBox` picks only one).
-- `DvSelect` keyboard navigation, date range selection, year-step navigation, a "clear" button in pickers, color palette/alpha editing, `DateTimeOffset`.
+- Text: ellipsis (except grid cells), line count limits, `line-height`, `word-break`, hyphenation; automatic wrapping of text children of `DvRow` (giving a width works).
+- Fonts: bundling font files (`font-family` picks from installed fonts); `font-weight` other than normal and bold.
+- Layout and style: `margin`, `%`/`em`/`auto` sizes (except grid tracks and grid column widths), keyframe animation (`@keyframes`, `animation`), `rotate`/`skew`, hit areas following `transform`, compound selectors (`.a.b`, tag, descendant selectors).
+- Input: keyboard focus navigation and tab order (except Enter/Tab in grid edit cells), drag and drop.
+- Dialogs: closing by pressing outside, drag-moving, open/close animations, a title bar X button, physical keyboard Esc/Enter (the only exception is the edit-completion Enter of built-in input boxes), a multi-select box (`SelectBox` picks only one).
+- Pickers: `DvSelect` keyboard navigation, date range selection, year-step navigation, a "clear" button in pickers, color palette/alpha editing, `DateTimeOffset`.
 - `DvDataGrid`: reading or setting filter state from app code (filters are operated only by the user in the filter row), cell templates, variable row height, arrow key navigation, multi-cell paste/undo, per-row selection lists, header/summary editing, password cells.
 - `DvRepeat`: virtualization, keys, selection (use `DvDataGrid` if needed).
-- Process diagrams: units inside units, `exit` hint, bend points in automatic placement or on signal lines.
-- NativeAOT and trimmed publishing — **no plans to support** (the library finds bindings and handlers via reflection). Publish apps with JIT.
-- Compound selectors (`.a.b`, tag, descendant selectors).
+- Process diagrams: [process limits](dvml-process.md#process-not-supported).
+- Publishing: NativeAOT and trimmed publishing are not supported (the library finds bindings and handlers via reflection). Publish apps with JIT.
 
----
+<a id="api-reference"></a>
+## Where the C# API is
 
-## 8. Where the C# API is
+These pages cover the **markup**. On the C# side they list only the minimum tied to the markup (what the VM must provide, handler signatures).
 
-These two md documents cover **markup**. On the C# side they list only the minimum tied to the markup (what the VM must provide, handler signatures).
-
-- Detailed usage of hosts (`ViewWindow`, `ViewControl`, `DvSurface`, `DvRenderer`), themes (`DvTheme`), app, pages and dialogs (`DvApp`, `DvPage`, `DvBar`, `DvDialog`, `DialogCollection`, `DvDialogResult`, `DvMessageButtons`), alarms (`AlarmRow`, `AlarmLog`), trends (`TrendBuffer`, `TrendPoint`), localization (`DvStrings`), component and process-diagram symbol registration (`ComponentRegistry`), and constants (`Styles`, `Values`) is in each type's XML doc comments.
-- View them via IntelliSense in the IDE, or, if you only have the package, in the `Devinno.UI.xml` file.
+- Detailed usage is in each type's XML doc comments: hosts (`ViewWindow`, `ViewControl`, `DvSurface`, `DvRenderer`), themes (`DvTheme`), app, pages and dialogs (`DvApp`, `DvPage`, `DvBar`, `DvDialog`, `DialogCollection`, `DvDialogResult`, `DvMessageButtons`), alarms (`AlarmRow`, `AlarmLog`), trends (`TrendBuffer`, `TrendPoint`), localization (`DvStrings`), component and process-symbol registration (`ComponentRegistry`), custom widgets (`DvWidget`), video (`FrameSource`, `VideoPlayer`), constants (`Styles`, `Values`).
+- View them via IntelliSense in the IDE or, with only the package, in `Devinno.UI.xml` (`lib/net9.0/` in the package; the same folder as these pages in `.devinno/Devinno.UI/`).

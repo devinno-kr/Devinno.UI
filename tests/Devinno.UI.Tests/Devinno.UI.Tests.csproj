@@ -32,7 +32,7 @@
     <AdditionalFiles Include="Pages/*.dvml" />
   </ItemGroup>
 
-  <!-- 문서(dvml-ui-markup.md 16.1)의 전체 예제 = samples/Devinno.UI.AppSample. 페이지·바를 그대로 넣어 동작을 검사한다(Program.cs 제외). -->
+  <!-- 문서(dvml-app.md#app-example)의 전체 예제 = samples/Devinno.UI.AppSample. 페이지·바를 그대로 넣어 동작을 검사한다(Program.cs 제외). -->
   <ItemGroup>
     <Compile Include="..\..\samples\Devinno.UI.AppSample\Pages\*.cs" Link="AppSample\%(Filename)%(Extension)" />
     <Compile Include="..\..\tools\XmlDocI18n\XmlDocI18n.cs" Link="I18n\XmlDocI18n.cs" />

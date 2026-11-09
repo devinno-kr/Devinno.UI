@@ -1,37 +1,13 @@
-# Devinno.UI Process Diagram (P&ID) Authoring Guide
+# Devinno.UI process diagrams (DvProcess)
 
-This document explains, from start to finish, how to build a **process screen** (a P&ID-style screen) of tanks, pumps, valves and pipes with `<DvProcess>`. People can read it too, but it was written so that **an AI can write a correct process screen from this document alone**. That is why every rule is listed and every number is exact.
+Covers: process (P&ID-style) screens of tanks, pumps, valves and pipes with `<DvProcess>`: when to use it, choosing the placement mode, the authoring procedure, `DvProcess` attributes, connections (`DvLine`, face positions), attachments, instruments and signal lines, units, look, flow and medium, the view model, the checklist, what is not supported, and the FAQ.
+Read first: [the rules every screen follows](llm-rules.md#principles) · [markup basics](dvml-language.md#markup-basics) · [binding syntax](dvml-language.md#binding)
+Not here: [equipment tags, ports, sizes and user symbols](dvml-process-equipment.md#equipment) · [diagram size, `fit` and text size](dvml-process-layout.md#size-fit) · [how automatic placement and pipe routes are computed](dvml-process-layout.md#auto-layout) · [coordinate placement details](dvml-process-layout.md#fixed-placement) · [process Trace messages](dvml-process-layout.md#process-diagnostics) · [build diagnostics DVML008–011](dvml-diagnostics.md#build-diagnostics) · [complete examples and copying a given drawing](dvml-process-examples.md#process-examples) · [the level widget `DvTank`](dvml-instruments.md#dvtank)
 
-- Read [`llm-rules.md`](llm-rules.md) (principles and pitfalls) first. Tags, styles and bindings outside the process diagram are in [`dvml-ui-markup.md`](dvml-ui-markup.md). Chapter 22 of that document is a summary of this one.
-- Any tag, attribute or value not in this document **does not exist**. Do not invent them.
+These four pages (this one, [equipment](dvml-process-equipment.md#equipment), [layout](dvml-process-layout.md#size-fit) and [examples](dvml-process-examples.md#process-examples)) hold every process rule with exact numbers, so an AI can write a correct process screen from them alone. Any tag, attribute or value not on them **does not exist**. Do not invent them.
 
-## Contents
-
-1. At a glance — connections only, no coordinates
-2. When to use `DvProcess`
-3. Authoring procedure (in this order)
-4. `DvProcess` attributes and size
-5. Equipment reference (tag, kind, ports, size, state)
-6. Connection (`DvLine`) rules
-7. Attaching to equipment (`DvAttach`, `DvAgitator`, `DvMotor`, instrument `DvInstrument`, signal line `DvSignal`)
-8. Unit groups (`DvUnit` · `DvPort`)
-9. How placement is decided
-10. How pipe routes are decided
-11. Refining with hints (`row`·`rank`·`rotate`·`flip`)
-12. Appearance (`look`)
-13. View model (C#) and updates
-14. User symbols (`DvSymbol`)
-15. Diagnostics and how to fix them
-16. Full example
-17. Checklist (MUST · NEVER)
-18. Not yet available
-19. Frequently asked questions
-20. Coordinate placement (`placement="fixed"`) — matching a given drawing
-21. Screen size and complex P&IDs — which mode, which attributes
-
----
-
-## 1. At a glance — connections only, no coordinates
+<a id="process-overview"></a>
+## At a glance — connections only, no coordinates
 
 ```xml
 <DvProcess direction="lr" look="plain">
@@ -51,29 +27,51 @@ This document explains, from start to finish, how to build a **process screen** 
 </DvProcess>
 ```
 
-This markup contains no coordinates at all. The library does the following.
+This markup contains no coordinates. You write the equipment and what connects to what; the library does the rest:
 
 1. It places equipment in columns from left to right in flow order (`IN` → `T1` → `P1`·`P2` → `V1` → `OUT`).
 2. It stacks the parallel pumps (`P1`, `P2`) one above the other in the same column.
 3. It draws pipes at right angles (orthogonally). Each pipe leaves straight out of the face its port is on and bends only in the empty corridors between equipment.
 4. Where `T1.bottom` splits to the two pumps (a branch) and where the two pumps join into `V1.in` (a merge), it draws T-junctions.
 
-Adding or removing a piece of equipment recomputes the placement and the pipes. Since there are no coordinates for a person to touch, mistakes like "a pipe runs through equipment" or "lines are misaligned" cannot happen.
+Adding or removing a piece of equipment recomputes the placement and the pipes. There are no coordinates for a person to touch, so pipes through equipment and misaligned lines are avoided automatically; when no clean route exists, a Trace warning says so ([process diagnostics](dvml-process-layout.md#process-diagnostics)).
 
-This automatic placement is the default and the right choice for almost every screen. Only when the screen **must match a drawing you were given** (a customer's P&ID) can equipment be placed by coordinates instead — chapter 20. Even then, pipes are routed automatically unless you write a route with `via` (20.6).
+- Everything outside `DvProcess` (title, buttons, tabs) is ordinary dvml.
+- Automatic placement is the default. When to place equipment by coordinates instead: [choose the placement mode](#placement-mode).
 
----
+<a id="process-glossary"></a>
+## Glossary
 
-## 2. When to use `DvProcess`
+| Term | Meaning |
+|---|---|
+| equipment | A tag drawn as a P&ID symbol inside `DvProcess`: `DvVessel`, `DvPump`, `DvValve`, `DvValve3`, `DvInline`, `DvExchanger`, `DvTerminal`, or a registered user symbol ([equipment](dvml-process-equipment.md#equipment)) |
+| symbol rectangle | The equipment's own drawing box (its kind's size, or `width`·`height` on a vessel). Faces, face positions and `x`·`y` refer to it |
+| footprint | The rectangle one piece of equipment occupies in placement: symbol + accessories + label + attached boxes (+ instruments on it) |
+| fixed port | A port at one point (`bottom`, `in`, `out`, `a`, `in2` …). Several lines on it split from that point |
+| face port | A vessel port spread over a face (`top`, `side`). Lines on it get nozzles chosen by the library ([ports](dvml-process-equipment.md#ports)) |
+| face position | `equipment.face@position`, a point on a face you choose ([face position](#face-position)) |
+| attached box | A `DvAttach` box beside equipment ([attachments](#attachments)) |
+| label | The equipment's one-line name tag (`label`); terminals use `text` |
+| column | The rank along the flow: a column in `lr`, a layer (row of equipment) in `tb` |
+| bundle | Lines joined by branches and merges; they share a trunk |
+| natural size | The diagram size at spacing scale 1, decided once ([size and `fit`](dvml-process-layout.md#size-fit)) |
+| spacing scale | The factor on equipment spacing (1 down to 0.5) used when the area is small |
+| Trace warning | A run-time message through `System.Diagnostics.Trace` ([process diagnostics](dvml-process-layout.md#process-diagnostics)); a DVML diagnostic is a build-time message ([build diagnostics](dvml-diagnostics.md#build-diagnostics)) |
+
+Booleans, numbers and word values follow the common value rules ([value rules](dvml-language.md#value-rules)).
+
+<a id="when-to-use"></a>
+## When to use DvProcess
 
 | Screen | Use |
 |---|---|
 | A process picture of tanks, pumps and valves connected by pipes | **`DvProcess`** |
-| A gauge showing just one tank's level in large size | `DvTank` (level widget, `dvml-ui-markup.md` chapter 9) |
+| A gauge showing just one tank's level in large size | `DvTank` ([level widget](dvml-instruments.md#dvtank)) |
 | An equipment list or status table | `DvRepeat` + `DvStatusItem`, or `DvDataGrid` |
 | A panel of numbers and gauges | General widgets such as `DvGauge`·`DvStat` |
 
-- The process vessel is **`DvVessel`**. Its name differs from the level widget `DvTank`. If you put a `DvTank` inside `DvProcess`, it is not equipment and is not drawn.
+- The process vessel is **`DvVessel`**. Its name differs from the level widget `DvTank`. A `DvTank` inside `DvProcess` is not equipment and is not drawn.
+- Do not draw a process picture yourself with `position:absolute`, `DvImage` or line-shaped boxes. The pipes will not follow the equipment, and things drift out of place when the resolution changes.
 
 **`DvTank` or `DvVessel`?** Two tags draw a tank because they are used in different places:
 
@@ -83,34 +81,52 @@ This automatic placement is the default and the right choice for almost every sc
 | Where it goes | Anywhere in ordinary dvml | Only directly inside `DvProcess` (or a `DvUnit`) |
 | Value | `value` between `min`·`max` (default 0–100) + `unit` | `level` 0–100 % (fixed range) |
 | Extras | `alarm-zones` (colored bands), value chip, `format` | Pipes connect to its ports; `kind`, `width`·`height` body size |
-| Chapter | `dvml-ui-markup.md` 9 | 5 |
+| Reference | [`DvTank`](dvml-instruments.md#dvtank) | [`DvVessel`](dvml-process-equipment.md#dvvessel) |
 
 **State words and process booleans.** UI widgets show a state with a **word** that picks a theme color (`state="run|stop|fault|warn|manual|off"`, `DvLamp`, `DvStatusItem`); process equipment is moved by **booleans** that drive the drawing and animation (`running`, `open`, `level`). They are two systems on purpose — link them in the view model, not in markup:
 
 ```xml
 <DvPump name="P1" running="{IsRun}" label="P-101">
-  <DvAttach side="right"><DvStatusItem label="P-101" state="{RunState}"/></DvAttach>
+  <DvAttach side="top"><DvStatusItem label="P-101" state="{RunState}"/></DvAttach>
 </DvPump>
 ```
 ```csharp
 public bool IsRun { get; set; }
 public string RunState => IsFault ? "fault" : IsRun ? "run" : "stop"; // the word for the theme color
 ```
-- Do not draw a process picture yourself with `position:absolute`, `DvImage` or line-shaped boxes. The pipes will not follow the equipment, and things drift out of place when the resolution changes.
 
----
+The attached box goes on `top` because the pump's `out` port is on its right face ([keep attached boxes off port faces](#attachments)).
 
-## 3. Authoring procedure (in this order)
+<a id="placement-mode"></a>
+## Choose the placement mode
+
+Decide this first, ahead of writing any equipment. A `DvProcess` uses one mode for the whole diagram.
+
+| The screen is … | Use | Size attributes |
+|---|---|---|
+| A new screen, flow mostly goes one way (feed → equipment → product), up to about 15 pieces of equipment, at most one or two lines back to earlier equipment | Automatic placement (default, `placement="auto"`) | `grow="1" style="height:0"`; add `fit="scale-down"` only when a render shows `Not enough space` ([sizing procedure](dvml-process-layout.md#sizing-procedure)) |
+| Many lines go **back to earlier equipment** (reflux, reboiler loops, recirculation, heat recovery from product to feed), or about 25 pieces of equipment or more | Coordinate placement `placement="fixed"` | `base-size="W H"` + `fit="contain"` + `grow="1" style="height:0"` |
+| The user gave a drawing the screen must look like (a customer's P&ID) | Coordinate placement `placement="fixed"` | `base-size` = the size of the drawing image (or the size you took the coordinates at) + `fit="contain"` |
+
+- **Default is automatic.** It is right for almost every screen. Never choose `fixed` for a small new screen.
+- Why the second row: automatic placement puts equipment in columns along the flow and cannot reproduce a specific drawing. Every line that goes back to an earlier column has to cross the drawing, so a process with many such lines comes out tangled and its layout time grows quickly (a distillation unit in automatic placement: 17 crossings, 3 pipes with no free path, and 1–2 minutes of layout time). Hints (`row`·`rank`) do not fix that.
+- **If the first render in automatic placement shows more than about 5 crossing warnings or any `no free path`, switch to coordinate placement instead of adding hints.**
+- In coordinate placement every piece of equipment (and every unit) has `x`·`y`; there is no mixing. Pipes are routed automatically unless you write a route with `via`. Details: [coordinate placement](dvml-process-layout.md#fixed-placement), [`via`](dvml-process-layout.md#via).
+
+<a id="procedure"></a>
+## Authoring procedure (in this order)
 
 AI MUST follow the order below exactly. Each step says what to decide.
 
+**⓪ Choose the placement mode** ([placement mode](#placement-mode)). For a given drawing, follow [copying a given drawing](dvml-process-examples.md#copy-drawing) instead of steps ①–⑧.
+
 **① Choose the flow direction.** If the process is long horizontally, use `direction="lr"` (default, left → right); if it is long vertically (blender or reactor units fed at the top and discharged at the bottom), use `direction="tb"`.
 
-**② List the equipment.** For each piece of equipment in the process, pick a tag and a `kind` (table in chapter 5). Add one `DvTerminal` for each pipe that comes in from or goes out to outside the screen.
+**② List the equipment.** For each piece of equipment, pick a tag and a `kind` ([equipment](dvml-process-equipment.md#equipment)). Add one `DvTerminal` for each pipe that comes in from or goes out to outside the screen.
 
-**③ Assign names.** Give every piece of equipment a `name`. Names must be unique within the process diagram and are used to connect lines. Short ASCII letters and digits (`T1`, `P101`, `FCV1`) are safe (do not use a dot `.` — it is the port separator). Put the name shown on screen (`P-101`) separately in `label`.
+**③ Assign names.** Give every piece of equipment a `name`. Names must be unique within the process diagram and are used to connect lines. Short ASCII letters and digits (`T1`, `P101`, `FCV1`) are safe (do not use a dot `.` — it is the port separator). Put the name shown on screen (`P-101`) in `label`.
 
-**④ Choose ports and connect.** Write one `<DvLine from="앞장비.포트" to="뒷장비.포트"/>` (from="upstreamEquipment.port" to="downstreamEquipment.port") for each segment of flow. **`from` is the front of the flow (upstream), `to` is the back (downstream).** This determines the placement order.
+**④ Choose ports and connect.** Write one `<DvLine from="upstreamEquipment.port" to="downstreamEquipment.port"/>` for each segment of flow. **`from` is the front of the flow (upstream), `to` is the back (downstream).** This determines the placement order.
 - Pumps, valves and inline equipment: `in` on the incoming side, `out` on the outgoing side.
 - Vessels: `top` when entering from above, `bottom` when leaving from the bottom, `side` when entering or leaving from the side.
 - Terminals: the name only, with no port (`from="IN"`, `to="OUT"`).
@@ -118,304 +134,47 @@ AI MUST follow the order below exactly. Each step says what to decide.
 
 **⑤ Bind the state.** Pump `running="{…}"`, valve `open="{…}"`, vessel `level="{…}"` (0–100 %). **If omitted, they are drawn stopped, closed and empty.** For a valve that is always open, use a literal such as `open="true"`.
 
-**⑥ Attach value displays and buttons.** Temperature or flow numbers next to equipment and Reset buttons go in ordinary dvml inside `<DvAttach side="right">` (chapter 7). A reading that belongs to an instrument can be its `value` instead (7.3): it takes no room in the layout, but its size is tied to `font-size`. For an agitator, put `<DvAgitator running="{…}"/>` inside the vessel.
+**⑥ Attach value displays and buttons.** Temperature or flow numbers next to equipment and Reset buttons go in ordinary dvml inside `<DvAttach side="…">` on a face without a connected port ([attachments](#attachments)). A reading that belongs to an instrument can be its `value` instead ([`DvInstrument`](#dvinstrument)): it takes no room in the layout, but its size is tied to `font-size`. For an agitator, put `<DvAgitator running="{…}"/>` inside the vessel.
 
-**⑦ Render and check.** Produce a PNG with `DvRenderer.RenderToFile` at the smallest size the screen is really shown at, look at it yourself, and check the Trace warnings (chapter 15). For `Not enough space` or `Shrunk to …`, follow the **sizing procedure** in chapter 4. If there are no warnings and the picture looks natural, you are done.
+**⑦ Render and check.** Produce a PNG with `DvRenderer.RenderToFile` at the smallest size the screen is really shown at, look at it yourself, and check the Trace warnings ([process diagnostics](dvml-process-layout.md#process-diagnostics), [verify with a PNG](llm-rules.md#verify-png)). For `Not enough space` or `Shrunk to …`, follow the [sizing procedure](dvml-process-layout.md#sizing-procedure). If there are no warnings and the picture looks natural, you are done.
 
-**⑧ Refine with hints only when needed.** If lines cross, use `row`; to change an equipment's column, use `rank`; for equipment orientation, use `rotate`·`flip` (chapter 11). If the result is clean without hints, do not use hints.
+**⑧ Refine with hints only when needed.** If lines cross, use `row`; to change an equipment's column, use `rank`; for equipment orientation, use `rotate`·`flip` ([hints](dvml-process-layout.md#hints)). If the result is clean without hints, do not use hints.
 
----
+<a id="dvprocess-attributes"></a>
+<a id="dvprocess"></a>
+## DvProcess attributes
 
-## 4. `DvProcess` attributes and size
-
-| Attribute | Values | Default | Description |
-|---|---|---|---|
-| `direction` | `lr` · `tb` | `lr` | Flow direction. An unknown value gives `lr` + a Trace warning |
-| `look` | `plain` · `rich` | `plain` | Appearance (chapter 12). An unknown value gives `plain` + a Trace warning |
-| `flow-animation` | true/false | false | Moving dashes over pipes that have flow (12.1). Bindable |
-| `align` | `auto` · `step` · `row` | `auto` | Row alignment of the next equipment connected to a port that leaves perpendicular to the flow (the bottom port in lr, the right port in tb) (chapter 9, item 5). `step` = staircase, `row` = same row, `auto` = chosen to fit the area. An unknown value gives `auto` + a Trace warning |
-| `placement` | `auto` · `fixed` | `auto` | `auto` = automatic placement (this whole document). `fixed` = every piece of equipment sits at its `x`·`y` (chapter 20). An unknown value gives `auto` + a Trace warning |
-| `base-size` | `"W H"` (px) | — | `fixed` only: the size the coordinates were taken at; positions are scaled to the area (chapter 20.3) |
-| `fit` | `none` · `scale-down` · `contain` | `none` | How the drawing meets the area. `none` = overflow with the "Not enough space" warning. `scale-down` = draw the whole diagram smaller when it still overflows (see **Size** below; the CSS `object-fit` word — it was `shrink` before 0.x stage 4). `contain` = `placement="fixed"` only: the drawing at `base-size` is scaled as a whole to the area, smaller or larger, and centered (chapter 20.3); in automatic placement it acts as `scale-down` with a Trace warning. An unknown value gives `none` + a Trace warning |
-| `style` | general style | — | `padding`, `background`, `width`, `height`, `border`, `font-size`, etc. `font-size` sets the size of all diagram text (see **Text size** below) |
-| `grow` and other layout attributes | — | — | Same as for an ordinary box |
-
-`direction`·`look` can be bound (`look="{Look}"`). Word values in this document (`direction`, `look`, `kind`, `rotate`, `flip`, `arrow`, `medium`, `side` …) ignore case and surrounding spaces; any other word gives the default + a Trace warning (ui chapter 2).
-
-**Names and references are written literally, never bound**: equipment, unit, `DvPort` and `DvInstrument` `name`, `DvLine`/`DvSignal` `from`·`to`, and `DvInstrument` `on`·`tap`. The placement is cached by the diagram's structure, so names are fixed text. A `{` in one of them writes a Trace warning and the text is used as written (`name="{N}"` is the name `{N}`).
-
-**The only allowed children are** equipment tags (chapter 5, including registered user symbols), units (`DvUnit`, or a component whose template root is `DvUnit` — chapter 8), `DvLine`, instrument `DvInstrument` and signal line `DvSignal` (7.3·7.4), and `DvStyle`. Any other tag (`DvLabel`, `DvButton`, `DvRepeat` …) placed directly under `DvProcess` is not drawn and leaves a Trace error. Put value displays and buttons inside `DvAttach`.
-
-**Size**
-
-- If no size is given, the process diagram's size = the content size (the placement result + a 12px outer margin).
-- The placement and the pipe routes are decided **once, at the natural size** (spacing scale 1; with `align="auto"`, the staircase). If a size is given or the parent determines the size, that same drawing is **stretched or shrunk to the area**: only positions move — equipment, text and pipes keep their size — and each axis is scaled on its own (a wider area spreads equipment sideways, a taller one downward). Bends, branch points and the side a pipe passes equipment on do not change with the area size. Equipment joined by a straight pipe moves together, so straight runs stay straight.
-- Shrinking has a limit: bubbles, labels and pipe spacing do not shrink, so below a certain size the shape no longer fits (a segment would fold back, a pipe would run into equipment, or pipes would touch). Only then is placement retried the old way, and the **first one that fits** is used: with `align="auto"` (default), staircase with spacing scale 1 → 0.85 → 0.7 → 0.6 → 0.5, then same-row with 1 → … → 0.5; with `align="step"`·`"row"`, only that mode. The drawing then **looks different from the natural size**, and the Trace warning "The piping no longer fits the diagram's natural-size shape …" is left.
-- If nothing fits, the natural-size shape is kept at its smallest and overflows, with the Trace warning "Not enough space". Equipment and text do not shrink.
-- **`fit="scale-down"`** changes only that last case: the whole drawing (equipment, text, lines, attached boxes, instruments) is scaled down to the area, keeping its proportions, and centered. A diagram that fits is not touched, and nothing is ever enlarged. Presses and drags follow the drawn positions. It reports the result as the Trace warning `Shrunk to N% … the smallest diagram text is now X px`.
-- **To make it fill the remaining space**, use `grow="1" style="height:0"` inside a vertical layout (same meaning as CSS `flex-basis:0` — grows from a base height of 0), and `grow="1"` inside a horizontal layout. With only `grow="1"` and no `height:0`, the process diagram does not shrink below its content height and may overflow the screen, and `fit="scale-down"` does nothing (the diagram is not given a smaller area).
-
-**Text size**
-
-- All text the diagram draws itself — equipment labels (13px), vessel name chips (14px), terminal text (12px), instrument `tag` (12px), `number` and `value` (11px), line and signal labels (11px) — and the minimum bubble size (40px) are given at `font-size` 14 (the default). `style="font-size:N"` on `DvProcess` scales all of them by N / 14 (units inside follow it). The sizes written elsewhere in this document are at 14.
-- Attached boxes (`DvAttach`) grow with it too: each is laid out at its own size and drawn N / 14 times larger, contents included (buttons, values), and it takes that much room beside the equipment. So `font-size` on `DvProcess` is the one setting for every text in the diagram.
-- `font-size` is not inherited in Devinno.UI, so only a value set on `DvProcess` itself changes this.
-- Use it to keep text readable when the diagram is shrunk (procedure below), or when the screen is read from a distance.
-
-Which placement mode and which `fit` to use for a large or complicated process: chapter 21.
-
-**Sizing procedure — do exactly this, in order**
-
-1. Give the diagram its area: `grow="1" style="height:0"` (above). Do not put `font-size` yet. Automatic placement: no `fit` yet. Coordinate placement (`placement="fixed"`, chapter 20): always `base-size` + `fit="contain"` from the start, then skip to step 2 and read step 5 for the `Shrunk to …` warning.
-2. Render a PNG at the **smallest size the screen is really shown at** (the panel resolution, or the smallest window), and read the Trace warnings.
-3. No size warning → done.
-4. `Not enough space` → add `fit="scale-down"` and render again.
-5. `Shrunk to N% … the smallest diagram text is now X px`:
-   - X ≥ 10 → done.
-   - X < 10 → set `style="font-size:F"` on `DvProcess` with F = (current font-size, 14 if none) × 11 / X, rounded up, and render again. (11, not 10: equipment symbols do not grow with the text, so the result lands a little below the aim.) Repeat step 5 at most twice.
-   - Still X < 10, or F would go above 28 → the diagram has too much for this screen: split it over several screens or leave out minor equipment (inlet valves, etc.). Do not go on raising `font-size`.
-6. Judge by the warning, not by the picture: a shrunk diagram always looks complete in the PNG.
-
-The minimum readable size is always 10px. Do not use another number.
-
-```xml
-<DvPageFrame title="정수 공정">
-  <DvCard title="계통도" grow="1">
-    <DvProcess look="rich" grow="1" style="height:0">
-      <DvVessel name="T1" level="40" label="T-101"/>
-      <DvPump name="P1" running="true" label="P-101"/>
-      <DvLine from="T1.bottom" to="P1.in"/>
-    </DvProcess>
-  </DvCard>
-</DvPageFrame>
-```
-
-After steps 4–5 (the render said `Not enough space`, then `… text is now 7.9px` → F = 14 × 11 / 7.9 = 19.5 → 20):
-
-```xml
-<DvProcess look="rich" grow="1" fit="scale-down" style="height:0; font-size:20">
-  <DvVessel name="T1" level="40" label="T-101"/>
-  <DvPump name="P1" running="true" label="P-101"/>
-  <DvLine from="T1.bottom" to="P1.in"/>
-</DvProcess>
-```
-
-The **background** is not painted. It follows the app theme's background or the `background` in `style`. `rich` looks best on a dark background, `plain` on a light or gray background.
-
----
-
-## 5. Equipment reference (tag, kind, ports, size, state)
-
-### 5.1 Common attributes
-
-Usable on every equipment tag (including user symbols). Terminals (`DvTerminal`) have no `rotate` (writing it is build warning DVML019) and `flip` has no effect on them; `text` belongs to terminals only.
-
-| Attribute | Description |
-|---|---|
-| `name` | **Required.** Must be unique within the process diagram. Without it the equipment cannot be connected by lines (Trace error); if duplicated, the later one cannot be connected (Trace error). Written literally (not bound) |
-| `label` | Name tag. For vessels, a rounded chip in the middle of the body. For everything else, placed on a **face not used by lines** — the first free face in the order bottom → top → right → left (the actuator side of a control valve is not free, because signal lines end there; if all four faces are used, bottom — and if it would cover the front of a port on that face, it shifts along the face to stay at least 12px from the port). 4px from the symbol (6px left/right). Font 13 bold (17px tall at `font-size` 14), color is the theme `--text`. One line only: `&#10;` does not break it and draws a box character. Not used on terminals (use `text`) |
-| `kind` | Type (tables below). If omitted, the first kind; an unknown value gives the first kind + a Trace warning |
-| `rotate` | `0` `90` `180` `270` (clockwise). The drawing and the port faces rotate together. Other values give 0 + a Trace warning |
-| `flip` | `h` (flip left-right) · `v` (up-down) · `hv` (`vh` is the same). Flip is applied, then rotation. Other values: no flip + a Trace warning |
-| `row` · `rank` | Placement hints (chapter 11) |
-| `x` · `y` | Only with `placement="fixed"`: the symbol center in px (chapter 20). Ignored with a Trace warning in automatic placement |
-| `visible` | If false, the equipment is not created. **Lines connected to that equipment become "equipment does not exist" errors, so they cannot be hidden along with it** — do not hide equipment that has lines; express it with state instead |
-| `onclick` · `hold` · `disabled` | Same as an ordinary button. Pressing the equipment body (the symbol and accessory area) triggers `onclick`; its label and `DvAttach` boxes do not |
-| `class` · `style` · `hover-style` · `press-style` | Applied to the equipment body rectangle (giving a background paints a rectangle behind the symbol — not normally used) |
-
-### 5.2 Vessel `DvVessel`
-
-| kind | Size (px) | Shape |
-|---|---|---|
-| `tank` (default) | 100 × 150 | Vertical cylinder rounded at top and bottom |
-| `reactor` | 100 × 160 | Reactor with a jacket (an added outer wall) |
-| `silo` | 100 × 160 | Conical roof + bottom funnel + legs |
-| `hopper` | 100 × 110 | Funnel open at the top |
-| `drum` | 160 × 80 | Horizontal drum (receiver, knock-out drum) with saddles |
-| `column` | 60 × 220 | Tall tower with dashed trays |
-| `open` | 120 × 90 | Open-top tank or basin (no roof line) |
-
-| Port | Position | When several lines connect |
-|---|---|---|
-| `top` | Top face (face port) | **Incoming lines merge into one nozzle and outgoing lines merge into one nozzle** (they gather into a T or cross in front of the tank). Nozzles lie in the 10–90 % horizontal span of the top face, avoiding the spot of an agitator or a cell attached on top. If there are both an incoming and an outgoing nozzle, they sit side by side ordered by the direction of their counterparts |
-| `bottom` | One point at the bottom center | Splits from that one point (branch) |
-| `side` | Left or right face (face port) | For each line, picks **the face toward the counterpart equipment** (left if the counterpart is to the left). If that face is mostly covered by an attached cell, the opposite face. Lines on the same face in the same direction (in/out) merge into one nozzle |
-
-| State attribute | Values | If omitted |
-|---|---|---|
-| `level` | 0–100 (%). Out-of-range values are clamped to 0 or 100. Number or numeric string | 0 (empty vessel) |
-
-| Size attribute | Values | If omitted |
-|---|---|---|
-| `height` | Height in px (to match a drawing's tall tank). Only the straight body grows or shrinks — the heads keep their shape and the width stays the same. 0.6–4 × the kind's height (outside that, clamped with a Trace warning) | The kind's height |
-| `width` | Width in px (to match a drawing's wide basin or narrow dosing tank). Upright kinds widen evenly — the top and bottom heads become wider (or narrower) ellipses; the horizontal `drum` grows only its straight body, keeping its left and right heads. The height stays the same. 0.6–4 × the kind's width (outside that, clamped with a Trace warning). Ports, the level fill and accessories follow the new width | The kind's width |
-
-- `width`·`height` are the symbol rectangle. On a `tank`, the body outline is 88 % of the width and 8px less than the height, with a small nozzle stub at top and bottom center reaching the rectangle. To match a drawn body W px wide, set `width` = W ÷ 0.88.
-- The level fills from the bottom following the body shape (rounded bottoms are filled round).
-- `label` is drawn as a rounded chip in the middle of the body (readable over the liquid too).
-- `DvAgitator`·`DvMotor`·`DvAttach` can be placed as children (chapter 7).
-
-### 5.3 Rotating equipment `DvPump`
-
-| kind | Size (px) | `in` | `out` | Shape |
+| attribute | values | default | bound | notes |
 |---|---|---|---|---|
-| `centrifugal` (default) | 64 × 64 | Left, 36px from top | Right, 20px from top | Round casing + tangential discharge at top + base |
-| `gear` | 72 × 52 | Left center | Right center | Rounded rectangle + two gears |
-| `compressor` | 72 × 64 | Left center | Right center | Circle + two converging lines |
-| `blower` | 72 × 64 | Left, 36px from top | Right, 19px from top | Round casing + blades |
-| `isa` | 64 × 64 | Left center | Right center | ISA-5.1 pump: circle + centerline + `>` toward the outlet (as on P&ID drawings) |
+| `direction` | `lr` · `tb` | `lr` | yes | Flow direction: `lr` = left → right, `tb` = top → bottom |
+| `look` | `plain` · `rich` | `plain` | yes | Appearance ([look](#look-flow-medium)); units follow it |
+| `flow-animation` | true/false | false | yes | Moving dashes over pipes that have flow ([flow display](#look-flow-medium)); units follow the outer value |
+| `align` | `auto` · `step` · `row` | `auto` | yes | Row alignment of the next equipment connected to a port that leaves perpendicular to the flow (the bottom port in `lr`, the right port in `tb`): `step` = staircase, `row` = same row, `auto` = chosen to fit the area ([automatic placement](dvml-process-layout.md#auto-layout)). Ignored with a Trace warning in `fixed` |
+| `placement` | `auto` · `fixed` | `auto` | yes | `auto` = automatic placement; `fixed` = every piece of equipment sits at its `x`·`y` ([placement mode](#placement-mode)) |
+| `base-size` | `"W H"` (px) | — | yes | `fixed` only: the size the coordinates were taken at ([size and `fit`](dvml-process-layout.md#size-fit)). Otherwise ignored with a warning |
+| `fit` | `none` · `scale-down` · `contain` | `none` | yes | How the drawing meets the area ([size and `fit`](dvml-process-layout.md#size-fit)). `contain` is for `fixed`; in automatic placement it acts as `scale-down` with a Trace warning |
+| `style` | general style | — | yes | `padding`, `background`, `width`, `height`, `border`, `font-size`, etc. `font-size` sets the size of all diagram text ([text size](dvml-process-layout.md#text-size)) |
+| `grow` and other layout attributes | — | — | — | Same as for an ordinary box. To fill the area: `grow="1" style="height:0"` in a vertical layout |
 
-| State attribute | Values | If omitted |
-|---|---|---|
-| `running` | true/false, or a number (non-zero = running) | Stopped |
+- Word values on these pages (`direction`, `look`, `align`, `kind`, `rotate`, `flip`, `arrow`, `medium`, `side` …) ignore case and surrounding spaces; any other word gives the default + a Trace warning ([word values](dvml-language.md#value-word)). Exception: `DvPort side` missing or unknown = `right` + a Trace **error** ([`DvPort`](#dvport)).
+- The drawing's height is set to fit the area by `align` (default `auto`); usually you do not write it.
+- **Names and references are written literally, never bound**: equipment, unit, `DvPort` and `DvInstrument` `name`, `DvLine`/`DvSignal` `from`·`to`, and `DvInstrument` `on`·`tap`. The placement is cached by the diagram's structure, so names are fixed text. A `{` in one of them writes a Trace warning and the text is used as written (`name="{N}"` is the name `{N}`); at build time it is [DVML011](dvml-diagnostics.md#dvml011).
+- **The only allowed children are** equipment tags (including registered user symbols), units (`DvUnit`, or a component whose template root is `DvUnit`), `DvLine`, `DvInstrument`, `DvSignal` and `DvStyle`. Any other tag (`DvLabel`, `DvButton`, `DvRepeat` …) placed directly under `DvProcess` is not drawn and leaves a Trace error. Put value displays and buttons inside `DvAttach`.
+- The background is not painted ([look](#look-flow-medium)).
 
-- **For a pump whose flow is right → left**, use `flip="h"` to put `in` on the right.
-- In a top → bottom (`tb`) process, pumps are still drawn horizontal by default (inlet left, outlet right). Parallel pumps stack vertically (chapter 9).
+<a id="connections"></a>
+## Connections
 
-### 5.4 Valve `DvValve`
-
-Straight kinds are 60 × 48px, with `in` on the left and `out` on the right, both 32px from the top (the pipe centerline). `angle` and `relief` are angle bodies: `in` at the bottom, `out` on the right (`flip="h"` puts `out` on the left).
-
-| kind | Shape |
-|---|---|
-| `gate` (default) | Bowtie + handle on top |
-| `ball` | Bowtie + ball in the middle + lever |
-| `butterfly` | Body + tilted disc + actuator on top |
-| `control` | Bowtie + dome-shaped actuator on top (control valve) |
-| `check` | Body + triangle (non-return, no state) |
-| `globe` | Bowtie + filled dot + handwheel (throttling) |
-| `plug` | Bowtie + hollow plug + lever |
-| `diaphragm` | Bowtie + dome (diaphragm) + handwheel |
-| `angle` | 48 × 48. Two triangles meeting at a right angle + handwheel. `in` bottom, `out` right (20px from top) |
-| `relief` | 48 × 64. Angle body + spring (pressure safety / relief valve, PSV). `in` bottom, `out` right (36px from top). `open` = relieving |
-
-| State attribute | Values | If omitted |
-|---|---|---|
-| `open` | true/false, or an opening number (non-zero = open) | **Closed** |
-
-- Give `open="true"` even to an always-open valve. Without it, the valve is drawn closed.
-- A valve on a vertical pipe uses `rotate="90"` (enters from the top, leaves at the bottom).
-
-### 5.5 Inline `DvInline` (no state)
-
-| kind | Size (px) | `in` / `out` height | Shape |
-|---|---|---|---|
-| `flowmeter` (default) | 64 × 48 | 32px from top | Pipe + display on top (flowmeter) |
-| `filter` | 60 × 60 | Center (30px) | Diamond + dashed line |
-| `strainer` | 64 × 56 | 20px from top | Y-type strainer |
-| `sight` | 64 × 48 | Center (24px) | Pipe + round sight glass |
-| `reducer` | 44 × 40 | Center (20px) | Concentric reducer, wide `in` → narrow `out` (`flip="h"` for an expander) |
-| `orifice` | 40 × 44 | Center (22px) | Orifice plate between two flanges |
-| `mixer` | 72 × 40 | Center (20px) | Static mixer (zig-zag elements) |
-| `vent` | 32 × 40 | **One port `in`, at the bottom** | Open vent to atmosphere (hood). Connect by name only: `to="VT1"` |
-| `blind` | 16 × 44 | **One port `in`, on the left** | Blind flange / manhole (closed nozzle). Connect by name only: `to="M1"` |
-
-Put flow numbers in `<DvAttach side="bottom">` or `side="top"` (chapter 7).
-
-### 5.6 Terminal `DvTerminal`
-
-A tag (off-page connector) for a pipe that continues outside the screen.
-
-| Attribute | Description |
-|---|---|
-| `text` | Tag text (font 12 bold). The width fits the longest line. For two or more lines, put `&#10;` at each line break (`text="SOLVENT&#10;FROM UNIT 1"`); the tag grows one line height taller per extra line |
-| Port | Only one, and it has no name. In a line, write just the name, like `from="IN"`, `to="OUT"` (adding a dot gives a Trace warning and is ignored) |
-
-- **Used in a line's `from`, it means "coming in from outside"**; used only in `to`, it means "going out".
-- Shape: in `lr`, an arrow tag pointing right (height 28, width = text + 34, minimum 64). For incoming, the pipe connects at the pointed end (right); for outgoing, at the flat left side. In `tb`, a tag pointing down (height 38, width = text + 20, minimum 60). Incoming connects at the bottom tip, outgoing at the top.
-- Use each terminal in one direction only. Incoming and outgoing pipes get separate terminals.
-
-### 5.7 Three-way valve `DvValve3`
-
-A valve that splits one pipe into two (branch) or gathers two into one (mixing). Both kinds are 60 × 64px.
-
-| kind | Shape |
-|---|---|
-| `ball` (default) | Three-way bowtie + ball in the middle + lever |
-| `control` | Three-way bowtie + dome-shaped actuator on top (control valve — the signal line reaches the top of the actuator, 7.4) |
-
-| Port | Position | Meaning |
-|---|---|---|
-| `a` | Left, 32px from top | Common port |
-| `b` | Right, 32px from top | Straight branch |
-| `c` | Bottom center | Turning branch |
-
-The heights of `a`·`b` match `in`·`out` of `DvValve` (in line with ordinary valves).
-
-| State attribute | Values | If omitted |
-|---|---|---|
-| `open-b` | true/false, or a number (non-zero = open) — `a`↔`b` passes | Closed |
-| `open-c` | Same format — `a`↔`c` passes | Closed |
-
-- If both are true, both paths are open (mixing or modulating); if both are false, it is blocked. Only the triangles of open branches are painted in the state color (the common `a` side is always the same color).
-- Paths pass in both directions. So the same tag is used for a **branch** (`from="P1.out" to="V3.a"`, `from="V3.b" …`, `from="V3.c" …`) and for **mixing** (`to="V3.b"`, `to="V3.c"`, `from="V3.a" …`).
-- **When using mixing in a left → right process, use `flip="h"`** to put the common `a` on the right (the side where flow leaves). Otherwise the incoming pipes wrap around the valve to get in.
-- In a top → bottom (`tb`) process, use `rotate="90"` (`a` top, `b` bottom, `c` left).
-
-```xml
-<DvProcess>
-  <DvVessel name="T1" level="{T1Level}" label="T-1"/>
-  <DvPump name="P1" running="{P1Run}" label="P-1"/>
-  <DvValve3 name="V3" kind="control" open-b="{ToCooler}" open-c="{ToDrain}" label="TV-301"/>
-  <DvExchanger name="E1" label="E-101"/>
-  <DvTerminal name="CWS" text="CW SUPPLY"/>
-  <DvTerminal name="CWR" text="CW RETURN"/>
-  <DvVessel name="T2" level="{T2Level}" label="T-2"/>
-  <DvTerminal name="DR" text="DRAIN"/>
-  <DvLine from="T1.bottom" to="P1.in"/>
-  <DvLine from="P1.out" to="V3.a"/>
-  <DvLine from="V3.b" to="E1.in"/>
-  <DvLine from="V3.c" to="DR"/>
-  <DvLine from="CWS" to="E1.in2"/>
-  <DvLine from="E1.out2" to="CWR"/>
-  <DvLine from="E1.out" to="T2.top"/>
-</DvProcess>
-```
-
-### 5.8 Heat exchanger `DvExchanger` (no state)
-
-| kind | Size (px) | Shape |
-|---|---|---|
-| `shell` (default) | 100 × 48 | Horizontal cylinder + tube bundle (shell and tube) |
-| `plate` | 64 × 80 | Plate type with stacked plates |
-
-| Port | `shell` position | `plate` position | Meaning |
-|---|---|---|---|
-| `in` | Left center | Left, 24px from top | Main process inlet |
-| `out` | Right center | Right, 24px from top | Main process outlet |
-| `in2` | Top, 30 % from left | Top, 30 % from left | Heat medium (steam, cooling water) inlet |
-| `out2` | Bottom, 70 % from left | Bottom, 70 % from left | Heat medium outlet |
-
-- **`in`·`out` = the process fluid being heated or cooled**, **`in2`·`out2` = the medium that exchanges heat**. Which is shell side and which is tube side differs by design, so it is not in the names.
-- The two paths (`in`→`out`, `in2`→`out2`) always pass and never mix. Even if the process side stops, flow on the medium side is judged separately.
-- Medium supply and return are usually connected to terminals (`DvTerminal`). A terminal connected to the top port (`in2`) is placed above the exchanger, and one connected to the bottom port (`out2`) below it (chapter 9, item 4).
-- Since all four faces are used, the name tag goes at the bottom, and if it would cover the bottom port it shifts sideways (5.1 `label`).
-
----
-
-## 6. Connection (`DvLine`) rules
-
-| Attribute | Description |
-|---|---|
-| `from` | The upstream end of the flow: `장비.포트` (equipment.port), or a face position `장비.면@위치` (6.1). For a terminal or a user symbol with only one port, just `장비` (equipment). For a unit, `유닛.포트` (unit.port — the name of that unit's `DvPort`); inside a unit, that unit's own ports are referenced by name only (chapter 8) |
-| `to` | The downstream end of the flow. Same format as `from` |
-| `arrow` | `end` (arrow into the `to` port) · `start` (into the `from` port) · `both` · `none` (default). Other values: `none` + a Trace warning |
-| `flow` | The app decides this line's flow (true/false, bindable). If omitted, judged automatically (12.1) |
-| `medium` | Medium color `water`·`steam`·`air`·`gas`·`oil`·`acid` (12.2). Propagates in the flow direction. If omitted, gray |
-| `via` | Only with `placement="fixed"`: the points the pipe runs through, `"x,y x,y …"`, in the same space as equipment `x`·`y` (chapter 20.6). If omitted, routed automatically |
-| `label` | One line of small text beside the pipe — the line number from the drawing (`01-100-PE-N`). Placed at the middle of the pipe's longest straight segment (below it if horizontal, to the right if vertical), in the theme text color. Does not affect layout, so give the pipe a segment long enough for the text |
-| `visible` | If false (the common true/false rule), the pipe is not created — like hidden equipment: not drawn, no flow passes through it, and automatic placement is computed without it (so equipment may move when it toggles). Bindable |
-
-**Rules**
+Equipment is referred to by `name`. A line connects `equipment.port` to `equipment.port`; terminals (`DvTerminal`) are written with the equipment name only, without a port.
 
 - `from` → `to` is the flow direction. It determines the column order of the placement, so **writing it backwards places the equipment backwards.**
 - Do not write a line twice between the same two ports.
-- **Branches and merges**: lines touching the same port form one "pipe group" that shares a trunk and splits at T-junctions. There is no branch-point equipment or tag.
+- **Branches and merges**: lines touching the same port form one pipe group (a bundle) that shares a trunk and splits at T-junctions. There is no branch-point equipment or tag (no `DvTee`, `DvJunction`).
   - Several lines on a fixed port (`bottom`, `in`, `out`, etc.) → they split from that single point.
-  - Several lines on a face port (`top`, `side`) → lines in the same direction (incoming with incoming, outgoing with outgoing) merge into one nozzle and gather into a T or cross in front of the tank. Incoming and outgoing lines are not merged (merging would make the inlet and outlet look connected outside the tank). To show separate nozzles, split the connections between `top` and `side`.
-- Pipes of different groups never overlap, and when running in parallel they keep a minimum spacing (plain 12px, rich 16px). Where they must cross, a semicircular jump is drawn on one of them.
-- In automatic placement there are **no** attributes for bend points: change the shape with the hints in chapter 11. Bend points exist only in coordinate placement, as `via` (chapter 20.6), where the equipment does not move on its own.
-- `DvLine` has no `class`·`style`·`onclick` or other common attributes (build warning DVML019); only `visible` (above).
+  - Several lines on a face port (`top`, `side`) → lines in the same direction merge into one nozzle ([vessel ports](dvml-process-equipment.md#ports)). Several supply lines into one tank: connect them all to `to="T.top"` (or `T.side`).
+- Pipes of different groups never overlap when a clean route exists, and when running in parallel they keep a minimum spacing (plain 12px, rich 16px). Where they must cross, a semicircular jump is drawn on one of them ([pipe routing](dvml-process-layout.md#pipe-routing)).
+- In automatic placement there are **no** attributes for bend points: change the shape with [hints](dvml-process-layout.md#hints). Bend points exist only in coordinate placement, as [`via`](dvml-process-layout.md#via), where the equipment does not move on its own.
+- Names and references are literal ([`DvProcess` attributes](#dvprocess-attributes)).
 
 **Invalid connections**
 
@@ -425,11 +184,31 @@ The heights of `a`·`b` match `in`·`out` of `DvValve` (in line with ordinary va
 | Nonexistent port name | Red dashed line connecting the centers of the two pieces of equipment + a red border on that equipment | Error "'X' has no port 'p' (available ports)" |
 | No port given on equipment with several ports (`from="P1"`) | Red dashed line + red border | Error "'X' requires a port (…)" |
 
-All other lines and equipment are drawn normally. The available port names appear in the parentheses, so fix it with one of those.
+All other lines and equipment are drawn normally. The available port names appear in the parentheses, so fix it with one of those. At build time the same mistakes are [DVML008](dvml-diagnostics.md#dvml008) and [DVML009](dvml-diagnostics.md#dvml009).
 
-### 6.1 Face position (`장비.면@위치`) — a nozzle at a set point
+<a id="dvline"></a>
+### DvLine
 
-Instead of a port name, a line end (and an instrument `tap`, 7.3) can name **a point on a face of the equipment**: `T1.left@0.15` = the left face, 15 % of the way down.
+A pipe between two ports, drawn orthogonally.
+
+| attribute | values | default | bound | notes |
+|---|---|---|---|---|
+| `from` | `equipment.port`, `equipment.face@position`, `equipment`, `unit.port`, or a port name inside a unit | required | no | The upstream end. Just `equipment` for a terminal or a user symbol with only one port. `unit.port` = the name of that unit's `DvPort`; inside a unit, its own ports by name only ([units](#units)). Face positions: [face position](#face-position) |
+| `to` | same as `from` | required | no | The downstream end |
+| `arrow` | `end` · `start` · `both` · `none` | `none` | yes | `end` = arrow into the `to` port, `start` = into the `from` port. Other values: `none` + Trace warning |
+| `flow` | true/false | automatic | yes | The app decides this line's flow; absent or a null binding = automatic ([flow display](#look-flow-medium)) |
+| `medium` | `water` · `steam` · `air` · `gas` · `oil` · `acid` | none (gray) | yes | Medium color; propagates in the flow direction ([medium](#look-flow-medium)) |
+| `via` | `"x,y x,y …"` | — | yes | Only with `placement="fixed"`: the points the pipe runs through ([`via`](dvml-process-layout.md#via)). Absent = routed automatically |
+| `label` | text | — | yes | One line of small text beside the pipe — the line number from the drawing (`01-100-PE-N`). At the middle of the pipe's longest straight segment (below it if horizontal, to the right if vertical), theme text color. Does not affect layout, so give the pipe a segment long enough for the text |
+| `visible` | true/false | true | yes | If false, the pipe is not created — like hidden equipment: not drawn, no flow passes through it, and automatic placement is computed without it (equipment may move when it toggles) |
+
+- Lines are always orthogonal: they leave straight out of the port's face and bend only in empty corridors.
+- `DvLine` has no `class`·`style`·`onclick` or other common attributes ([DVML019](dvml-diagnostics.md#dvml019)); only `visible` (and `id`).
+
+<a id="face-position"></a>
+### Face position (`equipment.face@position`) — a nozzle at a set point
+
+Instead of a port name, a line end (and an instrument `tap`) can name **a point on a face of the equipment**: `T1.left@0.15` = the left face, 15 % of the way down.
 
 ```xml
 <DvLine from="IN" to="T1.left@0.15"/>       <!-- nozzle N1: upper left -->
@@ -437,19 +216,32 @@ Instead of a port name, a line end (and an instrument `tap`, 7.3) can name **a p
 ```
 
 - Face: `top` · `bottom` · `left` · `right` — the faces of the symbol rectangle **as seen on screen** (after `rotate`/`flip`).
-- The point is on that rectangle, not on the drawn outline. On a round body or a rounded end, away from the middle of the face, the pipe or connection line stops short of the shape (a connection line on an 80px circle: 11px short at `left@0.1`, 5px at `left@0.25`, touching at `left@0.5`). Stay near the middle of the face there or, in your own symbol, draw a nozzle reaching the border (14.3).
+- The point is on that rectangle, not on the drawn outline. On a round body or a rounded end, away from the middle of the face, the pipe or connection line stops short of the shape (a connection line on an 80px circle: 11px short at `left@0.1`, 5px at `left@0.25`, touching at `left@0.5`). Stay near the middle of the face there or, in your own symbol, draw a nozzle reaching the border ([drawing a symbol](dvml-process-equipment.md#symbol-drawing)).
 - Position: 0–1 along the face — `top`/`bottom` from left to right, `left`/`right` from top to bottom. Outside 0–1 is clamped with a Trace warning; a wrong face or a non-number is an error.
 - The pipe leaves straight out of that face. Lines naming the same point share one nozzle (a branch there).
-- Works on any equipment except terminals and units (units connect only at their `DvPort`s). On a vessel the point counts as a vessel port for flow (12.1). On other equipment the pipe ends there: flow and `medium` stop at that point, and the symbol's own nozzles stay drawn. Where flow has to pass through at a drawn point, write a `DvSymbol` with its ports there and a `DvPass` (chapter 14).
-- Use it when a drawing fixes where nozzles are (mostly with `placement="fixed"`, chapter 20). Otherwise prefer the ports, which place nozzles automatically.
+- Works on any equipment except terminals and units (units connect only at their `DvPort`s). On a vessel the point counts as a vessel port for flow ([flow display](#look-flow-medium)). On other equipment the pipe ends there: flow and `medium` stop at that point, and the symbol's own nozzles stay drawn. Where flow has to pass through at a drawn point, write a [`DvSymbol`](dvml-process-equipment.md#dvsymbol) with its ports there and a `DvPass`.
+- Use it when a drawing fixes where nozzles are (mostly with `placement="fixed"`), or to choose a vessel face yourself (`to="T1.right@0.5"`). Otherwise prefer the ports, which place nozzles automatically.
 
----
+<a id="attachments"></a>
+## Attachments (DvAttach, DvAgitator, DvMotor)
 
-## 7. Attaching to equipment (`DvAttach`, `DvAgitator`, `DvMotor`, instrument `DvInstrument`, signal line `DvSignal`)
+`DvAttach`·`DvAgitator`·`DvMotor` go **inside** an equipment tag. No other children may be written inside equipment (Trace error). The instrument `DvInstrument` and the signal line `DvSignal` go not inside equipment but **directly under `DvProcess` (or `DvUnit`)**; an instrument names its equipment with `on` ([`DvInstrument`](#dvinstrument), [`DvSignal`](#dvsignal)).
 
-`DvAttach`·`DvAgitator`·`DvMotor` go **inside** an equipment tag. No other children may be written inside equipment (Trace error). The instrument `DvInstrument` and the signal line `DvSignal` go not inside equipment but **directly under `DvProcess` (or `DvUnit`)**, and an instrument points by name with `on` to the equipment it attaches to (7.3·7.4).
+<a id="dvattach"></a>
+### DvAttach — ordinary dvml beside equipment
 
-### 7.1 `DvAttach` — ordinary dvml beside equipment
+| attribute | values | default | bound | notes |
+|---|---|---|---|---|
+| `side` | `left` · `right` · `top` · `bottom` | `right` | yes | Other values: `right` + Trace warning |
+| `visible` | true/false | true | yes | The common visible rule |
+| content | any dvml | — | — | Value displays, buttons, lamps, badges. Stacked vertically (change with e.g. `style="display:flex; flex-direction:row"`). The box takes the common attributes like any box |
+
+- Attached 8px from the symbol. `left`/`right` at the symbol's vertical center, `top` above the accessories and label, `bottom` below the label (both centered on the symbol). Several on the same face: `top`/`bottom` stack in order but `left`/`right` overlap, so use only one per face.
+- The attached box is included in the equipment's footprint for placement, and **pipes avoid it.** Vessel `side`·`top` ports also position themselves to avoid the span covered by an attached box.
+- **Keep it off a face with a connected fixed port**: an exchanger's `in2` (top) or `out2` (bottom), the `in`·`out` of a pump or valve (sides), or a port turned there by `rotate`. The box stands in front of the port, and the pipe gets a `no free path` warning. Use a free face. If none is free (an exchanger with all four ports connected), show the number as an instrument's `value` ([`DvInstrument`](#dvinstrument)) or in a `DvAttach` on an empty symbol beside the equipment ([small symbols](dvml-process-equipment.md#symbol-drawing-marks)).
+- Buttons and inputs inside work exactly as on an ordinary screen (`onclick` is a screen VM method).
+- **Set text color with classes** (`label`, `caption`, `title`, `muted`, etc. — they follow the theme). Text without a class is dark regardless of the theme and is invisible on a dark background.
+- Do not overlay absolutely positioned boxes on the diagram instead: pipes cannot route around them.
 
 ```xml
 <DvVessel name="BL" level="{BlLevel}" label="BL-1">
@@ -463,32 +255,43 @@ Instead of a port name, a line end (and an instrument `tap`, 7.3) can name **a p
 </DvVessel>
 ```
 
-| Attribute | Description |
-|---|---|
-| `side` | `left` · `right` (default) · `top` · `bottom`. Other values: `right` + a Trace warning |
-| Content | Any dvml (value displays, buttons, lamps, badges). Stacked vertically (can be changed with e.g. `style="display:flex; flex-direction:row"`) |
+<a id="dvagitator"></a>
+<a id="dvmotor"></a>
+### DvAgitator · DvMotor — accessories mounted on top
 
-- Attached 8px from the symbol. `left`/`right` at the symbol's vertical center, `top` above the accessories and name tag, `bottom` below the name tag (both centered on the symbol). If there are several on the same face, `top`/`bottom` stack in order but `left`/`right` overlap, so use only one per face.
-- The attached cell is included in the equipment size for placement, and **pipes avoid that cell.** Vessel `side`·`top` ports also position themselves to avoid the span covered by an attached cell.
-- **Keep it off a face with a connected fixed port**: an exchanger's `in2` (top) or `out2` (bottom), the `in`·`out` of a pump or valve (sides), or a port turned there by `rotate`. The box stands in front of the port, and the pipe gets a `no free path` warning. Use a free face. If none is free (an exchanger with all four ports connected), show the number as an instrument's `value` (7.3) or in a `DvAttach` on an empty symbol beside the equipment (14.2).
-- Buttons and inputs inside work exactly as on an ordinary screen (`onclick` is a screen VM method).
-- **Set text color with classes** (`label`, `caption`, `title`, `muted`, etc. — they follow the theme). Text without a class is dark regardless of the theme and is invisible on a dark background.
+| attribute | values | default | bound | notes |
+|---|---|---|---|---|
+| `running` | true/false | false | yes | Running state (a boolean, not a UI state word) |
+| `kind` | `DvMotor`: `isa`; `DvAgitator`: none | default shape | yes | `DvMotor kind="isa"` = ISA-5.1 motor. On `DvAgitator` any non-empty value draws the default shape + warning |
+| `visible` | true/false | true | yes | The common visible rule |
 
-### 7.2 `DvAgitator` · `DvMotor` — accessories mounted on top
-
-| Tag | Size (px) | Placement | State |
-|---|---|---|---|
-| `DvAgitator` | 40 × 100 | Top center of the equipment. The motor and gearbox (30px) stick out above, and the shaft and blades go into the vessel. In a vessel resized with `width`·`height` (5.2), the blades widen or narrow with the vessel and the shaft reaches the same relative depth; the drive on top keeps its size | `running` |
-| `DvMotor` | 76 × 46 | Mounted whole on the top center of the equipment | `running` |
+| Tag | Size (px) | Placement |
+|---|---|---|
+| `DvAgitator` | 40 × 100 | Top center of the equipment. The motor and gearbox (30px) stick out above, and the shaft and blades go into the vessel. In a vessel resized with `width`·`height`, the blades widen or narrow with the vessel and the shaft reaches the same relative depth; the drive on top keeps its size |
+| `DvMotor` | 76 × 46 | Mounted whole on the top center of the equipment |
 
 - Mainly used inside `DvVessel` (agitator). When an accessory is present, the vessel's `top` port leaves the center empty and takes positions on both sides.
-- Pump drive motors are usually not drawn (they are considered part of the pump symbol). When the drawing shows one, put `DvMotor` inside `DvPump`: a shaft line joins the motor to the pump.
-- `DvMotor kind="isa"` draws the ISA-5.1 motor instead: an `M` in a circle (36 × 52, stem included). Pair it with `DvPump kind="isa"` to match a P&ID drawing.
+- Pump drive motors are usually not drawn (they are part of the pump symbol). When the drawing shows one, put `DvMotor` inside `DvPump`: a shaft line joins the motor to the pump.
+- `DvMotor kind="isa"` draws an `M` in a circle (36 × 52, stem included). Pair it with `DvPump kind="isa"` to match a P&ID drawing.
 - A signal line (`DvSignal to="P1"`) to equipment with an accessory ends on the accessory (the motor), as drawings show it.
+- They are not boxes: no `class`, `style` or `onclick`.
 
-### 7.3 `DvInstrument` — instrument bubble
+<a id="dvinstrument"></a>
+## DvInstrument — instrument bubble
 
-Draws field instruments (flow transmitter FT, level transmitter LT …) and controllers (FIC, LIC …) as ISA-5.1-style circles (bubbles). The instrument symbol (`tag`) is written in the upper part of the bubble and the number (`number`) in the lower part.
+Draws field instruments (flow transmitter FT, level transmitter LT …) and controllers (FIC, LIC …) as ISA-5.1-style circles (bubbles): the instrument letters (`tag`) in the upper part, the number (`number`) in the lower part.
+
+| attribute | values | default | bound | notes |
+|---|---|---|---|---|
+| `name` | text | required | no | Signal lines connect to it. Unique together with equipment names (one each within the diagram) |
+| `on` | equipment name | required unless `tap` | no | The equipment to attach to (same diagram, same unit). Missing or wrong: not drawn + Trace error |
+| `tap` | `equipment.face@position` or `equipment.port` | — | no | A thin solid connection line from the bubble to a point on equipment: a face position (`T1.left@0.85`) or a fixed port (`CV1.in` = the pipe just outside that port). The bubble then stands at that point instead of on a free face. That equipment is the instrument's equipment (`on` may be left out; if `on` names other equipment, `tap` wins with a warning) |
+| `tag` | text | — | yes | Text in the top of the bubble (`FT`·`TT`·`LT`·`PT`·`FIC`·`LIC` …) |
+| `number` | text | — | yes | Text in the bottom of the bubble (loop number `101`, `1001` …) |
+| `panel` | true/false | false | yes | true = a horizontal line across the middle (central control room instrument); false = field instrument |
+| `value` | text | — | yes | Small text beside the bubble, on the side away from the equipment (below) |
+| `x` · `y` | px | beside its equipment | yes | Only with `placement="fixed"`: the bubble center ([instrument coordinates](dvml-process-layout.md#instrument-coordinates)) |
+| `visible` · `onclick` · `style` | — | — | — | Same as an ordinary box |
 
 ```xml
 <DvProcess>
@@ -507,60 +310,57 @@ Draws field instruments (flow transmitter FT, level transmitter LT …) and cont
 </DvProcess>
 ```
 
-| Attribute | Required | Description |
-|---|---|---|
-| `name` | Yes | The name signal lines connect to. Must not collide with equipment names either (one each within the process diagram) |
-| `on` | Yes (unless `tap`) | Name of the equipment to attach to (in the same process diagram and same unit). If missing or wrong, not drawn and a Trace error |
-| `tap` | — | Connection line: a thin solid line from the bubble to a point on equipment — `장비.면@위치` (equipment.face@position, like `T1.left@0.85`, 6.1) or a fixed port `장비.포트` (equipment.port, like `CV1.in`, = the pipe just outside that port). The bubble then stands at that point instead of on a free face. That equipment is the instrument's equipment (`on` may be left out; if `on` names other equipment, `tap` wins with a warning) |
-| `tag` | — | Text in the top of the bubble (instrument symbol: `FT`·`TT`·`LT`·`PT`·`FIC`·`LIC` …) |
-| `number` | — | Text in the bottom of the bubble (loop number: `101`, `1001` …) |
-| `panel` | — | If true, a horizontal line across the middle of the bubble (central control room instrument). Default false = no line (field instrument) |
-| `value` | — | Small text beside the bubble (current value, etc.), on the side away from the equipment (see below). Bindable |
-| `x` · `y` | — | Only with `placement="fixed"`: the bubble center, in the same space as equipment `x`·`y` (chapter 20.5). If omitted, the bubble goes beside its equipment as below. Bindable |
-| `onclick` · `style` · `visible` | — | Same as an ordinary box |
+- **Always write `on` (or `tap`).** Instruments do not take part in the pipe-flow placement (columns and layers); they go into the footprint of their equipment and are placed on a free face beside it. When the equipment moves, the instrument follows, and **pipes avoid the instrument.**
+- The face is chosen automatically: the face of that equipment with the fewest lines, attached boxes and labels; on a tie, top → right → bottom → left. It is placed 20px outside the label and attached boxes on that face. Pumps, valves and inline equipment usually get the **top**; vessels using both top and bottom ports usually get the **side**. There is no attribute to set the face.
+- Several instruments on one piece of equipment sit side by side on that face (horizontally on top/bottom, vertically on a side). A single instrument is aligned to the equipment's center line (a controller above a control valve → the signal line drops straight down to the actuator).
+- **A controller not attached to equipment** (control room FIC, LIC) is attached with `on` to **the valve (or pump) it drives**, like `FIC1` above.
+- **With `x`·`y`** (coordinate placement only): the bubble stands exactly there, however far from its equipment; `on` or `tap` names the equipment it belongs to.
+- **With `tap`** (where the point on the equipment matters — a drawing, a level transmitter at the column base):
 
-- **Always write `on` (or `tap`).** Instruments do not take part in the pipe-flow placement (columns and layers); they go into the footprint of the `on` equipment and are placed on a free face beside it. So when the equipment moves, the instrument follows, and **pipes avoid the instrument.**
-- The face is chosen automatically: the face of that equipment with the fewest lines, attached cells and name tags; on a tie, top → right → bottom → left. It is placed 20px outside the name tag and attached cells on that face. Pumps, valves and inline equipment usually get the **top**; vessels using both top and bottom ports usually get the **side**.
-- If one piece of equipment has several instruments, they sit side by side on that face (horizontally on top/bottom, vertically on a side). A single instrument is aligned to the equipment's center line (a controller above a control valve → the signal line drops straight down to the actuator).
-- **A controller not attached to equipment** (control room instruments such as FIC, LIC) is attached with `on` to **the valve (or pump) that controller drives**. Like `FIC1` in the example above.
-- **With `x`·`y`** (coordinate placement only): the bubble stands exactly there, however far from its equipment; `on` or `tap` still names the equipment it belongs to. Chapter 20.5.
-- **With `tap`** (where the point on the equipment matters, 21.3): a face position puts the bubble 24px outside that point, on the line out of the face (`left@…` → to the left, `top@…` → above). A fixed port taps the pipe 12px out of the port and puts the bubble 24px above it (to the right of a vertical pipe). Several instruments with `tap` on the same equipment are each placed at their own point; instruments without `tap` keep the automatic face. When the connection line leaves the bubble to the right, the `value` text goes below the line. Pipes do not cross the connection line (they go around the bubble rather than between it and its equipment).
-- The bubble diameter is 40px (wider if the text is long); text sizes are `tag` 12px, `number` 11px, `value` 11px (all × `font-size` / 14, chapter 4). The color follows `look` (same fill as terminals).
-- The `value` text is **not part of the layout**: it does not widen the equipment's footprint and pipes do not avoid it, so a changing value never moves equipment, bubbles or pipes (signal lines still go around it). It sits on the bubble's outer side: to the right of a single bubble or of a column on the right face, to the left of a column on the left face, and above (top face) or below (bottom face) when several bubbles share a row. Keep it short — a long value can cover neighboring equipment, and that is reported with the Trace warning `'X' value text overlaps 'Y'`. Large or long values are better shown with `DvAttach`.
+  | `tap` target | Automatic placement | Coordinate placement with `x`·`y` |
+  |---|---|---|
+  | Face position (`T1.left@0.85`) | Bubble 24px outside that point, on the line out of the face (`left@…` → to the left, `top@…` → above) | The point slides along the face to line up with the bubble within 16px; further off, the line is diagonal |
+  | Fixed port (`CV1.in`) | Taps the pipe 12px out of the port; bubble 24px above it (to the right of a vertical pipe) | The line drops straight onto the nearest part of that pipe; with no part level with the bubble, it goes to the spot 12px out of the port (may be diagonal) |
 
-### 7.4 `DvSignal` — signal line
+  Several `tap` instruments on the same equipment are each placed at their own point; instruments without `tap` keep the automatic face. When the connection line leaves the bubble to the right, the `value` text goes below the line. Pipes do not cross the connection line (they go around the bubble rather than between it and its equipment).
+- The bubble diameter is 40px (wider if the text is long); text sizes are `tag` 12px, `number` 11px, `value` 11px (all × `font-size` / 14, [text size](dvml-process-layout.md#text-size)). The color follows `look` (same fill as terminals).
+- The `value` text is **not part of the layout**: it does not widen the footprint and pipes do not avoid it, so a changing value never moves equipment, bubbles or pipes (signal lines go around it). Where it sits: on a top or bottom face, to the right of a single bubble, and above (top face) or below (bottom face) when several bubbles share the row; on a side face, on the outer side (right face → right, left face → left). Keep it short — a long value can cover neighbors, reported as `'X' value text overlaps 'Y'`. Large or long values are better shown with `DvAttach`.
 
-Connects signals between instruments, or between an instrument and equipment, with a **thin line**: dashed for an electric signal (default), solid with slashes (`//`) for a pneumatic one (ISA-5.1).
+<a id="dvsignal"></a>
+## DvSignal — signal line
+
+Connects instruments, or an instrument and equipment, with a **thin line**: dashed for an electric signal (default), solid with slashes (`//`) for a pneumatic one (ISA-5.1).
+
+| attribute | values | default | bound | notes |
+|---|---|---|---|---|
+| `from` · `to` | instrument or equipment name | required | no | **Name only, no port** (`V1.in` is an error). Write them in the direction the signal travels (measurement → controller → valve) |
+| `kind` | `electric` · `pneumatic` | `electric` | yes | `pneumatic` = solid with `//`: one pair per full 60px of each straight segment (after a 12px margin at each end), at least one on the line; their number and position cannot be set. Only the drawing differs. Other values: `electric` + Trace warning |
+| `color` | `#RRGGBB` · `token(name)` | theme text color | yes | Line, slashes and arrowhead. Not a color: default + Trace warning; an unknown token is magenta ([color values](dvml-language.md#value-color), [magenta](dvml-diagnostics.md#magenta)) |
+| `thickness` | px > 0 | 1.6 | yes | Dashes grow with it. Named like `DvRing thickness` (`width` is a box or body width). Otherwise default + Trace warning |
+| `arrow` | `end` · `start` · `both` · `none` | `none` | yes | Small arrowhead at that end |
+| `label` | text | — | yes | One line of small text beside the `from` end (`SH`, `SL`, signal names), on the side away from the line's first bend — or the other side if that spot touches a pipe, a signal line or a bubble |
+| `visible` | true/false | true | yes | false = the signal line is not created. No other common attribute (`class`, `style` … = [DVML019](dvml-diagnostics.md#dvml019)) |
 
 ```xml
 <DvSignal from="FT1" to="FIC1"/>
 <DvSignal from="FIC1" to="V1"/>
 ```
 
-| Attribute | Description |
-|---|---|
-| `from` · `to` | Instrument name (`DvInstrument name`) or equipment name. Write **the name only, with no port** (writing it like `V1.in` is an error) |
-| `kind` | `electric` (default, dashed) · `pneumatic` (solid with `//`). Only the drawing differs: route, placement and flow are the same. There is one `//` pair per full 60px of each straight segment (after a 12px margin at each end), and at least one on the line; their number and position cannot be set. Bindable. Another value → `electric` + Trace warning |
-| `color` | `#RRGGBB` or `token(name)`. Line, slashes and arrowhead. If omitted, the theme text color. Bindable. Not a color → default + Trace warning; an unknown token is magenta (as everywhere) |
-| `thickness` | Line thickness in px, greater than 0. If omitted, 1.6. Dashes grow with it. Named like `DvRing thickness` (`width` means a box or body width: common `width`, `DvColumn`, `DvVessel`; it was `width` before 0.x stage 4). Bindable. Otherwise → default + Trace warning |
-| `arrow` | `end` · `start` · `both` · `none` (default). Small arrowhead at that end |
-| `label` | One line of small text beside the `from` end (`SH`, `SL` …), on the side away from the line's first bend — or the other side if that spot touches a pipe, a signal line or a bubble. Bindable |
-| `visible` | If false (the common true/false rule), the signal line is not created (not drawn). Bindable. No other common attribute (`class`, `style` … = DVML019) |
+- Signal lines and `tap` connection lines take the **theme text color**, not the `look` palette, so they read on a light and on a dark background in both looks. Use `color`·`thickness` only when a drawing or site standard says so; a fixed `#color` does not follow the theme, so check it on the dark theme too. `tap` connection lines have no `color`·`thickness`. Pipe color is `medium` only.
+- It is a different tag from pipes. **Do not draw signals with `DvLine`.** Signal lines are drawn **after all pipes** and have **no effect** on equipment placement, flow judgment or flow animation; adding or removing them leaves equipment positions unchanged.
+- Lines are orthogonal and avoid equipment bodies, labels, attached boxes and other instruments. Where they cross pipes they pass straight through **without a jump** (ISA convention). Paths running right alongside a pipe are avoided. There is no `via` on signal lines.
+- Where the ends land: for an instrument, the center of the bubble face toward the counterpart, avoiding the face with the value text, faces used by other signal lines, a face with no room in front of it (something within about 12px) and, for a bubble beside its equipment, the face toward that equipment; for a control valve (`DvValve` or `DvValve3` with `kind="control"`), **the top of the actuator**; for other equipment, the center of the body's face toward the counterpart (the body includes accessories, so a pump with a `DvMotor` is reached at the motor). On a user symbol that is the center of a face of its rectangle, so draw an actuator there for the line to land on it.
+- Terminals (`DvTerminal`), unit ports (`DvPort`) and instruments that are not drawn (a wrong `on`) cannot be signal ends (Trace error; only that signal line is dropped). Instruments inside a unit connect only within the same unit.
+- A corner or branch of a signal line: an empty symbol at that point ([small symbols](dvml-process-equipment.md#symbol-drawing-marks)).
 
-- By default, signal lines and instrument connection lines (`tap`) take the **theme text color**, not the `look` palette, so they read on a light and on a dark background in both looks. Leave them that way unless a drawing or a site standard says otherwise: `color` is for that, and a fixed `#color` does not follow the theme, so check it on the dark theme too. `tap` connection lines have no `color`·`thickness`. Pipe color is `medium` only (12.2).
-- It is a different tag from pipes (`DvLine`). Signal lines are drawn **after all pipes are drawn**, and have **no effect** on equipment placement, flow judgment or flow animation. Adding or removing signal lines leaves equipment positions unchanged.
-- Lines are orthogonal (horizontal and vertical) and avoid equipment bodies, name tags, attached cells and other instruments. Where they cross pipes they pass straight through **without a jump** (ISA convention). Paths running right alongside a pipe are avoided.
-- Where the ends land: for an instrument, the center of the bubble face toward the counterpart, avoiding the face with the value text, faces already used by other signal lines, a face with no room in front of it (something within about 12px) and, for a bubble placed beside its equipment, the face toward that equipment; for a control valve (`DvValve kind="control"`), **the top of the actuator**; for other equipment, the center of the body's face toward the counterpart (the body includes accessories, so a pump with a `DvMotor` is reached at the motor). On a user symbol that is the center of a face of its rectangle, so draw an actuator there for the line to land on it.
-- `arrow="end"` (`start` · `both` · `none`, default none) draws a small arrowhead, like `DvLine`. `label="SH"` puts small text beside the `from` end (switch actions such as `SH`·`SL`, signal names). Write `from`·`to` in the direction the signal travels (measurement → controller → valve).
-- Terminals (`DvTerminal`), unit ports (`DvPort`) and instruments that are not drawn (instruments with a wrong `on`) cannot be connected (Trace error; only that signal line is dropped). Instruments inside a unit connect only within the same unit.
+<a id="units"></a>
+<a id="dvunit"></a>
+## Units (DvUnit · DvPort)
 
----
-## 8. Unit groups (`DvUnit` · `DvPort`)
+Groups several pieces of equipment **into one unit.** Use it in two cases:
 
-Groups several pieces of equipment **into one unit.** Use it in two cases.
-
-- **When the same arrangement repeats** — plant where the tank/agitator/pump arrangement is identical, such as 3 blenders or 2 reactors. Define the unit once as a component and use it many times (8.4).
-- **When only part of the process flows in a different direction** — screens where the inside of a unit runs top→bottom (feed → tank → discharge pump) but the units must stand side by side.
+- **The same arrangement repeats** — 3 blenders or 2 reactors with the same tank/agitator/pump arrangement. Define the unit once as a component and use it many times ([repeating a unit](#units-components)).
+- **Only part of the process flows in a different direction** — the inside of a unit runs top → bottom (feed → tank → discharge pump) but the units stand side by side.
 
 ```xml
 <DvProcess direction="tb">
@@ -578,50 +378,49 @@ Groups several pieces of equipment **into one unit.** Use it in two cases.
 </DvProcess>
 ```
 
-### 8.1 `DvUnit` attributes and children
+| attribute | values | default | bound | notes |
+|---|---|---|---|---|
+| `name` | text | required | no | Unique within the outer diagram. Outer lines connect with `name.port` |
+| `direction` | `lr` · `tb` | `lr` | yes | Flow direction **inside** the unit, independent of the outer direction |
+| `label` | text | — | yes | Unit title outside the rectangle at its top-left, font 13 bold (theme `--text`); pipes avoid it |
+| `row` · `rank` | integer | — | yes | Placement hints in the outer diagram ([hints](dvml-process-layout.md#hints)) |
+| `x` · `y` | px | — | yes | Only when the outer `DvProcess` has `placement="fixed"`: the center of the whole unit frame |
+| `placement` | `auto` | `auto` | — | Read only to warn: the inside of a unit is always placed automatically |
+| `visible` · `onclick` | — | — | — | Same as regular equipment |
+| `style` · `class` | — | no border, no background | yes | Border and background of the unit rectangle (e.g. `style="border:1 token(border); border-radius:8"`) |
 
-| Attribute | Description |
-|---|---|
-| `name` | **Required.** Unique within the outer process diagram. Outer lines connect with `name.포트` (unit name + port) |
-| `direction` | Flow direction **inside** the unit: `lr` (default) · `tb`. Independent of the outer direction |
-| `label` | Unit title. Top-left of the unit, font 13 bold (theme `--text`) |
-| `row` · `rank` | Placement hints in the outer process diagram (chapter 11) |
-| `x` · `y` | Only when the outer `DvProcess` has `placement="fixed"`: the center of the whole unit (chapter 20). The inside of a unit is always placed automatically |
-| `style` · `class` | Border and background of the unit rectangle. **Default is no border and no background** (set e.g. `style="border:1 token(border); border-radius:8"`) |
-| `onclick` · `visible` | Same as regular equipment (5.1) |
+- `look` follows the outer `DvProcess` (it cannot differ per unit); so does `flow-animation`.
+- **Children**: equipment (including user symbols), `DvLine`, `DvPort`, `DvInstrument`, `DvSignal`, `DvStyle`. **A unit cannot contain another unit** (not drawn; Trace error).
+- **Name scope**: equipment names inside a unit only need to be unique within that unit. Three units may all contain `T` and `P1`.
 
-`look` follows the outer `DvProcess` (it cannot differ per unit).
-
-**Children**: equipment (chapter 5, including user symbols), `DvLine`, `DvPort`. **A unit cannot contain another unit** (not drawn; Trace error).
-
-**Name scope**: equipment names inside a unit only need to be unique within that unit. Three units may all contain `T` and `P1`.
-
-### 8.2 `DvPort` — unit outer port
+<a id="dvport"></a>
+### DvPort — unit outer port
 
 A connection point the unit exposes to the outside. **Outer lines can connect only to these ports.**
 
-| Attribute | Description |
-|---|---|
-| `name` | Port name (unique within the unit). Lines inside the unit use **the name only** (`to="out"`); outer lines use `유닛.이름` (unit.name, `from="U1.out"`) |
-| `side` | **Required.** Which side of the unit rectangle: `left` · `top` · `right` · `bottom`. Missing or invalid → `right` + Trace error |
-| `at` | Position along that side, 0–1 (left/top = 0), default 0.5. Out of range → 0.5 + Trace error |
+| attribute | values | default | bound | notes |
+|---|---|---|---|---|
+| `name` | text | required | no | Unique within the unit. Lines inside the unit use **the name only** (`to="out"`); outer lines use `unit.name` (`from="U1.out"`) |
+| `side` | `left` · `top` · `right` · `bottom` | required | yes | Side of the unit rectangle. Missing or unknown: `right` + Trace **error** |
+| `at` | 0–1 | 0.5 | yes | Position along that side (left/top = 0). Not a number or out of range: 0.5 + Trace error |
+| `visible` | true/false | true | yes | The common visible rule |
 
-- Connecting several inner lines to one port (two pump outlets → `out`) merges them at the port (a merge). The same applies outside.
-- A `DvPort` placed outside a `DvUnit` (directly under `DvProcess`) is ignored and leaves a Trace error.
+- Several inner lines to one port (two pump outlets → `out`) merge at the port. The same applies outside.
+- A `DvPort` outside a `DvUnit` (directly under `DvProcess`) is ignored and leaves a Trace error. A `DvPort` inside a `DvSymbol` is a symbol port ([`DvSymbol`](dvml-process-equipment.md#dvsymbol)).
+- **Do not connect directly from outside to equipment inside a unit.** `from="U1.T.bottom"` is an error (red marking + Trace "equipment inside a unit cannot be connected directly from outside. Add `<DvPort name="…" side="…"/>` to the unit, …"). Put a `DvPort` inside the unit, connect to that port from inside, and connect from outside with `U1.port`.
 
-**Do not connect directly from outside to equipment inside a unit.** `from="U1.T.bottom"` is an error (red marking + Trace "equipment inside a unit cannot be connected directly from outside. Add `<DvPort name="…" side="…"/>` to the unit, …"). Put a `DvPort` inside the unit, connect to that port from inside, and connect from outside with `U1.포트` (U1.port).
+**How units are placed**
 
-### 8.3 How units are placed
-
-1. **The inside of the unit is placed first**, using the chapter 9 rules as-is (with the unit's `direction`).
-2. **Unit rectangle (border)** = the rectangle enclosing all inner equipment footprints + 34px on every side (room for pipes to leave a port straight before bending).
-3. **Ports** sit on the rectangle's `side` side at the `at` position, and inner pipes run up to the port. Inner pipes never leave the rectangle.
-4. In the **outer process diagram**, the unit is a single piece of equipment the size of that rectangle. Outer pipes do not cross the unit rectangle and leave the port straight toward `side`.
+1. **The inside of the unit is placed first**, using the [automatic placement](dvml-process-layout.md#auto-layout) rules as they are (with the unit's `direction`).
+2. **Unit rectangle** = the rectangle enclosing all inner footprints + 34px on every side (room for pipes to leave a port straight and then bend).
+3. **Ports** sit on the rectangle's `side` at the `at` position, and inner pipes run up to the port. Inner pipes never leave the rectangle.
+4. In the **outer diagram**, the unit is a single piece of equipment the size of that rectangle. Outer pipes do not cross it and leave the port straight toward `side`.
 5. The unit title (`label`) sits outside the rectangle at its top-left, and pipes avoid it.
 
-**Choosing directions**: to stand several units **side by side**, make the outside `direction="tb"` and put the unit outlet ports at `side="bottom"` (the units stand horizontally on the same rank, and the receiving equipment comes centered below them). If the outside is `lr`, units in the same column stack vertically.
+**Choosing directions**: to stand several units **side by side**, make the outside `direction="tb"` and put the unit outlet ports at `side="bottom"` (the units stand on the same rank, and the receiving equipment comes centered below them). If the outside is `lr`, units in the same column stack vertically.
 
-### 8.4 Repeating the same unit — components
+<a id="units-components"></a>
+### Repeating the same unit — components
 
 Define a unit once as a `DvComponent` and use it many times as instances. A component whose **template root is `DvUnit`** becomes a unit inside a process diagram.
 
@@ -653,7 +452,7 @@ Define a unit once as a `DvComponent` and use it many times as instances. A comp
 ```
 
 ```xml
-<DvPageFrame vm="Plant.BlendPage" title="블렌더">
+<DvPageFrame vm="Plant.BlendPage" title="Blenders">
   <DvProcess direction="tb" look="rich" grow="1" style="height:0">
     <Blender name="BL1" U="{BL1}"/>
     <Blender name="BL2" U="{BL2}"/>
@@ -673,7 +472,7 @@ using Devinno.UI.App;
 
 namespace Plant;
 
-// 유닛 하나의 상태 — 같은 클래스의 객체를 유닛마다 하나씩
+// The state of one unit: one object of the same class per unit
 public sealed class BlenderVm
 {
     public required string Name { get; init; }
@@ -696,7 +495,7 @@ public sealed partial class BlendPage : DvPage
     public BlenderVm BL3 { get; } = Make(3);
     public double RmtLevel { get; set; } = 40;
 
-    // 템플릿 안 Reset 버튼 — 눌린 유닛의 BlenderVm 이 들어온다
+    // Reset button in the template: receives the BlenderVm of the pressed unit
     public void Reset(BlenderVm unit) => unit.Temp = 0;
 
     private static BlenderVm Make(int i) => new()
@@ -711,97 +510,17 @@ public sealed partial class BlendPage : DvPage
 using Devinno.UI.Components;
 
 var registry = new ComponentRegistry();
-registry.Register(blenderMarkup); // 위 <DvComponent name="Blender"> 문자열 — DvApp 이면 app.Registry 에
+registry.Register(blenderMarkup); // the <DvComponent name="Blender"> string above; with DvApp use app.Registry
 ```
 
-Rules:
-
-- For the instance (`<Blender …>`), its `name`·`label`·`row`·`rank` win (resolved against the outer VM). If absent, the template `DvUnit`'s values (resolved against the parameters) are used.
-- Inside the template **only the parameters** are visible (`{U.Level}`). Pass other screen VM properties as parameters. The simplest approach is one object of the same class per unit, passed as a single parameter (`U`).
-- **How a button inside the template receives its own unit**: if `onclick="Reset"` and the screen VM has `Reset(BlenderVm unit)` with **exactly one parameter**, the instance's parameter value whose type matches (`U`) is passed. If none matches, the parameterless `Reset()` is called. With several parameters, the first type-matching value in declaration order is used. This rule applies equally to regular components outside process diagrams (the same mechanism as `DvRepeat`'s `M(항목)`).
+- On the instance (`<Blender …>`), its `label`·`row`·`rank`·`x`·`y` win (resolved against the outer VM); if absent, the template `DvUnit`'s values (resolved against the parameters) are used. `name` is read from the instance only (a `name` on the template `DvUnit` is ignored).
+- Inside the template only the parameters are visible; a button in the template receives its own unit through a screen VM method with one parameter, like `Reset(BlenderVm unit)` ([component parameters](dvml-components.md#component-params), [component instances](dvml-components.md#component-instances)).
 - When only values change (level, running, temperature), neither the outer nor the inner layout is recomputed.
-- The instance works like any component instance (ui §15): its `style` (merged), `class`, `onclick` and `disabled` pass to the unit's frame, and an `id` on the instance gives a handle whose `Enabled`, `Visible`, `Bounds` and `Click` act on that unit.
 
+<a id="look-flow-medium"></a>
+## Look, flow and medium
 
----
-
-## 9. How layout is determined
-
-The order is written down so an AI can predict the result and choose hints. The same markup **always gives the same result** (no randomness).
-
-1. **Break cycles** — lines that loop back, such as recirculation, are reversed only for the layout calculation (the drawn direction stays). Loop-back lines take part in the in-column ordering (step 4) but are not used for alignment (step 5) — equipment positions are set only by flow-direction lines, and the recirculation pipe then routes around the equipment on top of that (so that in a top→bottom process the pump is not pushed beside the tank and the recirculation does not cross the inlet pipe).
-2. **Assign columns** (lr = column, tb = rank) — each equipment's column = length of its longest upstream path (0 if it has no predecessor). Equipment with no predecessor (terminals, etc.) is pulled to the column just before its successor. If there is a `rank` hint, that value is used.
-3. **Stack parallel equipment** — equipment with the same predecessor set and the same successor set, all of whose used ports are on flow-direction sides (lr: equipment using only top/bottom ports; tb: equipment using only left/right ports), is placed one step apart along the flow direction, standing on the same row. Two standby pumps stacking vertically in tb follow this rule. Parallel pumps with left/right ports in lr do not follow this rule; they go into the same column and are placed one above the other per steps 4–6.
-4. **In-column order** — start with declaration order, then repeatedly sort by the average position of neighbors in the previous/next columns, choosing the order with the fewest line crossings. The neighbor position uses **the side of the port the line is attached to** — equipment connected to a top (tb: left) side port goes earlier, equipment connected to a bottom (tb: right) side port goes later (the `c` branch of a 3-way valve, `in2`·`out2` of a heat exchanger). If crossings still remain, adjacent equipment pairs are swapped on trial, and the order is kept only if crossings decrease. If there is a `row` hint, that value is the order key.
-5. **Alignment** — each equipment is aligned to the average height (lr) / horizontal position (tb) of its neighbor ports in the previous column. Equipment with no predecessor (terminals, units) is aligned to its successor, then aligned once more against the previous column. So a series process becomes a straight line, and when several pieces of equipment converge on one (a merge, 3 units → 1 tank), the receiving equipment comes to the center. Ports on sides perpendicular to the flow are aligned according to `align`.
-   - **Incoming (front) side ports** (top ports in lr, left ports in tb): always aligned to "the spot 26px outside in front of the port" — a line fed from above comes straight down and bends once to enter.
-   - **Outgoing (back) side ports** (bottom ports in lr, right ports in tb): with `step`, 26px outside in front of the port (the next equipment sits lower than the tank → staircase, 1 bend, taller drawing); with `row`, the equipment's center line (the next equipment's inlet is at the tank's mid height → same row, pipe bends in a U shape with 3 bends, shorter and wider drawing). `auto` uses staircase; same row only when the staircase drawing cannot be shrunk into the area (sizing in chapter 4). Unit interiors use the same method as the outside.
-6. **Spacing** — between equipment in the same column = 40px × spacing scale (minimum 28px). Corridor between columns = 48px × spacing scale (minimum 44px) + number of pipe bundles passing through that corridor (lines connected by branches/merges form one bundle) × pipe spacing (plain 12px, rich 16px). Column width = the widest equipment (footprint) in that column; equipment is centered in the column.
-7. **Footprint** — the size one piece of equipment occupies = the rectangle enclosing symbol + accessories + name label + attached boxes. So equipment with a large attached box also widens its column.
-
----
-
-## 10. How pipe routes are determined
-
-1. Pipes leave the port **18px straight** outward (the port's lead-out end). No bend directly in front of a port. When two ports face each other closer than two lead-outs (36px — only possible with coordinate placement), both lead-outs are shortened to half the gap, so the pipe runs straight (or with one small step if the ports are offset).
-2. Routes are searched along an 8px grid (+ port coordinates). Cost = length + bend (30) + crossing another pipe (40). Following an already-drawn trunk of the same bundle costs 1/5, so branches and merges share a trunk.
-3. Routes do not enter within 10px of an equipment symbol or an instrument bubble, or within 4px of name labels and attached boxes, and do not cross an instrument's connection line (`tap`, 7.3).
-4. Pipes do not overlap pipes of other bundles, do not run closer than the pipe spacing when parallel, and do not bend on top of another pipe (it would look like they touch).
-5. If there is still no route, these constraints are turned into costs and the search is repeated (overlap allowed), leaving the Trace warning "no free path, so it overlaps other piping".
-6. Bundles are drawn in declaration order (lines written first get the good routes first).
-7. At crossings with other bundles a semicircular jump is drawn: in lr the vertical line jumps, in tb the horizontal line jumps (radius plain 7, rich 13).
-8. Pipe ends tuck slightly under the equipment body (fixed ports 6px, side ports 24px) and are hidden. So they appear attached without a gap even on the top of a rounded vessel.
-
----
-
-## 11. Refining with hints (`row`·`rank`·`rotate`·`flip`)
-
-Use hints only when needed **after viewing the result as a PNG**. If it came out clean, do not use them.
-
-| Hint | Value | Effect | When |
-|---|---|---|---|
-| `row` | integer | Order key within the same column. Smaller value = top (lr) / left (tb) | When lines cross, or to set the top/bottom order of equipment |
-| `rank` | integer ≥ 0 | Fixes that equipment's column | To push a particular piece of equipment to a column further right (down) |
-| `align` (`DvProcess`) | auto·step·row | Equipment after a tank-bottom outlet as staircase / same row | Fix it only when you don't like the shape `auto` chose (chapter 4, chapter 9) |
-| `rotate` | 0·90·180·270 | Rotates equipment (port sides rotate too) | Valve on a vertical pipe (`90`) |
-| `flip` | h·v·hv | Flip | Pump with reversed flow (`h`) |
-
-Caveats:
-
-- It is safest to give `row` **to all equipment in the same column**. If only some have it, it mixes with the order key (current index) of equipment without hints and may differ from what you expect.
-- `rank` is a **last resort**. Forcing a column can break flow order, making lines run backward or cross. Column numbers start at 0, and other equipment's columns are computed automatically, so it is hard to predict. Always re-render to check after using it. One case where it is the right tool: a control valve on a utility line (steam, cooling water) feeding equipment far down the process. Its upstream path is short, so it lands in an early column (chapter 9, step 2) and its pipe runs across the screen; `rank` = the fed equipment's column − 1 puts it next to that equipment and keeps the flow order.
-- Hints do not solve a lack of space. Enlarge the area, split the screen, or reduce the equipment count (e.g., omit the inlet valve and go straight from the terminal to the vessel).
-
-**Example: swapping the top/bottom order of parallel pumps**
-
-```xml
-<DvProcess>
-  <DvVessel name="T1" level="50"/>
-  <DvPump name="P1" row="1" label="P-101"/>
-  <DvPump name="P2" row="0" label="P-102"/>
-  <DvValve name="V1" open="true"/>
-  <DvLine from="T1.bottom" to="P1.in"/>
-  <DvLine from="T1.bottom" to="P2.in"/>
-  <DvLine from="P1.out" to="V1.in"/>
-  <DvLine from="P2.out" to="V1.in"/>
-</DvProcess>
-```
-
-**Example: valve on a vertical pipe**
-
-```xml
-<DvProcess direction="tb">
-  <DvTerminal name="IN" text="FEED"/>
-  <DvValve name="V1" rotate="90" open="true" label="XV-1"/>
-  <DvVessel name="T1" level="30" label="T-1"/>
-  <DvLine from="IN" to="V1.in"/>
-  <DvLine from="V1.out" to="T1.top" arrow="end"/>
-</DvProcess>
-```
-
----
-
-## 12. Look (`look`)
+**Look (`look`)**
 
 | | `plain` (default) | `rich` |
 |---|---|---|
@@ -814,13 +533,14 @@ Caveats:
 | Pipe spacing | 12px | 16px |
 | Suitable background | Light theme / gray | Dark theme |
 
-- Colors are a fixed process-diagram palette, not theme tokens — the one exception to "every color a built-in widget draws is a theme token" (`dvml-ui-markup.md` chapter 5). Name-label text, signal lines and instrument connection lines (`tap`) use theme `--text` instead, and a signal line can set its own `color` (7.4).
-- The process diagram does not decide alarm colors (red, etc.). Alarms are shown with `DvLamp`·`DvBadge` inside `DvAttach`, or with alarm widgets.
-- Pipes are not colored by medium (water, steam, etc.) **by default** (ISA-101 recommendation — chapter 18). Opt in per line with `medium` (12.2).
+- Colors are a fixed process-diagram palette, not theme tokens — the one exception to "every color a built-in widget draws is a theme token" ([theme tokens](dvml-style.md#theme-tokens)). Label text, signal lines and `tap` connection lines use theme `--text` instead, and a signal line can set its own `color` ([`DvSignal`](#dvsignal)).
+- The background is not painted. It follows the app theme's background or the `background` in `style`. `rich` looks best on a dark background, `plain` on a light or gray background.
+- The process diagram does not decide alarm colors (red, etc.). Show alarms with `DvLamp`·`DvBadge` inside `DvAttach`, or with alarm widgets.
+- Pipes are not colored by medium **by default** (ISA-101 recommendation). Opt in per line with `medium` (below).
 
-### 12.1 Flow display (`flow-animation` · `flow`)
+**Flow display (`flow-animation` · `flow`)**
 
-**The library decides from connections and equipment state** which pipes currently have flow, and when enabled, a dashed line moves along those pipes in the flow direction (`from` → `to`).
+The library decides from connections and equipment state which pipes currently have flow, and when enabled, a dashed line moves along those pipes in the flow direction (`from` → `to`).
 
 ```xml
 <DvProcess look="rich" flow-animation="{ShowFlow}">
@@ -839,30 +559,28 @@ Caveats:
 | Attribute | Description |
 |---|---|
 | `DvProcess flow-animation` | If true, a moving dashed line on flowing pipes. **Off by default** (ISA-101 — motion that draws operator attention is not on by default). Bindable. Units follow the outer value |
-| `DvLine flow` | The app decides this line's flow (override). True = flow, false = blocked. If not given or the bound value is null, automatic decision |
+| `DvLine flow` | The app decides this line's flow (override). True = flow, false = blocked. Not given, or a bound null = automatic decision |
 
-**Automatic decision rules** (an inference for display, not a measurement)
+Automatic decision rules (an inference for display, not a measurement):
 
 1. **Sources**: terminals used as a line's `from` (coming in from outside), vessels with level greater than 0. **Sinks**: terminals used as a line's `to`, vessels. A user symbol with `DvFill` counts as a vessel.
-2. **Paths**: lines only in the `from` → `to` direction. Inside equipment, the symbol's flow rules (`DvPass`) — pumps when running, valves when open (`open` true or a non-zero number), check valves one-way `in` → `out`, inline equipment always. Vessels are buffers and do not pass through internally (incoming and outgoing are separate). A user symbol with neither `DvPass` nor `DvFill` stops the flow: the pipes into it do not flow either. Unit ports connect inside and outside.
-3. **Flow**: a line flows **only when it is reached from a source and continues from that line to a sink**. So a pipe ending before a closed valve, the branch toward a stopped pump, and the downstream side of an empty tank do not flow.
-4. **Override**: a line with `flow="false"` is treated as blocked, and its downstream side also stops. A line with `flow="true"` always flows. It also counts as a source for what follows it and a sink for what comes before it: the lines after it flow as far as they reach a sink (even behind a stopped pump, if a flowmeter shows flow), and the lines before it flow if a source reaches them.
+2. **Paths**: lines only in the `from` → `to` direction. Inside equipment, the symbol's flow rules (`DvPass`) — pumps when running, valves when open (`open` true or a non-zero number), check valves one-way `in` → `out`, inline equipment always. Vessels are buffers and do not pass through internally. A user symbol with neither `DvPass` nor `DvFill` stops the flow: the pipes into it do not flow either. Unit ports connect inside and outside.
+3. **Flow**: a line flows **only when it is reached from a source and continues from that line to a sink**. A pipe ending at a closed valve, the branch toward a stopped pump, and the downstream side of an empty tank do not flow.
+4. **Override**: `flow="false"` is blocked, and its downstream side also stops. `flow="true"` always flows; it also counts as a source for what follows it and a sink for what comes ahead of it: the lines after it flow as far as they reach a sink (even behind a stopped pump, if a flowmeter shows flow), and the lines ahead of it flow if a source reaches them.
 5. Re-decided every time values change and the screen is rebuilt (layout unchanged, almost no cost).
 
-**When to use `flow`**: the inference can be wrong because of equipment not on the screen (manual field valves, etc.) — e.g., it looks like flow because the pump runs and the valve is open, but an off-screen valve is closed. **Bind `flow` on lines that have real data, such as flowmeters and flow switches.** Leave the rest to automatic.
+**When to use `flow`**: the inference can be wrong because of equipment not on the screen (manual field valves) — it looks like flow because the pump runs and the valve is open, but an off-screen valve is closed. **Bind `flow` on lines that have real data, such as flowmeters and flow switches.** Leave the rest to automatic; never compute flow per line in the VM.
 
-**Look and cost**
+Look and cost of the animation:
 
-- Look: a base stripe (plain = light sky blue, rich = dark teal) is laid on flowing pipes, and a thick dashed line (plain = blue 4px, rich = teal 5px) moves on top — the high light/dark contrast between dashes and gaps keeps it from blending with the tube color. On a pipe with `medium` (12.2) the stripe and the dashes use tones of that medium's color instead, so the medium stays visible while it flows. Speed 40px/s.
-- If at least one pipe is flowing, it **redraws at 20 frames per second** (only during that time). With no flow, or `flow-animation` off, it does not redraw.
-- Adapters (OpenTK CPU raster and GPU, WinForms) then redraw **only the area containing the process diagram** (`DvSurface.PartialRender`) — cost scales with the area of the flowing process diagram, not the whole screen. Measured (1600×1080 window, CPU raster): a small process diagram at about 7% of the screen goes from 27% → 7% of one core; a demo page that is mostly process diagram stays about 50% (almost unchanged — large area to redraw). `ViewWindow.Gpu` mode on the same small process diagram: 8.7% → 3.8% (CPU time).
+- A base stripe (plain = light sky blue, rich = dark teal) is laid on flowing pipes, and a thick dashed line (plain = blue 4px, rich = teal 5px) moves on top. On a pipe with `medium` the stripe and the dashes use darker and lighter tones of that medium's color, so the medium stays visible while it flows. Speed 40px/s.
+- While at least one pipe flows, it **redraws at 20 frames per second**. With no flow, or `flow-animation` off, it does not redraw.
+- The adapters (OpenTK CPU raster and GPU, WinForms) redraw **only the area containing the process diagram** (`DvSurface.PartialRender`): the cost grows with the area of the flowing diagram, not the whole screen. Measured in a 1600×1080 window, CPU raster: a small diagram covering about 7% of the screen costs about 7% of one core; a page that is mostly process diagram about 50%. `ViewWindow.Gpu` mode on the same small diagram: 3.8% (CPU time).
 - With animation off, flow does not appear in the drawing (only the decision result exists).
 
----
+**Medium color (`medium`)**
 
-### 12.2 Medium color (`medium`)
-
-Shows what flows inside (water, steam …) through pipe color. **None by default** (ISA-101 — color only when it carries information). Process diagrams without `medium` stay gray as before.
+Shows what flows inside (water, steam …) through pipe color. **None by default** (ISA-101 — color only when it carries information); diagrams without `medium` are gray.
 
 ```xml
 <DvLine from="IN" to="P1.in" medium="water"/>
@@ -878,21 +596,22 @@ Shows what flows inside (water, steam …) through pipe color. **None by default
 | `oil` | Oil | Dark yellow-red | Orange |
 | `acid` | Acid / alkali | Gray-violet | Light purple |
 
-Colors follow the KS A 0503 pipe identification color family, and the library chooses them so they read in both looks (`plain`·`rich`). **You cannot give color values directly** (only the 6 names above). Any other value → default gray + Trace warning. Bindable (`medium="{M}"`).
+Colors follow the KS A 0503 pipe identification color family, chosen to read in both looks. **You cannot give color values directly** (only the 6 names; no `style` or color on pipes). Any other value → default gray + Trace warning. Bindable (`medium="{M}"`).
 
-**Write it once and it spreads in the flow direction.**
+**Write it once on the first line of a run and it spreads in the flow direction:**
 
-- From the line where it is written, it continues in the `from` → `to` direction, and inside equipment along that equipment's paths (pump `in`→`out`, valves, inline, 3-way valve branches, heat exchanger `in`→`out` and `in2`→`out2` separately) to the next line. **State does not matter** — behind a stopped pump or closed valve it is the same pipe, so the same color.
-- It also reaches the other lines leaving the same port, because the same thing flows in them (two pumps fed from one point). A branch that carries something else gets its own `medium`.
-- It stops at **vessels** (mixing inside), **terminals**, and **lines with their own `medium`**. So after a tank, or where the medium changes (e.g., when you want to color steam → condensate separately), write it again on that first line.
+- From the line where it is written, it continues `from` → `to`, and inside equipment along that equipment's paths (pump `in`→`out`, valves, inline, 3-way valve branches, heat exchanger `in`→`out` and `in2`→`out2` separately) to the next line. **State does not matter** — behind a stopped pump or closed valve it is the same pipe, so the same color.
+- It also reaches the other lines leaving the same port (two pumps fed from one point). A branch that carries something else gets its own `medium`.
+- It stops at **vessels** (mixing inside), **terminals**, and **lines with their own `medium`**. After a tank, or where the medium changes (steam → condensate), write it again on that first line.
 - Unit ports connect inside and outside.
-- When different media meet on one line (mixing), it is colored with the medium written first and a Trace warning is left. Set it by writing `medium` directly on the line after the merge.
-- No legend is drawn automatically. If needed, put one on the screen with `DvAttach` or regular text.
-- Only the color changes. Layout and flow decision are unaffected. With flow animation (12.1) on, a flowing pipe with a medium draws its base stripe and moving dashes in tones of the medium color (darker and lighter), so the medium stays readable.
+- When different media meet on one line, it is colored with the medium written first and a Trace warning is left. Fix it by writing `medium` on the line after the merge.
+- No legend is drawn automatically. Put one on the screen with `DvAttach` or regular text.
+- Only the color changes; layout and flow decision are unaffected.
 
-## 13. View model (C#) and updates
+<a id="process-vm"></a>
+## View model (C#) and updates
 
-Process diagrams use the same VM binding as regular screens. Equipment state is VM properties; actions on tapping equipment are VM methods.
+Process diagrams use the same VM binding as regular screens. Equipment state is VM properties (`running="{P1Run}"`, `open="{V1Open}"`, `level="{T1Level}"` 0–100 %); actions on pressing equipment are VM methods.
 
 ```csharp
 using Devinno.UI.App;
@@ -907,14 +626,14 @@ public sealed partial class WaterPage : DvPage
     public bool V1Open { get; set; } = true;
     public string FlowText { get; set; } = "0.0 m³/h";
 
-    // 펌프를 누르면 정지 확인
+    // Pressing the pump asks for confirmation to stop it
     public async void P1Click()
     {
-        if (await App.MessageBox("P-101 을 정지할까요?", "펌프", DvMessageButtons.YesNo) == DvDialogResult.Yes)
-            P1Run = false; // await 뒤는 입력 스레드 — 자동으로 다시 그림
+        if (await App.MessageBox("Stop P-101?", "Pump", DvMessageButtons.YesNo) == DvDialogResult.Yes)
+            P1Run = false; // after await: input thread, redrawn automatically
     }
 
-    // 통신 스레드에서 값이 오면: 값을 바꾸고 App.Invalidate()
+    // Values from the communication thread: change them, then App.Invalidate()
     public void OnPlc(double level, bool p1, bool p2, double flow)
     {
         T1Level = level;
@@ -927,7 +646,7 @@ public sealed partial class WaterPage : DvPage
 ```
 
 ```xml
-<DvPageFrame vm="Plant.WaterPage" title="정수 공정">
+<DvPageFrame vm="Plant.WaterPage" title="Water treatment">
   <DvProcess look="plain" grow="1" style="height:0">
     <DvTerminal name="IN" text="RAW WATER"/>
     <DvVessel name="T1" level="{T1Level}" label="T-101"/>
@@ -951,679 +670,117 @@ public sealed partial class WaterPage : DvPage
 
 **Updates and cost**
 
-- When only values (`level`, `running`, `open`, attached-box text, instrument `value`) change, **layout is not recomputed.** If equipment, line structure, name labels and attached-box sizes are the same, the previously computed layout is reused. This holds inside units too. On a 1600×1000 screen, one value update costs 1–2ms for layout and about 16ms for drawing (CPU).
-- If attached-box text length changes and the box size changes, layout is recomputed (tens of ms). Recent layouts are kept, so going back to a width seen before reuses its layout. Giving frequently changing numbers a fixed width (`style="width:…"` on the attached box) keeps the layout from shifting. An instrument `value` never moves anything (7.3); only the signal lines around it are routed again when its width changes.
-- Thread rules are the same as regular screens: after changing the VM on a communication/timer thread, call `App.Invalidate()`. Handlers (`onclick`) and code after their `await` run on the input thread, so `Invalidate` is not needed (`llm-rules.md` chapter 6).
-- To draw several units of the same arrangement (3 blenders, etc.), use a unit component. Keep one VM object of the same class per unit and pass it as a parameter (8.4).
+- When only values (`level`, `running`, `open`, attached-box text, instrument `value`) change, **layout is not recomputed.** If equipment, line structure, labels and attached-box sizes are the same, the layout computed earlier is reused, inside units too. On a 1600×1000 screen, one value update costs 1–2ms for layout and about 16ms for drawing (CPU).
+- If attached-box text length changes and the box size changes, layout is recomputed (tens of ms). Recent layouts are kept, so going back to a width seen earlier reuses its layout. Giving frequently changing numbers a fixed width (`style="width:…"` on the attached box) keeps the layout from shifting. An instrument `value` never moves anything; only the signal lines around it are routed again when its width changes.
+- Thread rules are the same as on regular screens ([threads](dvml-app.md#threads)).
+- Several units of the same arrangement (3 blenders): use a unit component, with one VM object of the same class per unit passed as a parameter ([repeating a unit](#units-components)).
 
----
+## Complete examples
 
-## 14. User symbols (`DvSymbol`)
+Complete diagrams to start from (water treatment, blender, recirculation, a distillation unit in coordinate placement): [process examples](dvml-process-examples.md#process-examples).
 
-Equipment not in chapter 5 (cyclones, conveyors …) is used by defining a symbol. Built-in equipment is defined in exactly the same format.
+<a id="process-checklist"></a>
+## Checklist (MUST · NEVER)
 
-### 14.1 Definition and registration
+**MUST — all modes**
 
-```xml
-<DvSymbol name="Cyclone" view-box="0 0 60 100">
-  <DvParam name="running" type="bool"/>
-  <DvShape class="state" when="running" path="M10 0 H50 V40 L35 90 H25 L10 40 Z"/>
-  <DvShape class="detail" path="M14 12 H46"/>
-  <DvPort name="in" side="left" at="0.2" role="in"/>
-  <DvPort name="gas" side="top" at="0.5" role="out"/>
-  <DvPort name="dust" side="bottom" at="0.5" role="out"/>
-  <DvPass from="in" to="gas"/>
-  <DvPass from="in" to="dust"/>
-</DvSymbol>
-```
-
-```csharp
-using Devinno.UI.Components;
-
-var registry = new ComponentRegistry();
-registry.Register(CycloneMarkup);   // 컴포넌트와 같은 Register — 루트가 DvSymbol 이면 심볼로 등록
-// DvApp 이면 app.Registry 에, DvRenderer·DvSurface 면 registry 인자로 넘깁니다.
-```
-
-```xml
-<DvProcess>
-  <DvPump name="P1" running="true"/>
-  <Cyclone name="CY1" running="{Cy1Run}" label="CY-1"/>
-  <DvTerminal name="GAS" text="TO STACK"/>
-  <DvTerminal name="DUST" text="TO BIN"/>
-  <DvLine from="P1.out" to="CY1.in"/>
-  <DvLine from="CY1.gas" to="GAS"/>
-  <DvLine from="CY1.dust" to="DUST"/>
-</DvProcess>
-```
-
-- Inside a process diagram, **the symbol `name` is the tag** (`<Cyclone …>`). All common attributes (5.1) are available.
-- If you register under a built-in tag name (`DvVessel`, `DvPump`, `DvValve`, `DvInline`, `DvTerminal`), the built-in wins. Use a different name.
-- Registering the same name again replaces it with the new definition. It is not applied to screens already built, so register before building screens.
-
-### 14.2 Elements
-
-| Element · attribute | Description |
-|---|---|
-| `DvSymbol name` | Required. Name used as the tag |
-| `DvSymbol view-box` | Required. `"0 0 너비 높이"` (0 0 width height). **Only width and height (positive) are used** — the first two values are always `0 0`. These values are the on-screen size (px) as-is |
-| `DvParam name type default` | A state value received from outside. Bound via an instance attribute (`running="{…}"`). `type` is descriptive (not checked); `default` is the value when the attribute is not given |
-| `DvShape class path when` | One drawing layer. Drawn top to bottom (the one written first is behind). `path` = SVG path syntax, `class` = fill (table below), `when` = name of the parameter a `state` layer follows |
-| `DvPort name side at role` | Port. `side` = `left`·`top`·`right`·`bottom`, `at` = position along that side 0–1 (left/top = 0), default 0.5. `role` = `in`·`out`·`inout` (default). A port is a point on the view-box border |
-| `DvPass from to when` | Flow rule: this port passes to that port, when the `when` parameter is true (always, without `when`). Flow display and `medium` follow these rules (12.1, 12.2). Without one, flow stops at this symbol |
-| `DvFill clip value` | Level fill, and the symbol counts as a vessel for flow (12.1). `clip` = the `class` used as the fill shape (the union of that class's layers), `value` = name of a 0–100 parameter. The liquid is painted right after the first layer of that class, so layers written later (agitator shaft, etc.) show on top of the liquid |
-
-`DvShape class` — colors are not put in the path but set by class. That is why the same symbol is drawn in both looks, `plain` and `rich`.
-
-| class | Fill | Used for |
-|---|---|---|
-| `vessel` | Body (no state) — plain gray, rich metal | Vessels, tubes, main bodies |
-| `state` | Body; running color when the `when` parameter is true | Pump casings, valve bodies, motors |
-| `accent` | Mid gray; a metal gradient in `rich` | Flanges, bases, handles, nozzles, small parts |
-| `detail` | Stroke only (1.6px, round caps) | Blades, patterns, axis lines |
-| `dash` | Dashed stroke only | Filter mesh, internal boundaries |
-| `screen` | Display window: light gray in `plain`, near-black in `rich` | Instrument screens |
-| `glass` | Light glass | Sight glasses |
-
-- Filled layers (`vessel` `state` `accent` `screen` `glass`) are all drawn with an outline stroke.
-- While a `state` layer is in the running state, `detail` and `dash` strokes over that layer switch to a color that stays visible on the running body. The part outside it keeps the normal color.
-- A `state` layer without `when` is always the stopped color.
-- A symbol needs neither ports nor shapes. Without `DvPort`, no pipe connects to a port of it (face positions such as `N.left@0.5` and signal lines still do). Without `DvShape`, it draws nothing.
-- Paths may run outside the view-box. They are drawn, not clipped, but only the view-box counts for ports, pipes and overlaps. Equipment is drawn in the order written, so what is written later lies on top: write a tank's legs before the tank to put their tops behind it.
-
-**Small symbols for copying a drawing** (coordinate placement; not over equipment, where they get an `overlap` warning):
-
-- **Caption or number where the drawing has it**: an empty symbol (`<DvSymbol name="Mark" view-box="0 0 2 2"/>`) with a `label` or a `DvAttach`.
-- **Corner or branch of a signal line**: an empty symbol at that point, with signal lines ending and starting on it (`<DvSignal from="A" to="J1"/>`, `<DvSignal from="J1" to="B"/>`, `<DvSignal from="J1" to="C"/>`). This also sets a signal line's route, and the face it leaves on.
-- **Dashed line starting on a pipe**: a small symbol on the pipe, with `in`·`out` ports and a `DvPass` so flow continues, and a signal line from it (`<DvSignal from="Tap1" to="PI1"/>`).
-- **Pipe starting or ending in a bare arrow and text, without a terminal tag**: a symbol that draws nothing, with a `DvFill` and a `label`. Flow ends at it, and with `level` above 0 also starts from it (12.1). Put its port on the side the pipe is on: `<DvSymbol name="PipeEnd" view-box="0 0 2 2"><DvParam name="level" default="0"/><DvPort name="p" side="left"/><DvShape class="vessel" path="M1 1 Z"/><DvFill clip="vessel" value="level"/></DvSymbol>`. The arrow is `DvLine arrow="end"`, or a small symbol of its own where the drawing's arrow stands apart from the pipe.
-- **Leader line or note arrow**: a small symbol whose path runs outside its view-box. It is gray, like every symbol (colors come from the classes).
-
-### 14.3 How to draw a symbol (when an AI writes the path)
-
-1. **Decide the size first.** Match proportions with built-in equipment: rotating equipment and valves 60–72 × 48–64, vessels 100 × 110–160. Too small (under 40) gets lost next to name labels and pipes. To copy a drawing, take the drawing's proportions instead.
-2. **Coordinate system**: top-left is (0, 0), bottom-right is (width, height). Use absolute commands (`M L H V Q C A Z`). Two decimal places are enough.
-3. **Draw the body touching the port positions.** A port is a point on the border, and pipe ends tuck 6px under the body to be hidden. If the space in front of a port is empty (the body does not reach the border), the pipe end appears to float in the air, so draw a nozzle (a small `accent` rectangle) reaching the border. Example: left-center port → `M0 26 H8 V38 H0 Z`.
-4. **Layer order**: base/flanges (`accent`) → body (`vessel`/`state`) → pattern (`detail`) → small parts (`accent`). Layers written first lie underneath.
-5. **Match port sides to the flow direction**: regular equipment has inlet `left`, outlet `right`. Equipment that receives from above and discharges below (cyclone dust, hoppers) uses `top`/`bottom`.
-6. **Do not put rotation in the definition.** If you need a different orientation, use `rotate`·`flip` on the instance.
-7. **Always render to check**: both looks (`plain`·`rich`), both running and stopped.
-
-### 14.4 Definition errors
-
-If a definition is wrong, `Register` throws an `ArgumentException` describing what is wrong (the screen does not open — it surfaces immediately at startup).
-
-| Words in the message | Cause |
-|---|---|
-| `requires a name` | `DvSymbol` has no `name` |
-| `view-box` | Format is not `"0 0 W H"`, or W·H is 0 or less |
-| `side` | Port side is not `left`·`top`·`right`·`bottom` |
-| `at` | Port position outside 0–1 |
-| `role` | Not `in`·`out`·`inout` |
-| `duplicate port` | Two ports with the same name |
-| `DvPass` | Flow rule points to a nonexistent port |
-| `class` | Unknown `DvShape` class |
-| `path` | SVG path syntax error |
-| `clip` | `DvFill clip` matches no `DvShape` class |
-| `unknown child` | Unknown child element (e.g., `DvCircle`) — circles and rectangles are also written as paths |
-
-Circle path example (center cx, cy, radius r): `M{cx-r} {cy} A{r} {r} 0 1 0 {cx+r} {cy} A{r} {r} 0 1 0 {cx-r} {cy} Z` → for center (30, 30), radius 10: `M20 30 A10 10 0 1 0 40 30 A10 10 0 1 0 20 30 Z`.
-
----
-
-## 15. Diagnostics and fixes
-
-Process diagram problems are reported through `System.Diagnostics.Trace`. Keep a Trace listener on during development (console: `Trace.Listeners.Add(new ConsoleTraceListener())`). The same message appears only once per screen (`DvSurface`); another screen, or the same screen after its markup is reloaded, reports it again. Layout quality warnings are based on **the layout actually drawn**.
-
-| Message (prefixed with `Devinno.UI process:`) | Kind | Meaning | Fix |
-|---|---|---|---|
-| `'A.out'→'B.in': crosses other piping N time(s)` | Warning | Crossings (drawn with jumps) | Change the order of equipment in the same column with `row`. Arrange declaration order in flow order |
-| `'A.out'→'B.in': no free path, so it overlaps other piping` | Warning | Blocked, drawn overlapping | Enlarge the area, adjust `row`·`rank`, move attached boxes |
-| `Not enough space: needs W×H, area is W×H` | Warning | Overflows even with minimum spacing (the natural-size shape is kept and overflows) | Follow the sizing procedure in chapter 4 (step 4: `fit="scale-down"`) |
-| `Shrunk to N% to fit (needs W×H, area is W×H); the smallest diagram text is now X px …` | Warning | `fit="scale-down"`: the diagram still overflowed and was drawn smaller as a whole (chapter 4) | Sizing procedure in chapter 4, step 5 (X ≥ 10 is fine; otherwise `font-size` × 11 / X, or split the screen). X counts attached boxes too |
-| `'X' value text overlaps 'Y'` | Warning | An instrument `value` covers other equipment, a name label, another instrument or a pipe (the value is not part of the layout, 7.3) | Shorten the value, move the bubble or the pipe, or show the number on another bubble or with `DvAttach` |
-| `The piping no longer fits the diagram's natural-size shape in this area, so it is laid out again …` | Warning | Automatic placement: the area is too small for the natural-size drawing to shrink into, so alignment and spacing were chosen again and the drawing looks different (chapter 4) | Enlarge the area if the shape must stay the same |
-| `DvLine '…': no equipment named 'X'` | Error | Name typo, or equipment hidden with `visible` | Check the name |
-| `DvLine '…': 'X' has no port 'p' (…)` | Error | Port name typo | Use a name from the parentheses |
-| `DvLine '…': 'X' requires a port (…)` | Error | Port omitted, as in `from="X"` | Use `X.in`, etc. |
-| `DvLine '…': an endpoint (DvTerminal) is written without a port, …` | Warning | `.port` appended to a terminal | Name only |
-| `<Tag> is not process equipment (…)` | Error | Non-equipment tag directly under `DvProcess`, or unregistered symbol | Move it into `DvAttach`, or register the symbol |
-| `<X> has no name` | Error | `name` missing | Add `name` |
-| `Equipment name 'X' is used twice` | Error | Duplicate name | Use a different name |
-| `<Y> is not allowed inside <X> (…)` | Error | Tag other than `DvAttach`·`DvAgitator`·`DvMotor` inside equipment | Wrap it in `DvAttach` |
-| `<X kind='k'> is not a known kind (…)` | Warning | kind typo | Use a value from the parentheses |
-| `'T': not enough room on the top face for N nozzles (incoming and outgoing lines) …` | Warning | Agitator / attached boxes cover most of the side, so two nozzles are too close | Move the incoming or outgoing line to `side`, or move the attached box |
-| `DvProcess align='…' is not a valid value` | Warning | align typo | `auto`·`step`·`row` |
-| `DvLine '…': equipment inside a unit cannot be connected directly from outside …` | Error | Connecting into a unit directly from outside, as in `U1.T.top` | Put a `DvPort` on the unit, connect to the port from inside, and from outside use `U1.포트` |
-| `DvLine '…': 'U1' has no port 'p' (…)` | Error | Port name not on the unit | Use a name in the parentheses (that unit's `DvPort` names) |
-| `DvLine '…': a unit port (DvPort) is written by name only …` | Warning | A dot appended to a port inside the unit, as in `out.x` | Name only |
-| `<DvPort> can only be used inside <DvUnit>` | Error | `DvPort` directly under `DvProcess` | Move it into a unit |
-| `<DvPort name='…'> side must be one of …` · `at='…' must be between 0 and 1 …` | Error | Port side / position error | Always give `side`; `at` within 0–1 |
-| `<X>: a unit cannot be placed inside another unit` | Error | Nested units | Move it outside |
-| `rotate='r' is not a valid value` · `direction=…` · `look=…` | Warning | Value typo | Use a value from the tables |
-| `<DvInstrument name='X'> has no on (name of the equipment to attach to)` · `on='Y': no such equipment` | Error | No equipment for the instrument to attach to (not drawn) | Put the name of equipment in the same process diagram in `on` |
-| `<DvInstrument name='X'> tap='…': …` | Error | `tap` target missing, a terminal or unit, no port given, an unknown port, or a face port without a position (`T1.side`) — not drawn | `장비.면@위치` or a fixed port such as `CV1.in` |
-| `'…' is not a face (top·bottom·left·right)` · `'@…' is not a position` · `position … is outside 0–1` | Error (last: Warning, clamped) | Face position typo in `DvLine` `from`/`to` or `tap` | `left@0.85` form |
-| `<DvInstrument> has no name` · `Name 'X' is used twice (equipment and instrument names must be unique …)` | Error | Instrument name missing, or clashing with equipment or another instrument | A unique `name` |
-| `DvSignal '…': no instrument or equipment named 'X'` | Error | Signal line end name typo, a terminal / unit port, or an instrument that is not drawn | Check instrument / equipment names |
-| `DvSignal '…' kind='…' is not a known kind` | Warning | `kind` typo (drawn as electric) | `electric`·`pneumatic` |
-| `DvSignal '…' color='…' is not a color` · `thickness='…' must be a number greater than 0` | Warning | Value typo (default drawn) | `#RRGGBB`·`token(name)`; a number greater than 0 |
-| `DvSignal '…': signal lines use names only, without ports` | Error | Port appended, as in `to="V1.in"` | Name only |
-| `Signal line '…': no free path, so it is drawn across equipment` | Warning | No route for the signal line | Attach the instrument to other equipment, or enlarge the area |
-| `<X name='N'>: placement="fixed" needs both x and y …; not drawn` | Error | Coordinate placement, but the equipment has no (or an invalid) `x`/`y`. Lines to it then also report "no equipment named" | Give both `x` and `y` |
-| `'A' and 'B' overlap; move one of them (x/y) or enlarge base-size` | Warning | Coordinate placement: two pieces of equipment (symbol, label, attached boxes, instruments) overlap | Move one, or check `base-size` against the area |
-| `Not enough space: equipment reaches W×H, area is W×H …` | Warning | Coordinate placement: equipment goes past the area | Use `base-size` + `fit="contain"` (20.3) |
-| `Equipment reaches W×H, outside base-size W×H …` | Warning | `fit="contain"`: equipment is placed beyond `base-size`, so it sticks out of the scaled picture | Move equipment (x/y) or enlarge `base-size` |
-| `The piping no longer fits its base-size shape at this size, so it is routed again …` | Warning | Coordinate placement without `fit="contain"`: the pipes were routed again for this area and may look different from base-size (20.3) | `fit="contain"` keeps the shape at every size |
-| `<DvInstrument name='X'>: needs both x and y` | Warning | Only one of them, or not a number (placed beside its equipment) | Give both |
-| `DvLine '…' via='…': write points as x,y separated by spaces` · `via is used only with <DvProcess placement="fixed">` | Warning | `via` typo, or `via` in automatic placement (routed automatically) | `via="230,190 230,74"` in a `fixed` diagram |
-| `'A'→'B': via runs through 'X'` | Warning | The written route crosses a piece of equipment or a bubble (it is drawn as written) | Change the points, or move `X` |
-| `<X name='N'>: x/y are used only with <DvProcess placement="fixed">` · `row`/`rank`/`align … is not used with placement="fixed"` · `placement='…'` · `base-size …` | Warning | Attribute for the other placement mode, or a value typo | Remove it, or switch the mode |
-
-On screen, invalid connections show as a **red dashed line**, and equipment with a wrong port shows a **red border**.
-
-**Build-time checks**: if the process diagram is in a `*.dvml` file, the source generator reports connection errors at build time as diagnostics on that dvml line — DVML008 (missing name), DVML009 (port error), DVML010 (duplicate name), DVML011 (invalid value, warning). The messages have the same meaning as the table above. Values containing bindings (`{…}`) and equipment whose ports are unknown at build time (`DvSymbol` registered in code, component units) are skipped at build time and reported only through Trace at run time. Names and references (`name`, `from`, `to`, `on`, `tap`) are never bound: a `{` in one is DVML011 and the name is checked as written. Layout quality (crossings, overlaps, space) is known only at run time.
-
-**AI check order**: ⓪ build and confirm there are no DVML errors → ① render PNG → ② confirm no errors (Error) in Trace → ③ confirm no warnings (crossings, overlaps, space) → ④ in the drawing, confirm pipes don't pass through equipment, name labels / attached boxes don't overlap, and flow direction is correct → ⑤ if there is a problem, chapter 11 hints → back to ①.
-
-```csharp
-using System.Diagnostics;
-using Devinno.UI;
-using Devinno.UI.Styling;
-
-Trace.Listeners.Add(new ConsoleTraceListener());
-DvRenderer.RenderToFile(markup, vm, 1280, 800, "process.png", DvTheme.Dark, registry);
-```
-
----
-
-## 16. Complete examples
-
-### 16.1 Left→right water treatment process (parallel pumps, control valve, reactor)
-
-```xml
-<DvProcess look="rich">
-  <DvTerminal name="IN" text="RAW WATER"/>
-  <DvVessel name="T1" level="{T1Level}" label="T-101"/>
-  <DvPump name="P1" running="{P1Run}" label="P-101"/>
-  <DvPump name="P2" running="{P2Run}" label="P-102"/>
-  <DvValve name="V1" kind="control" open="{V1Open}" label="FCV-101"/>
-  <DvInline name="F1" kind="flowmeter" label="FT-101"/>
-  <DvVessel name="R1" kind="reactor" level="{R1Level}" label="R-201">
-    <DvAgitator running="{AgitatorRun}"/>
-  </DvVessel>
-  <DvTerminal name="OUT" text="TO DRAIN"/>
-  <DvLine from="IN" to="T1.top" arrow="end"/>
-  <DvLine from="T1.bottom" to="P1.in"/>
-  <DvLine from="T1.bottom" to="P2.in"/>
-  <DvLine from="P1.out" to="V1.in"/>
-  <DvLine from="P2.out" to="V1.in"/>
-  <DvLine from="V1.out" to="F1.in"/>
-  <DvLine from="F1.out" to="R1.top" arrow="end"/>
-  <DvLine from="R1.bottom" to="OUT"/>
-</DvProcess>
-```
-
-### 16.2 Top→bottom blender (two inlets, agitator, value display, parallel discharge pumps)
-
-```xml
-<DvProcess direction="tb" look="rich">
-  <DvTerminal name="MTO" text="MTO RMMT-1"/>
-  <DvTerminal name="UGTF" text="UGTF BL-1"/>
-  <DvVessel name="BL" level="{BlLevel}" label="BL-1">
-    <DvAgitator running="{AgitatorRun}"/>
-    <DvAttach side="right">
-      <DvLabel class="caption muted" text="TIA 1001"/>
-      <DvLabel class="title" text="{BlTempText}"/>
-    </DvAttach>
-    <DvAttach side="left">
-      <DvButton variant="secondary" size="sm" text="Reset" onclick="ResetBl"/>
-    </DvAttach>
-  </DvVessel>
-  <DvPump name="RP1" running="{Rp1Run}" label="RTP 1001"/>
-  <DvPump name="RP2" running="{Rp2Run}" label="RTP 1002"/>
-  <DvTerminal name="OUT" text="RESIN TANK"/>
-  <DvLine from="MTO" to="BL.top" arrow="end"/>
-  <DvLine from="UGTF" to="BL.side" arrow="end"/>
-  <DvLine from="BL.bottom" to="RP1.in"/>
-  <DvLine from="BL.bottom" to="RP2.in"/>
-  <DvLine from="RP1.out" to="OUT"/>
-  <DvLine from="RP2.out" to="OUT"/>
-</DvProcess>
-```
-
-Result: `MTO` enters the left of the top side, avoiding the agitator; `UGTF` enters the side facing it; and the two pumps stack one above the other below the bottom, sharing a left inlet trunk and a right outlet trunk.
-
-### 16.3 Recirculation (loop-back line)
-
-```xml
-<DvProcess>
-  <DvVessel name="T1" level="70" label="T-1"/>
-  <DvPump name="P1" running="true" label="P-1"/>
-  <DvValve name="V1" open="true" label="XV-1"/>
-  <DvTerminal name="OUT" text="PRODUCT"/>
-  <DvLine from="T1.bottom" to="P1.in"/>
-  <DvLine from="P1.out" to="V1.in"/>
-  <DvLine from="V1.out" to="OUT"/>
-  <DvLine from="P1.out" to="T1.side" arrow="end"/>
-</DvProcess>
-```
-
-The recirculation pipe branching from `P1.out` routes back into the tank's side. Recirculation is also written simply as `from` (upstream) → `to` (downstream).
-
----
-
-## 17. Checklist (MUST · NEVER)
-
-**MUST**
-
-- Write process screens only as equipment + `<DvLine>` inside `<DvProcess>`.
+- Write process screens only as equipment + `<DvLine from="equipment.port" to="equipment.port"/>` inside `<DvProcess>`.
 - Every piece of equipment has a unique `name`. On-screen text is `label` (`text` for terminals).
 - `from` = upstream, `to` = downstream.
-- Use only the defined port names: vessel `top`·`bottom`·`side`; pump/valve/inline `in`·`out`; 3-way valve `a`·`b`·`c`; heat exchanger `in`·`out`·`in2`·`out2`; terminals by name only; user symbols by the names they define.
+- Use only the defined port names: vessel `top`·`bottom`·`side`; pump/valve/inline `in`·`out` (inline `vent`·`blind`: `in` only); 3-way valve `a`·`b`·`c`; heat exchanger `in`·`out`·`in2`·`out2`; terminals by name only; user symbols by the names they define ([ports](dvml-process-equipment.md#ports)).
 - Give state by binding or literal (`open="true"`). If not given, it is stopped / closed / empty vessel.
 - Value displays and buttons go inside `<DvAttach>`; text uses classes (`label`·`caption`·`title`).
 - To fill the area, `grow="1" style="height:0"` (inside a vertical layout).
-- For screen size, follow the sizing procedure in chapter 4 step by step, rendering at the smallest real screen size.
+- For screen size, follow the [sizing procedure](dvml-process-layout.md#sizing-procedure) step by step, rendering at the smallest real screen size.
 - After fixing, render to PNG and check Trace errors and warnings.
-- Place instruments (`DvInstrument`) directly under `DvProcess` and always state the equipment to attach to with `on` (or with `tap`, where the point on the equipment matters). Attach controllers to the valve they move. Signal lines use `DvSignal`, ends by name only.
-- When there are several identical units of plant, define a unit component (template root `DvUnit`) once and repeat it as instances. For unit inside → outside connections, put a `DvPort` and use `유닛.포트` (unit.port).
+- Place instruments (`DvInstrument`) directly under `DvProcess` and always state their equipment with `on` (or `tap`, where the point on the equipment matters). Attach controllers to the valve they move. Signal lines use `DvSignal`, ends by name only.
+- Several identical units: define a unit component (template root `DvUnit`) once and repeat it as instances. Unit inside → outside connections go through a `DvPort` and `unit.port`.
 - For a button inside a unit template to receive its own unit, write the screen VM method with one parameter, like `Reset(BlenderVm unit)`.
-- Use automatic placement unless you were given a drawing the screen must match. Then use `placement="fixed"` with `x`·`y` on **every** piece of equipment (chapter 20).
+- Choose the mode with [the placement-mode rule](#placement-mode); automatic placement unless that rule says `fixed`.
 
-**NEVER**
+**MUST — coordinate placement (`placement="fixed"`)**
+
+- `x`·`y` on **every** piece of equipment and unit ([coordinate placement](dvml-process-layout.md#fixed-placement)).
+- `base-size` (the size the coordinates were taken at) + `fit="contain"`.
+
+**NEVER — all modes**
 
 - Do not put `DvTank` (level widget), `DvLabel`·`DvButton` directly in a process diagram (→ `DvVessel`, `DvAttach`).
-- Do not invent bend-point attributes. The only one is `via`, and it works only with `placement="fixed"` (chapter 20.6). Do not put `x`·`y` on equipment in automatic placement (they work only with `placement="fixed"`, chapter 20), and do not mix: in a `fixed` diagram every piece of equipment needs `x`·`y`.
-- Do not overlay absolutely positioned boxes on the process diagram to draw values or lines (pipes cannot avoid them).
+- Do not draw a process screen with `position:absolute`, `DvImage` or line boxes, and do not overlay absolutely positioned boxes on the diagram to draw values or lines (pipes cannot avoid them).
 - Do not invent junction equipment for pipes (`DvTee`, `DvJunction`, etc.). Connect several lines to the same port.
+- Do not invent kinds; register a [`DvSymbol`](dvml-process-equipment.md#dvsymbol) for equipment that is not built in.
 - Do not use dots (`.`) in names.
 - Do not hide connected equipment with `visible`.
-- Do not sprinkle `row`·`rank` from the start. Render first, then only where needed.
 - Do not try to put colors in user symbol paths (there is no attribute). Colors come from `class`.
 - Do not connect directly from outside to equipment inside a unit, as in `U1.T.top` (use `DvPort`).
 - Do not put a unit inside a unit. Do not bind screen VM properties directly inside a unit component template (only parameters are visible).
 - Do not compute flow per line as VM properties — leave it to the automatic decision, and bind `flow` only on lines with real measurements.
-- Do not draw signal lines as `DvLine` (pipes) (they interfere with flow and layout). Use `DvSignal`.
-- Do not invent attributes that set an instrument's face (`side`). In automatic placement the position is automatic, next to the `on` equipment; only `placement="fixed"` takes `x`·`y` on instruments (chapter 20.5).
+- Do not draw signal lines as `DvLine` (pipes): they interfere with flow and layout. Use `DvSignal`.
+- Do not invent attributes that set an instrument's face (`side`).
 - Do not try to set pipe color via `style` or color values. Medium colors exist only as the 6 names of `medium`.
-- In automatic placement, do not add `fit="scale-down"` before a render has shown `Not enough space`. In coordinate placement, do not use `base-size` without `fit="contain"` to show a drawing. Do not judge a shrunk diagram from the picture — use the `X px` in its warning.
-- Do not put `font-size` on a parent box for the diagram, and do not enlarge attached boxes one by one — `DvProcess`'s own `font-size` scales every diagram text, attached boxes included.
-- Do not invent the not-yet-available features in chapter 18 as attributes.
+- Do not put `font-size` on a parent box for the diagram, and do not enlarge attached boxes one by one — `DvProcess`'s own `font-size` scales every diagram text, attached boxes included ([text size](dvml-process-layout.md#text-size)).
+- Do not judge a shrunk diagram from the picture — use the `Xpx` in its warning.
+- Do not invent the features listed in [not supported](#process-not-supported) as attributes.
 
----
+**NEVER — automatic placement**
 
-## 18. Not yet available
+- Do not invent bend-point attributes; `via` works only with `placement="fixed"`. Do not put `x`·`y` on equipment or instruments (ignored with a warning).
+- Do not sprinkle `row`·`rank` from the start. Render first, then use them only where needed.
+- Do not add `fit="scale-down"` until a render has shown `Not enough space`.
 
-Planned for later stages. Do not use them now (they are silently ignored or drawn as errors).
+**NEVER — coordinate placement**
 
-| Stage | Content |
-|---|---|
-| On hold | `exit` hint (specifying the outgoing direction) — when a real screen needs it |
+- Do not mix: every piece of equipment needs `x`·`y`.
+- Do not use `base-size` without `fit="contain"` to show a drawing.
 
-Other items not planned: specifying bend points in automatic placement, zooming in or enlarging an automatically placed diagram (`fit="scale-down"` only shrinks an overflowing one; a coordinate-placed drawing scales both ways with `fit="contain"`, 20.3), pipe click events, dragging equipment.
+<a id="process-not-supported"></a>
+## Not supported
 
----
+Any tag, attribute or value not on the process pages does not exist. The items below are the ones most often asked for. Do not write them; an unknown attribute is build warning [DVML019](dvml-diagnostics.md#dvml019) and is ignored at run time.
 
-## 19. FAQ
+- There is no `exit` hint (an attribute setting the direction a pipe leaves); an `exit` attribute is DVML019 and ignored.
+- Units inside units.
+- Bend points in automatic placement (use [hints](dvml-process-layout.md#hints); `via` exists only in coordinate placement). No `via` on signal lines.
+- Zooming in or enlarging an automatically placed diagram: `fit="scale-down"` only shrinks an overflowing one; a coordinate-placed drawing scales both ways with `fit="contain"` ([size and `fit`](dvml-process-layout.md#size-fit)).
+- Pipe click events; dragging equipment.
+- Mirroring or rotating terminals ([terminals](dvml-process-equipment.md#terminal)).
+- Not available directly (use the [small symbols](dvml-process-equipment.md#symbol-drawing-marks)): the route of a signal line, a branch of one, starting one on a pipe, and leader lines.
+- Not available at all: a multi-line `label`; the size of a single bubble or of its `value` text (`font-size` on `DvProcess` sets them all and may be below 14, [text size](dvml-process-layout.md#text-size)); the number of `//`; colors on symbols (classes only), colors on pipes (`medium` only, [medium](#look-flow-medium)); text inside a symbol.
+- Automatic placement is not meant for processes with many lines back to earlier equipment ([placement mode](#placement-mode)); its layout time grows quickly with such loops.
+- A large drawing is laid out once when the screen is first built (the distillation example on a desktop CPU: about 1.3 s the first time, 0.4 s for another screen with the same markup). The result is kept: resizing the window with `fit="contain"` takes 1–2 ms and a rebuild after a value change 12 ms.
+
+<a id="process-faq"></a>
+## FAQ
 
 **I want a pipe to be a straight line.**
 It is straight when the connected ports are on the same row. Series equipment aligns automatically. When branches, merges and side ports mix, bends appear; this is normal.
 
 **I want to swap the order of two pieces of equipment.**
-In the same column, use `row`. To move one to a different column, first check the flow (`from`/`to`) is right, and if still needed, use `rank`.
+In the same column, use `row`. To move one to a different column, first check the flow (`from`/`to`) is right, and if needed, use `rank` ([hints](dvml-process-layout.md#hints)).
 
 **I want a valve to stand vertically.**
 `rotate="90"` — the inlet goes on top and the outlet on the bottom.
 
 **I want to choose which side of the tank a line enters.**
-`side` automatically picks the side facing the other equipment. If you need the opposite side, make sure attached boxes do not cover that side and try changing the other equipment's order with `row`. There is no attribute to choose the side directly.
+`side` automatically picks the face toward the other equipment. To choose the face yourself, connect to a face position: `to="T1.right@0.5"` ([face position](#face-position)).
 
 **Pipes go down like stairs and the drawing is too tall.**
-This is due to the staircase layout, where equipment after a line leaving the tank bottom drops below the tank. If the area is too small, `align="auto"` switches to the same-row method. To keep it low regardless of area, use `align="row"`.
+This is the staircase layout, where equipment after a line leaving the tank bottom drops below the tank. If the area is too small, `align="auto"` switches to the same-row method. To keep it low regardless of area, use `align="row"`.
 
 **Several lines enter the tank top separately and it looks cluttered.**
-Lines on the same side and in the same direction are already merged into one nozzle. What appears separate is an incoming and an outgoing line, or different left/right sides (`side`).
+Lines on the same face and in the same direction are merged into one nozzle. What appears separate is an incoming and an outgoing line, or different left/right faces ([vessel ports](dvml-process-equipment.md#ports)).
 
 **The screen is small and it overflows.**
-Follow the sizing procedure in chapter 4: `fit="scale-down"`, then `font-size` if the reported text size is below 10px, and split the screen if that is not enough. (Before `fit` acts, the library already tries moving equipment closer and other alignments by itself.)
+Follow the [sizing procedure](dvml-process-layout.md#sizing-procedure): `fit="scale-down"`, then `font-size` if the reported text size is below 10px, and split the screen if that is not enough. (Ahead of `fit`, the library tries moving equipment closer and other alignments by itself.)
 
 **I have several identical units of plant (3 blenders).**
-Define a unit component once and use it like `<Blender name="BL1" U="{BL1}"/>` (8.4). To stand them side by side, outer `direction="tb"` + unit outlet port `side="bottom"`.
+Define a unit component once and use it like `<Blender name="BL1" U="{BL1}"/>` ([repeating a unit](#units-components)). To stand them side by side, outer `direction="tb"` + unit outlet port `side="bottom"`.
 
 **I want to connect an outer pipe directly to a tank inside a unit.**
 Not possible. Put `<DvPort name="in2" side="left"/>` on the unit, connect `<DvLine from="in2" to="T.side"/>` inside, and connect with `to="BL1.in2"` from outside.
 
 **The screen must look exactly like the customer's drawing.**
-Use coordinate placement (chapter 20): `placement="fixed"`, and the symbol center of each piece of equipment from the drawing as `x`·`y`. Pipes are still routed for you. Give instrument bubbles `x`·`y` too (20.5), and write `via` on a pipe that runs differently from the drawing (20.6).
+Use coordinate placement ([placement mode](#placement-mode), [copying a given drawing](dvml-process-examples.md#copy-drawing)): `placement="fixed"`, and the symbol center of each piece of equipment from the drawing as `x`·`y`. Pipes are routed for you. Give instrument bubbles `x`·`y` too, and write [`via`](dvml-process-layout.md#via) on a pipe that runs differently from the drawing.
 
-**Can I give process diagram equipment an `id` to get it from code?**
-A code handle (`id`) for process diagram equipment is not a confirmed usage. Handle equipment state through VM binding and actions through `onclick`.
-
----
-
-## 20. Coordinate placement (`placement="fixed"`) — matching a given drawing
-
-Automatic placement (chapters 1–19) lays equipment out in flow order so that it looks right. It cannot reproduce a specific drawing. When a customer hands you a P&ID and the screen must look **the same as that drawing**, place the equipment by coordinates instead.
-
-- **One mode per diagram.** A `DvProcess` is either automatic or coordinate-placed. In a `fixed` diagram, every piece of equipment (and every unit) has `x`·`y`; there is no mixing.
-- **Equipment gets coordinates; instruments and pipes can.** Pipes, branches, merges, crossing jumps and signal lines are still routed automatically, exactly as in chapters 6–10, and moving a piece of equipment moves its pipes with it. Instruments without coordinates sit beside their equipment. To match a drawing further, give a bubble `x`·`y` (20.5) and a pipe `via` (20.6).
-- **Text and equipment are never scaled.** Only the distances between equipment change with the area (20.3).
-
-### 20.1 At a glance
-
-```xml
-<DvProcess placement="fixed" base-size="1000 560" fit="contain" look="rich">
-  <DvTerminal name="SRC1" text="FROM P-201" x="110" y="140"/>
-  <DvValve name="FV40" kind="control" open="true" label="FV-3040" x="300" y="140"/>
-  <DvInline name="FE10" kind="flowmeter" label="FE-10" x="470" y="140"/>
-  <DvTerminal name="SRC2" text="FROM P-504" x="110" y="400"/>
-  <DvValve name="FV41" kind="control" open="true" label="FV-3041" x="300" y="400"/>
-  <DvInline name="FE11" kind="flowmeter" label="FE-11" x="470" y="400"/>
-  <DvVessel name="R1" kind="reactor" level="55" label="R-102" x="800" y="270"/>
-
-  <DvLine from="SRC1" to="FV40.in"/>
-  <DvLine from="FV40.out" to="FE10.in"/>
-  <DvLine from="FE10.out" to="R1.side" arrow="end"/>
-  <DvLine from="SRC2" to="FV41.in"/>
-  <DvLine from="FV41.out" to="FE11.in"/>
-  <DvLine from="FE11.out" to="R1.side" arrow="end"/>
-</DvProcess>
-```
-
-### 20.2 Coordinates
-
-| Attribute | On | Meaning |
-|---|---|---|
-| `placement="fixed"` | `DvProcess` | Turns on coordinate placement |
-| `x` · `y` | each piece of equipment, each unit | The **center of the symbol** in px (labels, attached boxes, instruments and accessories such as an agitator are not counted). Bindable |
-| `base-size="W H"` | `DvProcess` | Optional. The size the coordinates were taken at (20.3) |
-
-- The origin `(0, 0)` is the top-left of the inside of the `DvProcess` (inside its `padding`).
-- Labels, `DvAttach` boxes and accessories go where they would in automatic placement, relative to their equipment. So do instruments, unless they have their own `x`·`y` (20.5).
-- To match the drawing's nozzles and instruments, connect at face positions (`to="T1.left@0.15"`, 6.1), give instruments that are joined to the process `tap` (`tap="T1.left@0.85"`, `tap="CV1.in"`, 7.3) and give bubbles `x`·`y` (20.5).
-- `direction` still matters (terminal shape, which faces are "front" and "back"). `row`, `rank` and `align` are ignored with a Trace warning.
-- Equipment without both `x` and `y` is **not drawn** (Trace error).
-- A unit (`DvUnit` or a unit component) is placed as a whole: `x`·`y` is the center of the unit's frame. The inside of a unit is always placed automatically (`placement` on a unit is ignored with a warning).
-
-**Where the pipe runs relative to `x`·`y`.** `x`·`y` is the symbol center, but a port is not always on the center line. Height of the `in`·`out` port line from the center, in px (+ = below); everything not listed is 0:
-
-| Equipment | Port line |
-|---|---|
-| Straight `DvValve` kinds, `flowmeter` | +8 |
-| `strainer` | −8 |
-| `plate` exchanger | −16 |
-| `centrifugal` pump | `in` +4, `out` −12 |
-| `blower` | `in` +4, `out` −13 |
-| `angle` valve | `out` −4; `in` (bottom) is 4px left of center |
-| `relief` valve | `out` +4; `in` (bottom) is 4px left of center |
-
-So a valve on a pipe at y=300 has `y="292"`. `rotate` turns this with the symbol: a valve on a vertical pipe at x=400 has `x="408"` with `rotate="90"` and `x="392"` with `rotate="270"`. An offset of up to 16px is straightened anyway, by moving the equipment (20.4).
-
-**Taking coordinates from a drawing** (step by step: 21.4): measure the center of each symbol on the drawing image. If the image is a different size from the screen area, either convert the numbers yourself, or keep the image's numbers and set `base-size` to the image size.
-
-### 20.3 Size and `base-size`
-
-- **Without `base-size`**: coordinates are used as they are (scale 1). The diagram's natural size is from the origin to the far edge of the content, plus a 12px margin. If the area is smaller, it overflows and a "Not enough space" warning is left — or, with `fit="scale-down"`, the whole drawing is scaled down to the area (chapter 4).
-- **With `base-size="W H"` and `fit="contain"` (use this to show a drawing)**: the drawing is laid out exactly at the coordinates, as a W×H picture, and that picture is scaled **as a whole** — equipment, text, lines, instruments and attached boxes — to the area: `s = min(area width / W, area height / H)`, smaller or larger, and centered on the axis with room left over (a wide area leaves equal margins left and right). Equipment positions and pipe routes are the same at every size, like an image. When it is drawn smaller, the `Shrunk to N% … X px` warning reports the text size (sizing procedure, chapter 4, step 5); larger needs no warning. Without `base-size`, the content extent (origin to the far edge of the content, plus the 12px margin) is the picture. Equipment placed beyond `base-size` is drawn outside the picture and warned (`Equipment reaches … outside base-size`).
-- **With `base-size="W H"` only (no `fit`)**: the natural size is W×H. In an area of another size, the scale `s = min(area width / W, area height / H)` is applied **to the coordinates only**, and the W·s × H·s box is centered in the area. A larger area spreads the equipment apart; a smaller one brings it closer. Equipment, pipes and text keep their size, so in a much smaller area equipment can touch.
-- **Pipe routes are decided once, at base-size.** At other sizes they are not routed again but stretched with the equipment: bends keep their number, order and side, and only their lengths change, so the drawing keeps its shape as the window changes. Equipment keeps its size while positions spread or close up, so that shape can stop fitting (a segment would fold back, a pipe would run into equipment, or pipes would touch): in a much smaller area, and also in a dense drawing at about 1.4 times base-size or more. The pipes are then routed again for that size — they may look different — and the Trace warning "The piping no longer fits its base-size shape …" is left. `fit="contain"` never does this.
-- Best practice: use `base-size` + `fit="contain"`, with `base-size` = the size the coordinates were taken at. Without `fit`, take `base-size` equal to the **smallest** real size of the screen area, so the scale stays at 1 or above; when the area is much smaller, equipment can end up touching — the overlap and "no free path" warnings tell you. If the shape has to stay the same at every size, use `fit="contain"`.
-
-### 20.4 Straightening small offsets (snap)
-
-Equipment has its ports at different heights — a valve's inlet is below its symbol center, a terminal's is at its center. Coordinates measured from a drawing therefore produce small jogs of a few px. To avoid this, when two connected fixed ports face each other (right ↔ left, or bottom ↔ top) and are **16px or less** out of line, the **downstream** (`to`) equipment is moved so the line is straight. The adjustment follows chains (A → B → C stay in line), and each piece of equipment follows only its first such upstream line. Face ports (vessel `top`·`side` …) are not snapped; the router picks their position on the face.
-
-So the coordinates you wrote may move by up to 16px. A larger offset is kept as written and gets a bend.
-
-### 20.5 Instrument coordinates
-
-In a `fixed` diagram, `x`·`y` on a `DvInstrument` is the bubble center, in the same space as equipment coordinates (scaled the same way by `base-size`). Read it straight off the drawing. Instruments without `x`·`y` stay beside their equipment, in the same diagram.
-
-```xml
-<DvProcess placement="fixed" base-size="900 420" fit="contain">
-  <DvTerminal name="IN" text="FEED" x="80" y="300"/>
-  <DvInline name="FE1" kind="orifice" x="240" y="300"/>
-  <DvValve name="FV1" kind="control" open="true" label="FV-1" x="420" y="292"/>
-  <DvTerminal name="OUT" text="PRODUCT" x="780" y="300"/>
-  <DvLine from="IN" to="FE1.in"/>
-  <DvLine from="FE1.out" to="FV1.in"/>
-  <DvLine from="FV1.out" to="OUT"/>
-
-  <!-- joined to the process: tap + x·y. Only a signal line: on + x·y -->
-  <DvInstrument name="FT1" tag="FT" number="101" tap="FE1.top@0.5" x="240" y="150"/>
-  <DvInstrument name="TT1" tag="TT" number="102" tap="FV1.out" x="600" y="200"/>
-  <DvInstrument name="FIC1" tag="FIC" number="101" on="FV1" panel="true" x="420" y="60"/>
-  <DvSignal from="FT1" to="FIC1"/>
-  <DvSignal from="FIC1" to="FV1"/>
-</DvProcess>
-```
-
-- **`on` or `tap` is still required.** It names the equipment the instrument belongs to; the bubble does not have to be near it.
-- The bubble does not widen its equipment's footprint and does not move when small offsets (20.4) move the equipment.
-- Pipes go around the bubble, and a bubble over a piece of equipment or another free bubble gets the `overlap` warning. Signal lines end on the bubble as usual.
-- The `value` text stands to the right of the bubble, and signal lines do not leave on that face, so a signal to a counterpart straight to the right goes around. Where that matters, put the counterpart above or below, or show the value on another bubble.
-- **With `tap`** the connection line runs from the tap point to the bubble:
-  - a fixed port (`tap="FV1.out"`) means **that pipe**: the line drops straight onto the nearest part of it, anywhere along its length. If no part of the pipe is level with the bubble, it goes to the spot 12px out of the port, and may be diagonal.
-  - a face position (`tap="FE1.top@0.5"`) is that point, slid along the face to line up with the bubble when it is within 16px, so small offsets stay straight. Further off, the line is diagonal: line the bubble up with the point.
-  - Other pipes avoid the bubble but not this line, so keep it clear of them.
-- Only one of `x`·`y`, or a value that is not a number: Trace warning, and the bubble goes beside its equipment. In automatic placement and inside units they are ignored with a Trace warning.
-
-### 20.6 Pipe bend points (`via`)
-
-`via` on a `DvLine` is the route, written as the points it runs through, in the same space as equipment coordinates:
-
-```xml
-<DvProcess placement="fixed" base-size="800 360" fit="contain">
-  <DvTerminal name="IN" text="FEED" x="80" y="300"/>
-  <DvPump name="P1" running="true" label="P-101" x="420" y="100"/>
-  <DvTerminal name="OUT" text="OUT" x="700" y="88"/>
-  <DvLine from="IN" to="P1.in" via="230,300 230,104"/>
-  <DvLine from="P1.out" to="OUT"/>
-</DvProcess>
-```
-
-- The pipe leaves its port, runs through the points in order and enters the other port. Everything else about it (color, flow, arrows, `label`, jumps at crossings) is the same as a routed pipe. Other pipes are routed after it and keep clear of it.
-- **Use it only where the automatic route differs from the drawing.** Moving equipment does not move the points, so a `via` has to be rewritten when its equipment moves.
-- You do not need the exact height of a port: a first or last point within 16px of the port's line is moved onto it, together with its neighbors on the same line.
-- Points that are not on one line are joined by a right-angle elbow, so `via="230,200"` alone is a valid route. Pipes stay orthogonal.
-- It is drawn as written: a route through equipment or a bubble is reported (`via runs through`), and overlapping another pipe is not prevented.
-- With `base-size`, the points scale like the coordinates. Bindable (`via="{Route}"`).
-- A typo, or `via` in automatic placement or inside a unit, gives a Trace warning and the pipe is routed automatically.
-- Signal lines (`DvSignal`) have no `via`.
-
-### 20.7 Checking
-
-Render to PNG and check Trace, as in chapter 15. In coordinate placement, also watch for:
-
-- `'A' and 'B' overlap` — move one of them. The body, the name label and attached boxes all count.
-- `no free path` — two pieces of equipment are too close for a pipe to leave one and enter the other. Keep at least 20px between ports facing each other on one line; otherwise each pipe needs about 18px straight out of its port. Move them apart.
-- Crossings — move equipment; there are no `row` hints in this mode.
-
-For laying out a large or complicated drawing, reading a given drawing, and fitting it to screens of every size, see chapter 21.
-
----
-
-## 21. Screen size and complex P&IDs — which mode, which attributes
-
-This chapter puts in one place what to choose for a large or complicated process screen, how it meets screens of different sizes, and how to copy a given drawing. Chapters 4 and 20 have the details; follow this chapter for the decisions.
-
-### 21.1 Which placement mode
-
-Decide this before writing any equipment.
-
-| The screen is … | Use | Size attributes |
-|---|---|---|
-| A new screen, flow mostly goes one way (feed → equipment → product), up to about 15 pieces of equipment, at most one or two lines back to earlier equipment | Automatic placement (default) | `grow="1" style="height:0"`; add `fit="scale-down"` only when a render shows `Not enough space` (sizing procedure, chapter 4) |
-| Many lines go **back to earlier equipment** (reflux, reboiler loops, recirculation, heat recovery from product to feed), or about 25 pieces of equipment or more | Coordinate placement `placement="fixed"` (chapter 20) | `base-size="W H"` + `fit="contain"` + `grow="1" style="height:0"` |
-| The user gave a drawing the screen must look like | Coordinate placement `placement="fixed"` | `base-size` = the size of the drawing image (or the size you took the coordinates at) + `fit="contain"` |
-
-Why: automatic placement puts equipment in columns along the flow. Every line that goes back to an earlier column has to cross the drawing, so a process with many such lines comes out tangled (in a test with a distillation unit: 17 crossings, 3 pipes with no free path, and 1–2 minutes of layout time). Hints (`row`·`rank`) do not fix that. **If the first render in automatic placement shows more than about 5 crossing warnings or any `no free path`, switch to coordinate placement instead of adding hints.**
-
-### 21.2 How the drawing meets the screen (`fit`)
-
-| `fit` | Placement | Area smaller than the drawing | Area larger | Text |
-|---|---|---|---|---|
-| `none` (default) | both | Automatic: spacing shrinks down to 0.5×, then the diagram overflows (`Not enough space`). Fixed: overflows | Automatic: equipment spreads out. Fixed: the drawing stays at the top left (with `base-size` alone: positions spread, 20.3) | keeps its size |
-| `scale-down` | both (meant for automatic) | First everything `none` does; if it still overflows, the whole drawing is scaled down to fit, centered | same as `none` | shrinks with the drawing |
-| `contain` | `fixed` only (automatic: acts as `scale-down`, with a warning) | The `base-size` picture is scaled down as a whole, centered | The picture is scaled **up** as a whole, centered | follows the drawing both ways |
-
-- The scaled drawing behaves like the real one: presses, drags (knobs, sliders, custom widgets in `DvAttach`), editing and flow animation all follow the drawn positions.
-- With `contain`, equipment positions and pipe routes are identical at every size — only the scale changes, like an image. A wide area leaves equal margins left and right; a tall one, above and below.
-- `fit` only acts on the area the diagram is **given**: use `grow="1" style="height:0"` inside a page frame or card (chapter 4). Directly under `DvScreen` (not a flex container) `grow` does nothing, the diagram keeps its natural size and `fit` has nothing to do.
-- When the drawing is shrunk, the warning `Shrunk to N% … the smallest diagram text is now X px` tells you the smallest text on screen. Text below 10px is not readable: follow the sizing procedure (chapter 4, step 5) — `style="font-size:F"` on `DvProcess`, F = current × 11 / X. That one `font-size` scales every diagram text, attached boxes included.
-- **After raising `font-size`, check the warnings at the base size again.** Bigger bubbles, labels and value text take more room: in the distillation example, `font-size:21` produced a value text over a pipe, a value text over another bubble and a signal line with no free path. Move the equipment involved apart (coordinate placement) and render again.
-
-### 21.3 Drawing a complex P&ID in coordinate placement
-
-1. **Pick `base-size`** for the shape of the real screen: `1800 980` for a wide (16:9) panel, `1400 1000` for 4:3. Coordinates are px inside that box; `fit="contain"` scales the box to any screen later, so draw it as large as is comfortable.
-2. **Place the main equipment first, then build bands around it.** For a distillation unit: the column in the middle; the overhead (condenser, reflux drum, reflux pumps) in the top band; the reboiler below the column; the feed train to the left; products to the right (distillate top right, bottoms bottom right). Each band reads left → right in the flow direction.
-3. **Spacing**: about 110–160px between neighboring pieces of equipment along a line (labels and instrument bubbles need room; each pipe needs about 18px straight out of a port), about 110px between parallel pumps.
-4. **Parallel equipment goes one above the other** (`P-202A` at y 270, `P-202B` at y 380), not side by side — side by side, their outlet pipes cross.
-5. **Terminals cannot be turned.** With `direction="lr"`, a terminal that receives a line (a product, `TO FLARE`, `CWR`) is drawn as an arrow pointing right and takes its line on its left side; one that supplies a line takes it on its right. Put receiving terminals **downstream (to the right)** of the equipment that feeds them, and supplying terminals upstream (to the left). A receiving terminal placed to the left makes the pipe loop around it. With `direction="tb"`, the arrow points down: a receiving terminal takes its line on top and a supplying one at the bottom, so put them below and above their equipment.
-6. **Equipment that must flow right → left** (a reflux valve returning to the column, a reboiler fed from its right side) is mirrored with `flip="h"`: its `in` is then on the right.
-7. **Several lines on one face of a vessel**: do not connect them all to `side` (lines on the same face in the same direction merge into one nozzle). Give each its own point with a face position (6.1): feed `T201.left@0.5`, reflux return `T201.right@0.3`, reboiler return `T201.left@0.9`, relief `T201.right@0.1`.
-8. **Instruments**: `on` (`on="FV101"`) puts the bubble on the least busy face automatically — fine for valves and flowmeters. Where the position means something (a level transmitter at the column base, a temperature at a tray, a temperature on a product line), use `tap`: `tap="T201.right@0.82"`, `tap="E203.out"`. A bubble placed with `on` can also sit in front of a nozzle and block a pipe (a `no free path` on that equipment's line) — `tap` fixes that too. When it has to be somewhere else entirely, give it `x`·`y` (20.5).
-9. **Value text** (`value`) is not part of the layout. Keep it short (`96.4 °C`, `38.2 m³/h`) and watch for `'X' value text overlaps …`.
-10. **Render at the base size** and fix every `overlap` and `no free path` by moving equipment. One or two crossings are normal on a real P&ID and are drawn with jumps. A pipe that still runs where you do not want it (around the wrong side, or across a busy area) gets its route with `via` — the points it runs through (20.6). Then follow the sizing procedure (chapter 4) at the smallest real screen size.
-
-### 21.4 Reading a given drawing and copying it
-
-1. **Inventory first.** Write down from the drawing: every piece of equipment with its tag (`T-201`, `P-202A`), its kind (chapter 5 — column, drum, shell-and-tube exchanger, control valve, check valve, relief valve …), every line with its direction (follow the flow arrows; `from` is upstream), every instrument bubble with its letters and number, and every signal line (dashed) with its two ends. Equipment that is not in chapter 5 becomes a `DvSymbol` (chapter 14) — do not invent kinds.
-2. **Size**: set `base-size` to the size of the drawing image in px (e.g. `1600 900`), so the coordinates can be read straight off the image. Two adjustments: if a terminal or label would run off the edge, add the same margin to every `x` (or `y`) and to `base-size`. If the drawing's symbols are much bigger than the built-in sizes (a 118px pump against 64px), multiply all coordinates and `base-size` by k = built-in size ÷ drawing size, so built-in kinds come out in the drawing's proportions; `fit="contain"` enlarges the whole picture again.
-3. **Coordinates**: for each piece of equipment, read the **center of its symbol** on the image (not of its label) and write it as `x`·`y`. Small offsets of up to 16px between connected ports are straightened automatically (20.4).
-4. **Nozzles**: where the drawing shows a line entering a vessel at a particular point, measure it along that face: position = (distance from the top of the face) ÷ (face height) — for the left and right faces from the top, for the top and bottom faces from the left. Write it as `T1.left@0.15`.
-5. **Instruments**: read each bubble's center off the image as `x`·`y` (20.5). A bubble joined to a pipe or nozzle by a solid line → `tap` at that pipe's port (`tap="CV1.in"`) or at that point of the face (`tap="T1.left@0.85"`). A bubble with only signal lines → `on` the equipment it belongs to (controllers: the valve they move; others: the equipment of their loop — with `x`·`y` this only names the owner). A line with slashes is `DvSignal kind="pneumatic"`; a dashed line is the default. A colored or heavier signal line is `color`·`thickness`. Signal arrows and switch actions on signal lines are `DvSignal arrow`·`label` (7.4); line numbers are `DvLine label`.
-6. **Media**: color the main lines with `medium` (water, steam, gas, oil …) on the first line of each run, as the drawing's legend says.
-7. **State**: a drawing shows no running state. For the same look, leave `running`·`open` out, and symbols are drawn stopped (near-white in `plain`). On a page that shows live values, bind them, and they show the state colors.
-8. **Compare**: render at the image size and look at it next to the drawing. Fix differences by moving equipment (`x`·`y`) — the library routes the pipes, so a pipe that runs differently from the drawing usually means a nozzle position or a piece of equipment is off. If the positions are right and the pipe still runs differently, write its route with `via` (20.6).
-9. **Build the same form as the drawing, as far as the library allows.** Compare each symbol's shape and proportions, positions, nozzle points, pipe routes, where captions sit and line kinds, and keep going until only what 21.6 lists still differs. Where a built-in kind looks different from the drawing's symbol (an exchanger drawn as a circle with a coil, a tank with legs and flanged nozzles), write a `DvSymbol` (chapter 14) in the drawing's shape and proportions instead of settling for the nearest kind; the number of symbols is not a cost. Give it ports where the drawing's nozzles are and a `DvPass` so flow and `medium` continue through it. For captions, corners and branches of signal lines, dashed lines from a pipe and bare arrow ends, see the small symbols in 14.2. For the drawing's bubble size, set `font-size` = 14 × bubble diameter ÷ 40 in `base-size` px, here from the start; it sets the diagram's text too. Do not nudge attached boxes with `transform`: on a `DvAttach` it does not follow `font-size`.
-10. Then add `fit="contain"` and follow the sizing procedure (chapter 4) for the real screen sizes.
-
-### 21.5 Full example — distillation unit
-
-A distillation unit with a feed train (two pumps, steam preheater, flow control), the column, overhead condenser, reflux drum with pressure control, reflux pumps with reflux flow control and distillate level control, a thermosiphon reboiler with steam temperature control, and bottoms pumps with a cooler and level control. Coordinates at `base-size` 1800×980; `font-size:21` comes from the sizing procedure at a 1280×720 screen (the smallest text was 7.6px → 14 × 11 / 7.6 = 21 → 11.4px).
-
-```xml
-<DvProcess look="rich" placement="fixed" base-size="1800 980" fit="contain" grow="1" style="height:0; font-size:21">
-  <!-- doc-test: crossings-allowed — the reboiler steam line and the reboiler return cross once, as on real drawings -->
-  <DvTerminal name="FEED" text="FEED&#10;FROM TK-100" x="80" y="470"/>
-  <DvPump name="P101A" running="true" label="P-101A" x="230" y="400"/>
-  <DvPump name="P101B" label="P-101B" x="230" y="540"/>
-  <DvExchanger name="E101" label="E-101" x="400" y="470"/>
-  <DvTerminal name="STM1" text="LP STEAM" x="270" y="300"/>
-  <DvTerminal name="CND1" text="CONDENSATE" x="560" y="555"/>
-  <DvInline name="FE101" kind="flowmeter" label="FE-101" x="540" y="470"/>
-  <DvValve name="FV101" kind="control" open="true" label="FV-101" x="650" y="470"/>
-  <DvVessel name="T201" kind="column" height="380" level="45" label="T-201" x="800" y="470"/>
-
-  <DvValve name="PSV201" kind="relief" label="PSV-201" x="920" y="250"/>
-  <DvTerminal name="FLR1" text="TO FLARE" x="1060" y="272"/>
-  <DvExchanger name="E201" label="E-201" x="1000" y="110"/>
-  <DvTerminal name="CWS1" text="CWS" x="860" y="40"/>
-  <DvTerminal name="CWR1" text="CWR" x="1110" y="215"/>
-  <DvVessel name="D201" kind="drum" level="55" label="D-201" x="1300" y="120"/>
-  <DvValve name="PV201" kind="control" open="true" label="PV-201" x="1490" y="100"/>
-  <DvTerminal name="FLR2" text="TO FLARE" x="1640" y="100"/>
-  <DvPump name="P202A" running="true" label="P-202A" x="1290" y="270"/>
-  <DvPump name="P202B" label="P-202B" x="1290" y="380"/>
-  <DvInline name="FE202" kind="flowmeter" label="FE-202" x="1470" y="330">
-    <DvAttach side="bottom"><DvLabel class="caption muted" text="REFLUX RATIO"/><DvLabel class="title" text="2.4"/></DvAttach>
-  </DvInline>
-  <DvValve name="FV202" kind="control" open="true" flip="h" label="FV-202" x="1060" y="450"/>
-  <DvValve name="LV201" kind="control" open="true" label="LV-201" x="1590" y="330"/>
-  <DvTerminal name="DIST" text="DISTILLATE" x="1720" y="330"/>
-
-  <DvExchanger name="E202" label="E-202" flip="h" x="640" y="810"/>
-  <DvValve name="TV201" kind="control" open="true" label="TV-201" x="470" y="725"/>
-  <DvTerminal name="STM2" text="LP STEAM" x="330" y="725"/>
-  <DvValve name="CV1" kind="check" label="CHK" x="690" y="915"/>
-  <DvTerminal name="CND2" text="CONDENSATE" x="840" y="915"/>
-  <DvPump name="P203A" running="true" label="P-203A" x="990" y="760"/>
-  <DvPump name="P203B" label="P-203B" x="990" y="880"/>
-  <DvExchanger name="E203" label="E-203" x="1160" y="820"/>
-  <DvTerminal name="CWS2" text="CWS" x="1020" y="700"/>
-  <DvTerminal name="CWR2" text="CWR" x="1280" y="915"/>
-  <DvValve name="LV202" kind="control" open="true" label="LV-202" x="1370" y="820"/>
-  <DvTerminal name="BTM" text="BOTTOMS" x="1510" y="820"/>
-
-  <DvLine from="FEED" to="P101A.in" medium="oil"/>
-  <DvLine from="FEED" to="P101B.in"/>
-  <DvLine from="P101A.out" to="E101.in"/>
-  <DvLine from="P101B.out" to="E101.in"/>
-  <DvLine from="STM1" to="E101.in2" medium="steam"/>
-  <DvLine from="E101.out2" to="CND1" medium="water"/>
-  <DvLine from="E101.out" to="FE101.in"/>
-  <DvLine from="FE101.out" to="FV101.in"/>
-  <DvLine from="FV101.out" to="T201.left@0.5" arrow="end"/>
-  <DvLine from="T201.top" to="E201.in" medium="gas"/>
-  <DvLine from="T201.right@0.1" to="PSV201.in"/>
-  <DvLine from="PSV201.out" to="FLR1"/>
-  <DvLine from="CWS1" to="E201.in2" medium="water"/>
-  <DvLine from="E201.out2" to="CWR1"/>
-  <DvLine from="E201.out" to="D201.top" medium="oil"/>
-  <DvLine from="D201.right@0.3" to="PV201.in" medium="gas"/>
-  <DvLine from="PV201.out" to="FLR2"/>
-  <DvLine from="D201.bottom" to="P202A.in"/>
-  <DvLine from="D201.bottom" to="P202B.in"/>
-  <DvLine from="P202A.out" to="FE202.in"/>
-  <DvLine from="P202B.out" to="FE202.in"/>
-  <DvLine from="FE202.out" to="FV202.in"/>
-  <DvLine from="FE202.out" to="LV201.in"/>
-  <DvLine from="FV202.out" to="T201.right@0.3" arrow="end"/>
-  <DvLine from="LV201.out" to="DIST"/>
-  <DvLine from="T201.bottom" to="E202.in"/>
-  <DvLine from="E202.out" to="T201.left@0.9" arrow="end"/>
-  <DvLine from="STM2" to="TV201.in" medium="steam"/>
-  <DvLine from="TV201.out" to="E202.in2"/>
-  <DvLine from="E202.out2" to="CV1.in" medium="water"/>
-  <DvLine from="CV1.out" to="CND2"/>
-  <DvLine from="T201.bottom" to="P203A.in"/>
-  <DvLine from="T201.bottom" to="P203B.in"/>
-  <DvLine from="P203A.out" to="E203.in"/>
-  <DvLine from="P203B.out" to="E203.in"/>
-  <DvLine from="CWS2" to="E203.in2" medium="water"/>
-  <DvLine from="E203.out2" to="CWR2"/>
-  <DvLine from="E203.out" to="LV202.in"/>
-  <DvLine from="LV202.out" to="BTM"/>
-
-  <DvInstrument name="FT101" tag="FT" number="101" on="FE101"/>
-  <DvInstrument name="FIC101" tag="FIC" number="101" on="FV101" panel="true" value="38.2 m³/h"/>
-  <DvInstrument name="PT201" tag="PT" number="201" on="D201"/>
-  <DvInstrument name="PIC201" tag="PIC" number="201" on="PV201" panel="true" value="1.8 barg"/>
-  <DvInstrument name="TT201" tag="TT" number="201" tap="T201.right@0.62"/>
-  <DvInstrument name="TIC201" tag="TIC" number="201" on="TV201" panel="true" value="96.4 °C"/>
-  <DvInstrument name="LT201" tag="LT" number="201" on="D201"/>
-  <DvInstrument name="LIC201" tag="LIC" number="201" on="LV201" panel="true" value="55 %"/>
-  <DvInstrument name="FT202" tag="FT" number="202" on="FE202"/>
-  <DvInstrument name="FIC202" tag="FIC" number="202" on="FV202" panel="true" value="21.0 m³/h"/>
-  <DvInstrument name="LT202" tag="LT" number="202" tap="T201.right@0.82"/>
-  <DvInstrument name="LIC202" tag="LIC" number="202" on="LV202" panel="true" value="45 %"/>
-  <DvInstrument name="TI203" tag="TI" number="203" tap="E203.out" value="42 °C"/>
-  <DvSignal from="FT101" to="FIC101"/>
-  <DvSignal from="FIC101" to="FV101"/>
-  <DvSignal from="PT201" to="PIC201"/>
-  <DvSignal from="PIC201" to="PV201"/>
-  <DvSignal from="TT201" to="TIC201"/>
-  <DvSignal from="TIC201" to="TV201"/>
-  <DvSignal from="LT201" to="LIC201"/>
-  <DvSignal from="LIC201" to="LV201"/>
-  <DvSignal from="FT202" to="FIC202"/>
-  <DvSignal from="FIC202" to="FV202"/>
-  <DvSignal from="LT202" to="LIC202"/>
-  <DvSignal from="LIC202" to="LV202"/>
-</DvProcess>
-```
-
-What to notice:
-
-- The column has four separate nozzles on its faces (feed, reflux return, reboiler return, relief), the reflux valve `FV202` and the reboiler `E202` are mirrored (`flip="h"`) because they flow right → left, and all receiving terminals are to the right of what feeds them.
-- `TT201`, `LT202` and `TI203` use `tap` so they sit where they measure; the other instruments use `on`.
-- In the demo app (`-- process`, tab "Distillation — fixed + contain") the same drawing scales down and up with the window, centered.
-
-### 21.6 Limits
-
-- Automatic placement is not meant for processes with many lines back to earlier equipment (21.1); its layout time grows quickly with such loops.
-- A large drawing is laid out once when the screen is first built (measured for the example above on a desktop CPU: about 1.3 s the first time, 0.4 s for another screen with the same markup). The result is kept: resizing the window with `fit="contain"` took 1–2 ms and a rebuild after a value change 12 ms.
-- Terminals cannot be mirrored (21.3, item 5).
-- Not available directly: the route of a signal line, a branch of one, starting one on a pipe, and leader lines (use the small symbols in 14.2). Not available at all: a multi-line `label`; the size of a single bubble or of its `value` text (`font-size` on `DvProcess` sets them all, chapter 4, and may be below 14); the number of `//`; colors on symbols (classes only, 14.2), colors on pipes (`medium` only, 12.2) and text inside a symbol.
+**Can I give process equipment an `id` to get it from code?**
+Yes: `id` gives a `DvControl` handle (`Visible`, `Enabled`, `Bounds`, `Click`) like any box; lines connect by `name`, never by `id`. Prefer VM binding for state and `onclick` for actions ([equipment `id`](dvml-process-equipment.md#equipment-id)).

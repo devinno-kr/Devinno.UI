@@ -4,7 +4,7 @@ using Devinno.UI.Layout;
 using SkiaSharp;
 using Xunit;
 
-// 문서 16.1 전체 예제 = samples/Devinno.UI.AppSample — 문서에 파일이 그대로 실려 있는지, 그 코드가 실제로 동작하는지.
+// 문서 dvml-app.md#app-example 전체 예제 = samples/Devinno.UI.AppSample — 문서에 파일이 그대로 실려 있는지, 그 코드가 실제로 동작하는지.
 [Collection("AttachedApp")] // 다이얼로그를 띄우므로 앱을 붙이는 테스트와 같은 비병렬 묶음에
 public class AppSampleDocTests
 {
@@ -24,9 +24,9 @@ public class AppSampleDocTests
     {
         var root = RepoRoot();
         var code = Normalize(File.ReadAllText(Path.Combine(root, "samples", "Devinno.UI.AppSample", file)));
-        var doc = Normalize(File.ReadAllText(Path.Combine(root, "dvml-ui-markup.md")));
+        var doc = Normalize(File.ReadAllText(Path.Combine(root, "dvml-app.md")));
         Assert.True(doc.Contains($"\n{code}\n```", StringComparison.Ordinal),
-            $"dvml-ui-markup.md 16.1 이 samples/Devinno.UI.AppSample/{file} 와 다릅니다 — 문서 블록을 파일 내용 그대로 고치세요.");
+            $"dvml-app.md 의 전체 예제가 samples/Devinno.UI.AppSample/{file} 와 다릅니다 — 문서 블록을 파일 내용 그대로 고치세요.");
     }
 
     // README 의 "A screen in markup" 예제도 같은 샘플 파일 그대로
@@ -164,7 +164,7 @@ public class AppSampleDocTests
     private static string RepoRoot([CallerFilePath] string source = "")
     {
         var dir = new DirectoryInfo(Path.GetDirectoryName(source)!);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "dvml-ui-markup.md")))
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "llm-rules.md")))
             dir = dir.Parent;
         return dir?.FullName ?? throw new InvalidOperationException("저장소 루트를 찾지 못했습니다");
     }

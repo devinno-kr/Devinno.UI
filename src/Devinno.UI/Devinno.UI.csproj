@@ -23,12 +23,10 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <!-- 패키지 문서: AI·사람용 작성 규칙과 마크업 레퍼런스(C# API 설명은 Devinno.UI.xml, README·아이콘·제3자 고지는 ../Directory.Build.props) -->
+  <!-- 패키지 문서: AI·사람용 작성 규칙과 저장소 루트의 dvml-*.md 페이지 전부(C# API 설명은 Devinno.UI.xml, README·아이콘·제3자 고지는 ../Directory.Build.props) -->
   <ItemGroup>
     <None Include="..\..\llm-rules.md" Pack="true" PackagePath="docs\" />
-    <None Include="..\..\dvml-ui-markup.md" Pack="true" PackagePath="docs\" />
-    <None Include="..\..\dvml-process.md" Pack="true" PackagePath="docs\" />
-    <None Include="..\..\dvml-image.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\dvml-*.md" Pack="true" PackagePath="docs\" />
   </ItemGroup>
 
   <!-- dvml 소스 생성기: 이 라이브러리가 참조하되(빌드 순서) 어셈블리로는 안 쓰고, 분석기로 패키지에 넣는다. -->

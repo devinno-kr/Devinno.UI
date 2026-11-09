@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- dvml-ui-markup.md 16.1 의 "전체 예제" 그대로. 문서와 다르면 AppSampleDocTests 가 실패한다. -->
+  <!-- dvml-app.md#app-example 의 "전체 예제" 그대로. 문서와 다르면 AppSampleDocTests 가 실패한다. -->
   <ItemGroup>
     <ProjectReference Include="..\..\src\Devinno.UI.OpenTK\Devinno.UI.OpenTK.csproj" />
     <ProjectReference Include="..\..\src\Devinno.UI.Generators\Devinno.UI.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

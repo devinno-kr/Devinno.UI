@@ -119,7 +119,7 @@ WinForms 앱은 대상 프레임워크를 `net9.0-windows10.0.19041.0` 이상으
 **지원 OS.** Windows 11(x64)에서 두 어댑터 모두 테스트했습니다. WinForms 어댑터는 Windows 에서만 돌아갑니다. 코어 라이브러리와 OpenTK 어댑터는 Windows 전용 API 를 쓰지 않지만, Linux(라즈베리파이 터치 패널 포함)에서는 아직 테스트하지 않았습니다. Linux 에서는 앱에 `SkiaSharp.NativeAssets.Linux` 패키지도 넣어야 합니다.
 
 ## 시작하기
-<!-- en-hash: 5a2afa9cf5286a29 -->
+<!-- en-hash: 5db506387dc874dd -->
 
 화면 한 장 = `DvPage` 를 상속한 클래스 + 같은 이름의 `.dvml`. `DvApp` 이 페이지를 담아 창(OpenTK `ViewWindow` 또는 WinForms `ViewControl`)에 올립니다.
 
@@ -136,7 +136,7 @@ using var window = new ViewWindow(app, 1280, 800, "My HMI");
 window.Run();
 ```
 
-페이지 안에서는 `App.Show<AlarmPage>()` 로 전환합니다. 자세한 내용은 [`dvml-ui-markup.md`](dvml-ui-markup.md) 16장을 보세요.
+페이지 안에서는 `App.Show<AlarmPage>()` 로 전환합니다. 자세한 내용은 [`dvml-app.md`](dvml-app.md)를 보세요.
 
 ## 데모
 <!-- en-hash: 1c350b6070a339c0 -->
@@ -150,13 +150,17 @@ dotnet run --project samples/Devinno.UI.Demo
 작은 시뮬레이션이 값을 움직이는 정수장 쇼케이스가 뜹니다. 운영 대시보드, 흐름 표시가 켜진 P&ID, 기능별 페이지를 모은 Widgets 페이지(그리드, 트렌드, 알람, 다이얼로그, 입력, 공정도 등)로 이루어져 있습니다. `-- shot <폴더>` 를 붙이면 창 없이 모든 화면을 PNG 로 저장합니다.
 
 ## 문서
-<!-- en-hash: 3225b9b292182cbe -->
+<!-- en-hash: 3181dfd28bd26171 -->
 
 아래 문서는 패키지의 `docs/` 폴더에 들어 있습니다(빌드하면 프로젝트의 `.devinno/Devinno.UI/` 에도 복사됩니다 — 아래 참고). 영어로만 제공됩니다.
 
 - [`llm-rules.md`](llm-rules.md): 작성 규칙 — 원칙, CSS 와 다른 점, 자주 하는 실수, 화면 확인 방법 (먼저 읽기)
-- [`dvml-ui-markup.md`](dvml-ui-markup.md): 마크업 레퍼런스 — 태그·속성·스타일 키·테마 토큰
-- [`dvml-process.md`](dvml-process.md): 공정도(P&ID) 작성 가이드 — `DvProcess` 장비·연결·배치 규칙·사용자 심볼
+- [`dvml-language.md`](dvml-language.md): 마크업 언어 — 시작하기, 공통 속성, 값 규칙, 바인딩, 값 위젯, 이벤트, 이름 규칙
+- [`dvml-layout.md`](dvml-layout.md), [`dvml-style.md`](dvml-style.md): 레이아웃 상자·크기·스크롤, 스타일 키·클래스·테마 토큰
+- [`dvml-widgets.md`](dvml-widgets.md), [`dvml-inputs.md`](dvml-inputs.md), [`dvml-instruments.md`](dvml-instruments.md), [`dvml-grid.md`](dvml-grid.md): 내장 태그마다 속성과 예제
+- [`dvml-components.md`](dvml-components.md), [`dvml-app.md`](dvml-app.md), [`dvml-code.md`](dvml-code.md), [`dvml-dialogs.md`](dvml-dialogs.md): 사용자 컴포넌트·커스텀 위젯, 앱·페이지·바·스레드·호스트, 코드에서 컨트롤 다루기, 대화상자
+- [`dvml-diagnostics.md`](dvml-diagnostics.md): 빌드 진단 DVML001–021 과 실행 중 Trace 경고
+- [`dvml-process.md`](dvml-process.md), [`dvml-process-equipment.md`](dvml-process-equipment.md), [`dvml-process-layout.md`](dvml-process-layout.md), [`dvml-process-examples.md`](dvml-process-examples.md): 공정도(P&ID) — `DvProcess` 장비·연결·배치 규칙·사용자 심볼·완전 예제
 - [`dvml-image.md`](dvml-image.md): 그림(시안·재현할 디자인)에서 화면 만들기 가이드 — 부분별 구현 방식, 이미지 파일, 터치 영역, 검증
 - [`llms.txt`](llms.txt): AI 도구용 진입점 (위 문서들의 읽는 순서)
 - C# API: XML 문서 주석 (IntelliSense, 패키지의 `Devinno.UI.xml`. 한국어 Visual Studio 에서는 한국어 설명이 보입니다)

@@ -131,7 +131,7 @@ public class TagSchemaTests
     internal static string RepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "dvml-ui-markup.md")))
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "llm-rules.md")))
             dir = dir.Parent;
         return dir?.FullName ?? throw new DirectoryNotFoundException("repo root");
     }

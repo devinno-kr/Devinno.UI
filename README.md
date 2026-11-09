@@ -130,7 +130,7 @@ using var window = new ViewWindow(app, 1280, 800, "My HMI");
 window.Run();
 ```
 
-Inside a page, switch with `App.Show<AlarmPage>()`. For details see section 16 of `dvml-ui-markup.md` (listed below).
+Inside a page, switch with `App.Show<AlarmPage>()`. For details see `dvml-app.md` (listed below).
 
 ## Demo
 
@@ -147,8 +147,12 @@ It opens a water treatment plant showcase driven by a small simulation: an opera
 These documents ship in the package's `docs/` folder (after a build they are also copied to `.devinno/Devinno.UI/` in your project, see below).
 
 - `llm-rules.md`: authoring rules (principles, differences from CSS, common mistakes, how to check a screen). Read this first.
-- `dvml-ui-markup.md`: markup reference with every tag, attribute, style key and theme token.
-- `dvml-process.md`: guide to process diagrams (P&ID) with `DvProcess`: equipment, connections, layout rules and user symbols.
+- `dvml-language.md`: the markup language: getting started, common attributes, value rules, binding, value widgets, events, naming.
+- `dvml-layout.md`, `dvml-style.md`: layout boxes, sizes and scrolling; style keys, classes and theme tokens.
+- `dvml-widgets.md`, `dvml-inputs.md`, `dvml-instruments.md`, `dvml-grid.md`: one section per built-in tag with its attributes and an example.
+- `dvml-components.md`, `dvml-app.md`, `dvml-code.md`, `dvml-dialogs.md`: user components and custom widgets; app, pages, bars, threads and hosts; controls from code; dialogs.
+- `dvml-diagnostics.md`: build diagnostics DVML001–021 and runtime Trace warnings.
+- `dvml-process.md`, `dvml-process-equipment.md`, `dvml-process-layout.md`, `dvml-process-examples.md`: process diagrams (P&ID) with `DvProcess`: equipment, connections, layout rules, user symbols and complete examples.
 - `dvml-image.md`: guide to building a screen from a picture (a mockup or design to reproduce): deciding how to build each part, image files, touch areas, verification.
 - `llms.txt`: entry point for AI tools (reading order of the files above)
 - C# API: XML doc comments (IntelliSense, `Devinno.UI.xml` in the package)
