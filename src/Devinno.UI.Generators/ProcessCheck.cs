@@ -106,7 +106,7 @@ internal static class ProcessCheck
     private static void Coordinate(XElement e, string attr, Action<DiagnosticDescriptor, XObject, object[]> report)
     {
         var a = e.Attribute(attr);
-        if (a is null || a.Value.Length == 0 || Dynamic(a.Value) || IsNumber(a.Value))
+        if (a is null || Dynamic(a.Value) || AttributeCheck.IsNumber(a.Value)) // 라이브러리 숫자 규칙(빈 값 = 없음, NaN·무한 아님)
             return;
         report(Diagnostics.ProcessUnknownValue, a, [$"<{e.Name.LocalName}> {attr}", a.Value, "px"]);
     }
@@ -126,7 +126,7 @@ internal static class ProcessCheck
         var a = signal.Attribute("thickness");
         if (a is null || a.Value.Trim().Length == 0 || Dynamic(a.Value))
             return;
-        if (!double.TryParse(a.Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var w) || w <= 0)
+        if (!AttributeCheck.IsNumber(a.Value) || double.Parse(a.Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture) <= 0)
             report(Diagnostics.ProcessUnknownValue, a, ["<DvSignal> thickness", a.Value, "px > 0"]);
     }
 

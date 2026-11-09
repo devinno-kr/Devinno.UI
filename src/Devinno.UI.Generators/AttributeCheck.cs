@@ -272,7 +272,8 @@ internal static class AttributeCheck
 
     // 다른 진단이 이미 값을 검사하는 속성 — DVML011(공정도 ProcessCheck) · DVML017(WidgetCheck). DVML020 은 같은 값을 두 번 알리지 않는다
     private static bool CheckedElsewhere(string tag, string name) =>
-        (tag, name) is ("DvProcess", "direction" or "look" or "align") or ("DvLine", "medium") or ("DvSignal", "kind" or "color")
+        (tag, name) is ("DvProcess", "direction" or "look" or "align") or ("DvLine", "medium") or ("DvSignal", "kind" or "color" or "thickness")
+            or ("DvInstrument", "x" or "y")
             or ("DvListBox", "selection-mode") or ("DvSlider", "direction")
         || name == "kind" && ProcessCheck.Kinds.ContainsKey(tag)
         || name == "rotate" && ProcessCheck.Kinds.ContainsKey(tag);
@@ -353,7 +354,7 @@ internal static class AttributeCheck
             return; // 바인딩·보간 — 실행 때 값이 정해진다
         if (Has(Bool, CommonBool, tag, name) && !IsBool(value))
             report(Diagnostics.InvalidBool, a, new object[] { tag, name, value });
-        else if (Has(Number, CommonNumber, tag, name) && !IsNumber(value))
+        else if (Has(Number, CommonNumber, tag, name) && !CheckedElsewhere(tag, name) && !IsNumber(value))
             report(Diagnostics.InvalidNumber, a, new object[] { tag, name, value });
         else if (EnumValues(tag, name) is { } values && !CheckedElsewhere(tag, name) && !IsEnum(value, values, tag, name))
             report(Diagnostics.InvalidEnum, a, new object[] { tag, name, value, values.Length == 0 ? "-" : string.Join(", ", values) });

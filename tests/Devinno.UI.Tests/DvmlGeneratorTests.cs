@@ -1090,6 +1090,21 @@ public class DvmlGeneratorTests
         Assert.Empty(ok.Ids("DVML011"));
     }
 
+    // 공정도 숫자 속성(DvSignal thickness·DvInstrument x/y)은 DVML011 이 본다 — DVML020 은 같은 값을 다시 알리지 않는다
+    [Fact]
+    public void Value_ProcessNumberCheckedElsewhere_NotTwice()
+    {
+        var all = Run("public partial class P { }", ("P.dvml",
+            "<DvProcess><DvPump name=\"P\"/><DvInstrument name=\"I\" on=\"P\" x=\"a\" y=\"b\"/><DvSignal from=\"I\" to=\"P\" thickness=\"thick\"/></DvProcess>"));
+        Assert.Empty(all.Ids("DVML020"));
+        Assert.Equal(3, all.Ids("DVML011").Length);
+        // 같은 숫자 규칙: NaN·무한은 숫자가 아니다, 빈 값 = 없음
+        var odd = Run("public partial class P { }", ("P.dvml",
+            "<DvProcess><DvPump name=\"P\"/><DvInstrument name=\"I\" on=\"P\" x=\"NaN\" y=\"\"/><DvSignal from=\"I\" to=\"P\" thickness=\"Infinity\"/></DvProcess>"));
+        Assert.Empty(odd.Ids("DVML020"));
+        Assert.Equal(2, odd.Ids("DVML011").Length);
+    }
+
     // 3단계 R2 — 색: #RGB·#RRGGBB·#RRGGBBAA·transparent·token(이름) 이 아니면 DVML020(색 이름 red 는 실행 때도 못 읽는다)
     [Fact]
     public void Value_NotColor_Warns()
