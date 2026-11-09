@@ -183,52 +183,90 @@ public sealed class LayoutEngine
         }
     }
 
-    private LayoutBox? Build(ElementNode node, object? vm, ComponentRegistry? registry, int depth)
+    // 템플릿(컴포넌트 틀) 안에서 빌드할 때의 문맥 — DvSlot 이 펼칠 인스턴스 자식과 그 빌드 방법, 양방향 파라미터
+    private sealed record TemplateContext(IReadOnlyList<ElementNode> SlotChildren,
+        Func<ElementNode, IEnumerable<LayoutBox>> SlotBuilder, IReadOnlyDictionary<string, string>? TwoWay);
+
+    // 요소 하나 → 상자(없으면 null). 화면과 컴포넌트 틀이 같은 분기를 쓴다 — tc 가 있으면 틀 안(DvSlot 펼침·양방향 파라미터 연결).
+    private LayoutBox? Build(ElementNode node, object? vm, ComponentRegistry? registry, int depth, TemplateContext? tc = null)
     {
         SetReadTag(node);
         if (node.Tag is "DvStyle" or "DvTrendChannel" or "DvOption" or "DvColumn" or "DvColumnGroup" or "DvSummaryRow" or "DvSummary" ||
             !IsVisibleOf(node, vm))
             return null;
 
-        if (TryGetComponent(registry, node.Tag, out var def))
-            return ExpandComponent(node, def, vm, registry, depth,
-                child => Build(child, vm, registry, depth) is { } b ? new[] { b } : Array.Empty<LayoutBox>());
+        // 자식 1개 → 상자 0..N 개. 틀 안의 DvSlot 은 이 인스턴스의 자식(슬롯 내용)으로 펼친다
+        // — 중첩 컴포넌트 안에 놓인 DvSlot 도 바깥 인스턴스 자식을 받는다.
+        IEnumerable<LayoutBox> Child(ElementNode ch, object? ctx)
+        {
+            if (tc is not null && ch.Tag == "DvSlot")
+                return tc.SlotChildren.SelectMany(tc.SlotBuilder).ToList();
+            return Build(ch, ctx, registry, depth, tc) is { } b ? new[] { b } : Array.Empty<LayoutBox>();
+        }
 
-        if (registry is not null && registry.TryGetWidget(node.Tag, out var create))
-            return BuildWidget(node, vm, create!);
+        if (TryGetComponent(registry, node.Tag, out var def))
+            return ExpandComponent(node, def, vm, registry, depth, child => Child(child, vm));
 
         if (node.Tag == "DvRepeat")
-            return BuildRepeat(node, vm,
-                (ch, scope) => Build(ch, scope, registry, depth) is { } b ? new[] { b } : Array.Empty<LayoutBox>());
+            return BuildRepeat(node, vm, Child);
+
+        Func<Widgets.DvWidget>? createWidget = null;
+        var isWidget = registry is not null && registry.TryGetWidget(node.Tag, out createWidget);
+
+        // 양방향 파라미터: 틀 안 DvToggle/DvKnob/DvInput(·커스텀 위젯) value="{p}" 의 커밋 대상을 바깥 VM 경로로 연결
+        string? outerExpr = null;
+        object? outerTarget = null;
+        var twoWay = tc?.TwoWay;
+        if ((isWidget || node.Tag is "DvToggle" or "DvCheckBox" or "DvKnob" or "DvSlider" or "DvInput" or "DvSelect" or "DvSegment" or "DvTabs" or "DvDateTimeInput" or "DvColorInput" or "DvButton") && twoWay is not null &&
+            node.Attributes.TryGetValue("value", out var ve) && BindingResolver.IsBinding(ve) &&
+            twoWay.TryGetValue(ve[1..^1].Trim(), out var oe))
+        {
+            outerExpr = oe;
+            (twoWay as TwoWayParams)?.Targets.TryGetValue(ve[1..^1].Trim(), out outerTarget);
+        }
+
+        _valueOverride = outerExpr;
+        LayoutBox box;
+        try
+        {
+            box = isWidget ? BuildWidget(node, vm, createWidget!) : BuildSelf(node, vm);
+        }
+        finally
+        {
+            _valueOverride = null;
+        }
+
+        if (outerExpr is not null)
+        {
+            box.ValueBindExpr = outerExpr;
+            box.ValueTarget = outerTarget; // 인스턴스 핸들 칸(없으면 바깥 VM)
+            box.ValueOrigin = (twoWay as TwoWayParams)?.Instance;
+        }
+
+        if (isWidget)
+            return box; // 위젯은 자식을 쓰지 않는다
 
         if (node.Tag == "DvTabs")
-            return BuildTabs(BuildSelf(node, vm), vm,
-                ch => Build(ch, vm, registry, depth) is { } b ? new[] { b } : Array.Empty<LayoutBox>());
+            return BuildTabs(box, vm, ch => Child(ch, vm));
 
         if (node.Tag == "DvExpander")
-            return BuildExpander(BuildSelf(node, vm), vm,
-                ch => Build(ch, vm, registry, depth) is { } b ? new[] { b } : Array.Empty<LayoutBox>());
+            return BuildExpander(box, vm, ch => Child(ch, vm));
 
         if (node.Tag == "DvProcess")
         {
-            var proc = BuildSelf(node, vm);
-            Process.ProcessBuilder.Build(proc, vm, registry, ProcessBuilders(registry, depth));
-            return proc;
+            Process.ProcessBuilder.Build(box, vm, registry, ProcessBuilders(registry, depth));
+            return box;
         }
-
-        var box = BuildSelf(node, vm);
 
         foreach (var ch in node.Children)
-        {
-            if (Build(ch, vm, registry, depth) is { } child)
-                box.Children.Add(child);
-        }
+            box.Children.AddRange(Child(ch, vm));
         AddSegmentItems(box, vm);
         AddListItems(box, vm);
         AddTreeItems(box, vm);
 
         return box;
     }
+
 
     /// <summary>Keeps custom widget instances between builds (set by the surface). If <see langword="null"/>, each layout creates new instances.</summary>
     internal InstanceStore<Widgets.DvWidget>? WidgetStore { get; set; }
@@ -1291,7 +1329,7 @@ public sealed class LayoutEngine
         _rootItemScope = passedClick ? outerVm as ItemScope ?? _rootItemScope : null; // 루트가 또 컴포넌트면 바깥 항목을 이어 준다
         try
         {
-            var box = BuildTemplate(root, scope, registry, depth + 1, instance.Children, slotBuilder, twoWay);
+            var box = Build(root, scope, registry, depth + 1, new TemplateContext(instance.Children, slotBuilder, twoWay));
             if (box is not null)
                 LinkInstance(box, instance);
             return box;
@@ -1342,93 +1380,6 @@ public sealed class LayoutEngine
         }
 
         return copy;
-    }
-
-    private LayoutBox? BuildTemplate(ElementNode node, object? scope, ComponentRegistry? registry, int depth,
-        IReadOnlyList<ElementNode> slotChildren, Func<ElementNode, IEnumerable<LayoutBox>> slotBuilder,
-        IReadOnlyDictionary<string, string>? twoWay)
-    {
-        SetReadTag(node);
-        if (node.Tag is "DvStyle" or "DvTrendChannel" or "DvOption" or "DvColumn" or "DvColumnGroup" or "DvSummaryRow" or "DvSummary" ||
-            !IsVisibleOf(node, scope))
-            return null;
-
-        if (TryGetComponent(registry, node.Tag, out var def))
-            return ExpandComponent(node, def, scope, registry, depth,
-                child => TemplateChild(child, scope, registry, depth, slotChildren, slotBuilder, twoWay));
-
-        if (node.Tag == "DvRepeat")
-            return BuildRepeat(node, scope,
-                (ch, itemScope) => TemplateChild(ch, itemScope, registry, depth, slotChildren, slotBuilder, twoWay));
-
-        Func<Widgets.DvWidget>? createWidget = null;
-        var isWidget = registry is not null && registry.TryGetWidget(node.Tag, out createWidget);
-
-        // 양방향 파라미터: 템플릿 DvToggle/DvKnob/DvInput(·커스텀 위젯) value="{p}" 의 커밋 대상을 바깥 VM 경로로 연결
-        string? outerExpr = null;
-        object? outerTarget = null;
-        if ((isWidget || node.Tag is "DvToggle" or "DvCheckBox" or "DvKnob" or "DvSlider" or "DvInput" or "DvSelect" or "DvSegment" or "DvTabs" or "DvDateTimeInput" or "DvColorInput" or "DvButton") && twoWay is not null &&
-            node.Attributes.TryGetValue("value", out var ve) && BindingResolver.IsBinding(ve) &&
-            twoWay.TryGetValue(ve[1..^1].Trim(), out var oe))
-        {
-            outerExpr = oe;
-            (twoWay as TwoWayParams)?.Targets.TryGetValue(ve[1..^1].Trim(), out outerTarget);
-        }
-
-        _valueOverride = outerExpr;
-        LayoutBox box;
-        try
-        {
-            box = isWidget ? BuildWidget(node, scope, createWidget!) : BuildSelf(node, scope);
-        }
-        finally
-        {
-            _valueOverride = null;
-        }
-
-        if (outerExpr is not null)
-        {
-            box.ValueBindExpr = outerExpr;
-            box.ValueTarget = outerTarget; // 인스턴스 핸들 칸(없으면 바깥 VM)
-            box.ValueOrigin = (twoWay as TwoWayParams)?.Instance;
-        }
-
-        if (isWidget)
-            return box; // 위젯은 자식을 쓰지 않는다
-
-        if (node.Tag == "DvTabs")
-            return BuildTabs(box, scope, ch => TemplateChild(ch, scope, registry, depth, slotChildren, slotBuilder, twoWay));
-
-        if (node.Tag == "DvExpander")
-            return BuildExpander(box, scope, ch => TemplateChild(ch, scope, registry, depth, slotChildren, slotBuilder, twoWay));
-
-        if (node.Tag == "DvProcess")
-        {
-            Process.ProcessBuilder.Build(box, scope, registry, ProcessBuilders(registry, depth));
-            return box;
-        }
-
-        foreach (var ch in node.Children)
-            box.Children.AddRange(TemplateChild(ch, scope, registry, depth, slotChildren, slotBuilder, twoWay));
-        AddSegmentItems(box, scope);
-        AddListItems(box, scope);
-        AddTreeItems(box, scope);
-
-        return box;
-    }
-
-    // 템플릿 자식 1개 → 박스 0..N 개. DvSlot 은 이 템플릿 인스턴스의 자식(슬롯 내용)으로 펼친다
-    // — 중첩 컴포넌트 안에 놓인 DvSlot 도 바깥 인스턴스 자식을 받는다.
-    private IEnumerable<LayoutBox> TemplateChild(ElementNode ch, object? scope, ComponentRegistry? registry, int depth,
-        IReadOnlyList<ElementNode> slotChildren, Func<ElementNode, IEnumerable<LayoutBox>> slotBuilder,
-        IReadOnlyDictionary<string, string>? twoWay)
-    {
-        if (ch.Tag == "DvSlot")
-            return slotChildren.SelectMany(slotBuilder).ToList();
-
-        return BuildTemplate(ch, scope, registry, depth, slotChildren, slotBuilder, twoWay) is { } b
-            ? new[] { b }
-            : Array.Empty<LayoutBox>();
     }
 
     private static bool TryGetAttribute(ElementNode node, string name, out string value)
