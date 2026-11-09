@@ -754,7 +754,7 @@ A component cannot be registered under the name of a built-in tag (`DvGauge`, `D
 - `variant` = `primary` `secondary` `danger` `ghost` → themed button look (`.btn .btn-{variant}`), including hover/press/disabled looks. `size` = `sm` `lg` (only when `variant` is set).
 - Without `variant`, it is an unstyled text box (for custom styling).
 - `icon="fa-floppy-disk"` = icon to the left of the text (gap 8). Icon size = `font-size`, color = `color`. An icon alone without text is fine.
-- `variant`·`size` are bound (`variant="{Kind}"` — same look as the literal). If the bound value is null or empty, it is the same as having no `variant`. Any other word adds no class and writes a Trace warning (`variant="foo"` does not add `.btn-foo`; style your own class with `class`). Changes are applied on `Invalidate()`.
+- `variant`·`size` are bound (`variant="{Kind}"` — same look as the literal). If the bound value is null or empty, it is the same as having no `variant`. Any other word is also treated as no `variant` (a latching button keeps `btn btn-secondary`) and writes a Trace warning (`variant="foo"` does not add `.btn-foo`; style your own class with `class`). Changes are applied on `Invalidate()`.
 
 **DvIcon** — `<DvIcon icon="fa-triangle-exclamation" style="font-size:32; color:token(tone-warning)"/>`. Size = `font-size` (default 24), color = `color` (default `token(text)`). Icon names are in chapter 18.
 
