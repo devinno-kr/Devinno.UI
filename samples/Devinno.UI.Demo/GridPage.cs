@@ -36,9 +36,9 @@ public sealed partial class GridPage : DemoPage
         public DateTime ReserveAt { get; set; }
         public string Pen { get; set; } = "#3B82F6";
 
-        // 즉시 셀 — 경보 램프(상한 fault·하한 warn, 점멸), 미확인 경보만 확인 버튼 활성
+        // 즉시 셀 — 경보 램프(상한 fault·하한 warn, 점멸), 미확인 경보만 확인 버튼 활성(cell-disabled = true 면 꺼짐)
         public string? AlarmLamp => Acked ? null : State == "High" ? "fault" : State == "Low" ? "warn" : null;
-        public bool CanAck => !Acked && State != "Normal";
+        public bool AckDisabled => Acked || State == "Normal";
 
         // 조건부 색 — 조건은 앱 코드(그리드는 그릴 때 읽는다)
         public string? RowClass => State == "High" ? "alarm-row" : null;

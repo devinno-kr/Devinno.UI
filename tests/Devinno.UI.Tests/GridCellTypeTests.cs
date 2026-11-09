@@ -15,7 +15,7 @@ public class GridCellTypeTests
         public bool? Maybe { get; set; }
         public int Count { get; set; }
         public string? State { get; set; }
-        public bool CanAck { get; set; } = true;
+        public bool AckDisabled { get; set; }
         public bool Computed => Id % 2 == 0; // setter 없음
     }
 
@@ -48,7 +48,7 @@ public class GridCellTypeTests
         "<DvColumn header=\"Id\" field=\"Id\" width=\"60\" sortable=\"true\"/>" +
         "<DvColumn header=\"사용\" field=\"On\" width=\"60\" cell-type=\"check\"/>" +
         "<DvColumn header=\"운전\" field=\"On\" width=\"60\" cell-type=\"lamp\"/>" +
-        "<DvColumn header=\"확인\" width=\"60\" cell-type=\"button\" text=\"ACK\" onclick=\"Ack\" enabled=\"CanAck\"/>" +
+        "<DvColumn header=\"확인\" width=\"60\" cell-type=\"button\" text=\"ACK\" onclick=\"Ack\" cell-disabled=\"AckDisabled\"/>" +
         "<DvColumn header=\"이름\" field=\"Name\"/>";
 
     private const string Selectable = "items=\"{Rows}\" selection-mode=\"single\" selection=\"{Bind Picked}\" onrowclick=\"Inspect\"";
@@ -133,7 +133,7 @@ public class GridCellTypeTests
     public void Button_uses_variant_and_dims_when_disabled()
     {
         var vm = new Vm();
-        vm.Rows[1].CanAck = false;
+        vm.Rows[1].AckDisabled = true;
         using var bmp = Render(Surface(vm));
         Assert.Equal(Token("primary"), bmp.GetPixel(188, (int)Y(0)));
         Assert.Equal(Token("surface-raised"), bmp.GetPixel(188, (int)Y(1)));
@@ -253,10 +253,10 @@ public class GridCellTypeTests
     }
 
     [Fact]
-    public void Button_calls_with_the_item_and_respects_enabled()
+    public void Button_calls_with_the_item_and_respects_cell_disabled()
     {
         var vm = new Vm();
-        vm.Rows[1].CanAck = false;
+        vm.Rows[1].AckDisabled = true;
         var s = Surface(vm);
         Tap(s, 210, Y(0));
         Tap(s, 210, Y(1));

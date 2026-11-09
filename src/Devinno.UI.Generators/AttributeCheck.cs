@@ -99,7 +99,7 @@ internal static class AttributeCheck
         ["DvColumn"] =
         [
             "header", "field", "width", "align", "format", "frozen", "sortable", "sort", "cell-class", "cell-type", "filter", "readonly", "onbeforecommit",
-            "on-color", "blink", "text", "icon", "variant", "onclick", "enabled", "min", "max", "unit", "mode", "show-seconds", "items", "item-value", "item-text", "item-icon",
+            "on-color", "blink", "text", "icon", "variant", "onclick", "cell-disabled", "min", "max", "unit", "mode", "show-seconds", "items", "item-value", "item-text", "item-icon",
         ],
         ["DvColumnGroup"] = ["header"],
         ["DvSummaryRow"] = ["label", "fn"],
@@ -420,9 +420,12 @@ internal static class AttributeCheck
         [("DvExpander", "header")] = "title",
         [("DvSummaryRow", "title")] = "label",
         [("DvSignal", "width")] = "thickness",
+        [("DvColumn", "enabled")] = "cell-disabled",
     };
 
-    private static object RenamedText(string old, string now) => Diagnostics.Text("Attr_Renamed", old, now);
+    // enabled → cell-disabled 는 뜻도 뒤집혔다 — 그것까지 알린다
+    private static object RenamedText(string old, string now) =>
+        Diagnostics.Text(old == "enabled" ? "Attr_RenamedInverted" : "Attr_Renamed", old, now);
 
     // 가장 가까운 이름(편집 거리 2 이내) — "txet" → "text"
     private static object Suggest(string name, string[] own, string tag)

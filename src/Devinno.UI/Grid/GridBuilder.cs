@@ -109,7 +109,7 @@ internal static class GridBuilder
                 Variant = Enum("variant") ?? "primary",
                 OnClick = CA("onclick"),
                 Filter = ParseFilter(Enum("filter")),
-                Enabled = CA("enabled") is { Length: > 0 } en ? new FieldReader(en) : null,
+                CellDisabled = CA("cell-disabled") is { Length: > 0 } cd ? new FieldReader(cd) : null,
                 Min = min,
                 Max = max,
                 Unit = BindingResolver.ResolveInline(vm, CA("unit")),

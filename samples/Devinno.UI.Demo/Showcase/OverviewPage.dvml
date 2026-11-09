@@ -80,7 +80,7 @@
         <DvColumn header="Description" field="Description"/>
         <DvColumn header="Load" field="Load" width="70" format="0' %'"/>
         <DvColumn header="Auto" field="Auto" cell-type="check" width="60" align="center"/>
-        <DvColumn header="" cell-type="button" text="Reset" variant="secondary" enabled="CanReset" onclick="ResetEquipment" width="84"/>
+        <DvColumn header="" cell-type="button" text="Reset" variant="secondary" cell-disabled="ResetDisabled" onclick="ResetEquipment" width="84"/>
       </DvDataGrid>
     </DvCard>
 

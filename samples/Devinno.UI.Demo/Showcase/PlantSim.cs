@@ -212,7 +212,7 @@ public sealed class EquipmentRow(string tag, string description, double load, bo
     public bool Running { get; set; } = load > 0;
     public bool Fault { get; set; }
 
-    // 램프 칸 = state-* 토큰 키, 버튼 칸 = 고장일 때만 누를 수 있다
+    // 램프 칸 = state-* 토큰 키, 버튼 칸 = 고장일 때만 누를 수 있다(cell-disabled = true 면 꺼짐)
     public string State => Fault ? "fault" : Running ? "run" : "stop";
-    public bool CanReset => Fault;
+    public bool ResetDisabled => !Fault;
 }

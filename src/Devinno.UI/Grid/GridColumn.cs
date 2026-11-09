@@ -69,8 +69,11 @@ internal sealed class GridColumn
             return GridFilterKind.Values;
         return GridFilterKind.Text;
     }
-    /// <summary>Button <c>enabled</c> — an item bool property; when false, the button is dimmed and does nothing.</summary>
-    public FieldReader? Enabled { get; init; }
+    /// <summary>Button <c>cell-disabled</c> — an item bool property; when true, the button is dimmed and does nothing.</summary>
+    public FieldReader? CellDisabled { get; init; }
+
+    /// <summary>Whether the button of <paramref name="item"/> is disabled (<c>cell-disabled</c> reads <see langword="true"/>; anything else = enabled).</summary>
+    public bool IsButtonDisabled(object item) => CellDisabled?.Get(item) is true;
 
     // ── 편집 셀(3d-1): cell-type = input · select · datetime · color
     public double? Min { get; init; }

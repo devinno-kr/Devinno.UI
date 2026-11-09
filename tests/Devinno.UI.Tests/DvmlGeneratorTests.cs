@@ -843,6 +843,7 @@ public class DvmlGeneratorTests
     [InlineData("<DvExpander header=\"A\"/>", "DvExpander", "header", "title")]
     [InlineData("<DvDataGrid><DvColumn field=\"A\"/><DvSummaryRow title=\"T\" fn=\"sum\"/></DvDataGrid>", "DvSummaryRow", "title", "label")]
     [InlineData("<DvProcess><DvInstrument name=\"FIC\" tag=\"FIC\" on=\"P\"/><DvPump name=\"P\"/><DvSignal from=\"FIC\" to=\"P\" width=\"2\"/></DvProcess>", "DvSignal", "width", "thickness")]
+    [InlineData("<DvDataGrid><DvColumn field=\"A\" cell-type=\"button\" enabled=\"CanAck\"/></DvDataGrid>", "DvColumn", "enabled", "cell-disabled")]
     public void Attribute_Renamed_SaysTheNewName(string body, string tag, string old, string now)
     {
         var d = Assert.Single(Attrs($"<DvStack>{body}</DvStack>"));
@@ -852,6 +853,14 @@ public class DvmlGeneratorTests
         Assert.Contains($"'{now}'", d.GetMessage(new System.Globalization.CultureInfo("ko-KR")));
     }
 
+    // enabled → cell-disabled 는 뜻도 뒤집혔다(true = 버튼 꺼짐) — 메시지가 그것을 말한다
+    [Fact]
+    public void Attribute_Renamed_Enabled_SaysTheSenseFlipped()
+    {
+        var d = Assert.Single(Attrs("<DvStack><DvDataGrid><DvColumn field=\"A\" cell-type=\"button\" enabled=\"CanAck\"/></DvDataGrid></DvStack>"));
+        Assert.Contains("true = the button is disabled", d.GetMessage(Invariant));
+    }
+
     [Fact]
     public void Attribute_NewNames_NoWarnings()
     {
@@ -859,6 +868,7 @@ public class DvmlGeneratorTests
             <DvStack>
               <DvExpander title="A"/>
               <DvDataGrid>
+                <DvColumn field="A" cell-type="button" cell-disabled="AckDisabled"/>
                 <DvSummaryRow label="T" fn="sum"/>
               </DvDataGrid>
               <DvProcess><DvInstrument name="FIC" tag="FIC" on="P"/><DvPump name="P"/><DvSignal from="FIC" to="P" thickness="2"/></DvProcess>

@@ -193,6 +193,9 @@
   <data name="Attr_Renamed" xml:space="preserve">
     <value> — '{0}' 는 '{1}' 로 이름이 바뀌었습니다</value>
   </data>
+  <data name="Attr_RenamedInverted" xml:space="preserve">
+    <value> — '{0}' 는 '{1}' 로 이름이 바뀌고 뜻이 뒤집혔습니다: 행 항목의 bool 속성이 true 면 버튼이 꺼집니다</value>
+  </data>
   <data name="Style_DidYouMean" xml:space="preserve">
     <value> — '{0}' 를 쓰려던 것인가요?</value>
   </data>

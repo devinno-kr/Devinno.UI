@@ -1,4 +1,5 @@
 using Devinno.UI;
+using Devinno.UI.Grid;
 using Devinno.UI.Layout;
 using Devinno.UI.Styling;
 using Xunit;
@@ -90,5 +91,23 @@ public class Stage4NameTests
 
         Assert.Equal(4f, Stroke("thickness"));
         Assert.Null(Stroke("width"));
+    }
+
+    // N10 — DvColumn enabled → cell-disabled, 뜻도 뒤집힘: 행 항목의 bool 이 true 면 버튼이 꺼진다. 옛 enabled 는 읽지 않는다(모든 버튼 켜짐)
+    [Fact]
+    public void ButtonColumn_CellDisabled_TrueDisables_EnabledIsNotRead()
+    {
+        static GridColumn Col(string attr)
+        {
+            var s = new DvSurface(GridLayoutBuildTests.Screen("items=\"{Rows}\"", $"<DvColumn field=\"Name\"/><DvColumn cell-type=\"button\" text=\"Go\" {attr}=\"AckDisabled\"/>"),
+                new GridCellTypeTests.Vm(), DvTheme.Light);
+            s.Layout(400, 300);
+            return s.Root!.Children[0].Grid!.Columns[1];
+        }
+
+        var row = new GridCellTypeTests.Row { AckDisabled = true };
+        Assert.True(Col("cell-disabled").IsButtonDisabled(row));
+        Assert.False(Col("cell-disabled").IsButtonDisabled(new GridCellTypeTests.Row()));
+        Assert.False(Col("enabled").IsButtonDisabled(row));
     }
 }

@@ -599,7 +599,7 @@ Most attributes are bound. The following are **not bound and are used literally*
 | All elements | `onclick` `onbeforecommit` (method names), `id` (control name, chapter 20), `vm` on the root |
 | `DvAlarmBanner` `DvAlarmList` | `onack` |
 | `DvDataGrid` | `row-key` `row-class` `onrowclick` (paths / names), `selection` (the binding expression itself) |
-| `DvColumn` | `field` `onclick` `onbeforecommit` `enabled` `cell-class` (paths / names) |
+| `DvColumn` | `field` `onclick` `onbeforecommit` `cell-disabled` `cell-class` (paths / names) |
 | `DvSelect`, select cell | `item-value` `item-text` `item-icon` (paths inside the item) |
 | `DvSummary` | `field` |
 | Process diagram (`dvml-process.md`) | equipment, unit, `DvPort` and `DvInstrument` `name`, `DvLine`/`DvSignal` `from` `to`, `DvInstrument` `on` `tap` (names and references; a `{` in them writes a Trace warning and is used as written) |
@@ -1140,7 +1140,7 @@ public string? ValueClass => Value > Hi ? "over" : null;
 |---|---|---|
 | `check` | bool/bool? property. Tapping toggles it and **writes directly to the row item**. A property with no public setter is only displayed, dimmed | `onbeforecommit` (6.5 — without it the value is written directly; if the named method is missing or its signature does not match, nothing is written), `readonly` |
 | `lamp` | Display only. bool → on = `on-color` (default `state-run` token); string/enum → `state-{값}` token (unknown value = off) | `on-color` (`#rrggbb` or `token()`, bindable; unreadable = `state-run` + warning, unknown token = magenta), `blink="true"` (lit lamp blinks) |
-| `button` | `onclick` → `VM.M(Row row)` or `VM.M()` | `text` `icon` `variant` (primary, otherwise secondary danger ghost) `enabled` (bool property path on the row item; false = dimmed and inactive) |
+| `button` | `onclick` → `VM.M(Row row)` or `VM.M()` | `text` `icon` `variant` (primary, otherwise secondary danger ghost) `cell-disabled` (bool property path on the row item; true = dimmed and inactive — the same direction as the common `disabled`; it was `enabled`, with the opposite sense, before 0.x stage 4) |
 
 Tapping a check or button cell performs only that action (no selection, no `onrowclick`). Tapping a lamp cell is a normal row tap. The whole cell is the touch area.
 

@@ -111,7 +111,7 @@ internal static class GridInteraction
 
             if (col.CellType == GridCellType.Button)
             {
-                if (vm is not null && col.OnClick is { Length: > 0 } m && (col.Enabled is null || col.Enabled.Get(item) is not false))
+                if (vm is not null && col.OnClick is { Length: > 0 } m && !col.IsButtonDisabled(item))
                     InvokeRowClick(vm, m, item, owner, "onclick", box.Node.Tag);
                 return true;
             }

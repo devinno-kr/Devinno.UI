@@ -2551,9 +2551,7 @@
             <summary>버튼 색 — primary · secondary · danger · ghost.</summary>
         </member><member name="P:Devinno.UI.Grid.GridColumn.FilterKind" en-hash="7f586d934a7abd97">
             <summary>실제 필터 종류 — auto 는 지금 값 타입으로(항목이 없어 타입을 모르면 text).</summary>
-        </member><member name="P:Devinno.UI.Grid.GridColumn.Enabled" en-hash="a2d2a72617922697">
-            <summary>버튼 <c>enabled</c> — 항목 bool 속성, false 면 흐린 버튼·무동작.</summary>
-        </member><member name="P:Devinno.UI.Grid.GridColumn.Mode" en-hash="7ef570edff299b79">
+        </member><member name="P:Devinno.UI.Grid.GridColumn.CellDisabled" en-hash="47ce4c8a8c414358"><summary>버튼 <c>cell-disabled</c> — 항목 bool 속성, true 면 흐린 버튼·무동작.</summary></member><member name="M:Devinno.UI.Grid.GridColumn.IsButtonDisabled(System.Object)" en-hash="a73e2e8c61791ae9"><summary><paramref name="item" /> 의 버튼이 꺼졌는가(<c>cell-disabled</c> 가 <see langword="true" /> 를 읽을 때; 그 밖은 켜짐).</summary></member><member name="P:Devinno.UI.Grid.GridColumn.Mode" en-hash="7ef570edff299b79">
             <summary>datetime <c>mode</c> 원문(생략 = 값 타입으로).</summary>
         </member><member name="P:Devinno.UI.Grid.GridColumn.OptionsReader" en-hash="8192e4c2c08ee0e4"><summary>select 항목 원천 — 그리드 VM 문맥에서 DvColumn 노드(DvOption 자식·items·item-*)를 읽는 리더.</summary></member><member name="P:Devinno.UI.Grid.GridColumn.Options" en-hash="aa00c7f63aaf8d04">
             <summary>select 항목 — 값 타입이 정해지면 그 타입 기준으로 한 번 만든다(enum 자동 포함).</summary>

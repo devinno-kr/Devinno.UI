@@ -374,7 +374,7 @@ internal static class TagSchema
             new("icon", AttrKind.Text, Note: "button cells"),
             new("variant", AttrKind.Enum, "primary", Values: ["primary", "secondary", "danger", "ghost"], Note: "button cells; " + EnumRule),
             new("onclick", AttrKind.Expr, Bindable: false, Note: "button cells; M(row) or M()"),
-            new("enabled", AttrKind.Path, Bindable: false, Note: "button cells; read raw; an item bool property path (the common disabled is the inverse sense and is not read here)"),
+            new("cell-disabled", AttrKind.Path, Bindable: false, Note: "button cells; read raw; an item bool property path, true = that row's button is disabled (stage 4 N10: was enabled, the opposite sense; named like cell-class)"),
             new("min", AttrKind.Number, Note: "input cells; typed values out of range are rejected; both given and min >= max = 0..100 + warning; " + NumberRule + " (ignored)"),
             new("max", AttrKind.Number, Note: "input cells; typed values out of range are rejected; both given and min >= max = 0..100 + warning; " + NumberRule + " (ignored)"),
             new("unit", AttrKind.Text, Note: "input cells; inline interpolation only"),

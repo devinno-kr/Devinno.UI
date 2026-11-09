@@ -24,7 +24,7 @@
       <DvColumn header="Tag" field="Tag" width="150" frozen="true" sortable="true" filter="text"/>
       <DvColumn header="Use" field="Use" width="64" cell-type="check"/>
       <DvColumn header="Alarm" field="AlarmLamp" width="64" cell-type="lamp" blink="true"/>
-      <DvColumn header="Ack" width="96" cell-type="button" text="Ack" icon="fa-check" onclick="Ack" enabled="CanAck"/>
+      <DvColumn header="Ack" width="96" cell-type="button" text="Ack" icon="fa-check" onclick="Ack" cell-disabled="AckDisabled"/>
       <DvColumn header="Name" field="Name" width="140" cell-type="input"/>
       <DvColumn header="Setpoint" field="SetPoint" width="110" cell-type="input" min="0" max="120" unit="℃" format="0.0" onbeforecommit="CheckSetPoint" filter="range"/>
       <DvColumn header="Mode" field="Mode" width="110" cell-type="select" filter="auto">

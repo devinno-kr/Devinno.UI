@@ -193,6 +193,9 @@
   <data name="Attr_Renamed" xml:space="preserve">
     <value> — '{0}' was renamed to '{1}'</value>
   </data>
+  <data name="Attr_RenamedInverted" xml:space="preserve">
+    <value> — '{0}' was renamed to '{1}' and its sense flipped: the item bool property now means true = the button is disabled</value>
+  </data>
   <data name="Style_DidYouMean" xml:space="preserve">
     <value> — did you mean '{0}'?</value>
   </data>

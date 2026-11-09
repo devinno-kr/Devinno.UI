@@ -381,13 +381,13 @@ public sealed partial class Painter
         return _theme.TryGet(name, out _) ? ThemeColor(name) : null;
     }
 
-    // 버튼 — 셀 안쪽(가로 6·세로 8 여백) 둥근 사각형 + [아이콘] 글자, variant 색은 DvButton 과 같음, enabled=false 면 흐림
+    // 버튼 — 셀 안쪽(가로 6·세로 8 여백) 둥근 사각형 + [아이콘] 글자, variant 색은 DvButton 과 같음, cell-disabled 가 true 면 흐림
     private void DrawButtonCell(SKCanvas canvas, GridColumn col, object item, SKRect cell, GridFonts fonts, SKPaint ink, SKPaint fill)
     {
         var r = new SKRect(cell.Left + 6f, cell.Top + 8f, cell.Right - 6f, cell.Bottom - 8f);
         if (r.Width <= 4 || r.Height <= 4)
             return;
-        var enabled = col.Enabled is null || col.Enabled.Get(item) is not false;
+        var enabled = !col.IsButtonDisabled(item);
         SKColor bg, fg;
         SKColor? border = null;
         if (!enabled)
