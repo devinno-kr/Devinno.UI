@@ -1603,7 +1603,7 @@ public sealed partial class DvSurface
     // value 가 없으면 화면이 기억하는 묶음 값. 단방향·고정 값·묶음 없음은 읽기 전용.
     private void CommitRadio(LayoutBox radio)
     {
-        if (radio.Disabled || radio.ToggleOn || radio.RadioOption is not { } option)
+        if (radio.Disabled || radio.ReadOnly || radio.ToggleOn || radio.RadioOption is not { } option)
             return;
         if (radio.ValueBindExpr is { } ve && Binding.BindingResolver.IsTwoWay(ve))
         {

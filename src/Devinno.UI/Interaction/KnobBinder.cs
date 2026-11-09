@@ -17,11 +17,11 @@ public static class KnobBinder
     /// <summary>Movement of less than this distance (px) from the press point is not treated as a drag (distinguishes hand tremor from a tap).</summary>
     public const float MinDragDistance = 8f;
 
-    /// <summary>Checks whether the knob can be turned. It must not be disabled, and <c>value</c> must be a two-way binding (<c>{Bind …}</c>).</summary>
+    /// <summary>Checks whether the knob can be turned. It must not be disabled or read-only (<c>readonly</c>), and <c>value</c> must be a two-way binding (<c>{Bind …}</c>).</summary>
     /// <param name="box">The knob box.</param>
     /// <returns><see langword="true"/> if it can be turned.</returns>
     public static bool CanDrag(LayoutBox box)
-        => !box.Disabled && box.ValueBindExpr is { } e && BindingResolver.IsTwoWay(e);
+        => !box.Disabled && !box.ReadOnly && box.ValueBindExpr is { } e && BindingResolver.IsTwoWay(e);
 
     /// <summary>
     /// Rounds the value to <c>step</c> intervals from <c>min</c> (0.5 rounds away from zero), clamps it to <c>min</c>–<c>max</c>, then rounds to the decimal places of <c>step</c> to remove floating-point error.

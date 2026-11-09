@@ -499,6 +499,12 @@ public sealed partial class LayoutEngine
                 yield return "input-readonly";
         }
 
+        // 3단계 R5 — 입력 상자처럼 생긴 값 위젯도 같은 읽기 전용 모양(투명 바탕 + 점선). DvListBox·DvTreeView 는 컴포넌트 양방향 파라미터를 쓰지 않는다
+        if (node.Tag == "DvSegment" && InputReadOnly(r, valueOverride) ||
+            node.Tag == "DvListBox" && InputReadOnly(r, null, AttrRules.Enum(r, "selection-mode") == "multi" ? "selected-items" : "value") ||
+            node.Tag == "DvTreeView" && InputReadOnly(r, null))
+            yield return "input-readonly";
+
         if (node.Tag == "DvIcon")
             yield return "icon";
 
@@ -664,12 +670,13 @@ public sealed partial class LayoutEngine
         public Dictionary<string, object> Targets { get; } = new(StringComparer.Ordinal);
     }
 
-    // 읽기 전용 = readonly 참, 또는 값이 양방향 바인딩이 아님(단방향·리터럴)
-    // 쓸 수 있는 값 = 양방향 바인딩이거나 핸들이 주인(value 없음 + 값 핸들)
-    private bool InputReadOnly(AttrReader r, string? valueOverride)
-        => !(BindingResolver.IsTwoWay(valueOverride ?? r.Raw("value")) ||
-             valueOverride is null && OwnerSlot(r) is not null) ||
-           AttrRules.Bool(BindingResolver.ResolveValueOrLiteral(r.Context, r.Raw("readonly")), false, r.Node.Tag, "readonly");
+    // 3단계 R5 — 읽기 전용 판단식 하나: 값을 쓸 수 없음(단방향·리터럴) 또는 readonly 참(공용 참/거짓 규칙, 코드 덮어쓰기는 리더로).
+    // 모든 값 위젯이 이 식을 쓴다(DvRadio 는 value 없는 묶음 기억도 쓸 수 있는 값).
+    private static bool ReadOnlyOf(AttrReader r, bool writable) => !writable || AttrRules.Bool(r, "readonly");
+
+    // 쓸 수 있는 값 = 양방향 바인딩이거나 핸들이 주인(value 없음 + 값 핸들). valueOverride = 컴포넌트 양방향 파라미터의 바깥 식, attr = 값 속성 이름
+    private bool InputReadOnly(AttrReader r, string? valueOverride, string attr = "value")
+        => ReadOnlyOf(r, BindingResolver.IsTwoWay(valueOverride ?? r.Raw(attr)) || valueOverride is null && OwnerSlot(r) is not null);
 
     // value 없음 + 값 핸들 = 핸들이 주인인 칸(설계 4.1). 아니면 null.
     private Controls.ValueSlot? OwnerSlot(AttrReader r)

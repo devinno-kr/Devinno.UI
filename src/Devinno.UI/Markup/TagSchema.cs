@@ -84,7 +84,7 @@ internal static class TagSchema
         ["DvTabs"] =
         [
             new("value", AttrKind.Object, Note: "two-way {Bind X} selects by DvTab value; one-way/literal = read-only; absent = the screen remembers the index (shared by all instances of the node)"),
-            new("readonly", AttrKind.Bool, "false", Note: "read through the block shared with DvSelect; not documented for DvTabs"),
+            new("readonly", AttrKind.Bool, "false", Note: "the common read-only rule (" + ReadOnlyRule + "): header taps do not change the value; no read-only visual on tabs"),
             new("placeholder", AttrKind.Text, Note: "dead read: the block shared with DvSelect reads it, tabs never show it"),
             new("items", AttrKind.Items, Note: "dead read: the block shared with DvSelect builds options from it, then the DvTab children replace them"),
             new("item-value", AttrKind.Path, Note: "dead read (see items)"),
@@ -134,23 +134,26 @@ internal static class TagSchema
             new("position", AttrKind.Number, Note: "seconds; a changed value seeks; {Bind X} is written back every frame; with src or source=VideoPlayer only"),
             new("duration", AttrKind.Number, Note: "seconds; only {Bind X} is used (written out); a one-way value or literal is ignored silently"),
         ],
-        ["DvToggle"] = [BoolValue()],
-        ["DvCheckBox"] = [BoolValue(), Text("a code Text override is honored by the build, but the handle exposes no Text")],
+        ["DvToggle"] = [BoolValue(), ReadOnly()],
+        ["DvCheckBox"] = [BoolValue(), Text("a code Text override is honored by the build, but the handle exposes no Text"), ReadOnly()],
         ["DvRadio"] =
         [
             new("option", AttrKind.Text, "", Note: "converted to the type of the bound value for comparison"),
             new("value", AttrKind.Object, Note: "the group value; {Bind X} = VM; one-way/literal = that value (a handle override is read as checked); absent = the screen remembers the group; a handle cannot own it"),
             new("group", AttrKind.Text, Note: "read only when value is absent; no name + a handle = this element alone"),
             Text("a code Text override is honored by the build, but the handle exposes no Text"),
+            ReadOnly("read-only also when value is one-way or a literal (absent value with group memory is writable)"),
         ],
         ["DvKnob"] =
         [
             .. KnobRange(),
+            ReadOnly(),
             new("input-mode", AttrKind.Enum, "drag", Values: ["drag", "tap", "both"], Note: EnumRule),
         ],
         ["DvSlider"] =
         [
             .. KnobRange(),
+            ReadOnly(),
             new("direction", AttrKind.Enum, "right", Values: Directions, Note: EnumRule),
             new("show-value", AttrKind.Bool, "false", Note: "decimals come from step"),
         ],
@@ -178,7 +181,7 @@ internal static class TagSchema
         ["DvSegment"] =
         [
             OwnedValue("the option value is written without conversion to the bound type"),
-            ReadOnly("no read-only visual"),
+            ReadOnly(),
             new("fill", AttrKind.Bool, "false"),
             new("placeholder", AttrKind.Text, Note: "dead read: the block shared with DvSelect reads it, a segment never shows it"),
             .. Items("not documented for DvSegment"),
@@ -188,7 +191,7 @@ internal static class TagSchema
             new("selection-mode", AttrKind.Enum, "single", Values: ["single", "multi"], Note: EnumRule + "; the handle resolves it against the screen VM"),
             OwnedValue("single selection only (read when selection-mode is not multi)"),
             new("selected-items", AttrKind.Items, Note: "multi selection only (read when selection-mode is multi); two-way {Bind X} list"),
-            new("readonly", AttrKind.Bool, "false", Note: "own formula (not the shared input rule); no input-readonly class"),
+            ReadOnly("read-only also when the value attribute (value, or selected-items when multi) is one-way or a literal"),
             .. Items(),
         ],
         ["DvTreeView"] =
@@ -198,7 +201,7 @@ internal static class TagSchema
             new("item-text", AttrKind.Path, Bindable: false, Note: "read raw; absent = the item itself as text"),
             new("item-value", AttrKind.Path, Bindable: false, Note: "read raw; absent = the item itself; the handle also reads it raw"),
             OwnedValue("the selected item's value"),
-            new("readonly", AttrKind.Bool, "false", Note: "own formula (not the shared input rule); expand/collapse still works"),
+            ReadOnly("read-only also when value is one-way or a literal; expand/collapse still works"),
         ],
         ["DvDateTimeInput"] =
         [
@@ -563,8 +566,11 @@ internal static class TagSchema
 
     private static AttrDef Placeholder() => new("placeholder", AttrKind.Text);
 
+    // 3단계 R5 — 모든 값 위젯 같은 판단식·모양(LayoutEngine.ReadOnlyOf, Painter.PaintReadOnlyEdge / .input-readonly)
+    private const string ReadOnlyRule = BoolRule + "; read-only = this is true or the value is one-way/literal; the value is shown as is, taps/drags/keypad do not write it (no dimming)";
+
     private static AttrDef ReadOnly(string? note = null) =>
-        new("readonly", AttrKind.Bool, "false", Note: note ?? "read-only also when value is one-way or a literal");
+        new("readonly", AttrKind.Bool, "false", Note: (note ?? "read-only also when value is one-way or a literal") + "; " + ReadOnlyRule + "; look: dashed outline (.input-readonly on box widgets)");
 
     private static AttrDef[] KnobRange() =>
     [

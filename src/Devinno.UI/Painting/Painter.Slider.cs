@@ -17,6 +17,9 @@ public sealed partial class Painter
         var a = box.Disabled ? (byte)0x80 : (byte)0xff;
         var hot = !box.Disabled && state is not null && (ReferenceEquals(state.Press, box) || ReferenceEquals(state.Hover, box));
         var fill = ThemeColor("knob-fill", new SKColor(0x25, 0x63, 0xeb)).WithAlpha(a);
+        // 읽기 전용 — 손잡이가 다니는 길 둘레 점선
+        PaintReadOnlyEdge(canvas, box, new SKRect(MathF.Min(min.X, max.X) - SliderMetrics.Thumb, MathF.Min(min.Y, max.Y) - SliderMetrics.Thumb,
+            MathF.Max(min.X, max.X) + SliderMetrics.Thumb, MathF.Max(min.Y, max.Y) + SliderMetrics.Thumb), SliderMetrics.Thumb);
 
         using var p = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = bar, StrokeCap = SKStrokeCap.Round };
         p.Color = ThemeColor("gauge-track", new SKColor(0xe2, 0xe8, 0xf0)).WithAlpha(a);

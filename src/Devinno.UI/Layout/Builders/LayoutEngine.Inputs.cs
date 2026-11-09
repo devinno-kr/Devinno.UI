@@ -118,6 +118,7 @@ public sealed partial class LayoutEngine
         else
             cur = BindingResolver.ResolveValueOrLiteral(vm, ve);
         box.ToggleOn = AttrRules.Bool(cur, false, r.Node.Tag, "value");
+        box.ReadOnly = InputReadOnly(r, _valueOverride);
     }
 
     /// <summary>
@@ -151,6 +152,9 @@ public sealed partial class LayoutEngine
             box.RadioGroup = group is { Length: > 0 } ? group : ControlOf?.Invoke(node) is not null ? node : null;
             box.ToggleOn = box.RadioGroup is { } key && RadioGroupOf?.Invoke(key) is { } picked && picked == option;
         }
+
+        // 쓸 수 있는 값 = 양방향 바인딩, 또는 value 없이 화면이 기억하는 묶음
+        box.ReadOnly = ReadOnlyOf(r, ve is not null ? BindingResolver.IsTwoWay(ve) : box.RadioGroup is not null);
     }
 
     // DvKnob·DvSlider — 같은 값 필드(Knob*)를 쓴다
@@ -170,6 +174,7 @@ public sealed partial class LayoutEngine
         var step = ToFloat(r, "step", 1f);
         box.KnobStep = step > 0 ? step : 1f;
         box.KnobUnit = r.Text("unit");
+        box.ReadOnly = InputReadOnly(r, _valueOverride);
         if (r.Node.Tag == "DvKnob")
         {
             // input-mode — 공용 목록 규칙(바인딩 가능, 모르는 값 = drag + 경고)
@@ -363,8 +368,7 @@ public sealed partial class LayoutEngine
             box.InputValue = current;
         }
 
-        box.ReadOnly = !(twoWay || target is not null) ||
-                       AttrRules.Bool(BindingResolver.ResolveValueOrLiteral(vm, r.Raw("readonly")), false, node.Tag, "readonly");
+        box.ReadOnly = InputReadOnly(r, null, attr);
     }
 
     /// <summary>
@@ -394,8 +398,7 @@ public sealed partial class LayoutEngine
         else
             current = BindingResolver.ResolveValueOrLiteral(vm, raw);
         box.InputValue = current;
-        box.ReadOnly = !(twoWay || target is not null) ||
-                       AttrRules.Bool(BindingResolver.ResolveValueOrLiteral(vm, r.Raw("readonly")), false, node.Tag, "readonly");
+        box.ReadOnly = InputReadOnly(r, null);
 
         var itemsRaw = r.Raw("items");
         var textPath = r.Raw("item-text");

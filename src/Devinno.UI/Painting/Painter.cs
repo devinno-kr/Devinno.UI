@@ -216,9 +216,8 @@ public sealed partial class Painter
         {
             var tr = WidgetMetrics.ShapeRect(box); // 늘어난 상자에서도 자기 크기로 가운데
             var radius = tr.Height / 2f;
-            // 비활성 = 반투명(체크박스·슬라이더와 같음), 읽기 전용(단방향·고정 값) = 점선 테두리(입력 상자 읽기 전용과 같음)
+            // 비활성 = 반투명(체크박스·슬라이더와 같음), 읽기 전용 = 점선 테두리(PaintReadOnlyEdge — 모든 값 위젯 같은 모양)
             var a = box.Disabled ? (byte)0x80 : (byte)0xff;
-            var readOnly = !box.Disabled && !Binding.BindingResolver.IsTwoWay(box.ValueBindExpr);
             var trackOn = ThemeColor("--toggle-on", new SKColor(0x3A, 0x7B, 0xD5)).WithAlpha(a);
             var trackOff = ThemeColor("--toggle-off", new SKColor(0xC7, 0xCD, 0xD5)).WithAlpha(a);
             using (var trackPaint = new SKPaint
@@ -230,20 +229,7 @@ public sealed partial class Painter
                 canvas.DrawRoundRect(tr, radius, radius, trackPaint);
             }
 
-            if (readOnly)
-            {
-                using var dash = SKPathEffect.CreateDash([4f, 3f], 0);
-                using var edge = new SKPaint
-                {
-                    IsAntialias = true,
-                    Style = SKPaintStyle.Stroke,
-                    StrokeWidth = 1.5f,
-                    PathEffect = dash,
-                    Color = ThemeColor("border-strong", new SKColor(0x94, 0xa3, 0xb8))
-                };
-                var o = SKRect.Inflate(tr, 2.5f, 2.5f);
-                canvas.DrawRoundRect(o, radius + 2.5f, radius + 2.5f, edge);
-            }
+            PaintReadOnlyEdge(canvas, box, tr, radius);
 
             var knobDiameter = tr.Height - 4;
             var knobX = box.ToggleOn ? tr.Right - knobDiameter - 2 : tr.Left + 2;

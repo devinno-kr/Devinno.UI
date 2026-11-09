@@ -2882,8 +2882,8 @@
             <summary>노브 호 전체 각도(도)입니다. 이만큼 돌리면 값이 <c>min</c> 에서 <c>max</c> 까지 바뀝니다.</summary>
         </member><member name="F:Devinno.UI.Interaction.KnobBinder.MinDragDistance" en-hash="3b50734d76a845fd">
             <summary>누른 지점에서 이 거리(px) 미만으로 움직이면 드래그로 보지 않습니다(손떨림·탭 구분).</summary>
-        </member><member name="M:Devinno.UI.Interaction.KnobBinder.CanDrag(Devinno.UI.Layout.LayoutBox)" en-hash="ee9cde067c24250d">
-            <summary>노브를 돌릴 수 있는지 확인합니다. 비활성이 아니고 <c>value</c> 가 양방향 바인딩(<c>{Bind …}</c>)이어야 합니다.</summary>
+        </member><member name="M:Devinno.UI.Interaction.KnobBinder.CanDrag(Devinno.UI.Layout.LayoutBox)" en-hash="c35d1973a035e420">
+            <summary>노브를 돌릴 수 있는지 확인합니다. 비활성·읽기 전용(<c>readonly</c>)이 아니고 <c>value</c> 가 양방향 바인딩(<c>{Bind …}</c>)이어야 합니다.</summary>
             <param name="box">노브 상자.</param>
             <returns>돌릴 수 있으면 <see langword="true" />.</returns>
         </member><member name="M:Devinno.UI.Interaction.KnobBinder.Snap(Devinno.UI.Layout.LayoutBox,System.Double)" en-hash="3de2c4da681a0edd">
@@ -2977,13 +2977,13 @@
         </member><member name="T:Devinno.UI.Interaction.TwoWayBinder" en-hash="dbc1932065f4c73e">
             <summary><c>DvToggle</c> 을 눌렀을 때 반전된 값을 양방향 바인딩(<c>value="{Bind …}"</c>) 대상에 쓰는 부품입니다.</summary>
             <remarks>엔진 내부 단계입니다. 보통 앱 코드는 직접 쓰지 않고 마크업 바인딩과 <see cref="T:Devinno.UI.DvSurface" />/<see cref="T:Devinno.UI.DvRenderer" /> 를 씁니다.</remarks>
-        </member><member name="M:Devinno.UI.Interaction.TwoWayBinder.Commit(Devinno.UI.Layout.LayoutBox,System.Object)" en-hash="dd0d7b060301b351">
+        </member><member name="M:Devinno.UI.Interaction.TwoWayBinder.Commit(Devinno.UI.Layout.LayoutBox,System.Object)" en-hash="a1b939318c2058fc">
             <summary>
             토글 상자의 현재 상태를 반전한 값을 바인딩 경로에 씁니다. <c>onbeforecommit="M"</c> 이 있으면 먼저 <c>bool M(bool proposed)</c> 를 호출해
             <see langword="true" /> 를 돌려줄 때만 씁니다. 메서드가 없거나 시그니처가 맞지 않으면(반환 형식이 <see langword="bool" /> 이 아닌 경우 포함) 쓰지 않고 Trace 경고를 남기고(같은 원인에 1회),
             메서드가 예외를 던지면 쓰지 않고 Trace 오류를 남깁니다. <c>DvRepeat</c> 항목 안이면 항목 범위에 씁니다.
             </summary>
-            <param name="box">눌린 토글 상자. 비활성이거나 값이 양방향 바인딩이 아니면 무시합니다.</param>
+            <param name="box">눌린 토글 상자. 비활성·읽기 전용(<c>readonly</c>)이거나 값이 양방향 바인딩이 아니면 무시합니다.</param>
             <param name="vm">화면 뷰모델. <see langword="null" /> 이면 무시합니다.</param>
             <remarks>
             확인 메서드가 던진 예외와 쓰기 실패(속성 setter 예외·형식 변환 실패)는 전달하지 않습니다. 쓰지 않은 것으로 처리하고 Trace 오류를 남깁니다.

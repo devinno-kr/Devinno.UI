@@ -168,6 +168,7 @@ public class KnobKeypadTests
 
     [Theory]
     [InlineData("disabled=\"true\"")]
+    [InlineData("readonly=\"true\"")] // 3단계 R5 — readonly 도 키패드를 열지 않는다
     public void Disabled_NoKeypad(string extra)
     {
         var (app, root, _) = Start("input-mode=\"tap\"", extra);

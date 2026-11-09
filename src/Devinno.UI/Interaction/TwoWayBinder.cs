@@ -12,7 +12,7 @@ public static class TwoWayBinder
     /// the value is written only when it returns <see langword="true"/>. If the method is missing or its signature does not match (including a return type other than <see langword="bool"/>), nothing is written and a Trace warning is logged (once per cause);
     /// if the method throws, nothing is written and a Trace error is logged. Inside a <c>DvRepeat</c> item, it writes in the item scope.
     /// </summary>
-    /// <param name="box">The pressed toggle box. Ignored if it is disabled or its value is not a two-way binding.</param>
+    /// <param name="box">The pressed toggle box. Ignored if it is disabled, read-only (<c>readonly</c>) or its value is not a two-way binding.</param>
     /// <param name="vm">The screen view model. Ignored if <see langword="null"/>.</param>
     /// <remarks>
     /// Exceptions thrown by the check method and write failures (property setter exceptions, type conversion failures) are not propagated. They are treated as not written and a Trace error is logged.
@@ -23,7 +23,7 @@ public static class TwoWayBinder
     // owner = 예외를 알릴 서피스(HandlerError)
     internal static void Commit(LayoutBox box, object? vm, DvSurface? owner)
     {
-        if (box.Disabled || vm is null || box.ValueBindExpr is null)
+        if (box.Disabled || box.ReadOnly || vm is null || box.ValueBindExpr is null)
             return;
         if (!BindingResolver.IsTwoWay(box.ValueBindExpr))
             return;

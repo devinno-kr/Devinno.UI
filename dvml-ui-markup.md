@@ -461,7 +461,7 @@ Sets where the text (and button icon) of `DvLabel`/`DvButton` is placed inside t
 | Tree | `.treeview` `.treeview-item` `.treeview-item-on` | Automatic on `DvTreeView` and its rows |
 | Tabs | `.tabs` `.tab-header` `.tab` `.tab-on` `.tab-rule` `.tab-body` | Added automatically to `DvTabs`, the header, the divider and `DvTab` content |
 | Icon | `.icon` | Automatic on `DvIcon` (24, `token(text)`) |
-| Input | `.input` `.input-readonly` | Automatic on input widgets |
+| Input | `.input` `.input-readonly` | Automatic on input widgets; `.input-readonly` also on a read-only `DvSegment`, `DvListBox`, `DvTreeView` |
 
 There are also classes for internal use by built-in semantic components (`.stat` `.stat-accent` `.stat-body` `.stat-value` `.status-item` `.switch-row`), but they are not meant to be used directly.
 
@@ -724,15 +724,17 @@ Built-in components whose appearance is defined by the theme. You rarely need `s
 | `DvButton` | `text` or inner text, `icon`, `variant` `size`, `onclick`, `disabled`, `hold`, `value` (latching) `onbeforecommit` | Text (+icon) size + padding |
 | `DvIcon` | `icon` | `font-size` (24) square + padding |
 | `DvLamp` | `on` `blink`(false) `blink-interval`(500 ms) `color` `state` | 24×24 |
-| `DvToggle` | `value` (two-way) `onbeforecommit` `disabled` | 44×24 |
-| `DvCheckBox` | `text` `value` (two-way) `onbeforecommit` `disabled` | Box 24 + gap 10 + text, height 40 or more |
-| `DvRadio` | `text` `value` (two-way, group value) `option` `group` `onbeforecommit` `disabled` | Circle 24 + gap 10 + text, height 40 or more |
+| `DvToggle` | `value` (two-way) `readonly`(false) `onbeforecommit` `disabled` | 44×24 |
+| `DvCheckBox` | `text` `value` (two-way) `readonly`(false) `onbeforecommit` `disabled` | Box 24 + gap 10 + text, height 40 or more |
+| `DvRadio` | `text` `value` (two-way, group value) `option` `group` `readonly`(false) `onbeforecommit` `disabled` | Circle 24 + gap 10 + text, height 40 or more |
 | `DvSegment` | `value` (two-way) `readonly` `disabled` `onbeforecommit` + `DvOption` children | Sum of item text sizes + padding |
-| `DvTabs` | `value` (two-way, optional) `onbeforecommit` + `DvTab` children (`value` `text` `disabled`) | Header + content of the selected tab |
+| `DvTabs` | `value` (two-way, optional) `readonly`(false) `onbeforecommit` + `DvTab` children (`value` `text` `disabled`) | Header + content of the selected tab |
 | `DvExpander` | `header` `expanded` (two-way, optional) `disabled` + content children | Header row 44 (+ content when expanded) |
 | `DvImage` | `src` `fit`(contain) | 100×100 |
 | `DvVideo` | `src` or `source`, `fit`(contain) `playing`(true) `loop`(false) `position`(two-way, s) `duration`(written, s) | 320×180 |
 | `DvStepBar` | `steps` `current`(0) | 96 width per step (min 200)×64 |
+
+**Read-only (`readonly`)** — every value widget (`DvToggle`, `DvCheckBox`, `DvRadio`, `DvKnob`, `DvSlider`, `DvInput`, `DvSelect`, `DvSegment`, `DvListBox`, `DvTreeView`, `DvDateTimeInput`, `DvColorInput`, `DvTabs`) follows one rule: it is read-only when `readonly` is true (bindable, the common true/false rule) **or** its `value` is one-way (`{X}`) or a literal. Read-only shows the value as is and blocks taps, drags, the keypad and the stepper (nothing is written and `onbeforecommit` is not called); it is not dimmed — dimming is `disabled`. The look is a dashed outline: box-shaped widgets (`DvInput`, `DvSelect`, `DvDateTimeInput`, `DvColorInput`, `DvSegment`, `DvListBox`, `DvTreeView`) get `.input-readonly` (transparent background, dashed border), drawn widgets (`DvToggle`, `DvCheckBox`, `DvRadio`, `DvKnob`, `DvSlider`) a dashed line around the shape. `DvTabs` has no read-only look (header presses just do not switch). A `DvRadio` without `value` (group remembered by the screen) is writable unless `readonly` is true. Code (handles) and the VM can still change the value.
 
 **DvLabel** — text. Wraps if longer than the width it is given (3.8; force a single line with `white-space:nowrap`). The default text color is `#222222`, so give a typography class (`class="body"` etc.) or `color`. Align the text with `content-align`/`text-align`.
 
@@ -769,7 +771,7 @@ public bool IsFault => State == 2;
 </DvSegment>
 ```
 - Writes the pressed item's `value` to the VM (value type conversion and `onbeforecommit` are the same as `DvSelect` — 10.2). The selected item has a `primary` background (`.segment-item-on`).
-- With one-way `value`, `readonly`, or `disabled`, it only displays. Items are created by the library (`.segment-item`) and do not wrap.
+- With one-way `value` or `readonly` it only displays (dashed border, `.input-readonly`); `disabled` dims it. Items are created by the library (`.segment-item`) and do not wrap.
 - Its width fits its items, also inside a vertical layout (`DvStack`, `DvCard` — not stretched like other children). When `grow`, `width` or `align-self:stretch` makes it wider than its items, the box takes that space but the background and border are drawn only around the items (no empty background after the last item).
 - `fill="true"`: fill the width instead — the items share the extra width equally (each keeps its text width, so longer labels stay wider and are not cut). Inside a vertical layout it also stretches to the full width.
 ```xml
@@ -792,6 +794,7 @@ public bool IsFault => State == 2;
 ```
 - Builds a tab header row and divider on top, and below it **only the selected tab's content** (other tabs are not built). Tab content stacks vertically and fills the remaining height (`.tab-body`).
 - Pressing a header writes that tab's `value` to the VM (value type conversion and `onbeforecommit` are the same as `DvSelect`). If no tab matches the VM value, the first tab is shown.
+- `readonly="true"` (bindable) or a one-way `value`: header presses do not switch tabs (no read-only look on tabs).
 - If `value` is **omitted**, the screen remembers the selection (starting at the first tab, kept across redraws; each `DvRepeat` item and each component instance remembers its own). Bind `value` if code needs to change tabs or read the selection.
 - A `DvTab` with an `id` can take a handle (`DvControl`): `Enabled = false` disables both its header and its content, `Visible = false` removes the tab.
 - When switching tabs, the scroll position of the tab being left is not kept. A value being edited is committed first when a header is pressed.
@@ -884,8 +887,8 @@ public sealed class Section(string title, List<Section> all)
 | `DvRing` | `value` `min`(0) `max`(100) `tone`(info) `alarm-zones` `unit` `label` `sweep`(270) `thickness` `format` | 120×120 |
 | `DvProgress` | `value` `min`(0) `max`(100) `direction`(right) `tone`(info) `alarm-zones` `show-value`(false) `unit` `format` | 200×12 (vertical 12×120) |
 | `DvTank` | `value` `min`(0) `max`(100) `unit` `alarm-zones` `show-zone-marks`(true) `format` | 80×160 |
-| `DvKnob` | `value`(two-way) `min`(0) `max`(100) `step`(1) `unit` `disabled` `onbeforecommit` `input-mode`(drag) | 96×96 |
-| `DvSlider` | `value`(two-way) `min`(0) `max`(100) `step`(1) `direction`(right) `show-value`(false) `unit` `disabled` `onbeforecommit` | 200×40 (vertical 40×200), +24 with `show-value` (vertical +56) |
+| `DvKnob` | `value`(two-way) `min`(0) `max`(100) `step`(1) `unit` `readonly`(false) `disabled` `onbeforecommit` `input-mode`(drag) | 96×96 |
+| `DvSlider` | `value`(two-way) `min`(0) `max`(100) `step`(1) `direction`(right) `show-value`(false) `unit` `readonly`(false) `disabled` `onbeforecommit` | 200×40 (vertical 40×200), +24 with `show-value` (vertical +56) |
 | `DvSparkline` | `values` `y-min` `y-max` `area`(false) `tone`(info) | 120×32 |
 | `DvBarChart` | `items` `item-value` `item-text` `y-min` `y-max` `show-value`(false) `tone`(info) | 320×200 |
 | `DvPieChart` | `items` `item-value` `item-text` `inner-radius`(0) `show-value`(false) | 320×180 |
@@ -896,8 +899,8 @@ public sealed class Section(string title, List<Section> all)
 - **DvRing:** thick arc fill. `sweep` = arc angle (1–360; 360 = a full circle starting at 12 o'clock), `thickness` = arc thickness (omitted = 11% of size), value + `unit` in the center, `label` below. Fill color = current zone color, otherwise `tone-{tone}`.
 - **DvProgress:** `direction` = `right` `left` `up` `down`. `show-value="true"` shows the value (+`unit`) in the center (only horizontal and height 14 or more). Fill color = current zone color or `tone-{tone}`. Corners can be changed with `border-radius` (default pill shape).
 - **DvTank:** cylindrical vessel. Value chip in the center (+`unit`), liquid color = current zone color. `show-zone-marks="false"` keeps the zone colors and hides only the boundary ticks and numbers on the right.
-- **DvKnob:** drag to rotate; written once on release (`onbeforecommit` = `bool M(double)`). Rotation is relative to the grab point. `unit` is bound. Choose the input method with `input-mode`: `drag` (default, drag to rotate), `tap` (tap opens a numeric keypad — no rotation), `both` (drag rotates; a tap without movement opens the keypad). The keypad is a built-in number box (same look as 21.5 `InputNumber`) showing the current value, `min`–`max`, and `unit`; a confirmed value goes through the same `step` rounding → range → `onbeforecommit` as dragging before being written. Cancel leaves it unchanged. The keypad appears only on `DvApp` screens (pages, bars, dialogs) — on hosts using `DvSurface` directly, taps are ignored (Trace warning). A tap on a `tap`·`both` knob opens the keypad instead of `onclick`. Read-only (one-way `value`) and `disabled` knobs do not open the keypad. `input-mode` is bound (`input-mode="{Mode}"`); an unknown value logs a warning and falls back to `drag`.
-- **DvSlider:** track + handle (diameter 24). **Pressing anywhere on the track moves the value there**, it follows while dragging, and it is written **once on release** (same commit as the knob — `step` rounding → `min`–`max` → `onbeforecommit` = `bool M(double)`). A press and release without dragging also writes the value at that spot. `direction` = the side where the value increases (same values as `DvProgress`: `right` default, `left` `up` `down` — vertical for `up`·`down`). `show-value="true"` shows the value above the handle (to the right when vertical) (+`unit`, decimal places = those of `step`). Colors: track `gauge-track`, fill and handle border `knob-fill`. There are no ticks. As with the knob, a drag started on the slider does not scroll. One-way or `disabled` sliders do not move. An unknown `direction` logs a warning and falls back to `right`.
+- **DvKnob:** drag to rotate; written once on release (`onbeforecommit` = `bool M(double)`). Rotation is relative to the grab point. `unit` is bound. Choose the input method with `input-mode`: `drag` (default, drag to rotate), `tap` (tap opens a numeric keypad — no rotation), `both` (drag rotates; a tap without movement opens the keypad). The keypad is a built-in number box (same look as 21.5 `InputNumber`) showing the current value, `min`–`max`, and `unit`; a confirmed value goes through the same `step` rounding → range → `onbeforecommit` as dragging before being written. Cancel leaves it unchanged. The keypad appears only on `DvApp` screens (pages, bars, dialogs) — on hosts using `DvSurface` directly, taps are ignored (Trace warning). A tap on a `tap`·`both` knob opens the keypad instead of `onclick`. Read-only (one-way `value` or `readonly`) and `disabled` knobs do not rotate or open the keypad. `input-mode` is bound (`input-mode="{Mode}"`); an unknown value logs a warning and falls back to `drag`.
+- **DvSlider:** track + handle (diameter 24). **Pressing anywhere on the track moves the value there**, it follows while dragging, and it is written **once on release** (same commit as the knob — `step` rounding → `min`–`max` → `onbeforecommit` = `bool M(double)`). A press and release without dragging also writes the value at that spot. `direction` = the side where the value increases (same values as `DvProgress`: `right` default, `left` `up` `down` — vertical for `up`·`down`). `show-value="true"` shows the value above the handle (to the right when vertical) (+`unit`, decimal places = those of `step`). Colors: track `gauge-track`, fill and handle border `knob-fill`. There are no ticks. As with the knob, a drag started on the slider does not scroll. One-way, `readonly` or `disabled` sliders do not move. An unknown `direction` logs a warning and falls back to `right`.
 - **Charts (DvSparkline · DvBarChart · DvPieChart):** display-only widgets that draw one series. For values flowing over time, use `DvTrend` (chapter 12).
   - **DvSparkline** — a small line with no axes or ticks (trend in a table cell or card header). `values` = a number list binding or `"3,5,4,8"` (unreadable values become 0). A dot on the last point; `area="true"` adds a translucent fill under the line. Range is `y-min`·`y-max`; if omitted, data min to max. Color = `tone-{tone}`.
   - **DvBarChart** — vertical bars. For each item in `items`, `item-value` (number path) and `item-text` (name path, below the bar — ellipsis if longer than the cell). Range is `y-min`·`y-max`; if omitted, includes 0 and the data (negative values go below the baseline). `show-value="true"` shows the value above the bar (integers as integers, otherwise one decimal place). Color = `tone-{tone}`.
@@ -1001,7 +1004,7 @@ An always-open selection list. Choices are built exactly like `DvSelect` (`items
 - **Single selection** (default): `value` is the **value** of the chosen choice (not its index — same conversion and comparison as `DvSelect`). Pressing a row writes that value once. Pressing the chosen row again leaves it unchanged.
 - **Multiple selection**: `selection-mode="multi"` + `selected-items="{Bind X}"`. Each row press adds or removes it, and every change writes a **new list** (same type rules as `DvDataGrid`'s `selection`: `T[]` `List<T>` `IList<T>` `IReadOnlyList<T>` `IEnumerable<T>`, elements are choice values converted to `T`). `onbeforecommit` receives the new list (`bool M(object)` or that list type). The mode name is `selection-mode`, same as `DvDataGrid`.
 - Row height is 40; without a given height, it is tall enough to show up to 5 rows. More rows scroll inside the list (scroll panel — dragging scrolls and does not select; includes inertia and scrollbar). For hundreds of rows or multiple columns, use `DvDataGrid`.
-- One-way, fixed value, or `readonly` only displays; `disabled` dims it. With only `id` and no `value` (`selected-items` for multiple), the handle holds the chosen value (20.9). With neither, it only displays.
+- One-way, fixed value, or `readonly` only displays (dashed border, `.input-readonly`); `disabled` dims it. With only `id` and no `value` (`selected-items` for multiple), the handle holds the chosen value (20.9). With neither, it only displays.
 - Appearance: `.listbox` (surface background, border, rounded corners, inner padding 4), rows `.listbox-item`, chosen row `.listbox-item-on` (`primary` background). Row text does not wrap.
 
 ### 10.5 DvTreeView
