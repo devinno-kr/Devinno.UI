@@ -1966,9 +1966,7 @@
             <param name="p">포인터 위치(<see cref="M:Devinno.UI.DvSurface.RenderTo(SkiaSharp.SKCanvas,System.Single,System.Single,System.Int64)" /> 와 같은 좌표계).</param>
         </member><member name="M:Devinno.UI.DvSurface.SetRadioGroupValue(System.Object,System.String)" en-hash="2b621933856becef">
             <summary>value 없는 라디오 묶음 값을 쓴다(null = 아무것도 안 고름). 핸들 쓰기(다른 스레드 가능)와 화면 누름이 같이 쓴다.</summary>
-        </member><member name="M:Devinno.UI.DvSurface.SetExpanderValue(Devinno.UI.Markup.ElementNode,System.Boolean)" en-hash="b989a7eb69cd61a7">
-            <summary>expanded 없는 접는 패널의 펼침을 쓴다 — 핸들 쓰기(다른 스레드 가능)와 제목 누름이 같이 쓴다.</summary>
-        </member><member name="M:Devinno.UI.DvSurface.Counterpart(Devinno.UI.Layout.LayoutBox,Devinno.UI.Layout.LayoutBox,Devinno.UI.Layout.LayoutBox)" en-hash="2cf35f830ef7351c">
+        </member><member name="M:Devinno.UI.DvSurface.SetExpanderValue(Devinno.UI.Layout.InstanceKey,System.Boolean)" en-hash="b989a7eb69cd61a7"><summary>expanded 없는 접기 패널의 펼침을 씁니다. 핸들 쓰기(다른 스레드 가능)와 제목 줄 누름이 함께 씁니다.</summary></member><member name="M:Devinno.UI.DvSurface.Counterpart(Devinno.UI.Layout.LayoutBox,Devinno.UI.Layout.LayoutBox,Devinno.UI.Layout.LayoutBox)" en-hash="2cf35f830ef7351c">
             <summary>옛 트리에서 target 의 자식 인덱스 경로를 따라 새 트리의 같은 박스를 찾는다(구조가 바뀌었으면 null).</summary>
         </member><member name="P:Devinno.UI.DvSurface.Edit" en-hash="81bbdf4ae7cc5ae7">
             <summary>
@@ -3392,14 +3390,10 @@
             </summary>
         </member><member name="P:Devinno.UI.Layout.LayoutEngine.ExpanderOf" en-hash="1026b8c9aae5df2a">
             <summary><c>expanded</c> 가 없는 DvExpander 의 펼침 상태(화면이 기억 — 다시 만들어도 유지). 없으면 접힘.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutEngine.ExpanderRevealOf" en-hash="484f73287c57d04a">
-            <summary>
-            펼침 움직임 — (요소, 반복 항목, 지금 펼침)을 받아 움직이는 중이면 지금 보이는 비율(0~1), 아니면 null.
+        </member><member name="P:Devinno.UI.Layout.LayoutEngine.ExpanderRevealOf" en-hash="b81fcbe63003f6a9"><summary>
+            펼침 움직임 — (요소 인스턴스, 지금 펼침)을 받아 움직이는 중이면 지금 보이는 비율(0~1), 아니면 null.
             화면이 지난 상태와 비교해 바뀌었으면 움직임을 시작한다. 접히는 중에도 내용을 만든다(비율만큼 보임).
-            </summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutEngine.TreeExpandedOf" en-hash="75b2ab100921a4d5">
-            <summary><c>DvTreeView</c> 의 펼친 항목(화면이 기억 — 요소 노드 + 항목 객체). 없으면 접힘.</summary>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.BuildTreeView(Devinno.UI.Layout.LayoutBox,Devinno.UI.Markup.ElementNode,System.Object)" en-hash="fdd182db0267e69b">
+            </summary></member><member name="P:Devinno.UI.Layout.LayoutEngine.TreeExpandedOf" en-hash="4b40c849809df04e"><summary><c>DvTreeView</c> 의 펼친 항목(화면이 기억 — 요소 인스턴스 + 항목 객체). 없으면 접힘.</summary></member><member name="M:Devinno.UI.Layout.LayoutEngine.BuildTreeView(Devinno.UI.Layout.LayoutBox,Devinno.UI.Markup.ElementNode,System.Object)" en-hash="fdd182db0267e69b">
             <summary>
             <c>DvTreeView</c> — <c>items</c>(뿌리 목록) + <c>item-children</c>(자식 목록 경로) + <c>item-text</c> + <c>item-value</c>(생략 = 항목 자체).
             펼친 가지만 행으로 만든다(행 높이 40, 깊이마다 들여쓰기). 고르기는 한 개 — <c>value</c> 에 고른 항목의 값(값의 주인 규칙은 다른 값 위젯과 같음).

@@ -272,7 +272,7 @@ public sealed class LayoutEngine
     }
 
     /// <summary>The selected index of a DvTabs without <c>value</c> (remembered by the screen, so it survives rebuilds). 0 if none.</summary>
-    internal Func<ElementNode, int?>? TabIndexOf { get; set; }
+    internal Func<InstanceKey, int?>? TabIndexOf { get; set; }
 
     // DvTabs — [머리글 줄(.tab-header: 탭마다 .tab / 선택 .tab-on) · 구분선(.tab-rule) · 선택된 DvTab 내용(.tab-body)].
     // 선택: value 가 있으면 VM 값과 맞는 탭(없으면 첫 탭), 없으면 화면이 기억한 번호. 나머지 탭 내용은 만들지 않는다.
@@ -289,7 +289,7 @@ public sealed class LayoutEngine
         }).ToList();
         var selected = bound
             ? box.SelectOptions.FindIndex(o => SelectValue.Matches(o.Value, box.InputValue, box.SelectValueType))
-            : TabIndexOf?.Invoke(box.Node) ?? 0;
+            : TabIndexOf?.Invoke(box.Instance) ?? 0;
         if (selected < 0 || selected >= tabs.Count)
             selected = 0;
         box.SelectedIndex = tabs.Count == 0 ? -1 : selected;
@@ -374,13 +374,13 @@ public sealed class LayoutEngine
     }
 
     /// <summary>The expanded state of a DvExpander without <c>expanded</c> (remembered by the screen, so it survives rebuilds). Collapsed if none.</summary>
-    internal Func<ElementNode, bool?>? ExpanderOf { get; set; }
+    internal Func<InstanceKey, bool?>? ExpanderOf { get; set; }
 
     /// <summary>
-    /// Expand animation: given (element, repeat item, currently expanded), returns the currently visible ratio (0 to 1) while animating, otherwise null.
+    /// Expand animation: given (element instance, currently expanded), returns the currently visible ratio (0 to 1) while animating, otherwise null.
     /// The screen starts the animation if the state changed compared with the previous one. Content is still built while collapsing (visible according to the ratio).
     /// </summary>
-    internal Func<ElementNode, object?, bool, float?>? ExpanderRevealOf { get; set; }
+    internal Func<InstanceKey, bool, float?>? ExpanderRevealOf { get; set; }
 
     // DvExpander — [제목 줄(.expander-header: ▶/▼ 아이콘 + header 글자) · 펼쳤으면 내용(.expander-body)]. 접으면 내용은 만들지 않는다(탭과 같음).
     // 펼침: expanded 가 양방향이면 VM 값, 단방향·고정이면 그 값(핸들이 덮어쓰면 그 값 — 제목을 눌러도 안 바뀜), 없으면 화면이 기억.
@@ -394,7 +394,7 @@ public sealed class LayoutEngine
         box.ToggleOn = ov is not null ? ToBool(ov.CellValue)
             : expr is not null && BindingResolver.IsTwoWay(expr) ? ToBool(BindingResolver.Resolve(vm, $"{{{BindingResolver.ExtractPath(expr)}}}"))
             : raw is not null ? ToBool(BindingResolver.ResolveValueOrLiteral(vm, raw))
-            : ExpanderOf?.Invoke(node) ?? false;
+            : ExpanderOf?.Invoke(box.Instance) ?? false;
 
         var header = BuildSelf(new ElementNode { Tag = "DvExpanderHeader", Attributes = { ["class"] = "expander-header" } }, vm);
         header.ResolvedText = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("header")) ?? "";
@@ -404,8 +404,7 @@ public sealed class LayoutEngine
             header.Disabled = true;
         box.Children.Add(header);
 
-        var item = (vm as ItemScope)?.Item;
-        var reveal = ExpanderRevealOf?.Invoke(node, item, box.ToggleOn);
+        var reveal = ExpanderRevealOf?.Invoke(box.Instance, box.ToggleOn);
         if (box.ToggleOn || reveal is not null)
         {
             var body = BuildSelf(new ElementNode { Tag = "DvExpanderBody", Attributes = { ["class"] = "expander-body" } }, vm);
@@ -416,7 +415,7 @@ public sealed class LayoutEngine
                 body.Reveal = reveal;
                 body.Style.Overflow = Overflow.Hidden; // 보이는 높이 밖은 잘림(움직임이 끝나면 다시 만들어 원래대로)
             }
-            body.RevealKey = (node, item);
+            body.RevealKey = box.Instance;
             box.Children.Add(body);
         }
         return box;
@@ -463,8 +462,8 @@ public sealed class LayoutEngine
         }
     }
 
-    /// <summary>The expanded items of a <c>DvTreeView</c> (remembered by the screen, keyed by element node + item object). Collapsed if absent.</summary>
-    internal Func<ElementNode, object, bool>? TreeExpandedOf { get; set; }
+    /// <summary>The expanded items of a <c>DvTreeView</c> (remembered by the screen, keyed by element instance + item object). Collapsed if absent.</summary>
+    internal Func<InstanceKey, object, bool>? TreeExpandedOf { get; set; }
 
     /// <summary>
     /// <c>DvTreeView</c>: <c>items</c> (root list) + <c>item-children</c> (path to the child list) + <c>item-text</c> + <c>item-value</c> (omitted = the item itself).
@@ -513,7 +512,7 @@ public sealed class LayoutEngine
                     : BindingResolver.Resolve(item, $"{{{childPath}}}") as System.Collections.IEnumerable;
                 var kidList = kids is null or string ? null : HandlerErrors.Snapshot(kids.Cast<object?>(), childPath, node.Tag);
                 var hasKids = kidList is { Count: > 0 };
-                var open = hasKids && TreeExpandedOf?.Invoke(node, item) == true;
+                var open = hasKids && TreeExpandedOf?.Invoke(box.Instance, item) == true;
                 var row = new TreeRow(item,
                     valuePath is null ? item : BindingResolver.Resolve(item, $"{{{valuePath}}}"),
                     HandlerErrors.Text(textPath is null ? item : BindingResolver.Resolve(item, $"{{{textPath}}}"), textPath, node.Tag) ?? "",

@@ -269,7 +269,8 @@ public sealed partial class DvSurface
         _root = root;
         _controlsByNode.Clear();
         _controlBoxes = null;
-        _tabIndex.Clear();
+        lock (_tabIndex)
+            _tabIndex.Clear();
         lock (_expanders)
             _expanders.Clear();
         lock (_treeOpen)
@@ -601,8 +602,7 @@ public sealed partial class DvSurface
             var engine = new LayoutEngine(_theme, _strings) { WidgetStore = _widgetStore, VideoStore = _videoStore };
             if (_controlsByNode.Count > 0)
                 engine.ControlOf = n => _controlsByNode.GetValueOrDefault(n);
-            if (_tabIndex.Count > 0)
-                engine.TabIndexOf = n => _tabIndex.TryGetValue(n, out var i) ? i : null;
+            engine.TabIndexOf = TabIndexValue;
             engine.RadioGroupOf = RadioGroupValue;
             engine.ExpanderOf = ExpanderValue;
             engine.ExpanderRevealOf = ExpanderReveal;
@@ -1663,15 +1663,15 @@ public sealed partial class DvSurface
     }
 
     // DvTreeView 의 펼친 항목(트리 요소 노드 → 항목 객체들). 다시 만들어도 유지 — 항목 객체가 같으면(Equals) 같은 가지.
-    private readonly Dictionary<Markup.ElementNode, HashSet<object>> _treeOpen = new();
+    private readonly Dictionary<Layout.InstanceKey, HashSet<object>> _treeOpen = new();
 
-    internal bool TreeExpanded(Markup.ElementNode tree, object item)
+    internal bool TreeExpanded(Layout.InstanceKey tree, object item)
     {
         lock (_treeOpen)
             return _treeOpen.TryGetValue(tree, out var set) && set.Contains(item);
     }
 
-    internal void SetTreeExpanded(Markup.ElementNode tree, object item, bool open)
+    internal void SetTreeExpanded(Layout.InstanceKey tree, object item, bool open)
     {
         lock (_treeOpen)
         {
@@ -1694,7 +1694,7 @@ public sealed partial class DvSurface
         var chevronRight = row.Rect.Left + row.Style.Padding.Left + LayoutEngine.TreeChevron + LayoutEngine.IconTextGap;
         if (r.HasChildren && local.X <= chevronRight)
         {
-            SetTreeExpanded(tree.Node, r.Item, !r.Open);
+            SetTreeExpanded(tree.Instance, r.Item, !r.Open);
             return;
         }
 
@@ -1717,13 +1717,12 @@ public sealed partial class DvSurface
         public float Now { get; set; } = from;
     }
 
-    private readonly Dictionary<(Markup.ElementNode, object?), ExpanderMotion> _expAnims = new();
-    private readonly Dictionary<(Markup.ElementNode, object?), bool> _expOpen = new();
-    private readonly HashSet<(Markup.ElementNode, object?)> _expSeen = new();
+    private readonly Dictionary<Layout.InstanceKey, ExpanderMotion> _expAnims = new();
+    private readonly Dictionary<Layout.InstanceKey, bool> _expOpen = new();
+    private readonly HashSet<Layout.InstanceKey> _expSeen = new();
 
-    private float? ExpanderReveal(Markup.ElementNode node, object? item, bool open)
+    private float? ExpanderReveal(Layout.InstanceKey key, bool open)
     {
-        var key = (node, item);
         _expSeen.Add(key);
         if (_expOpen.TryGetValue(key, out var was) && was != open)
             _expAnims[key] = new ExpanderMotion(open, _expAnims.TryGetValue(key, out var running) ? running.Now : open ? 0f : 1f); // 되돌림은 지금 비율에서
@@ -1770,26 +1769,26 @@ public sealed partial class DvSurface
 
     private void SetReveals(LayoutBox b)
     {
-        if (b.RevealKey is ValueTuple<Markup.ElementNode, object?> key && b.Reveal is not null && _expAnims.TryGetValue(key, out var m))
+        if (b.RevealKey is { } key && b.Reveal is not null && _expAnims.TryGetValue(key, out var m))
             b.Reveal = m.Now;
         foreach (var c in b.Children)
             SetReveals(c);
     }
 
     // expanded 없는 DvExpander 의 펼침(마크업 노드 기준 — 다시 만들어도 유지, 탭 번호와 같은 방식)
-    private readonly Dictionary<Markup.ElementNode, bool> _expanders = new();
+    private readonly Dictionary<Layout.InstanceKey, bool> _expanders = new();
 
-    internal bool? ExpanderValue(Markup.ElementNode node)
+    internal bool? ExpanderValue(Layout.InstanceKey key)
     {
         lock (_expanders)
-            return _expanders.TryGetValue(node, out var v) ? v : null;
+            return _expanders.TryGetValue(key, out var v) ? v : null;
     }
 
     /// <summary>Writes the expanded state of a collapsible panel without expanded. Shared by handle writes (other threads allowed) and header presses.</summary>
-    internal void SetExpanderValue(Markup.ElementNode node, bool expanded)
+    internal void SetExpanderValue(Layout.InstanceKey key, bool expanded)
     {
         lock (_expanders)
-            _expanders[node] = expanded;
+            _expanders[key] = expanded;
         Invalidate();
     }
 
@@ -1806,14 +1805,20 @@ public sealed partial class DvSurface
             Invalidate();
         }
         else if (!expander.Node.Attributes.ContainsKey("expanded"))
-            SetExpanderValue(expander.Node, next);
+            SetExpanderValue(expander.Instance, next);
         else
             return;
         NotifyValueWritten(expander);
     }
 
-    // value 없는 DvTabs 의 선택 번호(마크업 노드 기준 — 다시 만들어도 유지)
-    private readonly Dictionary<Markup.ElementNode, int> _tabIndex = new();
+    // value 없는 DvTabs 의 선택 번호(요소 인스턴스 기준 — 다시 만들어도 유지, 반복 항목·컴포넌트 인스턴스마다 따로)
+    private readonly Dictionary<Layout.InstanceKey, int> _tabIndex = new();
+
+    private int? TabIndexValue(Layout.InstanceKey key)
+    {
+        lock (_tabIndex)
+            return _tabIndex.TryGetValue(key, out var i) ? i : null;
+    }
 
     // 세그먼트·탭 머리글 — 그 선택지 값을 value 에 쓴다(DvSelect 와 같은 게이트·쓰기). 읽기 전용·단방향·비활성은 무시.
     // value 가 없는 DvTabs 는 화면이 선택 번호를 기억한다.
@@ -1823,7 +1828,8 @@ public sealed partial class DvSurface
         {
             if (!segment.Disabled && index >= 0 && index < segment.SelectOptions.Count)
             {
-                _tabIndex[segment.Node] = index;
+                lock (_tabIndex)
+                    _tabIndex[segment.Instance] = index;
                 Invalidate();
             }
             return;

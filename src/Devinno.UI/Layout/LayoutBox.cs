@@ -181,7 +181,7 @@ public sealed class LayoutBox
     /// <summary>The visible fraction (0–1) while a <c>DvExpander</c> content box is expanding or collapsing; multiplied into the measured height (overflowing content is clipped). Null otherwise.</summary>
     internal float? Reveal { get; set; }
     /// <summary>Expand animation key (element + repeat item); used by the surface (<see cref="DvSurface"/>) to find the box when it updates <see cref="Reveal"/> each frame.</summary>
-    internal object? RevealKey { get; set; }
+    internal InstanceKey? RevealKey { get; set; }
     /// <summary>The tree, if this is a row created by <c>DvTreeView</c> (null otherwise).</summary>
     internal LayoutBox? TreeOwner { get; set; }
     /// <summary>Tree row number (index into <see cref="TreeRows"/>).</summary>

@@ -33,7 +33,7 @@ public sealed class DvExpander : DvControl
     private protected override object? CurrentValue()
     {
         if (Slot!.ModeOf(Node) == ValueMode.None && Surface is { } s && Node is { } n)
-            return s.ExpanderValue(n) ?? false;
+            return s.ExpanderValue(new InstanceKey(n, 0)) ?? false; // id 는 반복·컴포넌트 밖 요소에만 → 첫 인스턴스
         return base.CurrentValue();
     }
 
@@ -41,7 +41,7 @@ public sealed class DvExpander : DvControl
     {
         if (Slot!.ModeOf(Node) == ValueMode.None && Surface is { } s && Node is { } n)
         {
-            s.SetExpanderValue(n, value is true);
+            s.SetExpanderValue(new InstanceKey(n, 0), value is true);
             return;
         }
         base.WriteValue(value);

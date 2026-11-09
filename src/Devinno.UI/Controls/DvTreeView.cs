@@ -31,7 +31,7 @@ public sealed class DvTreeView : DvControl
                 // 조상 가지 펼치기(뿌리까지)
                 for (var parent = row.Parent; parent is not null && Surface is { } s && Node is { } n;
                      parent = box.TreeAll.FirstOrDefault(r => Equals(r.Item, parent))?.Parent)
-                    s.SetTreeExpanded(n, parent, true);
+                    s.SetTreeExpanded(new InstanceKey(n, 0), parent, true); // id 는 반복·컴포넌트 밖 요소에만
                 SetCurrent(SelectValue.TryConvert(row.Value, box.SelectValueType, out var c) ? c : row.Value);
                 return;
             }
