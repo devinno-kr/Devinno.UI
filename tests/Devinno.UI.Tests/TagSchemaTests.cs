@@ -65,6 +65,59 @@ public class TagSchemaTests
         }
     }
 
+    // 3단계 R9 — 태그가 쓰지 않는 속성(dead read)은 정의에도 읽기에도 없다(쓰면 DVML019). 정의는 그 태그가 실제로 쓰는 것만
+    [Fact]
+    public void Schema_HasNoDeadReads()
+    {
+        var dead = TagSchema.Tags
+            .SelectMany(t => t.Value.Where(a => a.Note is { } n && n.Contains("dead read")).Select(a => $"{t.Key} {a.Name}"))
+            .ToList();
+        Assert.True(dead.Count == 0, "dead reads left: " + string.Join(", ", dead));
+    }
+
+    [Theory]
+    [InlineData("DvTabs", "placeholder")]
+    [InlineData("DvTabs", "items")]
+    [InlineData("DvTabs", "item-text")]
+    [InlineData("DvSegment", "placeholder")]
+    [InlineData("DvAlarmBanner", "row-height")]
+    [InlineData("DvAlarmList", "comm-alarm")]
+    [InlineData("DvGauge", "tone")]
+    [InlineData("DvGauge", "direction")]
+    [InlineData("DvGauge", "label")]
+    [InlineData("DvGauge", "sweep")]
+    [InlineData("DvGauge", "thickness")]
+    [InlineData("DvRing", "ticks")]
+    [InlineData("DvRing", "minor-ticks")]
+    [InlineData("DvRing", "show-tick-labels")]
+    [InlineData("DvRing", "direction")]
+    [InlineData("DvProgress", "ticks")]
+    [InlineData("DvProgress", "label")]
+    [InlineData("DvProgress", "sweep")]
+    [InlineData("DvProgress", "thickness")]
+    [InlineData("DvSparkline", "show-value")]
+    [InlineData("DvSparkline", "inner-radius")]
+    [InlineData("DvBarChart", "area")]
+    [InlineData("DvBarChart", "inner-radius")]
+    [InlineData("DvPieChart", "tone")]
+    [InlineData("DvPieChart", "y-min")]
+    [InlineData("DvPieChart", "area")]
+    [InlineData("DvPump", "text")]
+    [InlineData("DvVessel", "text")]
+    [InlineData("DvTerminal", "rotate")]
+    public void Schema_DeadReadsRemoved(string tag, string attr)
+        => Assert.DoesNotContain(TagSchema.Tags[tag], a => a.Name == attr);
+
+    // R8 로 쓰이게 된 것은 남는다
+    [Theory]
+    [InlineData("DvGauge", "unit")]
+    [InlineData("DvGauge", "show-value")]
+    [InlineData("DvTerminal", "text")]
+    [InlineData("DvRing", "tone")]
+    [InlineData("DvProgress", "direction")]
+    public void Schema_UsedAttributesKept(string tag, string attr)
+        => Assert.Contains(TagSchema.Tags[tag], a => a.Name == attr);
+
     internal static string RepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

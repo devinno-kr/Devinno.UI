@@ -85,11 +85,6 @@ internal static class TagSchema
         [
             new("value", AttrKind.Object, Note: "two-way {Bind X} selects by DvTab value; one-way/literal = read-only; absent = the screen remembers the index (shared by all instances of the node)"),
             new("readonly", AttrKind.Bool, "false", Note: "the common read-only rule (" + ReadOnlyRule + "): header taps do not change the value; no read-only visual on tabs"),
-            new("placeholder", AttrKind.Text, Note: "dead read: the block shared with DvSelect reads it, tabs never show it"),
-            new("items", AttrKind.Items, Note: "dead read: the block shared with DvSelect builds options from it, then the DvTab children replace them"),
-            new("item-value", AttrKind.Path, Note: "dead read (see items)"),
-            new("item-text", AttrKind.Path, Note: "dead read (see items)"),
-            new("item-icon", AttrKind.Path, Note: "dead read (see items)"),
         ],
         ["DvTab"] =
         [
@@ -184,7 +179,6 @@ internal static class TagSchema
             OwnedValue("the option value is written without conversion to the bound type"),
             ReadOnly(),
             new("fill", AttrKind.Bool, "false"),
-            new("placeholder", AttrKind.Text, Note: "dead read: the block shared with DvSelect reads it, a segment never shows it"),
             .. Items("not documented for DvSegment"),
         ],
         ["DvListBox"] =
@@ -225,8 +219,6 @@ internal static class TagSchema
             new("unit", AttrKind.Text, Note: UnitRule),
             new("format", AttrKind.Text, Note: FormatRule),
             AlarmZones(),
-            GaugeDead("ticks", AttrKind.Number), GaugeDead("minor-ticks", AttrKind.Number), GaugeDead("show-tick-labels", AttrKind.Bool),
-            GaugeDead("label", AttrKind.Text), GaugeDead("sweep", AttrKind.Number), GaugeDead("thickness", AttrKind.Number),
         ],
         // 계기·차트·알람 (2.4)
         ["DvGauge"] =
@@ -238,10 +230,6 @@ internal static class TagSchema
             new("format", AttrKind.Text, Note: FormatRule),
             new("unit", AttrKind.Text, Note: UnitRule),
             new("show-value", AttrKind.Bool, "true", Note: "the value text (+ unit) below the needle; " + BoolRule),
-            DialDead("tone", AttrKind.Text, "the gauge", "the needle tip uses the zone color or gauge-needle-tip; " + ThemeWordRule, def: "info"),
-            DialDead("direction", AttrKind.Enum, "the gauge", EnumRule, Directions, "right"),
-            DialDead("label", AttrKind.Text, "the gauge"), DialDead("sweep", AttrKind.Number, "the gauge", "the gauge sweep is fixed at 270"),
-            DialDead("thickness", AttrKind.Number, "the gauge"),
         ],
         ["DvRing"] =
         [
@@ -253,8 +241,6 @@ internal static class TagSchema
             new("thickness", AttrKind.Number, Note: "px; absent or <= 0 = 11% of the size; " + NumberRule),
             new("format", AttrKind.Text, Note: FormatRule),
             new("show-value", AttrKind.Bool, "true", Note: "the value text (+ unit) in the center; false hides it, label stays; " + BoolRule),
-            DialDead("ticks", AttrKind.Number, "the ring"), DialDead("minor-ticks", AttrKind.Number, "the ring"),
-            DialDead("show-tick-labels", AttrKind.Bool, "the ring"), DialDead("direction", AttrKind.Enum, "the ring", EnumRule, Directions, "right"),
         ],
         ["DvLamp"] =
         [
@@ -277,8 +263,6 @@ internal static class TagSchema
             new("values", AttrKind.Items, Note: "a list of numbers or comma-separated text; anything else = no values; an unreadable number = 0"),
             .. ChartCommon(),
             new("area", AttrKind.Bool, "false", Note: BoolRule),
-            ChartDead("show-value", AttrKind.Bool, "the sparkline"),
-            ChartDead("inner-radius", AttrKind.Number, "the sparkline"),
         ],
         ["DvBarChart"] =
         [
@@ -286,18 +270,13 @@ internal static class TagSchema
             .. ChartCommon(),
             new("show-value", AttrKind.Bool, "false", Note: BoolRule),
             new("format", AttrKind.Text, Note: "the show-value numbers; " + FormatRule),
-            ChartDead("area", AttrKind.Bool, "the bar chart"),
-            ChartDead("inner-radius", AttrKind.Number, "the bar chart"),
         ],
         ["DvPieChart"] =
         [
             .. ChartItems(),
             new("show-value", AttrKind.Bool, "false", Note: BoolRule + "; shows the numbers (and the donut total) instead of percentages"),
             new("format", AttrKind.Text, Note: "the show-value numbers and the donut total (not the percentages); " + FormatRule),
-            new("inner-radius", AttrKind.Number, "0", Note: "ratio, clamped to 0..0.9 (donut); " + NumberRule),
-            ChartDead("tone", AttrKind.Text, "the pie chart", "slices use the fixed palette; " + ThemeWordRule, def: "info"),
-            ChartDead("y-min", AttrKind.Number, "the pie chart"), ChartDead("y-max", AttrKind.Number, "the pie chart"),
-            ChartDead("area", AttrKind.Bool, "the pie chart"),
+            new("inner-radius", AttrKind.Number, "0", Note: "ratio, clamped to 0..0.9 (donut); slices use the fixed palette (no tone); " + NumberRule),
         ],
         ["DvTrend"] =
         [
@@ -321,13 +300,11 @@ internal static class TagSchema
         [
             .. AlarmCommon(),
             new("comm-alarm", AttrKind.Text, Note: "non-empty = the communication-loss strip with this text (blinks)"),
-            new("row-height", AttrKind.Number, "36", Note: "dead read: the block shared with DvAlarmList reads it, the banner never uses it"),
         ],
         ["DvAlarmList"] =
         [
             .. AlarmCommon(),
             new("row-height", AttrKind.Number, "36", Note: "px; <= 0 = 36; " + NumberRule + " (the geometry keeps at least 24)"),
-            new("comm-alarm", AttrKind.Text, Note: "dead read: the block shared with DvAlarmBanner reads it; not drawn (and since f841ebe it no longer keeps the blink timer running)"),
         ],
 
         // 그리드 (2.5)
@@ -434,7 +411,7 @@ internal static class TagSchema
         ["DvValve3"] = [.. Equipment("DvValve3"), StateBool("open-b"), StateBool("open-c")],
         ["DvInline"] = Equipment("DvInline"),
         ["DvExchanger"] = Equipment("DvExchanger"),
-        ["DvTerminal"] = Equipment("DvTerminal", "multi-line end-point text (&#10;)"),
+        ["DvTerminal"] = Equipment("DvTerminal"),
         ["DvAgitator"] = Accessory(null),
         ["DvMotor"] = Accessory(["isa"]),
         ["DvAttach"] =
@@ -521,8 +498,8 @@ internal static class TagSchema
         new(name, AttrKind.Number, Note: $"body {name} px, 0.6-4x the kind's natural size (outside = clamped + warning; not a number = natural + warning); "
             + $"the common layout also applies it as the box CSS {name}; name clash: DvSignal width is the stroke");
 
-    // 장비 공통 — name·label·kind·rotate·flip·row·rank·x·y·text·visible (상태 속성은 태그마다)
-    private static AttrDef[] Equipment(string tag, string? textNote = null)
+    // 장비 공통 — name·label·kind·rotate·flip·row·rank·x·y·visible (상태 속성은 태그마다). DvTerminal 은 rotate 대신 text(돌지 않는 끝점 글자)
+    private static AttrDef[] Equipment(string tag)
     {
         List<AttrDef> list =
         [
@@ -533,13 +510,14 @@ internal static class TagSchema
             list.Add(new("kind", AttrKind.Enum, kinds[0], Values: kinds, Note: EnumRule + "; elsewhere the look selector is variant"));
         list.AddRange(
         [
-            new("rotate", AttrKind.Enum, "0", Values: ["0", "90", "180", "270"], Note: EnumRule + (tag == "DvTerminal" ? "; read, but a terminal does not rotate" : "")),
+            .. tag == "DvTerminal"
+                ? new AttrDef[] { new("text", AttrKind.Text, Note: "multi-line end-point text (&#10;); a terminal has no rotate") }
+                : [new("rotate", AttrKind.Enum, "0", Values: ["0", "90", "180", "270"], Note: EnumRule)],
             new("flip", AttrKind.Enum, Values: ["h", "v", "hv"], Note: "vh is also accepted (= hv); " + EnumRule + " (no flip)"),
             ProcessInt("row"),
             ProcessInt("rank"),
             ProcessCoord("x", "symbol center (both needed, otherwise not drawn + error)"),
             ProcessCoord("y", "symbol center (both needed, otherwise not drawn + error)"),
-            new("text", AttrKind.Text, Note: textNote ?? "dead read: read on every equipment tag, drawn only by DvTerminal"),
             ProcessVisible(),
         ]);
         return [.. list];
@@ -615,9 +593,6 @@ internal static class TagSchema
     private static AttrDef Tone(string? note = null) =>
         new("tone", AttrKind.Text, "info", Note: "tone-{tone} token; valid when the theme has the token tone-{tone} (built-in: neutral info success warning danger); empty = info; " + ThemeWordRule + (note is null ? "" : "; " + note));
 
-    // DvGauge/DvRing 가 계기 공용 블록에서 읽기만 하고 그리지 않는 속성
-    private static AttrDef DialDead(string name, AttrKind kind, string who, string? why = null, string[]? values = null, string? def = null) =>
-        new(name, kind, def, Values: values, Note: $"dead read: the block shared by DvGauge/DvRing/DvProgress reads it, {who} never uses it" + (why is null ? "" : "; " + why));
 
     // DvSparkline·DvBarChart 공용
     private static AttrDef[] ChartCommon() =>
@@ -634,9 +609,6 @@ internal static class TagSchema
         new("item-text", AttrKind.Path, Bindable: false, Note: "read raw; absent = the item itself as text"),
     ];
 
-    // 차트 공용 블록이 모든 차트 태그에서 읽지만 이 차트는 쓰지 않는 속성
-    private static AttrDef ChartDead(string name, AttrKind kind, string who, string? why = null, string[]? values = null, string? def = null) =>
-        new(name, kind, def, Values: values, Note: $"dead read: the block shared by the charts reads it, {who} never uses it" + (why is null ? "" : "; " + why));
 
     private static AttrDef[] AlarmCommon() =>
     [
@@ -645,9 +617,6 @@ internal static class TagSchema
         new("show-ack", AttrKind.Bool, Note: "absent = shown only when onack is set; present = " + BoolRule + " (default shown)"),
     ];
 
-    // DvProgress 가 계기 공용 블록에서 읽기만 하고 그리지 않는 속성
-    private static AttrDef GaugeDead(string name, AttrKind kind) =>
-        new(name, kind, Note: "dead read: the block shared with DvGauge/DvRing reads it, the progress bar never uses it");
 
     // DvStack 계열 슈가(gap·padding·align·justify) — 기본값만 태그마다 다르다
     private static AttrDef[] Sugar(string? gap, string? align, string? justify, string? note = null) =>

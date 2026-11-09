@@ -186,7 +186,7 @@ The **background** is not painted. It follows the app theme's background or the 
 
 ### 5.1 Common attributes
 
-Usable on every equipment tag (including user symbols). On terminals, `rotate` and `flip` have no effect.
+Usable on every equipment tag (including user symbols). Terminals (`DvTerminal`) have no `rotate` (writing it is build warning DVML019) and `flip` has no effect on them; `text` belongs to terminals only.
 
 | Attribute | Description |
 |---|---|

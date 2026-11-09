@@ -150,7 +150,7 @@ internal static class ProcessCheck
 
             if (Kinds.TryGetValue(tag, out var kinds))
                 Value(ch, "kind", kinds, report);
-            if (tag is not ("DvPort" or "DvInstrument"))
+            if (tag is not ("DvPort" or "DvInstrument" or "DvTerminal")) // 끝점은 rotate 가 없다(DVML019)
                 Value(ch, "rotate", ["0", "90", "180", "270"], report);
 
             var nameAttr = ch.Attribute("name");

@@ -48,23 +48,31 @@ public sealed partial class LayoutEngine
     // tone — 지금 테마에 tone-{값} 토큰이 있으면 그 값(사용자 테마 단어 허용), 없으면 info + 경고
     private string Tone(AttrReader r) => AttrRules.ThemeWord(r.Value("tone"), "tone", _theme, "info", r.Node.Tag, "tone") ?? "info";
 
-    // DvGauge·DvRing·DvProgress 가 같은 상자 필드(Gauge*·Tone·Unit…)를 쓴다. 셋 다 모든 속성을 읽는다 —
-    // 태그가 그리지 않는 속성도(TagSchema Note "dead read"; 읽기를 빼는 건 3단계).
+    // DvGauge·DvRing·DvProgress 가 같은 상자 필드(Gauge*·Tone·Unit…)를 쓴다. 공용 부분(값·범위·구간·show-value·unit·format)만 셋이 읽고,
+    // 나머지는 그 속성을 그리는 태그만 읽는다(3단계 R9 — 안 쓰는 속성은 읽지 않는다, 쓰면 DVML019)
     private void BuildDial(LayoutBox box, AttrReader r)
     {
+        var tag = r.Node.Tag;
         box.GaugeValue = ToFloat(r, "value", 0f);
         (box.GaugeMin, box.GaugeMax) = FloatRange(r);
         box.GaugeZones = ParseZones(r);
-        box.GaugeTicks = ToFloat(r, "ticks", 0f);
-        box.GaugeMinorTicks = ToFloat(r, "minor-ticks", 0f);
-        if (r.Has("show-tick-labels"))
-            box.GaugeTickLabels = AttrRules.Bool(r.Value("show-tick-labels"), true, r.Node.Tag, "show-tick-labels");
+        if (tag == "DvGauge")
+        {
+            box.GaugeTicks = ToFloat(r, "ticks", 0f);
+            box.GaugeMinorTicks = ToFloat(r, "minor-ticks", 0f);
+            if (r.Has("show-tick-labels"))
+                box.GaugeTickLabels = AttrRules.Bool(r.Value("show-tick-labels"), true, tag, "show-tick-labels");
+        }
 
-        box.Tone = Tone(r);
-        box.Direction = AttrRules.Enum(r, "direction") ?? "right";
+        if (tag != "DvGauge")
+            box.Tone = Tone(r);
+        if (tag == "DvProgress")
+            box.Direction = AttrRules.Enum(r, "direction") ?? "right";
         box.ShowValue = AttrRules.Bool(r, "show-value");
         box.Unit = r.Text("unit");
         box.ValueFormat = r.Text("format");
+        if (tag != "DvRing")
+            return;
         box.Label = r.Text("label");
         var sweep = ToFloat(r, "sweep", 270f);
         box.RingSweep = Math.Clamp(sweep, 1f, 360f);
@@ -90,19 +98,23 @@ public sealed partial class LayoutEngine
         var alarmsRaw = r.Raw("items");
         box.AlarmItems = BindingResolver.ResolveValueOrLiteral(r.Context, alarmsRaw)
             is IEnumerable<Alarms.AlarmRow> items ? HandlerErrors.Snapshot(items, PathOf(alarmsRaw), node.Tag) : Array.Empty<Alarms.AlarmRow>();
-        box.CommAlarm = r.Text("comm-alarm");
+        if (node.Tag == "DvAlarmBanner")
+            box.CommAlarm = r.Text("comm-alarm"); // 통신 끊김 줄은 배너만 그린다
         box.OnAck = r.Raw("onack");
         // show-ack: 지정 시 그 값(바인딩 가능 — 권한별 표시, 공용 참/거짓 규칙 · 그 밖의 글자 = 보임 + 경고), 미지정 시 onack 이 있을 때만 표시
         box.AlarmShowAck = r.Has("show-ack")
             ? AttrRules.Bool(r.Value("show-ack"), true, r.Node.Tag, "show-ack")
             : !string.IsNullOrEmpty(box.OnAck);
-        var rh = ToFloat(r, "row-height", 36f);
+        if (node.Tag != "DvAlarmList")
+            return;
+        var rh = ToFloat(r, "row-height", 36f); // 행 높이는 목록만
         box.AlarmRowHeight = rh > 0 ? rh : 36f;
     }
 
     /// <summary>
     /// Charts (single series): DvSparkline uses <c>values</c> (a list of numbers or "1,2,3"); DvBarChart and DvPieChart use <c>items</c> + <c>item-value</c> (number) + <c>item-text</c> (name).
-    /// Common: <c>tone</c> (info), <c>show-value</c>; sparkline and bar: <c>y-min</c>/<c>y-max</c> (omitted = automatic); sparkline: <c>area</c>; pie: <c>inner-radius</c> (ratio 0 to 0.9, donut).
+    /// Sparkline and bar: <c>tone</c> (info), <c>y-min</c>/<c>y-max</c> (omitted = automatic); bar and pie: <c>show-value</c>, <c>format</c>; sparkline: <c>area</c>; pie: <c>inner-radius</c> (ratio 0 to 0.9, donut).
+    /// Each chart reads only the attributes it draws.
     /// Values that cannot be read as numbers are 0 (pie charts do not draw negative or zero slices).
     /// </summary>
     private void BuildChart(LayoutBox box, AttrReader r)
@@ -116,16 +128,17 @@ public sealed partial class LayoutEngine
             _ => double.TryParse(v.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : 0,
         };
 
-        // 모든 차트 태그가 공용 속성을 다 읽는다(차트가 쓰지 않는 것도 — TagSchema Note "dead read")
-        box.Tone = Tone(r);
-        box.ShowValue = AttrRules.Bool(r, "show-value");
-        box.ChartYMin = Num("y-min");
-        box.ChartYMax = Num("y-max");
-        box.ChartArea = AttrRules.Bool(r, "area");
-        box.ChartInner = Math.Clamp((float)(Num("inner-radius") ?? 0), 0f, 0.9f);
+        // 차트마다 그리는 속성만 읽는다(3단계 R9) — 꺾은선·막대 = tone·y-min·y-max, 막대·파이 = show-value, 꺾은선 = area, 파이 = inner-radius
+        if (node.Tag != "DvPieChart")
+        {
+            box.Tone = Tone(r);
+            box.ChartYMin = Num("y-min");
+            box.ChartYMax = Num("y-max");
+        }
 
         if (node.Tag == "DvSparkline")
         {
+            box.ChartArea = AttrRules.Bool(r, "area");
             var raw = r.Raw("values");
             box.ChartValues = BindingResolver.ResolveValueOrLiteral(r.Context, raw) switch
             {
@@ -137,6 +150,9 @@ public sealed partial class LayoutEngine
             return;
         }
 
+        box.ShowValue = AttrRules.Bool(r, "show-value");
+        if (node.Tag == "DvPieChart")
+            box.ChartInner = Math.Clamp((float)(Num("inner-radius") ?? 0), 0f, 0.9f);
         box.ValueFormat = r.Text("format"); // 막대·파이 값 글자(show-value) 형식 — 계기와 같은 규칙
         var itemsRaw = r.Raw("items");
         var items = BindingResolver.ResolveValueOrLiteral(r.Context, itemsRaw) is System.Collections.IEnumerable e and not string

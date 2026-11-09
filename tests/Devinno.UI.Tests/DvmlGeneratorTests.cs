@@ -807,6 +807,23 @@ public class DvmlGeneratorTests
         Assert.Empty(Attrs("<DvPageFrame vm=\"MyApp.P\" title=\"T\" subtitle=\"S\"><DvLabel text=\"a\"/></DvPageFrame>"));
     }
 
+    // 3단계 R9 — 태그가 쓰지 않던 속성(공용 블록의 dead read)은 이제 없는 속성
+    [Fact]
+    public void Attribute_DeadReads_Warn()
+    {
+        var d = Attrs("""
+            <DvStack>
+              <DvSparkline values="1,2" show-value="true"/>
+              <DvGauge value="1" sweep="180"/>
+              <DvTabs placeholder="p"><DvTab value="a"/></DvTabs>
+              <DvAlarmBanner row-height="40"/>
+              <DvProcess><DvPump name="P" text="x"/><DvTerminal name="T" rotate="90" text="IN"/></DvProcess>
+            </DvStack>
+            """);
+        Assert.Equal(["DvSparkline show-value", "DvGauge sweep", "DvTabs placeholder", "DvAlarmBanner row-height", "DvPump text", "DvTerminal rotate"],
+            d.Select(x => System.Text.RegularExpressions.Regex.Match(x.GetMessage(Invariant), @"^(\S+) has no attribute '([^']+)'")).Select(m => $"{m.Groups[1]} {m.Groups[2]}"));
+    }
+
     [Fact]
     public void Attribute_RootOnlyNames_WarnElsewhere()
     {

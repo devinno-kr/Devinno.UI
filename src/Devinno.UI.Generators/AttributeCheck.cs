@@ -21,7 +21,7 @@ internal static class AttributeCheck
         "onclick", "hold", "onbeforecommit",
     ];
 
-    /// <summary>태그별 속성 이름 — 라이브러리 <c>TagSchema.Tags</c> 의 이름만 복사(테스트가 비교). 정의에 "unused"·"dead read" 로 적힌 것도 아는 이름이다.</summary>
+    /// <summary>태그별 속성 이름 — 라이브러리 <c>TagSchema.Tags</c> 의 이름만 복사(테스트가 비교). 정의는 그 태그가 실제로 쓰는 속성만이다(3단계 R9).</summary>
     internal static readonly Dictionary<string, string[]> Tags = new(StringComparer.Ordinal)
     {
         // 공통 + 컨테이너
@@ -33,7 +33,7 @@ internal static class AttributeCheck
         ["DvBox"] = [],
         ["DvSlot"] = [],
         ["DvStyle"] = [],
-        ["DvTabs"] = ["value", "readonly", "placeholder", "items", "item-value", "item-text", "item-icon"],
+        ["DvTabs"] = ["value", "readonly"],
         ["DvTab"] = ["value", "text", "disabled"],
         ["DvExpander"] = ["expanded", "header"],
         ["DvStepBar"] = ["steps", "current"],
@@ -52,25 +52,25 @@ internal static class AttributeCheck
         ["DvInput"] = ["value", "keyboard-type", "multiline", "placeholder", "format", "min", "max", "unit", "readonly", "step", "show-stepper"],
         ["DvSelect"] = ["value", "placeholder", "readonly", "items", "item-value", "item-text", "item-icon"],
         ["DvOption"] = ["value", "text", "icon"],
-        ["DvSegment"] = ["value", "readonly", "fill", "placeholder", "items", "item-value", "item-text", "item-icon"],
+        ["DvSegment"] = ["value", "readonly", "fill", "items", "item-value", "item-text", "item-icon"],
         ["DvListBox"] = ["selection-mode", "value", "selected-items", "readonly", "items", "item-value", "item-text", "item-icon"],
         ["DvTreeView"] = ["items", "item-children", "item-text", "item-value", "value", "readonly"],
         ["DvDateTimeInput"] = ["value", "placeholder", "readonly", "mode", "show-seconds", "format"],
         ["DvColorInput"] = ["value", "placeholder", "readonly"],
-        ["DvProgress"] = ["value", "min", "max", "tone", "direction", "show-value", "unit", "format", "alarm-zones", "ticks", "minor-ticks", "show-tick-labels", "label", "sweep", "thickness"],
+        ["DvProgress"] = ["value", "min", "max", "tone", "direction", "show-value", "unit", "format", "alarm-zones"],
 
         // 계기·차트·알람
-        ["DvGauge"] = ["value", "min", "max", "alarm-zones", "ticks", "minor-ticks", "show-tick-labels", "format", "unit", "tone", "direction", "show-value", "label", "sweep", "thickness"],
-        ["DvRing"] = ["value", "min", "max", "alarm-zones", "tone", "unit", "label", "sweep", "thickness", "format", "show-value", "ticks", "minor-ticks", "show-tick-labels", "direction"],
+        ["DvGauge"] = ["value", "min", "max", "alarm-zones", "ticks", "minor-ticks", "show-tick-labels", "format", "unit", "show-value"],
+        ["DvRing"] = ["value", "min", "max", "alarm-zones", "tone", "unit", "label", "sweep", "thickness", "format", "show-value"],
         ["DvLamp"] = ["on", "blink", "blink-when", "blink-interval", "color", "state"],
         ["DvTank"] = ["value", "min", "max", "alarm-zones", "unit", "format", "show-zone-marks"],
-        ["DvSparkline"] = ["values", "tone", "y-min", "y-max", "area", "show-value", "inner-radius"],
-        ["DvBarChart"] = ["items", "item-value", "item-text", "tone", "y-min", "y-max", "show-value", "format", "area", "inner-radius"],
-        ["DvPieChart"] = ["items", "item-value", "item-text", "show-value", "format", "inner-radius", "tone", "y-min", "y-max", "area"],
+        ["DvSparkline"] = ["values", "tone", "y-min", "y-max", "area"],
+        ["DvBarChart"] = ["items", "item-value", "item-text", "tone", "y-min", "y-max", "show-value", "format"],
+        ["DvPieChart"] = ["items", "item-value", "item-text", "show-value", "format", "inner-radius"],
         ["DvTrend"] = ["source", "window", "end", "y-min", "y-max", "area", "smooth"],
         ["DvTrendChannel"] = ["name", "label", "unit", "color", "points"],
-        ["DvAlarmBanner"] = ["items", "onack", "show-ack", "comm-alarm", "row-height"],
-        ["DvAlarmList"] = ["items", "onack", "show-ack", "row-height", "comm-alarm"],
+        ["DvAlarmBanner"] = ["items", "onack", "show-ack", "comm-alarm"],
+        ["DvAlarmList"] = ["items", "onack", "show-ack", "row-height"],
 
         // 그리드
         ["DvDataGrid"] =
@@ -91,13 +91,13 @@ internal static class AttributeCheck
         ["DvProcess"] = ["direction", "look", "align", "placement", "base-size", "flow-animation", "fit"],
         ["DvUnit"] = ["name", "direction", "label", "row", "rank", "x", "y", "placement", "visible"],
         ["DvPort"] = ["name", "side", "at", "visible"],
-        ["DvVessel"] = ["name", "label", "kind", "rotate", "flip", "row", "rank", "x", "y", "text", "visible", "width", "height", "level"],
-        ["DvPump"] = ["name", "label", "kind", "rotate", "flip", "row", "rank", "x", "y", "text", "visible", "running"],
-        ["DvValve"] = ["name", "label", "kind", "rotate", "flip", "row", "rank", "x", "y", "text", "visible", "open"],
-        ["DvValve3"] = ["name", "label", "kind", "rotate", "flip", "row", "rank", "x", "y", "text", "visible", "open-b", "open-c"],
-        ["DvInline"] = ["name", "label", "kind", "rotate", "flip", "row", "rank", "x", "y", "text", "visible"],
-        ["DvExchanger"] = ["name", "label", "kind", "rotate", "flip", "row", "rank", "x", "y", "text", "visible"],
-        ["DvTerminal"] = ["name", "label", "rotate", "flip", "row", "rank", "x", "y", "text", "visible"],
+        ["DvVessel"] = ["name", "label", "kind", "rotate", "flip", "row", "rank", "x", "y", "visible", "width", "height", "level"],
+        ["DvPump"] = ["name", "label", "kind", "rotate", "flip", "row", "rank", "x", "y", "visible", "running"],
+        ["DvValve"] = ["name", "label", "kind", "rotate", "flip", "row", "rank", "x", "y", "visible", "open"],
+        ["DvValve3"] = ["name", "label", "kind", "rotate", "flip", "row", "rank", "x", "y", "visible", "open-b", "open-c"],
+        ["DvInline"] = ["name", "label", "kind", "rotate", "flip", "row", "rank", "x", "y", "visible"],
+        ["DvExchanger"] = ["name", "label", "kind", "rotate", "flip", "row", "rank", "x", "y", "visible"],
+        ["DvTerminal"] = ["name", "label", "text", "flip", "row", "rank", "x", "y", "visible"],
         ["DvAgitator"] = ["running", "kind", "visible"],
         ["DvMotor"] = ["running", "kind", "visible"],
         ["DvAttach"] = ["side", "visible"],
@@ -129,14 +129,14 @@ internal static class AttributeCheck
         ["DvTreeView"] = ["readonly"],
         ["DvDateTimeInput"] = ["readonly", "show-seconds"],
         ["DvColorInput"] = ["readonly"],
-        ["DvProgress"] = ["show-value", "show-tick-labels"],
+        ["DvProgress"] = ["show-value"],
         ["DvGauge"] = ["show-tick-labels", "show-value"],
-        ["DvRing"] = ["show-value", "show-tick-labels"],
+        ["DvRing"] = ["show-value"],
         ["DvLamp"] = ["on", "blink", "blink-when"],
         ["DvTank"] = ["show-zone-marks"],
-        ["DvSparkline"] = ["area", "show-value"],
-        ["DvBarChart"] = ["show-value", "area"],
-        ["DvPieChart"] = ["show-value", "area"],
+        ["DvSparkline"] = ["area"],
+        ["DvBarChart"] = ["show-value"],
+        ["DvPieChart"] = ["show-value"],
         ["DvTrend"] = ["area", "smooth"],
         ["DvAlarmBanner"] = ["show-ack"],
         ["DvAlarmList"] = ["show-ack"],
@@ -170,16 +170,15 @@ internal static class AttributeCheck
         ["DvKnob"] = ["value", "min", "max", "step"],
         ["DvSlider"] = ["value", "min", "max", "step"],
         ["DvInput"] = ["min", "max", "step"],
-        ["DvProgress"] = ["value", "min", "max", "ticks", "minor-ticks", "sweep", "thickness"],
-        ["DvGauge"] = ["value", "min", "max", "ticks", "minor-ticks", "sweep", "thickness"],
-        ["DvRing"] = ["value", "min", "max", "sweep", "thickness", "ticks", "minor-ticks"],
+        ["DvProgress"] = ["value", "min", "max"],
+        ["DvGauge"] = ["value", "min", "max", "ticks", "minor-ticks"],
+        ["DvRing"] = ["value", "min", "max", "sweep", "thickness"],
         ["DvLamp"] = ["blink-interval"],
         ["DvTank"] = ["value", "min", "max"],
-        ["DvSparkline"] = ["y-min", "y-max", "inner-radius"],
-        ["DvBarChart"] = ["y-min", "y-max", "inner-radius"],
-        ["DvPieChart"] = ["inner-radius", "y-min", "y-max"],
+        ["DvSparkline"] = ["y-min", "y-max"],
+        ["DvBarChart"] = ["y-min", "y-max"],
+        ["DvPieChart"] = ["inner-radius"],
         ["DvTrend"] = ["window", "y-min", "y-max"],
-        ["DvAlarmBanner"] = ["row-height"],
         ["DvAlarmList"] = ["row-height"],
         ["DvDataGrid"] = ["row-height", "header-height"],
         ["DvColumn"] = ["min", "max"],
@@ -222,8 +221,6 @@ internal static class AttributeCheck
         ["DvListBox"] = new(StringComparer.Ordinal) { ["selection-mode"] = ["single", "multi"] },
         ["DvDateTimeInput"] = new(StringComparer.Ordinal) { ["mode"] = ["date", "time", "datetime"] },
         ["DvProgress"] = new(StringComparer.Ordinal) { ["direction"] = ["right", "left", "up", "down"] },
-        ["DvGauge"] = new(StringComparer.Ordinal) { ["direction"] = ["right", "left", "up", "down"] },
-        ["DvRing"] = new(StringComparer.Ordinal) { ["direction"] = ["right", "left", "up", "down"] },
         ["DvDataGrid"] = new(StringComparer.Ordinal) { ["selection-mode"] = ["none", "single", "multi"] },
         ["DvColumn"] = new(StringComparer.Ordinal) { ["align"] = ["left", "center", "right"], ["sort"] = ["asc", "desc"], ["cell-type"] = ["text", "check", "lamp", "button", "input", "select", "datetime", "color"], ["filter"] = ["none", "auto", "text", "values", "range", "date"], ["variant"] = ["primary", "secondary", "danger", "ghost"], ["mode"] = ["date", "time", "datetime"] },
         ["DvSummaryRow"] = new(StringComparer.Ordinal) { ["fn"] = ["sum", "avg", "min", "max", "count"] },
@@ -237,7 +234,7 @@ internal static class AttributeCheck
         ["DvValve3"] = new(StringComparer.Ordinal) { ["kind"] = ["ball", "control"], ["rotate"] = ["0", "90", "180", "270"], ["flip"] = ["h", "v", "hv"] },
         ["DvInline"] = new(StringComparer.Ordinal) { ["kind"] = ["flowmeter", "filter", "strainer", "sight", "reducer", "orifice", "mixer", "vent", "blind"], ["rotate"] = ["0", "90", "180", "270"], ["flip"] = ["h", "v", "hv"] },
         ["DvExchanger"] = new(StringComparer.Ordinal) { ["kind"] = ["shell", "plate"], ["rotate"] = ["0", "90", "180", "270"], ["flip"] = ["h", "v", "hv"] },
-        ["DvTerminal"] = new(StringComparer.Ordinal) { ["rotate"] = ["0", "90", "180", "270"], ["flip"] = ["h", "v", "hv"] },
+        ["DvTerminal"] = new(StringComparer.Ordinal) { ["flip"] = ["h", "v", "hv"] },
         ["DvAgitator"] = new(StringComparer.Ordinal) { ["kind"] = [] },
         ["DvMotor"] = new(StringComparer.Ordinal) { ["kind"] = ["isa"] },
         ["DvAttach"] = new(StringComparer.Ordinal) { ["side"] = ["left", "right", "top", "bottom"] },
@@ -260,7 +257,7 @@ internal static class AttributeCheck
         (tag, name) is ("DvProcess", "direction" or "look" or "align") or ("DvLine", "medium") or ("DvSignal", "kind" or "color")
             or ("DvListBox", "selection-mode") or ("DvSlider", "direction")
         || name == "kind" && ProcessCheck.Kinds.ContainsKey(tag)
-        || name == "rotate" && (ProcessCheck.Kinds.ContainsKey(tag) || tag == "DvTerminal");
+        || name == "rotate" && ProcessCheck.Kinds.ContainsKey(tag);
 
     private static readonly HashSet<string> CommonSet = new(Common, StringComparer.Ordinal);
 

@@ -235,7 +235,8 @@ public sealed partial class LayoutEngine
         }
     }
 
-    // DvSelect·DvSegment — DvTabs 도 이 블록을 쓴다(값·옵션 형식; 옵션은 BuildTabs 가 DvTab 으로 바꿈)
+    // DvSelect·DvSegment — DvTabs 도 이 블록을 쓴다(값·값 형식·readonly). 선택지는 DvTabs 면 BuildTabs 가 DvTab 으로 만든다(items 는 읽지 않음),
+    // placeholder 는 DvSelect 만(3단계 R9 — 쓰지 않는 태그는 읽지 않는다)
     private void BuildSelect(LayoutBox box, AttrReader r)
     {
         var vm = r.Context;
@@ -265,9 +266,10 @@ public sealed partial class LayoutEngine
         }
 
         box.InputValue = current;
-        box.SelectOptions = SelectValue.Options(r, box.SelectValueType);
+        box.SelectOptions = r.Node.Tag == "DvTabs" ? [] : SelectValue.Options(r, box.SelectValueType);
         box.SelectedIndex = box.SelectOptions.FindIndex(o => SelectValue.Matches(o.Value, current, box.SelectValueType));
-        box.InputPlaceholder = r.Text("placeholder");
+        if (r.Node.Tag == "DvSelect")
+            box.InputPlaceholder = r.Text("placeholder");
         box.ReadOnly = InputReadOnly(r, _valueOverride);
         if (r.Node.Tag == "DvSegment")
             box.SegmentFill = AttrRules.Bool(r, "fill");

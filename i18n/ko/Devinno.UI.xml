@@ -3077,9 +3077,10 @@
 <c>DvTreeView</c> — <c>items</c>(뿌리 목록) + <c>item-children</c>(자식 목록 경로) + <c>item-text</c> + <c>item-value</c>(생략 = 항목 자체).
 펼친 가지만 행으로 만든다(행 높이 40, 깊이마다 들여쓰기). 고르기는 한 개 — <c>value</c> 에 고른 항목의 값(값의 주인 규칙은 다른 값 위젯과 같음).
 펼침은 화면이 기억한다(항목 객체 기준). 순환 참조(조상과 같은 객체가 다시 나옴)는 그 가지를 건너뛰고, 깊이는 64 까지.
-</summary></member><member name="M:Devinno.UI.Layout.LayoutEngine.BuildChart(Devinno.UI.Layout.LayoutBox,Devinno.UI.Layout.AttrReader)" en-hash="6d5bb0580a386493"><summary>
+</summary></member><member name="M:Devinno.UI.Layout.LayoutEngine.BuildChart(Devinno.UI.Layout.LayoutBox,Devinno.UI.Layout.AttrReader)" en-hash="79402dac3d0b0d92"><summary>
 그래프(계열 하나) — DvSparkline 은 <c>values</c>(숫자 목록 또는 "1,2,3"), DvBarChart·DvPieChart 는 <c>items</c> + <c>item-value</c>(숫자) + <c>item-text</c>(이름).
-공통 <c>tone</c>(info), <c>show-value</c>, 스파크라인·막대 <c>y-min</c>·<c>y-max</c>(생략 = 자동), 스파크라인 <c>area</c>, 원형 <c>inner-radius</c>(0~0.9 비율, 도넛).
+스파크라인·막대 <c>tone</c>(info), <c>y-min</c>·<c>y-max</c>(생략 = 자동), 막대·원형 <c>show-value</c>·<c>format</c>, 스파크라인 <c>area</c>, 원형 <c>inner-radius</c>(0~0.9 비율, 도넛).
+그래프마다 그리는 속성만 읽는다.
 숫자로 못 읽는 값은 0(원형은 빼기 전 음수·0 조각을 그리지 않음).
 </summary></member><member name="M:Devinno.UI.Layout.LayoutEngine.#ctor" en-hash="5820e9b87cf41e59">
             <summary>기본 테마(<see cref="P:Devinno.UI.Styling.DvTheme.Default" />)와 다국어 테이블 없이 엔진을 만듭니다.</summary>

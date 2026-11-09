@@ -42,7 +42,7 @@ public sealed partial class LayoutEngine
     // DvTabs — [머리글 줄(.tab-header: 탭마다 .tab / 선택 .tab-on) · 구분선(.tab-rule) · 선택된 DvTab 내용(.tab-body)].
     // 선택: value 가 있으면 VM 값과 맞는 탭(없으면 첫 탭), 없으면 화면이 기억한 번호. 나머지 탭 내용은 만들지 않는다.
     // 머리글을 누르면 DvSurface 가 그 탭 value 를 쓰거나(양방향) 기억한 번호를 바꾼다(value 없음).
-    // value·readonly·placeholder·items 는 BuildSelf 의 DvSelect 공용 블록이 먼저 읽는다(옵션은 여기서 DvTab 으로 바뀜).
+    // value·readonly 는 BuildSelf 의 DvSelect 공용 블록이 먼저 읽는다(선택지는 여기서 DvTab 으로 만든다 — placeholder·items 는 탭에 없다).
     private LayoutBox BuildTabs(LayoutBox box, object? vm, Func<ElementNode, IEnumerable<LayoutBox>> buildChild)
     {
         var tabs = box.Node.Children.Where(c => c.Tag == "DvTab" && IsVisibleOf(c, vm)).ToList();
