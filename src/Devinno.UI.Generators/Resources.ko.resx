@@ -115,6 +115,12 @@
   <data name="DVML017_Message" xml:space="preserve">
     <value>{0} {1}='{2}' 은(는) 없는 값입니다({3}) — 실행 때 {4} 로 동작</value>
   </data>
+  <data name="DVML019_Title" xml:space="preserve">
+    <value>없는 속성</value>
+  </data>
+  <data name="DVML019_Message" xml:space="preserve">
+    <value>{0} 에 '{1}' 속성은 없습니다 — 실행 때 조용히 무시됩니다{2}</value>
+  </data>
   <data name="DVML018_Title" xml:space="preserve">
     <value>핸들러 메서드를 찾을 수 없음</value>
   </data>

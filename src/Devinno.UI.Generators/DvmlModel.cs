@@ -66,6 +66,7 @@ internal sealed class DvmlModel
         // 공정도 연결 검사 — vm 이 없는 dvml 도. 생성(필드·Markup)은 막지 않는다(막으면 엉뚱한 컴파일 오류가 겹친다)
         ProcessCheck.Check(root, (d, at, args) => m.Reports.Add(Diagnostic.Create(d, m.At(at), args)));
         WidgetCheck.Check(root, (d, at, args) => m.Reports.Add(Diagnostic.Create(d, m.At(at), args)));
+        AttributeCheck.Check(root, (d, at, args) => m.Reports.Add(Diagnostic.Create(d, m.At(at), args)));
         var uses = new List<(string Name, XAttribute At)>();
         StyleCheck.Check(root, (d, at, off, len, args) => m.Reports.Add(Diagnostic.Create(d, m.At(at, off, len), args)), uses, m.ClassDefs);
         foreach (var (name, at) in uses)

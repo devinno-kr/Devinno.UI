@@ -42,4 +42,7 @@ internal static class Diagnostics
     public static readonly DiagnosticDescriptor HandlerBinding = D("DVML018", DiagnosticSeverity.Error, "Binding");
     public static readonly DiagnosticDescriptor HandlerCallForm = D("DVML018", DiagnosticSeverity.Error, "CallForm");
     public static readonly DiagnosticDescriptor HandlerNotName = D("DVML018", DiagnosticSeverity.Error, "NotName");
+
+    // DVML019 — 내장 태그에 그 태그·공통 정의(TagSchema)에 없는 속성(실행 때 조용히 무시된다)
+    public static readonly DiagnosticDescriptor UnknownAttribute = D("DVML019", DiagnosticSeverity.Warning);
 }

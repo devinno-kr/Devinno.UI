@@ -740,6 +740,80 @@ public class DvmlGeneratorTests
         Assert.Empty(r.Ids("DVML018"));
     }
 
+    // ── 없는 속성 검사(DVML019) — 내장 태그에 그 태그·공통 정의에 없는 속성 ──
+
+    // 생성기의 속성 이름 목록은 라이브러리 정의(TagSchema)의 복사본 — 이름만, 태그마다 같아야 한다
+    [Fact]
+    public void AttributeTables_MatchLibrary()
+    {
+        Assert.Equal(Devinno.UI.Markup.TagSchema.Common.Select(a => a.Name).OrderBy(n => n, StringComparer.Ordinal),
+            AttributeCheck.Common.OrderBy(n => n, StringComparer.Ordinal));
+        Assert.Equal(Devinno.UI.Markup.TagSchema.Tags.Keys.OrderBy(k => k, StringComparer.Ordinal), AttributeCheck.Tags.Keys.OrderBy(k => k, StringComparer.Ordinal));
+        foreach (var (tag, defs) in Devinno.UI.Markup.TagSchema.Tags)
+            Assert.True(defs.Select(a => a.Name).Distinct().OrderBy(n => n, StringComparer.Ordinal)
+                .SequenceEqual(AttributeCheck.Tags[tag].OrderBy(n => n, StringComparer.Ordinal)), tag);
+    }
+
+    private static Diagnostic[] Attrs(string dvml) =>
+        Run("public partial class P { }", ("P.dvml", dvml)).Ids("DVML019");
+
+    [Fact]
+    public void Attribute_Unknown_Warns()
+    {
+        var d = Assert.Single(Attrs("<DvStack>\n<DvLabel txet=\"a\"/>\n</DvStack>"));
+        Assert.Equal(DiagnosticSeverity.Warning, d.Severity);
+        var msg = d.GetMessage(Invariant);
+        Assert.Contains("DvLabel", msg);
+        Assert.Contains("txet", msg);
+        Assert.Contains("'text'", msg); // 가까운 이름
+        Assert.Equal(1, d.Location.GetLineSpan().StartLinePosition.Line);
+        Assert.Contains("txet", d.GetMessage(new System.Globalization.CultureInfo("ko-KR")));
+    }
+
+    [Fact]
+    public void Attribute_Valid_NoWarnings()
+    {
+        Assert.Empty(Attrs("""
+            <DvStack vm="MyApp.P" font-lang-ko="Malgun Gothic" xmlns:x="urn:x" gap="sm" padding="md" class="card" style="color:red">
+              <DvLabel id="l" text="{T}" grow="1" visible="{V}" content-align="center"/>
+              <DvButton text="Go" icon="fa-play" variant="primary" size="lg" onclick="Go" hold="500" hover-style="opacity:0.8"/>
+              <DvSlider value="{Bind X}" min="0" max="10" step="1" direction="up" show-value="true" onbeforecommit="Check"/>
+              <DvGrid columns="3" rows="auto" gap="none"/>
+              <DvDataGrid items="{Rows}" row-height="40"><DvColumn header="A" field="A" cell-type="lamp" on-color="#0f0"/></DvDataGrid>
+              <DvProcess placement="fixed" base-size="800 600"><DvVessel name="T1" level="50" width="80" x="10" y="20"/></DvProcess>
+              <DvLine visible="false"/>
+            </DvStack>
+            """));
+    }
+
+    [Fact]
+    public void Attribute_Skipped_OnUnknownTags()
+    {
+        // 사용자 컴포넌트 인스턴스(파라미터) · 등록 위젯(빌드 때 모름) · DvSymbol 정의 안 · 컴포넌트 정의 요소 · 내장이 아닌 루트
+        Assert.Empty(Attrs("""
+            <DvStack>
+              <DvComponent name="Tile" anything="x">
+                <DvParam name="title" default="t"/>
+                <DvLabel text="{title}"/>
+              </DvComponent>
+              <Tile title="A" whatever="1"/>
+              <BatteryGauge level="80" cells="4"/>
+              <DvSymbol name="Tank2" width="40" height="60">
+                <DvPort name="in" side="left" at="0.5" role="inlet"/>
+                <DvLabel foo="bar"/>
+              </DvSymbol>
+            </DvStack>
+            """));
+        Assert.Empty(Attrs("<DvPageFrame vm=\"MyApp.P\" title=\"T\" subtitle=\"S\"><DvLabel text=\"a\"/></DvPageFrame>"));
+    }
+
+    [Fact]
+    public void Attribute_RootOnlyNames_WarnElsewhere()
+    {
+        var d = Assert.Single(Attrs("<DvStack><DvRow vm=\"X\"/></DvStack>"));
+        Assert.Contains("vm", d.GetMessage(Invariant));
+    }
+
     // ── 진단 문구 언어 — 기본 영어, 한국어 리소스(ko) ──
 
     [Fact]

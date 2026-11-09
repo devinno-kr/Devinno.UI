@@ -176,7 +176,7 @@ internal static class StyleCheck
         return best.d <= 2 ? Diagnostics.Text("Style_DidYouMean", best.k) : (object)"";
     }
 
-    private static int Distance(string a, string b)
+    internal static int Distance(string a, string b)
     {
         var d = new int[a.Length + 1, b.Length + 1];
         for (var i = 0; i <= a.Length; i++) d[i, 0] = i;
