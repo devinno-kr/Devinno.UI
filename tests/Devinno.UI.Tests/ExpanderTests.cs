@@ -120,17 +120,17 @@ public class ExpanderTests
     }
 
     [Fact]
-    public void Handle_IsExpanded_ScreenState_And_Event()
+    public void Handle_Expanded_ScreenState_And_Event()
     {
         var (s, vm) = Start($"<DvExpander id=\"exp\" title=\"A\">{Body}</DvExpander>");
         var ev = new List<bool>();
         vm.exp!.ExpandedChanged += (_, e) => ev.Add(e.ByUser);
-        Assert.False(vm.exp.IsExpanded);
-        vm.exp.IsExpanded = true;
+        Assert.False(vm.exp.Expanded);
+        vm.exp.Expanded = true;
         s.Layout(W, H);
         Assert.Single(All(s, "DvLabel"));
         Tap(s, Header(s));
-        Assert.False(vm.exp.IsExpanded);
+        Assert.False(vm.exp.Expanded);
         Assert.Equal(new[] { false, true }, ev);
     }
 

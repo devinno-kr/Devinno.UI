@@ -3,7 +3,7 @@ using Devinno.UI.Layout;
 namespace Devinno.UI.Controls;
 
 /// <summary>
-/// Handle for a <c>DvTreeView</c> element. Read and write the chosen item with <see cref="SelectedNode"/> (value ownership rules are the same as <see cref="DvToggle"/> — the value is <c>value</c>).
+/// Handle for a <c>DvTreeView</c> element. Read and write the chosen item with <see cref="SelectedItem"/> (value ownership rules are the same as <see cref="DvToggle"/> — the value is <c>value</c>).
 /// </summary>
 /// <remarks>Items are based on the tree read by the last layout (including collapsed branches).</remarks>
 public sealed class DvTreeView : DvControl
@@ -14,7 +14,7 @@ public sealed class DvTreeView : DvControl
     /// Gets or sets the chosen item (an item object from <c>items</c>/<c>item-children</c>, or <see langword="null"/> if none). If <c>item-value</c> is set, the item is found by value.
     /// Writing it writes that item's value to <c>value</c> and expands ancestor branches so it is visible. Writing an item not in the tree writes that object as the value (same as when <c>item-value</c> is not set).
     /// </summary>
-    public object? SelectedNode
+    public object? SelectedItem
     {
         get
         {

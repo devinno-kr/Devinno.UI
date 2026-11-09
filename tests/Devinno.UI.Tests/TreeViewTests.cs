@@ -102,19 +102,19 @@ public class TreeViewTests
     }
 
     [Fact]
-    public void Handle_SelectedNode_ExpandsAncestors_AndRaises()
+    public void Handle_SelectedItem_ExpandsAncestors_AndRaises()
     {
         var (s, vm) = Start("id=\"tree\" item-value=\"Id\"");
         var ev = new List<bool>();
         vm.tree!.SelectionChanged += (_, e) => ev.Add(e.ByUser);
         var pump2 = vm.Plant[0].Kids[0].Kids[1];
-        vm.tree.SelectedNode = pump2;
+        vm.tree.SelectedItem = pump2;
         s.Layout(W, H);
         Assert.Equal(new[] { "1공장", "A라인", "펌프 1", "펌프 2", "B라인", "2공장" }, Texts(s));
-        Assert.Same(pump2, vm.tree.SelectedNode);
+        Assert.Same(pump2, vm.tree.SelectedItem);
         Assert.Contains("treeview-item-on", Rows(s)[3].Node.Attributes["class"]);
         TapText(s, Rows(s)[5]);
-        Assert.Equal("2공장", ((Node)vm.tree.SelectedNode!).Name);
+        Assert.Equal("2공장", ((Node)vm.tree.SelectedItem!).Name);
         Assert.Equal(new[] { false, true }, ev);
     }
 

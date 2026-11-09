@@ -78,7 +78,7 @@ public class ThreadStressTests(ITestOutputHelper output)
                         case 4: if (page.tg is { } t2) t2.Enabled = rng.Next(4) != 0; break;
                         case 5: if (page.sl is { } sl) sl.Value = rng.Next(100); break;
                         case 6: if (page.lst is { } lst) lst.SelectedIndex = rng.Next(-1, 3); break;
-                        case 7: if (page.exp is { } exp) exp.IsExpanded = !exp.IsExpanded; break;
+                        case 7: if (page.exp is { } exp) exp.Expanded = !exp.Expanded; break;
                         case 8: app.Theme = rng.Next(2) == 0 ? DvTheme.Light : DvTheme.Dark; break;
                         case 9: _ = app.ShowDialog<Ask, string>(); break;
                         case 10: app.CloseDialogs(); break;

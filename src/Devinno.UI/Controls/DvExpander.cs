@@ -4,7 +4,7 @@ using Devinno.UI.Layout;
 namespace Devinno.UI.Controls;
 
 /// <summary>
-/// Handle for a <c>DvExpander</c> element. Use <see cref="IsExpanded"/> to read and write the expanded state.
+/// Handle for a <c>DvExpander</c> element. Use <see cref="Expanded"/> to read and write the expanded state.
 /// </summary>
 /// <remarks>
 /// With <c>expanded="{Bind X}"</c> it reads and writes <c>X</c>; without <c>expanded</c> it reads and writes the expanded state remembered by the screen (kept while that screen is alive).
@@ -15,9 +15,9 @@ public sealed class DvExpander : DvControl
     internal DvExpander(string id) : base(id) => Slot = new ValueSlot(new ValueCell<bool>(), canOwn: false) { ValueAttr = "expanded" };
 
     /// <summary>Gets or sets whether it is expanded. Setting it schedules a repaint and is safe from any thread.</summary>
-    public bool IsExpanded { get => ValueConvert.ToBool(CurrentValue()); set => SetCurrent(value); }
+    public bool Expanded { get => ValueConvert.ToBool(CurrentValue()); set => SetCurrent(value); }
 
-    /// <summary>Raised when <see cref="IsExpanded"/> changes (header tap, code or binding; same rules as <see cref="DvToggle.CheckedChanged"/>).</summary>
+    /// <summary>Raised when <see cref="Expanded"/> changes (header tap, code or binding; same rules as <see cref="DvToggle.CheckedChanged"/>).</summary>
     public event EventHandler<DvValueChangedEventArgs>? ExpandedChanged
     {
         add { lock (EventGate) _changed += value; }

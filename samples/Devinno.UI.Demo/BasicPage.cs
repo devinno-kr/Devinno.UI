@@ -45,7 +45,7 @@ public sealed partial class BasicPage : DemoPage
     public string PickedEquipText => PickedEquip is { } e ? $"{e.Name} ({e.Tag})" : "(none)";
 
     // 핸들 — 항목 객체를 쓰면 조상 가지가 펼쳐지고 값(item-value = Tag)이 고른 값이 된다
-    public void PickPump2() => tvPlant.SelectedNode = Plant[0].Kids[0].Kids[1];
+    public void PickPump2() => tvPlant.SelectedItem = Plant[0].Kids[0].Kids[1];
 
     public double PanelOpacity { get; private set; } = 1;
     public double BallX { get; private set; }
@@ -75,8 +75,8 @@ public sealed partial class BasicPage : DemoPage
         rdStop.CheckedChanged += (_, e) => Log("Stop radio", rdStop.Checked ? "on" : "off", e);
         slLight.ValueChanged += (_, e) => Log("Light", $"{slLight.Value:0.0}", e);
         lstShift.SelectionChanged += (_, e) => Log("Shift", $"{lstShift.SelectedValue ?? "-"}", e);
-        tvPlant.SelectionChanged += (_, e) => Log("Tree", $"{(tvPlant.SelectedNode as Equip)?.Name ?? "-"}", e);
-        expMore.ExpandedChanged += (_, e) => Log("Advanced", expMore.IsExpanded ? "expanded" : "collapsed", e);
+        tvPlant.SelectionChanged += (_, e) => Log("Tree", $"{(tvPlant.SelectedItem as Equip)?.Name ?? "-"}", e);
+        expMore.ExpandedChanged += (_, e) => Log("Advanced", expMore.Expanded ? "expanded" : "collapsed", e);
 
         segMode.SelectedIndex = 0; // 배치 전 — 첫 레이아웃 때 적용
         knSpeed.Value = 40;
@@ -97,7 +97,7 @@ public sealed partial class BasicPage : DemoPage
         inOperator.Text = "Alex Kim";
         inTemp.Value = 65;
         tgAuto.Checked = true; // 바인딩 — VM Auto 에 씀
-        expMore.IsExpanded = true;
+        expMore.Expanded = true;
         chkLog.Checked = true;
         rdStop.Checked = true; // 바인딩 라디오 — VM Run = Stop
         slLight.Value = 0.8;

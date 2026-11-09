@@ -829,7 +829,7 @@ public bool IsFault => State == 2;
 </DvExpander>
 ```
 - Header row = ▶ (collapsed) / ▼ (expanded) icon + `title` text (bindable), height 44. `title` is the heading of the group (like `DvCard`/`DvPageFrame` `title`) — it is not an HTML tooltip; a future hover hint would be named `tooltip`. The whole row is the press target. When collapsed it takes **only the header row height** and the content is not built (same as tabs — `id` handles in collapsed content have empty `Bounds`). Content stacks vertically (`.expander-body`).
-- Expanded state: with `expanded="{Bind X}"` (bool), the VM owns it — pressing flips and writes it. **If omitted, the screen remembers it** (each `DvRepeat` item and each component instance separately) (initially collapsed, kept across redraws). A one-way or fixed value (`expanded="true"`) locks it in that state and pressing does not change it. To control it from code, use the `id` handle's `IsExpanded`·`ExpandedChanged` (20.9).
+- Expanded state: with `expanded="{Bind X}"` (bool), the VM owns it — pressing flips and writes it. **If omitted, the screen remembers it** (each `DvRepeat` item and each component instance separately) (initially collapsed, kept across redraws). A one-way or fixed value (`expanded="true"`) locks it in that state and pressing does not change it. To control it from code, use the `id` handle's `Expanded`·`ExpandedChanged` (20.9).
 - When expanding and collapsing, the height changes gradually over 0.2 seconds (ease-out) and the content below is pushed along (same when changed via VM or handle; the first screen does not animate). While collapsing, the content remains until the end and is then removed. Appearance: `.expander` (surface, border, rounded corners), `.expander-header`, `.expander-body`.
 - **A group where only one is open (accordion)** has no dedicated widget — put `DvExpander` inside `DvRepeat`, and have the item's `Open` setter close the rest of the same list.
 ```xml
@@ -1043,7 +1043,7 @@ Expand and collapse hierarchical data (plant → line → equipment) and pick on
 - **Pressing the ▶/▼ area (indent + icon) expands/collapses; pressing anywhere else selects.** Selecting does not expand. Expanding/collapsing works even when read-only.
 - Initially everything is collapsed, and the screen remembers expansion (per tree instance — each `DvRepeat` item or component instance has its own — keyed by item object — the same object (`Equals`) keeps it across redraws). Collapsing a branch keeps the expansion memory below it, so it is restored when re-expanded.
 - Row height 40, indent 20 per depth. Without a given height, up to 8 rows are visible and more scroll (scroll panel — dragging scrolls). There is no lazy loading (reading children on expand) — child lists are read fully at layout time.
-- Single selection only. Value ownership rules are the same as other value widgets (with only `id` and no `value`, the handle holds it — `SelectedNode`, 20.9). Cycles (an ancestor object appearing again as a child) skip that branch.
+- Single selection only. Value ownership rules are the same as other value widgets (with only `id` and no `value`, the handle holds it — `SelectedItem`, 20.9). Cycles (an ancestor object appearing again as a child) skip that branch.
 - Appearance: `.treeview`, rows `.treeview-item`, chosen row `.treeview-item-on` (`primary` background).
 
 ---
@@ -1634,7 +1634,7 @@ void OnAlarmReceived(AlarmRow row)
 | `DvApp.Invalidate`·`DvSurface.Invalidate`·`Repaint` | Any thread | Only sets a flag. Bindings are re-read at the next frame |
 | `ShowDialog`·`MessageBox`·`InputBox`·`InputNumber`·`SelectBox`·`CloseDialogs`·`DvDialog.Close`·`IsTop`·`Dialogs` | Any thread | The result `Task` completes on the input thread. If you `await` on the input thread, the continuation also runs on the input thread |
 | `Lock`·`Unlock`·`IsLocked`·`DvApp.Current`·`Pages` | Any thread | |
-| Writing handle values (`Checked`·`Value`·`SelectedIndex`·`IsExpanded`·`Text`·`Enabled`, etc.) | Any thread | Schedules a repaint. If the value changes, the changed event (`ByUser = false`) fires **on the writing thread** |
+| Writing handle values (`Checked`·`Value`·`SelectedIndex`·`Expanded`·`Text`·`Enabled`, etc.) | Any thread | Schedules a repaint. If the value changes, the changed event (`ByUser = false`) fires **on the writing thread** |
 | Events raised by user interaction, `onclick` handlers | Called on the input thread | Screen values may be changed directly inside the handler |
 | `TrendBuffer.Add`·`AlarmLog` (all members)·`DvSyncContext.Post` | Any thread | Internal locking. Enumerating `AlarmLog` gives a snapshot at that moment |
 | Writing view model properties | App's responsibility | The library only reads. Calling `Invalidate` after writing reflects it at the next frame |
@@ -2022,8 +2022,8 @@ Giving an `id` to a widget that has a value creates a handle for that value. Use
 | `DvKnob`, `DvSlider` | Same name | `double Value` | `ValueChanged` |
 | `DvInput` | `DvInput` | `string? Text`, plus `double? Value` for numeric input | `TextChanged`, followed by `ValueChanged` for numeric input |
 | `DvSelect`, `DvSegment` | Same name | `int SelectedIndex` (none = -1), `object? SelectedValue` | `SelectionChanged` |
-| `DvExpander` | `DvExpander` | `bool IsExpanded` | `ExpandedChanged` |
-| `DvTreeView` | `DvTreeView` | `object? SelectedNode` (the selected item object — writing it expands the ancestor branches) | `SelectionChanged` |
+| `DvExpander` | `DvExpander` | `bool Expanded` | `ExpandedChanged` |
+| `DvTreeView` | `DvTreeView` | `object? SelectedItem` (the selected item object — writing it expands the ancestor branches) | `SelectionChanged` |
 | `DvListBox` | `DvListBox` | `SelectedIndex`, `SelectedValue` (the first one if multiple), `IReadOnlyList<object?> SelectedItems` (writing selects those values) — for multi-select, `selected-items` decides the owner | `SelectionChanged` |
 | `DvDateTimeInput` | Same name | `DateTime? Value` | `ValueChanged` |
 | `DvColorInput` | Same name | `SKColor? Value` | `ValueChanged` |
