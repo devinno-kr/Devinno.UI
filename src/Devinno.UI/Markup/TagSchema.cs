@@ -210,7 +210,7 @@ internal static class TagSchema
             OwnedValue("the option value is written without conversion to the bound type"),
             ReadOnly(),
             new("fill", AttrKind.Bool, "false"),
-            .. Items("not documented for DvSegment"),
+            .. Items(),
         ],
         ["DvListBox"] =
         [

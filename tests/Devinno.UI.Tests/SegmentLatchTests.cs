@@ -24,6 +24,8 @@ public class SegmentLatchTests
         public RunMode Run { get; set; } = RunMode.Auto;
         public bool GateRun(RunMode proposed) => Allow;
         public void Hit() => Clicks++;
+        public sealed record Opt(int Id, string Name, string Icon);
+        public List<Opt> Opts { get; } = [new(1, "저", "fa-a"), new(2, "중", "fa-b"), new(3, "고", "fa-c")];
     }
 
     private static (DvSurface S, Vm Vm) Start(string body, Vm? vm = null)
@@ -154,6 +156,22 @@ public class SegmentLatchTests
         Assert.Equal(items[1].Style.Background, items[2].Style.Background);
         Assert.True(items[0].Rect.Right <= items[1].Rect.Left); // 한 줄
         Assert.Equal(items[0].Rect.Top, items[1].Rect.Top);
+    }
+
+    // 선택지는 DvSelect 와 같은 규칙으로 만든다 — items(+ item-value·item-text·item-icon)가 DvOption 자식보다 먼저
+    [Fact]
+    public void Segment_Items_BuildOptions_AndTapWritesItemValue()
+    {
+        var (s, vm) = Start("""
+            <DvSegment value="{Bind Level}" items="{Opts}" item-value="Id" item-text="Name" item-icon="Icon">
+              <DvOption value="9" text="무시"/>
+            </DvSegment>
+            """);
+        var items = Items(s);
+        Assert.Equal(["저", "중", "고"], items.Select(i => i.ResolvedText));
+        Assert.Equal(["fa-a", "fa-b", "fa-c"], items.Select(i => i.Icon));
+        Tap(s, items[2]);
+        Assert.Equal(3, vm.Level);
     }
 
     [Fact]
