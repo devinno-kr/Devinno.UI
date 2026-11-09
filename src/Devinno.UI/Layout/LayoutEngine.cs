@@ -735,16 +735,12 @@ public sealed class LayoutEngine
         box.StyleHover = State(r => r.Hover, "hover-style");
         box.StylePress = State(r => r.Press, "press-style");
         box.StyleDisabled = State(r => r.Disabled, "disabled-style");
-        if (node.Attributes.TryGetValue("disabled", out var dv))
-        {
-            var rv = BindingResolver.ResolveValueOrLiteral(vm, dv);
-            box.Disabled = IsDisabledValue(rv, dv);
-        }
-
-        var ov = ControlOf?.Invoke(node)?.Overrides;
-        if (ov?.Enabled is { } en)
-            box.Disabled = !en;
-        box.HasCodeClick = ov?.HasClick == true;
+        // 속성 읽기 한 통로 — 핸들이 코드로 쓴 값(Enabled·Visible·Text)이 마크업 값을 이긴다
+        var control = ControlOf?.Invoke(node);
+        var r = new AttrReader(node, vm, control?.AttrOverrides);
+        if (r.Has("disabled"))
+            box.Disabled = IsDisabledValue(r.Value("disabled"), r.Raw("disabled") ?? "disabled");
+        box.HasCodeClick = control?.Overrides.HasClick == true;
 
         box.OnClick = node.Attributes.GetValueOrDefault("onclick");
         if (BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("hold")) is { } holdText &&
@@ -1046,8 +1042,8 @@ public sealed class LayoutEngine
 
         if (node.Tag is "DvLabel" or "DvButton" or "DvCheckBox" or "DvRadio")
         {
-            var raw = node.Attributes.GetValueOrDefault("text") ?? node.Text ?? "";
-            box.ResolvedText = ov is { HasText: true } ? ov.Value.Text : BindingResolver.ResolveText(vm, raw) ?? "";
+            box.ResolvedText = r.Overridden("text") ? r.Text("text") ?? ""
+                : BindingResolver.ResolveText(vm, r.Raw("text") ?? node.Text ?? "") ?? "";
         }
 
         return box;
@@ -1242,16 +1238,16 @@ public sealed class LayoutEngine
     internal Func<ElementNode, Controls.DvControl?>? ControlOf { get; set; }
 
     // 핸들의 Visible 덮어쓰기가 마크업 visible 보다 우선
-    private bool IsVisibleOf(ElementNode node, object? ctx) =>
-        ControlOf?.Invoke(node)?.Overrides.Visible is { } v ? v : IsVisible(node, ctx);
+    private bool IsVisibleOf(ElementNode node, object? ctx) => IsVisible(new AttrReader(node, ctx, ControlOf?.Invoke(node)?.AttrOverrides));
 
     /// <summary>If the <c>visible</c> attribute is false or empty, the element is not created.</summary>
-    private static bool IsVisible(ElementNode node, object? ctx)
+    private static bool IsVisible(AttrReader r)
     {
-        if (!node.Attributes.TryGetValue("visible", out var raw))
+        if (!r.Has("visible"))
             return true;
 
-        var v = BindingResolver.ResolveValueOrLiteral(ctx, raw);
+        var raw = r.Raw("visible") ?? "visible";
+        var v = r.Value("visible");
         return v switch
         {
             null => false,

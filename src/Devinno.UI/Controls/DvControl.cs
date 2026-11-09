@@ -130,6 +130,28 @@ public class DvControl
 
     internal void SetOverrideText(string? text) => Write(o => o with { Text = text });
 
+    /// <summary>
+    /// Values written from code, keyed by markup attribute name with the markup meaning (<c>disabled</c> = not <see cref="Enabled"/>, <c>visible</c>, <c>text</c>).
+    /// Layout reads attributes through these (one reference read, never torn). <see langword="null"/> if nothing is overridden.
+    /// </summary>
+    internal IReadOnlyDictionary<string, object?>? AttrOverrides
+    {
+        get
+        {
+            var o = _ov;
+            if (ReferenceEquals(o, Ov.Empty) || o is { Enabled: null, Visible: null, Text: null })
+                return null;
+            var map = new Dictionary<string, object?>(3, StringComparer.Ordinal);
+            if (o.Enabled is { } enabled)
+                map["disabled"] = !enabled;
+            if (o.Visible is { } visible)
+                map["visible"] = visible;
+            if (o.Text is not null)
+                map["text"] = o.Text;
+            return map;
+        }
+    }
+
     /// <summary>Snapshot of override values that layout reads at once (a single reference read, so it is never torn).</summary>
     internal (bool? Enabled, bool? Visible, string? Text, bool HasText, bool HasClick) Overrides
     {
