@@ -9,7 +9,7 @@ namespace Devinno.UI.Generators;
 
 /// <summary>
 /// 없는 속성 검사(DVML019) — 내장 태그에 그 태그의 속성도 공통 속성도 아닌 이름(오타 등)이 있으면 경고. 실행 때는 조용히 무시된다.
-/// 값 검사(DVML020) — 참/거짓·숫자 속성에 리터럴로 쓴 값이 그 종류가 아니면 경고(실행 때는 기본값 + Trace). 바인딩(<c>{</c> 포함)은 건너뛴다.
+/// 값 검사(DVML020) — 참/거짓·숫자·목록 값·색 속성에 리터럴로 쓴 값이 그 종류가 아니면 경고(실행 때는 기본값 + Trace). 바인딩(<c>{</c> 포함)은 건너뛴다.
 /// 표에 없는 태그(사용자 컴포넌트 인스턴스·등록 위젯·심볼·DvPageFrame 같은 내장 컴포넌트)와 <c>DvSymbol</c> 정의 안은 건너뛴다.
 /// </summary>
 internal static class AttributeCheck
@@ -194,6 +194,73 @@ internal static class AttributeCheck
         ["DvInstrument"] = ["x", "y"],
     };
 
+    /// <summary>목록 값 속성 — 라이브러리 <c>TagSchema</c> 에서 Kind 가 Enum 인 이름과 그 Values(테스트가 비교). 공통은 <see cref="CommonEnum"/>.</summary>
+    internal static readonly Dictionary<string, string[]> CommonEnum = new(StringComparer.Ordinal)
+    {
+        ["content-align"] = ["top-left", "top-center", "top-right", "middle-left", "middle-center", "middle-right", "bottom-left", "bottom-center", "bottom-right"],
+    };
+
+    /// <summary>태그별 목록 값 속성(<c>AttrKind.Enum</c>) → 받는 값.</summary>
+    internal static readonly Dictionary<string, Dictionary<string, string[]>> Enum = new(StringComparer.Ordinal)
+    {
+        ["DvStack"] = new(StringComparer.Ordinal) { ["align"] = ["start", "center", "end", "stretch"], ["justify"] = ["start", "center", "end", "between"] },
+        ["DvRow"] = new(StringComparer.Ordinal) { ["align"] = ["start", "center", "end", "stretch"], ["justify"] = ["start", "center", "end", "between"] },
+        ["DvGrid"] = new(StringComparer.Ordinal) { ["align"] = ["start", "center", "end", "stretch"], ["justify"] = ["start", "center", "end", "between"] },
+        ["DvSpacer"] = new(StringComparer.Ordinal) { ["align"] = ["start", "center", "end", "stretch"], ["justify"] = ["start", "center", "end", "between"] },
+        ["DvRepeat"] = new(StringComparer.Ordinal) { ["align"] = ["start", "center", "end", "stretch"], ["justify"] = ["start", "center", "end", "between"] },
+        ["DvButton"] = new(StringComparer.Ordinal) { ["variant"] = ["primary", "secondary", "danger", "ghost"], ["size"] = ["sm", "lg"] },
+        ["DvImage"] = new(StringComparer.Ordinal) { ["fit"] = ["contain", "cover", "fill"] },
+        ["DvVideo"] = new(StringComparer.Ordinal) { ["fit"] = ["contain", "cover", "fill"] },
+        ["DvKnob"] = new(StringComparer.Ordinal) { ["input-mode"] = ["drag", "tap", "both"] },
+        ["DvSlider"] = new(StringComparer.Ordinal) { ["direction"] = ["right", "left", "up", "down"] },
+        ["DvInput"] = new(StringComparer.Ordinal) { ["keyboard-type"] = ["text", "numeric", "password"] },
+        ["DvListBox"] = new(StringComparer.Ordinal) { ["selection-mode"] = ["single", "multi"] },
+        ["DvDateTimeInput"] = new(StringComparer.Ordinal) { ["mode"] = ["date", "time", "datetime"] },
+        ["DvProgress"] = new(StringComparer.Ordinal) { ["tone"] = ["neutral", "info", "success", "warning", "danger"], ["direction"] = ["right", "left", "up", "down"] },
+        ["DvGauge"] = new(StringComparer.Ordinal) { ["tone"] = ["neutral", "info", "success", "warning", "danger"], ["direction"] = ["right", "left", "up", "down"] },
+        ["DvRing"] = new(StringComparer.Ordinal) { ["tone"] = ["neutral", "info", "success", "warning", "danger"], ["direction"] = ["right", "left", "up", "down"] },
+        ["DvLamp"] = new(StringComparer.Ordinal) { ["state"] = ["run", "stop", "fault", "warn", "manual", "off"] },
+        ["DvSparkline"] = new(StringComparer.Ordinal) { ["tone"] = ["neutral", "info", "success", "warning", "danger"] },
+        ["DvBarChart"] = new(StringComparer.Ordinal) { ["tone"] = ["neutral", "info", "success", "warning", "danger"] },
+        ["DvPieChart"] = new(StringComparer.Ordinal) { ["tone"] = ["neutral", "info", "success", "warning", "danger"] },
+        ["DvDataGrid"] = new(StringComparer.Ordinal) { ["selection-mode"] = ["none", "single", "multi"] },
+        ["DvColumn"] = new(StringComparer.Ordinal) { ["align"] = ["left", "center", "right"], ["sort"] = ["asc", "desc"], ["cell-type"] = ["text", "check", "lamp", "button", "input", "select", "datetime", "color"], ["filter"] = ["none", "auto", "text", "values", "range", "date"], ["variant"] = ["primary", "secondary", "danger", "ghost"], ["mode"] = ["date", "time", "datetime"] },
+        ["DvSummaryRow"] = new(StringComparer.Ordinal) { ["fn"] = ["sum", "avg", "min", "max", "count"] },
+        ["DvSummary"] = new(StringComparer.Ordinal) { ["fn"] = ["sum", "avg", "min", "max", "count"] },
+        ["DvProcess"] = new(StringComparer.Ordinal) { ["direction"] = ["lr", "tb"], ["look"] = ["plain", "rich"], ["align"] = ["auto", "step", "row"], ["placement"] = ["auto", "fixed"], ["fit"] = ["none", "shrink", "contain"] },
+        ["DvUnit"] = new(StringComparer.Ordinal) { ["direction"] = ["lr", "tb"], ["placement"] = ["auto"] },
+        ["DvPort"] = new(StringComparer.Ordinal) { ["side"] = ["left", "top", "right", "bottom"] },
+        ["DvVessel"] = new(StringComparer.Ordinal) { ["kind"] = ["tank", "reactor", "silo", "hopper", "drum", "column", "open"], ["rotate"] = ["0", "90", "180", "270"], ["flip"] = ["h", "v", "hv"] },
+        ["DvPump"] = new(StringComparer.Ordinal) { ["kind"] = ["centrifugal", "gear", "compressor", "blower", "isa"], ["rotate"] = ["0", "90", "180", "270"], ["flip"] = ["h", "v", "hv"] },
+        ["DvValve"] = new(StringComparer.Ordinal) { ["kind"] = ["gate", "ball", "butterfly", "control", "check", "globe", "plug", "diaphragm", "angle", "relief"], ["rotate"] = ["0", "90", "180", "270"], ["flip"] = ["h", "v", "hv"] },
+        ["DvValve3"] = new(StringComparer.Ordinal) { ["kind"] = ["ball", "control"], ["rotate"] = ["0", "90", "180", "270"], ["flip"] = ["h", "v", "hv"] },
+        ["DvInline"] = new(StringComparer.Ordinal) { ["kind"] = ["flowmeter", "filter", "strainer", "sight", "reducer", "orifice", "mixer", "vent", "blind"], ["rotate"] = ["0", "90", "180", "270"], ["flip"] = ["h", "v", "hv"] },
+        ["DvExchanger"] = new(StringComparer.Ordinal) { ["kind"] = ["shell", "plate"], ["rotate"] = ["0", "90", "180", "270"], ["flip"] = ["h", "v", "hv"] },
+        ["DvTerminal"] = new(StringComparer.Ordinal) { ["rotate"] = ["0", "90", "180", "270"], ["flip"] = ["h", "v", "hv"] },
+        ["DvAgitator"] = new(StringComparer.Ordinal) { ["kind"] = [] },
+        ["DvMotor"] = new(StringComparer.Ordinal) { ["kind"] = ["isa"] },
+        ["DvAttach"] = new(StringComparer.Ordinal) { ["side"] = ["left", "right", "top", "bottom"] },
+        ["DvLine"] = new(StringComparer.Ordinal) { ["arrow"] = ["end", "start", "both", "none"], ["medium"] = ["water", "steam", "air", "gas", "oil", "acid"] },
+        ["DvSignal"] = new(StringComparer.Ordinal) { ["arrow"] = ["end", "start", "both", "none"], ["kind"] = ["electric", "pneumatic"] },
+    };
+
+    /// <summary>태그별 색 속성(<c>AttrKind.Color</c>) — 라이브러리 <c>TagSchema</c> 와 같아야 한다(테스트가 비교). 공통 색 속성은 없다.</summary>
+    internal static readonly Dictionary<string, string[]> Color = new(StringComparer.Ordinal)
+    {
+        ["DvLamp"] = ["color"],
+        ["DvTrendChannel"] = ["color"],
+        ["DvDataGrid"] = ["header-color", "header-text-color", "text-color", "row-color", "row-alt-color", "hover-color", "selected-color", "line-color", "summary-color", "summary-text-color"],
+        ["DvColumn"] = ["on-color"],
+        ["DvSignal"] = ["color"],
+    };
+
+    // 다른 진단이 이미 값을 검사하는 속성 — DVML011(공정도 ProcessCheck) · DVML017(WidgetCheck). DVML020 은 같은 값을 두 번 알리지 않는다
+    private static bool CheckedElsewhere(string tag, string name) =>
+        (tag, name) is ("DvProcess", "direction" or "look" or "align") or ("DvLine", "medium") or ("DvSignal", "kind" or "color")
+            or ("DvListBox", "selection-mode") or ("DvSlider", "direction")
+        || name == "kind" && ProcessCheck.Kinds.ContainsKey(tag)
+        || name == "rotate" && (ProcessCheck.Kinds.ContainsKey(tag) || tag == "DvTerminal");
+
     private static readonly HashSet<string> CommonSet = new(Common, StringComparer.Ordinal);
 
     public static void Check(XElement root, Action<DiagnosticDescriptor, XObject, object[]> report) => Walk(root, true, report);
@@ -227,7 +294,8 @@ internal static class AttributeCheck
     }
 
     // DVML020 — 리터럴 값이 속성 종류에 맞는지. 규칙은 라이브러리 Layout.AttrRules 와 같다:
-    // 참/거짓 = true·false(대소문자 무시)·숫자·빈 값, 숫자 = Invariant 숫자·빈 값(없음과 같음). 앞뒤 공백 무시.
+    // 참/거짓 = true·false(대소문자 무시)·숫자·빈 값, 숫자 = Invariant 숫자·빈 값(없음과 같음),
+    // 목록 값 = 정의된 값(대소문자 무시)·빈 값, 색 = #RGB·#RRGGBB·#RRGGBBAA·transparent·token(이름)·빈 값. 앞뒤 공백 무시.
     private static void CheckValue(string tag, string name, XAttribute a, Action<DiagnosticDescriptor, XObject, object[]> report)
     {
         var value = a.Value;
@@ -237,6 +305,38 @@ internal static class AttributeCheck
             report(Diagnostics.InvalidBool, a, new object[] { tag, name, value });
         else if (Has(Number, CommonNumber, tag, name) && !IsNumber(value))
             report(Diagnostics.InvalidNumber, a, new object[] { tag, name, value });
+        else if (EnumValues(tag, name) is { } values && !CheckedElsewhere(tag, name) && !IsEnum(value, values, tag, name))
+            report(Diagnostics.InvalidEnum, a, new object[] { tag, name, value, values.Length == 0 ? "-" : string.Join(", ", values) });
+        else if (Has(Color, Array.Empty<string>(), tag, name) && !CheckedElsewhere(tag, name) && !IsColor(value))
+            report(Diagnostics.InvalidColor, a, new object[] { tag, name, value });
+    }
+
+    // 목록 값 속성의 값 목록 — 태그 정의가 먼저(Has 와 같은 순서), 아니면 공통. 목록 속성이 아니면 null
+    private static string[]? EnumValues(string tag, string name)
+    {
+        if (Tags.TryGetValue(tag, out var own) && Array.IndexOf(own, name) >= 0)
+            return Enum.TryGetValue(tag, out var attrs) && attrs.TryGetValue(name, out var v) ? v : null;
+        return CommonEnum.TryGetValue(name, out var c) ? c : null;
+    }
+
+    internal static bool IsEnum(string value, string[] values, string tag = "", string name = "")
+    {
+        var s = value.Trim();
+        if (s.Length == 0 || values.Any(v => string.Equals(v, s, StringComparison.OrdinalIgnoreCase)))
+            return true;
+        return name == "flip" && s.Equals("vh", StringComparison.OrdinalIgnoreCase); // 공정 장비 flip — vh 는 hv 의 별칭
+    }
+
+    private static readonly System.Text.RegularExpressions.Regex TokenOnly =
+        new(@"^(?:token\(\s*[A-Za-z0-9_.-]+\s*\)|var\(\s*--[A-Za-z0-9_.-]+\s*\))$");
+
+    // 색 — 라이브러리 DvColor.TryParse(#3·6·8자리, transparent) 또는 토큰 하나. 토큰 이름은 앱 테마에 달렸으므로 형식만(이름은 DVML013 이 본다)
+    internal static bool IsColor(string value)
+    {
+        var s = value.Trim();
+        if (s.Length == 0 || s.Equals("transparent", StringComparison.OrdinalIgnoreCase) || TokenOnly.IsMatch(s))
+            return true;
+        return s.Length is 4 or 7 or 9 && s[0] == '#' && s.Skip(1).All(Uri.IsHexDigit);
     }
 
     // 태그 정의가 같은 이름을 다른 종류로 가지면(DvVessel width = 숫자) 태그 정의가 이긴다 — TagSchema.Find 와 같은 순서

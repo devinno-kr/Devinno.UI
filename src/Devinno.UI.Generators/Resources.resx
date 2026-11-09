@@ -130,6 +130,12 @@
   <data name="DVML020_Number" xml:space="preserve">
     <value>{0} {1}='{2}' is not a number (invariant culture, e.g. 1.5) — the default is used at run time</value>
   </data>
+  <data name="DVML020_Enum" xml:space="preserve">
+    <value>{0} {1}='{2}' is not one of {3} (case is ignored) — the default is used at run time</value>
+  </data>
+  <data name="DVML020_Color" xml:space="preserve">
+    <value>{0} {1}='{2}' is not a color (#RGB, #RRGGBB, #RRGGBBAA, transparent or token(name); color names are not supported) — the default color is used at run time</value>
+  </data>
   <data name="DVML018_Title" xml:space="preserve">
     <value>Handler method not found</value>
   </data>

@@ -22,9 +22,9 @@ internal static class WidgetCheck
                 case "DvListBox":
                 {
                     var mode = e.Attribute("selection-mode");
-                    if (mode is not null && !IsBinding(mode.Value) && mode.Value is not ("single" or "multi"))
+                    if (mode is not null && !IsBinding(mode.Value) && !AttributeCheck.IsEnum(mode.Value, ["single", "multi"]))
                         report(Diagnostics.WidgetUnknownValue, mode, new object[] { "DvListBox", "selection-mode", mode.Value, "single·multi", "single" });
-                    var multi = mode?.Value == "multi";
+                    var multi = mode is not null && mode.Value.Trim().Equals("multi", StringComparison.OrdinalIgnoreCase); // 라이브러리 목록 값 규칙
                     if (multi && e.Attribute("value") is { } v)
                         report(Diagnostics.ListBoxValueAttr, v, new object[] { Diagnostics.Text("Widget_ListMultiValue") });
                     else if (!multi && mode is not null && IsBinding(mode.Value))
@@ -34,7 +34,7 @@ internal static class WidgetCheck
                     break;
                 }
 
-                case "DvSlider" when e.Attribute("direction") is { } d && !IsBinding(d.Value) && d.Value is not ("right" or "left" or "up" or "down"):
+                case "DvSlider" when e.Attribute("direction") is { } d && !IsBinding(d.Value) && !AttributeCheck.IsEnum(d.Value, ["right", "left", "up", "down"]):
                     report(Diagnostics.WidgetUnknownValue, d, new object[] { "DvSlider", "direction", d.Value, "right·left·up·down", "right" });
                     break;
             }

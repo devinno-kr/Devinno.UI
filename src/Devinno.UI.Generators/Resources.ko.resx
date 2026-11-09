@@ -130,6 +130,12 @@
   <data name="DVML020_Number" xml:space="preserve">
     <value>{0} {1}='{2}' 은(는) 숫자가 아닙니다(Invariant 형식, 예: 1.5) — 실행 때 기본값을 씁니다</value>
   </data>
+  <data name="DVML020_Enum" xml:space="preserve">
+    <value>{0} {1}='{2}' 은(는) {3} 중 하나가 아닙니다(대소문자 무시) — 실행 때 기본값을 씁니다</value>
+  </data>
+  <data name="DVML020_Color" xml:space="preserve">
+    <value>{0} {1}='{2}' 은(는) 색이 아닙니다(#RGB, #RRGGBB, #RRGGBBAA, transparent 또는 token(이름) — 색 이름은 지원 안 함) — 실행 때 기본색을 씁니다</value>
+  </data>
   <data name="DVML018_Title" xml:space="preserve">
     <value>핸들러 메서드를 찾을 수 없음</value>
   </data>

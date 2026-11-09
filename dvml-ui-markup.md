@@ -1945,16 +1945,16 @@ Problems in each dvml are reported at compile time. The location points inside t
 | DVML008 | Error | Process diagram: the equipment/instrument name referenced by `DvLine`, `DvSignal`, or `DvInstrument on`·`tap` does not exist |
 | DVML009 | Error | Process diagram: nonexistent port, port required but not chosen, port/endpoint on a signal line, connecting directly from outside to equipment inside a unit |
 | DVML010 | Error | Process diagram: duplicate equipment/instrument name (within the process diagram or a unit) |
-| DVML011 | Warning | Process diagram: nonexistent value (`kind`, `medium`, `rotate`, `direction`, `look`, `align`) — default used at runtime |
+| DVML011 | Warning | Process diagram: nonexistent value (`kind`, `medium`, `rotate`, `direction`, `look`, `align`; case and surrounding spaces are ignored, as at runtime) or a `DvSignal color` that is not a color — default used at runtime |
 | DVML012 | Warning | Nonexistent style property name in `style`, `*-style`, or `<DvStyle>` (e.g. `colr`, or unsupported ones like `margin`) — silently ignored at runtime. Suggests a similar name if one exists |
 | DVML013 | Warning | Name in `token(이름)`/`var(--이름)` not in the built-in theme — magenta at runtime |
 | DVML014 | Warning | `class` name not found in built-in classes or any `<DvStyle>` in the project's dvml — silently ignored at runtime |
 | DVML015 | Warning | `DvRadio` without `option` — selects no value and never turns on |
 | DVML016 | Warning | `DvListBox` value attribute does not match the mode — `value` with multi-select (`selection-mode="multi"`), `selected-items` with single-select (ignored at runtime) |
-| DVML017 | Warning | Value not allowed for an attribute that accepts fixed values — `DvListBox selection-mode` (single, multi), `DvSlider direction` (right, left, up, down). Default used at runtime |
+| DVML017 | Warning | Value not allowed for an attribute that accepts fixed values — `DvListBox selection-mode` (single, multi), `DvSlider direction` (right, left, up, down); case and surrounding spaces are ignored, as at runtime. Default used at runtime |
 | DVML018 | Error | Handler attribute (`onclick`, `onbeforecommit`, `onack`, `onrowclick`) that is not the name of a public instance method of the VM — misspelled, private or static method, binding (`{…}`), or call form (`M(item)`). At runtime the handler would silently never run |
 | DVML019 | Warning | Attribute that a built-in tag does not have — not in that tag's attributes or the common ones (`id`, `class`, `style`, `grow`, `width`, `height`, `visible`, `disabled`, `onclick`, `hold`, …), e.g. `<DvLabel txet="a"/>`. Silently ignored at runtime. Suggests a similar name if one exists |
-| DVML020 | Warning | Attribute value that is not valid for its kind — a true/false attribute that is not `true`, `false` or a number (`<DvLamp on="yes"/>`), or a number attribute that is not an invariant-culture number (`max="abc"`, `blink-interval="1,5"`). The default is used at runtime (with a Trace warning) |
+| DVML020 | Warning | Attribute value that is not valid for its kind — a true/false attribute that is not `true`, `false` or a number (`<DvLamp on="yes"/>`), a number attribute that is not an invariant-culture number (`max="abc"`, `blink-interval="1,5"`), a word attribute with a word not in its list (`<DvProgress direction="sideways"/>`, `variant="foo"`; case is ignored), or a color attribute that is not `#RGB`/`#RRGGBB`/`#RRGGBBAA`/`transparent`/`token(이름)` (`<DvLamp color="red"/>`). The default is used at runtime (with a Trace warning) |
 
 DVML012–017 are checked for all dvml, including those without `vm` (DVML016/017 are skipped when the value is a binding `{…}`). A style that is entirely a binding (`style="{S}"`) is skipped; for declarations where only the value is bound (`color:{C}`), only the name is checked. Token names built from component parameters (`token(tone-{tone}-fg)`) and bound classes (`class="{C}"`) are skipped. **Themes created in C# (`new DvTheme(토큰, 스타일시트)`) and `<DvStyle>` of components registered in code are not visible at build time** — apps that use such tokens/classes turn the check off in `.editorconfig` with `dotnet_diagnostic.DVML013.severity = none` (`DVML014` for classes).
 
@@ -1962,7 +1962,7 @@ DVML018 checks dvml with `vm` only (the VM type is the target), including handle
 
 DVML019 checks dvml with or without `vm`. Only built-in tags are checked: user component instances (their attributes are parameters), widgets registered in C#, built-in components such as `DvPageFrame`, and everything inside a `<DvSymbol>` definition are skipped. On the root element `vm` and `font-lang-{lang}` are also accepted. Attributes in another namespace (`xmlns:…`, `x:…`) are skipped.
 
-DVML020 checks the same tags as DVML019, literal values only — a value containing `{` (a binding or interpolation, including component parameters inside a template) is decided at runtime and skipped. Empty text is valid (false for true/false attributes, "not given" for numbers).
+DVML020 checks the same tags as DVML019, literal values only — a value containing `{` (a binding or interpolation, including component parameters inside a template) is decided at runtime and skipped. Empty text is valid (false for true/false attributes, "not given" for the others). Attributes whose values DVML011 or DVML017 already check (process `direction`·`look`·`align`·`kind`·`rotate`·`medium`, `DvSignal kind`·`color`, `DvListBox selection-mode`, `DvSlider direction`) are reported only there. A token name in a color is checked by DVML013, not DVML020.
 
 Messages are in English. When the compiler's UI language is Korean (Korean Visual Studio, or `dotnet build` on a Korean OS), they are shown in Korean.
 

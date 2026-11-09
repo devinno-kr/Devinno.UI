@@ -775,7 +775,7 @@ public class DvmlGeneratorTests
     {
         Assert.Empty(Attrs("""
             <DvStack vm="MyApp.P" font-lang-ko="Malgun Gothic" xmlns:x="urn:x" gap="sm" padding="md" class="card" style="color:red">
-              <DvLabel id="l" text="{T}" grow="1" visible="{V}" content-align="center"/>
+              <DvLabel id="l" text="{T}" grow="1" visible="{V}" content-align="middle-center"/>
               <DvButton text="Go" icon="fa-play" variant="primary" size="lg" onclick="Go" hold="500" hover-style="opacity:0.8"/>
               <DvSlider value="{Bind X}" min="0" max="10" step="1" direction="up" show-value="true" onbeforecommit="Check"/>
               <DvGrid columns="3" rows="auto" gap="none"/>
@@ -832,6 +832,21 @@ public class DvmlGeneratorTests
                 Assert.True(Names(defs, kind).SequenceEqual(table.TryGetValue(tag, out var n) ? Sorted(n) : []), $"{kind} {tag}");
             Assert.All(table.Keys, tag => Assert.True(Devinno.UI.Markup.TagSchema.Tags.ContainsKey(tag), tag));
         }
+
+        // 목록 값(이름과 값 목록)·색
+        static string Enums(IEnumerable<Devinno.UI.Markup.AttrDef> defs) =>
+            string.Join("; ", defs.Where(a => a.Kind == Devinno.UI.Markup.AttrKind.Enum).OrderBy(a => a.Name, StringComparer.Ordinal)
+                .Select(a => a.Name + "=" + string.Join(",", a.Values ?? [])));
+        static string Copy(IReadOnlyDictionary<string, string[]>? table) =>
+            table is null ? "" : string.Join("; ", table.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => p.Key + "=" + string.Join(",", p.Value)));
+        Assert.Equal(Enums(Devinno.UI.Markup.TagSchema.Common), Copy(AttributeCheck.CommonEnum));
+        foreach (var (tag, defs) in Devinno.UI.Markup.TagSchema.Tags)
+        {
+            Assert.True(Enums(defs) == Copy(AttributeCheck.Enum.TryGetValue(tag, out var e) ? e : null), $"Enum {tag}");
+            Assert.True(Names(defs, Devinno.UI.Markup.AttrKind.Color).SequenceEqual(AttributeCheck.Color.TryGetValue(tag, out var c) ? Sorted(c) : []), $"Color {tag}");
+        }
+        Assert.Empty(Names(Devinno.UI.Markup.TagSchema.Common, Devinno.UI.Markup.AttrKind.Color));
+        Assert.All(AttributeCheck.Enum.Keys.Concat(AttributeCheck.Color.Keys), tag => Assert.True(Devinno.UI.Markup.TagSchema.Tags.ContainsKey(tag), tag));
     }
 
     private static Diagnostic[] Values(string dvml) =>
@@ -873,6 +888,66 @@ public class DvmlGeneratorTests
               <DvTrend smooth="" window=" 60 "/>
               <DvProcess><DvVessel name="T1" width="80" level="50"/></DvProcess>
               <DvLine flow="{F}"/>
+            </DvStack>
+            """));
+    }
+
+    // 3단계 R3 — 목록 값: 정의된 값(대소문자·앞뒤 공백 무시)이 아니면 DVML020. 이미 DVML011·DVML017 이 보는 속성은 그쪽만
+    [Fact]
+    public void Value_NotEnum_Warns()
+    {
+        var d = Assert.Single(Values("<DvStack><DvProgress direction=\"sideways\"/></DvStack>"));
+        var msg = d.GetMessage(Invariant);
+        Assert.Contains("DvProgress direction='sideways'", msg);
+        Assert.Contains("right, left, up, down", msg);
+        Assert.Contains("중 하나가 아닙니다", d.GetMessage(new System.Globalization.CultureInfo("ko-KR")));
+        Assert.Single(Values("<DvStack><DvButton variant=\"foo\" text=\"a\"/></DvStack>"));
+        Assert.Single(Values("<DvStack><DvLabel text=\"a\" content-align=\"center\"/></DvStack>")); // 공통 속성
+        Assert.Single(Values("<DvStack><DvRing tone=\"ok\"/></DvStack>"));
+        Assert.Single(Values("<DvStack><DvProcess><DvPump name=\"P\" flip=\"x\"/></DvProcess></DvStack>"));
+    }
+
+    [Fact]
+    public void Value_EnumCheckedElsewhere_NotTwice()
+    {
+        var all = Run("public partial class P { }", ("P.dvml", "<DvStack><DvSlider direction=\"sideways\"/><DvProcess look=\"fancy\"/></DvStack>"));
+        Assert.Empty(all.Ids("DVML020"));
+        Assert.Single(all.Ids("DVML017"));
+        Assert.Single(all.Ids("DVML011"));
+        // 같은 규칙: 대소문자·앞뒤 공백 무시
+        var ok = Run("public partial class P { }", ("P.dvml", "<DvStack><DvSlider direction=\" UP \"/><DvProcess look=\"Rich\"/></DvStack>"));
+        Assert.Empty(ok.Ids("DVML017"));
+        Assert.Empty(ok.Ids("DVML011"));
+    }
+
+    // 3단계 R2 — 색: #RGB·#RRGGBB·#RRGGBBAA·transparent·token(이름) 이 아니면 DVML020(색 이름 red 는 실행 때도 못 읽는다)
+    [Fact]
+    public void Value_NotColor_Warns()
+    {
+        var d = Assert.Single(Values("<DvStack><DvLamp color=\"red\"/></DvStack>"));
+        Assert.Contains("DvLamp color='red'", d.GetMessage(Invariant));
+        Assert.Contains("색이 아닙니다", d.GetMessage(new System.Globalization.CultureInfo("ko-KR")));
+        Assert.Single(Values("<DvStack><DvDataGrid header-color=\"#12345\"/></DvStack>"));
+        Assert.Single(Values("<DvStack><DvDataGrid><DvColumn field=\"A\" on-color=\"token(a\"/></DvDataGrid></DvStack>"));
+        // DvSignal color 는 DVML011 이 같은 규칙으로 본다(#RGBA 4자리는 실행 때 못 읽음)
+        var sig = Run("public partial class P { }", ("P.dvml", "<DvProcess><DvPump name=\"P\"/><DvInstrument name=\"I\" on=\"P\"/><DvSignal from=\"I\" to=\"P\" color=\"#f00f\"/></DvProcess>"));
+        Assert.Single(sig.Ids("DVML011"));
+        Assert.Empty(sig.Ids("DVML020"));
+    }
+
+    [Fact]
+    public void Value_EnumAndColor_Valid_NoWarnings()
+    {
+        Assert.Empty(Values("""
+            <DvStack align="Center" justify="between">
+              <DvButton variant=" PRIMARY " size="sm" text="a"/>
+              <DvButton variant="{Kind}" text="b"/>
+              <DvLabel text="a" content-align="middle-left"/>
+              <DvLamp color="token(state-run)" state="Run"/>
+              <DvLamp color="#00ff0080" state=""/>
+              <DvTrend><DvTrendChannel color="var(--tone-info)"/></DvTrend>
+              <DvDataGrid header-color="transparent" row-color="#ffffff"><DvColumn field="A" align="right" cell-type="Check" sort="desc"/><DvSummaryRow fn="sum"/></DvDataGrid>
+              <DvProcess fit="shrink"><DvPump name="P" flip="vh" rotate="90"><DvAttach side="left"><DvLabel text="a"/></DvAttach></DvPump><DvLine from="P.in" to="P.out" arrow="end"/></DvProcess>
             </DvStack>
             """));
     }

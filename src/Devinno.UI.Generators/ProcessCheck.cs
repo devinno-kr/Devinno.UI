@@ -86,7 +86,7 @@ internal static class ProcessCheck
     private static void Value(XElement e, string attr, string[] allowed, Action<DiagnosticDescriptor, XObject, object[]> report)
     {
         var a = e.Attribute(attr);
-        if (a is null || a.Value.Length == 0 || Dynamic(a.Value) || allowed.Contains(a.Value))
+        if (a is null || Dynamic(a.Value) || AttributeCheck.IsEnum(a.Value, allowed)) // 라이브러리 목록 값 규칙(앞뒤 공백·대소문자 무시, 빈 값 = 없음)
             return;
         report(Diagnostics.ProcessUnknownValue, a, [$"<{e.Name.LocalName}> {attr}", a.Value, string.Join("·", allowed)]);
     }
@@ -103,16 +103,13 @@ internal static class ProcessCheck
         report(Diagnostics.ProcessUnknownValue, a, [$"<{e.Name.LocalName}> {attr}", a.Value, "px"]);
     }
 
-    // 신호선 색 — #색(3·4·6·8자리) 또는 token(이름). 토큰 이름은 앱 테마에 달렸으므로 형식만
+    // 신호선 색 — 라이브러리 색 규칙(AttributeCheck.IsColor: #3·6·8자리, transparent, token(이름)). 토큰 이름은 앱 테마에 달렸으므로 형식만
     private static void SignalColor(XElement signal, Action<DiagnosticDescriptor, XObject, object[]> report)
     {
         var a = signal.Attribute("color");
-        if (a is null || a.Value.Trim().Length == 0 || Dynamic(a.Value))
+        if (a is null || Dynamic(a.Value) || AttributeCheck.IsColor(a.Value))
             return;
-        var v = a.Value.Trim();
-        var hex = v.Length is 4 or 5 or 7 or 9 && v[0] == '#' && v.Skip(1).All(Uri.IsHexDigit);
-        if (!hex && !(v.StartsWith("token(", StringComparison.Ordinal) && v.EndsWith(")", StringComparison.Ordinal)))
-            report(Diagnostics.ProcessUnknownValue, a, ["<DvSignal> color", a.Value, "#RRGGBB·token(name)"]);
+        report(Diagnostics.ProcessUnknownValue, a, ["<DvSignal> color", a.Value, "#RRGGBB·token(name)"]);
     }
 
     // 신호선 두께 — 0 보다 큰 수
