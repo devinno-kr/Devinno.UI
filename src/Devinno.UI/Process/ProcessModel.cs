@@ -130,7 +130,7 @@ internal sealed class ProcessNode
 
     public float Level => Values.GetValueOrDefault(Def?.FillValue ?? "level") is { } v && TryFloat(v, out var f) ? Math.Clamp(f, 0, 100) : 0;
 
-    /// <summary>A state parameter as a boolean (the common rule, <see cref="Layout.AttrRules.ParseBool"/>); any other value is off. Built-in boolean attributes are already read (and warned about) when the diagram is built.</summary>
+    /// <summary>A state parameter as a boolean (the common rule, <see cref="Layout.AttrRules.ParseBool(object?)"/>); any other value is off. Built-in boolean attributes are already read (and warned about) when the diagram is built.</summary>
     public bool On(string? param) => param is not null && Layout.AttrRules.ParseBool(Values.GetValueOrDefault(param)) == true;
 
     internal static bool TryFloat(object v, out float f)

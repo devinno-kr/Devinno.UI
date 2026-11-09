@@ -343,7 +343,7 @@ One line of a `DvTrend` (child element; takes only these attributes + `id`).
 |---|---|---|---|---|
 | `name` | text | `ch0`, `ch1` … | yes | Channel name looked up in the `source` buffer |
 | `label` | text | `name` | yes | Legend name |
-| `unit` | text | empty | yes | Legend only: shown after the latest value |
+| `unit` | text | empty | yes | Legend only: shown after the latest value. The legend value is rounded to 2 decimals (`1191.03`); there is no `format` here — round the values you add to the buffer for fewer digits |
 | `color` | `#RRGGBB`, `token(name)`, `var(--name)` | `chart-1` … `chart-6` in channel order | yes | Unknown token = magenta + warning. Unparsable = that palette color + warning |
 | `points` | `IEnumerable<TrendPoint>` | none | yes | Wins over `source`. Any other type = from `source` by `name` |
 

@@ -56,7 +56,7 @@ internal static class AttrRules
     }
 
     /// <summary>
-    /// Reads <paramref name="value"/> with <see cref="ParseBool"/>; any other value is <paramref name="fallback"/> with a warning that names the tag and attribute
+    /// Reads <paramref name="value"/> with <see cref="ParseBool(object?)"/>; any other value is <paramref name="fallback"/> with a warning that names the tag and attribute
     /// (once per surface for each <paramref name="raw"/> markup expression; <see langword="null"/> = once per message).
     /// </summary>
     public static bool Bool(object? value, bool fallback, string tag, string attr, string? raw = null)

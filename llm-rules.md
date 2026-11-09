@@ -312,6 +312,7 @@ DvRenderer.RenderToFile(markup, vm, 1280, 800, "screen.png", DvTheme.Dark, regis
 - It uses the same layout and drawing code as the real window; bindings are read from the VM as-is.
 - Overloads take a `ComponentRegistry` (user components) and `DvStrings` (localization).
 - For blinking (lamps, alarms) the `timestampMs` argument selects the on/off moment.
+- This form renders one markup + VM. To render a page of a `DvApp` together with its bars (and open dialogs), show the page and render the app surface: [render a whole app](#verify-app).
 - Check: text is visible (color), no magenta (token typo), no element disappeared (size 0), what should stretch stretched (`grow`/stretch), text does not overflow its box.
 - One image is rarely enough: set the VM to each state (alarm state, empty list, long text, pressed looks) and render one image per state to compare.
 

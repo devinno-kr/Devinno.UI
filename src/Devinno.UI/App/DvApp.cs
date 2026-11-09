@@ -11,10 +11,10 @@ namespace Devinno.UI.App;
 /// App manager that holds the pages and switches the current page. One app = one window; the adapter (window or control) takes this object and only draws it and forwards input.
 /// </summary>
 /// <remarks>
-/// <para><b>Pages</b> — Add <see cref="DvPage"/> instances to <see cref="Pages"/> and switch with <see cref="Show{T}"/> or <see cref="Show(DvPage)"/>. A page's surface is built once, when it is first shown,
+/// <para><b>Pages</b> — Add <see cref="DvPage"/> instances to <see cref="Pages"/> and switch with <see cref="Show{T}()"/> or <see cref="Show(DvPage)"/>. A page's surface is built once, when it is first shown,
 /// and kept, so when you come back it is exactly as you left it (scroll, input values, editing). When there is no <see cref="CurrentPage"/>, the first page added is the start page.</para>
 /// <para><b>Bars (fixed areas)</b> — Place bars (<see cref="DvBar"/>) in <see cref="Top"/>, <see cref="Bottom"/>, <see cref="Left"/> and <see cref="Right"/>. All are optional; the page area is the remaining space.</para>
-/// <para><b>Threads</b> — <see cref="Show{T}"/>, <see cref="Show(DvPage)"/>, area assignment, setting <see cref="Theme"/>, <see cref="Strings"/> or <see cref="Registry"/>, and <see cref="Invalidate"/>
+/// <para><b>Threads</b> — <see cref="Show{T}()"/>, <see cref="Show(DvPage)"/>, area assignment, setting <see cref="Theme"/>, <see cref="Strings"/> or <see cref="Registry"/>, and <see cref="Invalidate"/>
 /// can be called from any thread (for example, switching to an alarm page from a communication callback). Requests are queued and applied on the input (UI) thread at the adapter's next frame;
 /// <see cref="DvPage.OnShown"/>, <see cref="DvPage.OnHidden"/> and <c>OnLoaded()</c> are also always called on that thread. <see cref="CurrentPage"/> is the value after a request is applied.</para>
 /// <para><b>Global settings</b> — Changing <see cref="Theme"/>, <see cref="Strings"/> or <see cref="Registry"/> rebuilds every kept page and bar surface with the new settings, keeping the same screen

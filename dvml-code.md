@@ -215,6 +215,7 @@ An app project needs three things: the `Devinno.UI` library, one host package to
 - `AdditionalFiles` decides which dvml files the generator reads. `**/*.dvml` with `$(DefaultItemExcludes)` is the same set the package adds; a narrower list (`Pages/*.dvml`) works when every dvml is in the listed folders.
 - A dvml that is not in `AdditionalFiles` gets no generated code: its `id` fields are missing (compile errors) and showing that page, bar or dialog throws `InvalidOperationException` ("No dvml markup is attached").
 - In the library repository, `samples/Devinno.UI.AppSample/Devinno.UI.AppSample.csproj` uses this form.
+- Building your app also builds the referenced library projects, so their `bin`/`obj` folders are written inside the library repository (normal for project references; they are ignored by its git).
 
 **Where the dvml goes.** Anywhere in the project. The generator reads the root `vm` of each dvml and creates that class's `partial` (markup link, `id` fields, `OnLoaded`); the file name plays no part ([the `vm` attribute](dvml-language.md#vm-attribute)).
 
