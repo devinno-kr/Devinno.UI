@@ -44,24 +44,13 @@ public static class StyleParser
 
         // offset 은 natural 에서만 — 다른 맞춤과 함께면 쓰지 않는다(선언 순서와 무관하게 다 읽은 뒤 판단)
         if (s.BackgroundOffset is not null && s.BackgroundSize != BackgroundFit.Natural)
-            WarnOnce($"Devinno.UI: background-image-offset is used only with background-size: natural; ignored (style: {style.Trim()})");
+            Interaction.Warnings.Warn($"Devinno.UI: background-image-offset is used only with background-size: natural; ignored (style: {style.Trim()})");
 
         return s;
     }
 
     private static bool TryNumber(string v, out float f) =>
         float.TryParse(v.Replace("px", "").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out f) && float.IsFinite(f);
-
-    private static readonly HashSet<string> Warned = new();
-
-    private static void WarnOnce(string msg)
-    {
-        lock (Warned)
-        {
-            if (Warned.Add(msg))
-                System.Diagnostics.Trace.TraceWarning(msg);
-        }
-    }
 
     // 케밥 9값만(대소문자 구분) — top-left … bottom-right
     private static bool TryContentAlign(string v, out ContentVAlign vertical, out TextAlign horizontal)
@@ -192,7 +181,7 @@ public static class StyleParser
                 if (TryContentAlign(v.Trim(), out var cv, out var ch))
                     (s.ContentVertical, s.TextAlign) = (cv, ch);
                 else
-                    WarnOnce($"Devinno.UI: content-align '{v}' ignored; expected top|middle|bottom-left|center|right (e.g. middle-center)");
+                    Interaction.Warnings.Warn($"Devinno.UI: content-align '{v}' ignored; expected top|middle|bottom-left|center|right (e.g. middle-center)");
                 break;
             case "gap":
                 s.Gap = F(v);
@@ -324,14 +313,14 @@ public static class StyleParser
                 if (Transform2D.Parse(v) is { } xf)
                     s.Transform = xf;
                 else
-                    WarnOnce($"Devinno.UI: could not parse transform '{v}' (only translate, translateX, translateY, scale, scaleX, scaleY); ignored");
+                    Interaction.Warnings.Warn($"Devinno.UI: could not parse transform '{v}' (only translate, translateX, translateY, scale, scaleX, scaleY); ignored");
                 break;
             case "transition":
             {
                 var bad = new List<string>();
                 s.Transitions = TransitionSpec.Parse(v, bad);
                 foreach (var x in bad)
-                    WarnOnce($"Devinno.UI: could not parse transition '{x}' (expected: property duration [easing] [delay]); skipped");
+                    Interaction.Warnings.Warn($"Devinno.UI: could not parse transition '{x}' (expected: property duration [easing] [delay]); skipped");
                 break;
             }
         }

@@ -125,6 +125,20 @@ public class WarningScopeTests
         Assert.Equal(1, n);
     }
 
+    // 리뷰 M3 — 스타일 해석 경고도 공용 경고(화면마다 한 번). 전: StyleParser 의 프로세스 전체 static 집합 — 두 번째 화면은 알리지 않았다
+    [Fact]
+    public void Style_TwoSurfaces_EachWarn_SameSurfaceOnce()
+    {
+        const string markup = "<DvScreen><DvBox style=\"transform:m3style-x\"/></DvScreen>";
+        var n = Count("m3style-x", () =>
+        {
+            var s = Show(markup);
+            Rebuild(s);
+            Show(markup);
+        });
+        Assert.Equal(2, n);
+    }
+
     [Fact]
     public void ReloadedMarkup_WarnsAgain()
     {

@@ -24,7 +24,7 @@ public class ProcessTapTests
         public override void Write(string? message) { }
         public override void WriteLine(string? message)
         {
-            if (message is not null && message.Contains("Devinno.UI process"))
+            if (message is not null && message.Contains("Devinno.UI"))
                 lock (Lines) Lines.Add(message);
         }
         public override void TraceEvent(TraceEventCache? c, string source, TraceEventType type, int id, string? message)
@@ -354,6 +354,42 @@ public class ProcessTapTests
         Assert.DoesNotContain(w, x => x.Contains("width='60'"));
         Assert.Equal(400, Node(d, "T3").Sym.Width, 0.5);           // 4배까지
         Assert.Contains(w, x => x.Contains("9999"));
+    }
+
+    public sealed class SizeVm
+    {
+        public double W { get; set; } = 150.5;
+    }
+
+    // 리뷰 M3 — 용기 width·height 는 공용 숫자 규칙(AttrRules.Number): 바인딩한 숫자는 문화권과 무관하게 숫자로 읽는다(전: ToString → de-DE "150,5" → 숫자 아님 경고)
+    [Fact]
+    public void VesselWidth_BoundNumber_IgnoresCurrentCulture()
+    {
+        var old = System.Globalization.CultureInfo.CurrentCulture;
+        System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("de-DE");
+        ProcessDiagram d = null!;
+        List<string> w;
+        try
+        {
+            w = Warnings(() => (_, d) = ProcessTests.Start("""<DvVessel name="T1" width="{W}"/>""", vm: new SizeVm()));
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentCulture = old;
+        }
+
+        Assert.DoesNotContain(w, x => x.Contains("DvVessel"));
+        Assert.Equal(150.5, Node(d, "T1").Sym.Width, 0.5);
+    }
+
+    // 숫자 아님 = 공용 문구("{tag} {attr}='{value}' is not a number; …") + 원래 크기
+    [Fact]
+    public void VesselWidth_NotANumber_CommonMessage()
+    {
+        ProcessDiagram d = null!;
+        var w = Warnings(() => (_, d) = ProcessTests.Start("""<DvVessel name="T1" width="abc-m3v"/>"""));
+        Assert.Contains(w, x => x.Contains("DvVessel width='abc-m3v' is not a number"));
+        Assert.Equal(100, Node(d, "T1").Sym.Width, 0.5);
     }
 
     // 크기를 바꾼 용기의 교반기 — 날개는 용기 폭만큼 넓어지고, 축은 같은 깊이 비율까지 내려간다(구동부는 그대로)

@@ -887,13 +887,13 @@ internal static class ProcessBuilder
             {
                 float Size(string attr, float natural)
                 {
-                    if (r.Text(attr) is not { Length: > 0 } text)
+                    // 공용 숫자 규칙(바인딩 숫자는 숫자로, Invariant) — 숫자 아님 = 원래 크기 + 경고
+                    if (AttrRules.NumberOrNull(r.Value(attr), ch.Tag, attr, "drawing at " + natural.ToString("0", CultureInfo.InvariantCulture), AttrRules.RawOf(r, attr)) is not { } number)
                         return natural;
-                    if (!float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) || !float.IsFinite(v))
-                    {
-                        Warn($"<DvVessel {attr}='{text}'> is not a number (px); drawing at {natural:0}");
-                        return natural;
-                    }
+                    var v = (float)number;
+                    if (!float.IsFinite(v)) // float 범위를 넘는 수 — 끝값으로
+                        v = number > 0 ? float.MaxValue : float.MinValue;
+                    var text = number.ToString(CultureInfo.InvariantCulture);
 
                     var clamped = Math.Clamp(v, natural * 0.6f, natural * 4);
                     if (MathF.Abs(clamped - v) > 0.01f) // 끝값(0.6배)은 소수 오차로 조금 넘어 보인다

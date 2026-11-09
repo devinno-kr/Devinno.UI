@@ -311,13 +311,15 @@ public class ThemeTokenContractTests
         return bmp.GetPixel(x, y);
     }
 
+    // 이 스레드의 경고만 — 병렬로 도는 다른 테스트(DesignSystemTests 의 token(no-such) 등)의 경고가 섞이지 않게
     private sealed class Capture(string marker) : TraceListener
     {
+        private readonly int _thread = Environment.CurrentManagedThreadId;
         public List<string> Lines { get; } = new();
         public override void Write(string? message) { }
         public override void WriteLine(string? message)
         {
-            if (message is not null && message.Contains(marker))
+            if (message is not null && message.Contains(marker) && Environment.CurrentManagedThreadId == _thread)
                 lock (Lines) Lines.Add(message);
         }
         public override void TraceEvent(TraceEventCache? c, string source, TraceEventType type, int id, string? message)
