@@ -43,7 +43,7 @@ public sealed class DvWidgetContext
 
     /// <summary>
     /// Writes a value to the element's <c>value</c> binding, the same way built-in widgets do: <c>onbeforecommit="M"</c> is asked first (<c>bool M(T proposed)</c>, where
-    /// <c>T</c> is the value's type or <see cref="object"/>), the value is converted to the property type, and inside <c>DvRepeat</c> it goes to the item.
+    /// <c>T</c> is the value's type or <see cref="object"/>; inside a <c>DvRepeat</c> item <c>bool M(item, T)</c> is tried first), the value is converted to the property type, and inside <c>DvRepeat</c> it goes to the item.
     /// The screen is rebuilt afterwards.
     /// </summary>
     /// <param name="value">The new value.</param>
@@ -54,8 +54,7 @@ public sealed class DvWidgetContext
         if (!CanCommit)
             return false;
         var tag = _box.Node.Tag;
-        var types = value is null ? new[] { typeof(object) } : new[] { value.GetType(), typeof(object) };
-        if (!Interaction.CommitGate.Allows(_owner, tag, _vm, _box.OnBeforeCommit, value, types))
+        if (!Interaction.CommitGate.Allows(_owner, tag, _vm, _box.OnBeforeCommit, value, value?.GetType() ?? typeof(object), _box.ItemScope?.Item))
             return false;
         if (!Interaction.HandlerErrors.TrySet(_owner, tag, _box.ValueContext(_vm), BindingResolver.ExtractPath(_box.ValueBindExpr!), value))
             return false;

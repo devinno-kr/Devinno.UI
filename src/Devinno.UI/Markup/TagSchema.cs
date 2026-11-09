@@ -57,7 +57,7 @@ internal static class TagSchema
         new("disabled", AttrKind.Bool, "false", Note: BoolRule + "; inherited downward"),
         new("onclick", AttrKind.Expr, Bindable: false),
         new("hold", AttrKind.Number, "0", Note: "ms, rounded; <= 0 = none; " + NumberRule + "; ignored on tags in TagCatalog.HoldIgnored"),
-        new("onbeforecommit", AttrKind.Expr, Bindable: false, Note: "used by value widgets only"),
+        new("onbeforecommit", AttrKind.Expr, Bindable: false, Note: "used by value widgets only (built-in DvSwitch passes it to its toggle); " + GateRule),
     ];
 
     /// <summary>
@@ -352,7 +352,7 @@ internal static class TagSchema
             new("cell-type", AttrKind.Enum, "text", Values: ["text", "check", "lamp", "button", "input", "select", "datetime", "color"], Note: EnumRule),
             new("filter", AttrKind.Enum, "none", Values: ["none", "auto", "text", "values", "range", "date"], Note: EnumRule),
             GridFlag("readonly", "check and edit cells"),
-            new("onbeforecommit", AttrKind.Expr, Bindable: false, Note: "check cells: bool M(item, bool) first, otherwise bool M(bool)"),
+            new("onbeforecommit", AttrKind.Expr, Bindable: false, Note: "check and edit cells; " + GateRule + " (the row is the item)"),
             new("on-color", AttrKind.Color, Note: "lamp cells; absent = the state-run token; " + ColorRule + " (state-run); named on-color (DvLamp uses color)"),
             GridFlag("blink", "lamp cells; fixed 500 ms (no blink-interval)"),
             new("text", AttrKind.Text, "", Note: "button cells; inline interpolation only; a code Text override on the DvColumn wins and is used as is"),
@@ -486,6 +486,8 @@ internal static class TagSchema
     // 3단계 R6 — 범위(Layout.AttrRules.Range)
     private const string RangeRule = "min >= max = 0..100 + warning; " + NumberRule;
     private const string ThemeWordRule = "case and surrounding spaces ignored; a word without that theme token = the default + warning; not checked at build time (the theme is the app's)";
+    // 3단계 R13 — onbeforecommit 탐색 하나(Interaction.CommitGate)
+    private const string GateRule = "lookup: inside a repeat item or grid row bool M(item, T) then bool M(item, object), then bool M(T) then bool M(object) (T = the value type, nullable = its underlying type); none, false or an exception = not written";
     private const string RawName = "read raw (process names and references are not bindable; a { in it = warning, used as written)";
     private static string[] Directions => ["right", "left", "up", "down"];
 

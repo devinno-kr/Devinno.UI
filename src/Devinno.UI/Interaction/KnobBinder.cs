@@ -68,7 +68,7 @@ public static class KnobBinder
         if (vm is null || !CanDrag(box))
             return;
 
-        if (!CommitGate.Allows(owner, box.Node.Tag, vm, box.OnBeforeCommit, proposed, typeof(double)))
+        if (!CommitGate.Allows(owner, box.Node.Tag, vm, box.OnBeforeCommit, proposed, typeof(double), box.ItemScope?.Item))
             return;
 
         // DvRepeat 안이면 항목 범위로. setter 예외 = 쓰지 않음(다시 빌드되어 VM 값으로 보임)

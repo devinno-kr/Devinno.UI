@@ -45,14 +45,14 @@ internal sealed class BoxSlot : IValueSlot
         return true;
     }
 
-    // 게이트: bool M(값 타입) → 없으면 bool M(object). 메서드 없음·시그니처 불일치·예외 = 거절(CommitGate, 그리드 셀과 같은 규칙). setter 예외 = Failed.
+    // 게이트: 반복 항목 안이면 bool M(항목, 값) 먼저, 그다음 bool M(값 타입) → bool M(object) (CommitGate 공용 탐색). 메서드 없음·시그니처 불일치·예외 = 거절(CommitGate, 그리드 셀과 같은 규칙). setter 예외 = Failed.
     public CommitResult Write(object? value)
     {
         if (Box.ValueBindExpr is null || Equals(value, Box.InputValue))
             return CommitResult.Same;
 
         var vm = Owner.Vm;
-        if (!Interaction.CommitGate.Allows(Owner, Box.Node.Tag, vm, Box.OnBeforeCommit, value, value?.GetType() ?? typeof(object), typeof(object)))
+        if (!Interaction.CommitGate.Allows(Owner, Box.Node.Tag, vm, Box.OnBeforeCommit, value, value?.GetType() ?? typeof(object), Box.ItemScope?.Item))
             return CommitResult.Rejected;
 
         if (!Interaction.HandlerErrors.TrySet(Owner, Box.Node.Tag, Box.ValueContext(vm), BindingResolver.ExtractPath(Box.ValueBindExpr), value))

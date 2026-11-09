@@ -1612,14 +1612,14 @@ public sealed partial class DvSurface
                 System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvRadio option '{option}' cannot be converted to {radio.SelectValueType?.Name}; not written");
                 return;
             }
-            if (!CommitGate.Allows(this, radio.Node.Tag, _vm, radio.OnBeforeCommit, value, value?.GetType() ?? typeof(object), typeof(object)))
+            if (!CommitGate.Allows(this, radio.Node.Tag, _vm, radio.OnBeforeCommit, value, value?.GetType() ?? typeof(object), radio.ItemScope?.Item))
                 return;
             if (!HandlerErrors.TrySet(this, radio.Node.Tag, radio.ValueContext(_vm), Binding.BindingResolver.ExtractPath(ve), value))
                 return;
         }
         else if (radio.ValueBindExpr is null && radio.RadioGroup is { } key)
         {
-            if (!CommitGate.Allows(this, radio.Node.Tag, _vm, radio.OnBeforeCommit, option, typeof(string), typeof(object)))
+            if (!CommitGate.Allows(this, radio.Node.Tag, _vm, radio.OnBeforeCommit, option, typeof(string), radio.ItemScope?.Item))
                 return;
             SetRadioGroupValue(key, option);
         }
@@ -1656,7 +1656,7 @@ public sealed partial class DvSurface
             System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvListBox selected-items '{path}': unsupported property type (supported: T[], List<T>, IList<T>, IReadOnlyList<T>, IEnumerable<T>)");
             return;
         }
-        if (!CommitGate.Allows(this, list.Node.Tag, _vm, list.OnBeforeCommit, value, value?.GetType() ?? typeof(object), typeof(object)))
+        if (!CommitGate.Allows(this, list.Node.Tag, _vm, list.OnBeforeCommit, value, value?.GetType() ?? typeof(object), list.ItemScope?.Item))
             return;
         if (!HandlerErrors.TrySet(this, list.Node.Tag, ctx, path, value))
             return;

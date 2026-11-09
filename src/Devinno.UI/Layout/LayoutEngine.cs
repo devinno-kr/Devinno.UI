@@ -241,6 +241,8 @@ public sealed partial class LayoutEngine
             box.ValueBindExpr = outerExpr;
             box.ValueTarget = outerTarget; // 인스턴스 핸들 칸(없으면 바깥 VM)
             box.ValueOrigin = (twoWay as TwoWayParams)?.Instance;
+            if ((twoWay as TwoWayParams)?.Gate is { } gate)
+                box.OnBeforeCommit = gate; // DvSwitch 인스턴스의 onbeforecommit(3단계 R13)
         }
 
         if (isWidget)
@@ -579,6 +581,11 @@ public sealed partial class LayoutEngine
             }
         }
 
+        // 내장 DvSwitch — 인스턴스의 onbeforecommit 을 안쪽 값 위젯(토글)이 쓴다(3단계 R13). 사용자 컴포넌트 인스턴스의 전달은 6단계
+        if (instance.Tag == "DvSwitch" && BuiltInComponents.Registry.TryGet("DvSwitch", out var builtInSwitch) && ReferenceEquals(builtInSwitch, component) &&
+            TryGetAttribute(instance, "onbeforecommit", out var switchGate) && switchGate.Length > 0)
+            (twoWay ??= new TwoWayParams(instance)).Gate = switchGate;
+
         var root = WithPassthrough(component, instance, outerVm);
         // 인스턴스 onclick 이 DvRepeat 항목 안이면 루트 박스가 그 항목을 받게 한다(M(항목) 우선 — 일반 onclick 과 같은 규칙)
         var passedClick = instance.Attributes.ContainsKey("onclick") &&
@@ -668,6 +675,9 @@ public sealed partial class LayoutEngine
     {
         public ElementNode Instance { get; } = instance;
         public Dictionary<string, object> Targets { get; } = new(StringComparer.Ordinal);
+
+        /// <summary>The instance's <c>onbeforecommit</c> handed to the two-way value widget inside (built-in <c>DvSwitch</c> only).</summary>
+        public string? Gate { get; set; }
     }
 
     // 3단계 R5 — 읽기 전용 판단식 하나: 값을 쓸 수 없음(단방향·리터럴) 또는 readonly 참(공용 참/거짓 규칙, 코드 덮어쓰기는 리더로).

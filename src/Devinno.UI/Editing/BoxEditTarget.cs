@@ -67,7 +67,7 @@ internal sealed class BoxEditTarget : IEditTarget
             gateArg = number;
         }
 
-        if (!Interaction.CommitGate.Allows(_s, Box.Node.Tag, vm, Box.OnBeforeCommit, gateArg, gateArg.GetType()))
+        if (!Interaction.CommitGate.Allows(_s, Box.Node.Tag, vm, Box.OnBeforeCommit, gateArg, gateArg.GetType(), Box.ItemScope?.Item))
         {
             error = Localization.DvStrings.Builtin(_s.Strings, "dv.input.rejected");
             return false;

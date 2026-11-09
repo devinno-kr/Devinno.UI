@@ -616,16 +616,22 @@ Most attributes are bound. The following are **not bound and are used literally*
 
 Right before writing a value to the VM, a VM method confirms it. The value is written only when it returns `true`.
 
-| Widget | Signature |
+Every widget and grid cell looks the method up the same way, in this order (the first that exists is called):
+
+1. Inside a `DvRepeat` item or for a grid cell: `bool M(Item item, T value)`, then `bool M(Item item, object value)` (`Item` = a type the repeat item / grid row is an instance of).
+2. `bool M(T value)`, then `bool M(object value)`.
+
+`T` is the type of the value to write (for a nullable property its underlying type — `int` for `int?`, and a `T?` parameter also matches). The value parameter must be exactly `T` or `object` — another base type or interface (`IComparable`, `IList<string>`) is not matched:
+
+| Widget | `T` |
 |---|---|
-| `DvToggle` (including inside `DvSwitch`), `DvCheckBox`, latching `DvButton` | `bool M(bool proposed)` |
-| `DvRadio` | `bool M(형식 proposed)` — `option` converted to the bound property's type (if none, `bool M(object)`); for a `group` set, `bool M(string)` |
-| `DvKnob`, `DvSlider` | `bool M(double proposed)` |
-| `DvInput` numeric (`keyboard-type="numeric"`) | `bool M(double proposed)` (double even if the property is int) |
-| `DvInput` text / password | `bool M(string proposed)` |
-| `DvSelect` `DvSegment` `DvTabs` `DvDateTimeInput` `DvColorInput` | `bool M(T value)` (T = actual type of the value to write) or `bool M(object value)` |
-| `DvColumn cell-type="check"` | `bool M(Row row, bool value)` or `bool M(bool value)` |
-| `DvColumn` edit cell (`input` `select` `datetime` `color`) | `bool M(Row row, T value)` or `bool M(T value)` (T = the property's underlying type; `int` for `int?`) |
+| `DvToggle` (including inside `DvSwitch` — the switch's `onbeforecommit` goes to its toggle), `DvCheckBox`, latching `DvButton`, `DvColumn cell-type="check"` | `bool` |
+| `DvRadio` | `option` converted to the bound property's type; for a `group` set, `string` |
+| `DvKnob`, `DvSlider` | `double` |
+| `DvInput` numeric (`keyboard-type="numeric"`) | `double` (double even if the property is int) |
+| `DvInput` text / password | `string` |
+| `DvSelect` `DvSegment` `DvTabs` `DvListBox` `DvDateTimeInput` `DvColorInput`, custom widgets (`ctx.Commit`) | the actual type of the value to write |
+| `DvColumn` edit cell (`input` `select` `datetime` `color`) | the property's underlying type |
 
 - If the method is not on the VM (a misspelled name is build error DVML018 in a dvml with `vm`) or the signature differs (including a non-`bool` return such as `void M(bool)`), **no widget or cell writes** (rejected). A Trace warning is logged once per screen for each method name and signature.
 - If the method throws, the write is also rejected, a Trace error is logged, and it is reported via `HandlerError` (6.7; the exception is not propagated to the app).

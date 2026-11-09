@@ -153,35 +153,8 @@ internal sealed class GridCellSlot : IValueSlot
         return CommitResult.Written;
     }
 
-    // bool M(항목, 값) 우선, 없으면 bool M(값) — 값 = 속성의 기저 타입(또는 그 nullable).
-    // 둘 다 없음 = 쓰지 않음 + 경고 1회, VM 없음·예외·true 아닌 반환 = 거절(3c 규칙)
+    // 공용 탐색(CommitGate, 3단계 R13): bool M(항목, 값) → bool M(항목, object) → bool M(값) → bool M(object). 값 = 속성의 기저 타입(nullable 은 바탕 형).
+    // 없음 = 쓰지 않음 + 경고 1회, VM 없음·예외·true 아닌 반환 = 거절(3c 규칙)
     private bool Gate(string gate, object? value)
-    {
-        var vm = Owner.Vm;
-        if (vm is null)
-            return false;
-        var t = ValueType;
-        bool Fits(Type p) => p == t || Nullable.GetUnderlyingType(p) == t;
-        var methods = vm.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(m => m.Name == gate).ToList();
-        var withItem = methods.FirstOrDefault(m => m.GetParameters() is { Length: 2 } ps &&
-                                                   ps[0].ParameterType.IsInstanceOfType(Item) && Fits(ps[1].ParameterType));
-        var valueOnly = methods.FirstOrDefault(m => m.GetParameters() is { Length: 1 } ps && Fits(ps[0].ParameterType));
-        var target = withItem ?? valueOnly;
-        if (target is null)
-        {
-            Interaction.Warnings.Warn($"Devinno.UI: DvColumn onbeforecommit '{gate}': no bool {gate}(item, {t?.Name}) or bool {gate}({t?.Name}) found; not written");
-
-            return false;
-        }
-
-        try
-        {
-            return target.Invoke(vm, withItem is not null ? new[] { Item, value } : new[] { value }) is true;
-        }
-        catch (Exception ex) // 처리기 예외(TargetInvocationException)·호출 자체 실패(인수 불일치 등) 모두 거절
-        {
-            HandlerErrors.Report(Owner, ex, "onbeforecommit", gate, GridBox.Node.Tag);
-            return false;
-        }
-    }
+        => Interaction.CommitGate.Allows(Owner, GridBox.Node.Tag, Owner.Vm, gate, value, ValueType ?? typeof(object), Item);
 }

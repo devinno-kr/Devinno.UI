@@ -215,7 +215,7 @@ internal static class GridInteraction
         return en?.GetGenericArguments()[0] ?? typeof(object);
     }
 
-    // 체크 반전 → onbeforecommit(항목, bool) 또는 (bool) 확인 → 항목 속성에 바로 씀. bool 아닌 속성·readonly = 쓰지 않음
+    // 체크 반전 → onbeforecommit 확인(공용 탐색) → 항목 속성에 바로 씀. bool 아닌 속성·readonly = 쓰지 않음
     private static void CommitCheck(GridColumn col, object item, object? vm, DvSurface? owner, string tag)
     {
         if (col.ReadOnly || col.Reader.Path.Length == 0)
@@ -229,34 +229,9 @@ internal static class GridInteraction
         }
 
         var proposed = current is not true;
-        if (vm is not null && col.OnBeforeCommit is { Length: > 0 } gate)
-        {
-            var methods = vm.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(m => m.Name == gate).ToList();
-            var withItem = methods.FirstOrDefault(m => m.GetParameters() is { Length: 2 } ps &&
-                                                        ps[0].ParameterType.IsInstanceOfType(item) && ps[1].ParameterType == typeof(bool));
-            var boolOnly = methods.FirstOrDefault(m => m.GetParameters() is { Length: 1 } ps && ps[0].ParameterType == typeof(bool));
-            var target = withItem ?? boolOnly;
-            if (target is null)
-            {
-                // 이름 오타·시그니처 불일치 — 확인을 건너뛰고 쓰지 않는다(확인 없이 쓰면 위험)
-                Trace.TraceWarning($"Devinno.UI: onbeforecommit '{gate}': no bool {gate}(item, bool) or bool {gate}(bool) found; not written");
-                return;
-            }
-
-            object? result;
-            try
-            {
-                result = target.Invoke(vm, withItem is not null ? new[] { item, proposed } : new object[] { proposed });
-            }
-            catch (TargetInvocationException ex)
-            {
-                HandlerErrors.Report(owner, ex, "onbeforecommit", gate, tag); // 거절로 처리
-                return;
-            }
-
-            if (result is not true)
-                return; // false 또는 bool 아님(void 등) = 쓰지 않음
-        }
+        // 공용 탐색(CommitGate, 3단계 R13): bool M(행, bool) → bool M(행, object) → bool M(bool) → bool M(object). 없음·false·예외 = 쓰지 않음
+        if (!CommitGate.Allows(owner, tag, vm, col.OnBeforeCommit, proposed, typeof(bool), item))
+            return;
 
         HandlerErrors.TrySet(owner, tag, item, col.Reader.Path, proposed); // setter 예외 = 쓰지 않음(알림은 TrySet 이)
     }

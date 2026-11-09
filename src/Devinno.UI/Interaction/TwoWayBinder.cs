@@ -31,7 +31,7 @@ public static class TwoWayBinder
         var path = BindingResolver.ExtractPath(box.ValueBindExpr);
         var proposed = !box.ToggleOn;
 
-        if (!CommitGate.Allows(owner, box.Node.Tag, vm, box.OnBeforeCommit, proposed, typeof(bool)))
+        if (!CommitGate.Allows(owner, box.Node.Tag, vm, box.OnBeforeCommit, proposed, typeof(bool), box.ItemScope?.Item))
             return;
 
         // DvRepeat 안이면 항목 범위로. setter 예외 = 쓰지 않음(다시 빌드되어 VM 값으로 보임)
