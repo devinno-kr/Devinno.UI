@@ -583,6 +583,9 @@ public sealed partial class LayoutEngine
                 // 글자로만 보이는 파라미터(내장 컴포넌트) — 바인딩 값도 그 글자로(템플릿이 {이름.Length} 로 있음을 판단)
                 if (component.TextParams.Contains(p.Name) && scope[p.Name] is { } v and not string)
                     scope[p.Name] = BindingResolver.ToText(v, raw);
+                // 테마 단어 파라미터(내장 컴포넌트) — 토큰이 없는 단어는 기본값 + 경고 한 번(안쪽 요소마다 따로 경고·마젠타가 되지 않게)
+                if (component.ThemeWordParams.TryGetValue(p.Name, out var prefix))
+                    scope[p.Name] = AttrRules.ThemeWord(scope[p.Name], prefix, _theme, p.Default, instance.Tag, p.Name, raw: raw);
                 if (BindingResolver.IsTwoWay(raw))
                     (twoWay ??= new TwoWayParams(instance))[p.Name] = raw;
             }

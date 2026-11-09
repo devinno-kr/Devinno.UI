@@ -20,4 +20,10 @@ public sealed class ComponentDef
 
     /// <summary>Parameters used only as display text: a bound value is turned into its text when the instance is expanded, so the template can test presence with <c>{name.Length}</c> (built-in components only).</summary>
     internal HashSet<string> TextParams { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Parameters that take a theme word (key = parameter name, value = token prefix, e.g. <c>state</c>): when the instance is expanded, the value is checked once with
+    /// <see cref="Layout.AttrRules.ThemeWord"/>, so a word without a <c>{prefix}-{word}</c> token becomes the parameter default with one warning (built-in components only).
+    /// </summary>
+    internal Dictionary<string, string> ThemeWordParams { get; } = new(StringComparer.Ordinal);
 }

@@ -254,6 +254,33 @@ public class DesignSystemTests
         Assert.Equal(Hex("#fca5a5"), ByText(root, "정지").Style.Color);
     }
 
+    // 모르는 state 단어 = 기본(off) + 경고 한 번 — 램프와 상태 칩이 같은 off 색(칩이 마젠타가 되지 않는다)
+    [Theory]
+    [InlineData("Zq7Bogus")]
+    [InlineData("run-fg")]
+    public void StatusItem_unknown_state_uses_off_for_lamp_and_chip_with_one_warning(string word)
+    {
+        var cap = new Capture(word);
+        System.Diagnostics.Trace.Listeners.Add(cap);
+        LayoutBox root;
+        try
+        {
+            root = Lay($"<DvScreen><DvStatusItem label=\"P1\" state=\"{word}\" status=\"정지\"/></DvScreen>", theme: DvTheme.Dark);
+        }
+        finally
+        {
+            System.Diagnostics.Trace.Listeners.Remove(cap);
+        }
+        Assert.Single(cap.Lines);
+        Assert.Contains("off", cap.Lines[0]);
+        Assert.Equal("off", All(root).Single(b => b.Node.Tag == "DvLamp").LampState);
+        var chip = ByText(root, "정지");
+        Assert.True(DvTheme.Dark.TryGet("state-off-fg", out var fg));
+        Assert.True(DvTheme.Dark.TryGet("state-off-soft", out var soft));
+        Assert.Equal(Hex(fg), chip.Style.Color);
+        Assert.Equal(Hex(soft), chip.Style.Background);
+    }
+
     [Fact]
     public void Component_instance_style_merges_into_template_root()
     {

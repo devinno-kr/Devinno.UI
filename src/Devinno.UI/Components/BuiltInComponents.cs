@@ -141,6 +141,9 @@ public static class BuiltInComponents
         Text(r, "DvCard", "title", "badge");
         Text(r, "DvStat", "delta", "unit");
         Text(r, "DvStatusItem", "status");
+        // 테마 단어 파라미터 — 모르는 단어는 펼칠 때 한 번 기본값(off) + 경고. 램프와 상태 칩(token(state-{state}-fg))이 같은 단어를 쓴다
+        r.TryGet("DvStatusItem", out var statusItem);
+        statusItem!.ThemeWordParams["state"] = "state";
         return r;
     }
 }
