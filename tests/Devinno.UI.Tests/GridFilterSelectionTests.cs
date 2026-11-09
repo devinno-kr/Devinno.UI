@@ -17,7 +17,6 @@ public class GridFilterSelectionTests
     {
         public List<Row> Rows { get; set; } = Enumerable.Range(0, 6).Select(i => new Row { Id = i, On = i % 2 == 0, Name = "n" + i }).ToList();
         public List<Row> Picked { get; set; } = new();
-        public bool ShowOn { get; set; } = true;
     }
 
     private const string Cols =
