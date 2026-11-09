@@ -1606,7 +1606,7 @@ public sealed partial class DvSurface
         {
             if (!SelectValue.TryConvert(option, radio.SelectValueType, out var value))
             {
-                System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvRadio option '{option}' cannot be converted to {radio.SelectValueType?.Name}; not written");
+                Warnings.Warn($"Devinno.UI: DvRadio option '{option}' cannot be converted to {radio.SelectValueType?.Name}; not written"); // 탭마다가 아니라 화면마다 한 번
                 return;
             }
             if (!CommitGate.Allows(this, radio.Node.Tag, _vm, radio.OnBeforeCommit, value, value?.GetType() ?? typeof(object), radio.ItemScope?.Item))
@@ -1875,7 +1875,7 @@ public sealed partial class DvSurface
     {
         if (Window.Composer is not App.DvApp app)
         {
-            System.Diagnostics.Trace.TraceWarning("Devinno.UI: DvKnob input-mode tap/both opens its keypad only on DvApp screens (pages, bars, dialogs); this tap is ignored");
+            Warnings.Warn("Devinno.UI: DvKnob input-mode tap/both opens its keypad only on DvApp screens (pages, bars, dialogs); this tap is ignored"); // 화면마다 한 번
             return;
         }
 
@@ -1896,7 +1896,17 @@ public sealed partial class DvSurface
         // 3단계 R6 — 범위 밖은 자르지 않고 거절(키패드 입력창이 이미 거절하므로 보통 오지 않는다)
         if (result is not { } value || value < lo || value > hi)
             return;
-        KnobBinder.Commit(knob, vm, KnobBinder.Snap(knob, value), this);
+        // await 뒤 이어지는 곳은 입력 처리의 읽기 범위 밖 — 이 화면의 범위로 다시 들어가 커밋(게이트 경고·VM 읽기 예외가 화면마다 한 번)
+        var prevRead = HandlerErrors.EnterRead(_reads);
+        try
+        {
+            KnobBinder.Commit(knob, vm, KnobBinder.Snap(knob, value), this);
+        }
+        finally
+        {
+            HandlerErrors.ExitRead(prevRead);
+        }
+
         Invalidate();
     }
 

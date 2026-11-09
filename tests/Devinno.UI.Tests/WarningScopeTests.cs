@@ -224,4 +224,54 @@ public class WarningScopeTests
         Assert.Equal(1, tooMany);
         Assert.Equal(Warnings.MaxWarned, scope.Warned.Count);
     }
+
+    public sealed class LevelVm
+    {
+        public double Level { get; set; } = 40;
+    }
+
+    public sealed class RunVm
+    {
+        public CheckRadioTests.Mode Run { get; set; } = CheckRadioTests.Mode.Auto;
+    }
+
+    private static void TapBox(DvSurface s, string tag)
+    {
+        var b = Flat(s.Root!).First(x => x.Node.Tag == tag);
+        var p = new SKPoint(b.Rect.MidX, b.Rect.MidY);
+        s.PointerDown(p);
+        s.PointerUp(p);
+        s.Layout(800, 500);
+    }
+
+    private static IEnumerable<Devinno.UI.Layout.LayoutBox> Flat(Devinno.UI.Layout.LayoutBox b) => new[] { b }.Concat(b.Children.SelectMany(Flat));
+
+    // 리뷰 M5 — 탭마다 쓰던 경고도 공용 경고(화면마다 한 번): 속성 형식으로 못 바꾸는 DvRadio option
+    [Fact]
+    public void RadioOption_NotConvertible_WarnsOncePerSurface()
+    {
+        var n = Count("m5radio-x", () =>
+        {
+            var s = new DvSurface("<DvScreen><DvRadio text=\"x\" value=\"{Bind Run}\" option=\"m5radio-x\"/></DvScreen>", new RunVm(), DvTheme.Light);
+            s.Layout(800, 500);
+            TapBox(s, "DvRadio");
+            TapBox(s, "DvRadio");
+            TapBox(s, "DvRadio");
+        });
+        Assert.Equal(1, n);
+    }
+
+    // DvApp 밖 화면의 노브 키패드 탭
+    [Fact]
+    public void KnobKeypad_OutsideDvApp_WarnsOncePerSurface()
+    {
+        var n = Count("only on DvApp screens", () =>
+        {
+            var s = new DvSurface("<DvScreen><DvKnob value=\"{Bind Level}\" input-mode=\"tap\" style=\"width:96; height:96\"/></DvScreen>", new LevelVm(), DvTheme.Light);
+            s.Layout(800, 500);
+            TapBox(s, "DvKnob");
+            TapBox(s, "DvKnob");
+        });
+        Assert.Equal(1, n);
+    }
 }

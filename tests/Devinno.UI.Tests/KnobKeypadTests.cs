@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Devinno.UI;
 using Devinno.UI.App;
 using SkiaSharp;
@@ -214,5 +215,41 @@ public class KnobKeypadTests
     public sealed class Vm
     {
         public double Level { get; set; } = 40;
+    }
+
+    private sealed class Capture(string marker) : TraceListener
+    {
+        public List<string> Lines { get; } = new();
+        public override void Write(string? message) { }
+        public override void WriteLine(string? message)
+        {
+            if (message is not null && message.Contains(marker))
+                lock (Lines) Lines.Add(message);
+        }
+        public override void TraceEvent(TraceEventCache? c, string source, TraceEventType type, int id, string? message)
+            => WriteLine(message);
+    }
+
+    // 리뷰 M5 — 키패드 확인 뒤(await 뒤) 커밋도 화면의 읽기 범위 안: 없는 onbeforecommit 경고는 화면마다 한 번(전: 범위 밖이라 확인할 때마다)
+    [Fact]
+    public void KeypadCommit_MissingGate_WarnsOncePerSurface()
+    {
+        var cap = new Capture("m5-missing-gate");
+        Trace.Listeners.Add(cap);
+        try
+        {
+            var (app, root, page) = Start("input-mode=\"tap\"", "onbeforecommit=\"m5-missing-gate\"");
+            for (var i = 0; i < 3; i++)
+            {
+                Tap(root, Center);
+                Ok(app, root, 50 + i);
+            }
+        }
+        finally
+        {
+            Trace.Listeners.Remove(cap);
+        }
+
+        Assert.Single(cap.Lines);
     }
 }
