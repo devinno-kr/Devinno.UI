@@ -120,7 +120,7 @@ internal static class AttributeCheck
         ["DvMotor"] = ["running", "kind", "visible"],
         ["DvAttach"] = ["side", "visible"],
         ["DvLine"] = ["from", "to", "arrow", "flow", "medium", "via", "label", "visible"],
-        ["DvSignal"] = ["from", "to", "arrow", "label", "kind", "color", "width", "visible"],
+        ["DvSignal"] = ["from", "to", "arrow", "label", "kind", "color", "thickness", "visible"],
         ["DvInstrument"] = ["name", "on", "tap", "tag", "number", "value", "panel", "x", "y", "visible"],
     };
 
@@ -209,7 +209,7 @@ internal static class AttributeCheck
         ["DvInline"] = ["row", "rank", "x", "y"],
         ["DvExchanger"] = ["row", "rank", "x", "y"],
         ["DvTerminal"] = ["row", "rank", "x", "y"],
-        ["DvSignal"] = ["width"],
+        ["DvSignal"] = ["thickness"],
         ["DvInstrument"] = ["x", "y"],
     };
 
@@ -419,6 +419,7 @@ internal static class AttributeCheck
     {
         [("DvExpander", "header")] = "title",
         [("DvSummaryRow", "title")] = "label",
+        [("DvSignal", "width")] = "thickness",
     };
 
     private static object RenamedText(string old, string now) => Diagnostics.Text("Attr_Renamed", old, now);

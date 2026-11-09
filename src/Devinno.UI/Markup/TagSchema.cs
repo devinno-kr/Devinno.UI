@@ -469,7 +469,7 @@ internal static class TagSchema
             new("label", AttrKind.Text, Note: "small text beside the from end"),
             new("kind", AttrKind.Enum, "electric", Values: ["electric", "pneumatic"], Note: EnumRule),
             new("color", AttrKind.Color, Note: "absent = theme text color; " + ColorRule + " (theme text color); the only process color attribute (the rest use a fixed palette)"),
-            new("width", AttrKind.Number, "1.6", Note: "stroke px > 0; not a number or <= 0 = default + warning; name clash: DvVessel width is the body width"),
+            new("thickness", AttrKind.Number, "1.6", Note: "stroke px > 0; not a number or <= 0 = default + warning; named like DvRing thickness (stage 4 N7: was width, which is a box/body width elsewhere)"),
             LineVisible("the signal line"),
         ],
         ["DvInstrument"] =

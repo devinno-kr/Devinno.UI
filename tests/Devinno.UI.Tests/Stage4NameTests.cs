@@ -80,4 +80,15 @@ public class Stage4NameTests
         Assert.False(old!.Shrink);
         Assert.Contains(w, x => x.Contains("fit='shrink'") && x.Contains("scale-down"));
     }
+
+    // N7 — DvSignal width → thickness (DvRing thickness; width stays the box/body width). 옛 이름은 읽지 않는다
+    [Fact]
+    public void Signal_Thickness_IsTheStroke_WidthIsNotRead()
+    {
+        static float? Stroke(string attr) => ProcessTests.Start(ProcessInstrumentTests.Loop.Replace("""<DvSignal from="FIC1" to="V1"/>""", $"""<DvSignal from="FIC1" to="V1" {attr}="4"/>"""))
+            .D.Signals.Single(s => s.ToRef == "V1").Width;
+
+        Assert.Equal(4f, Stroke("thickness"));
+        Assert.Null(Stroke("width"));
+    }
 }

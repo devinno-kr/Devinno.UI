@@ -378,15 +378,15 @@ internal static class ProcessBuilder
     // 신호선 색(color) — 공용 색 규칙. 안 쓰면 기본(테마 글자색), 모르는 토큰 = 자홍 + 경고, 못 읽으면 기본 + 경고
     private static SKColor? SignalColor(AttrReader r, Builders b) => b.Color(r, "color", "drawing with the default color");
 
-    // 신호선 두께(width) — 0 보다 큰 px. 안 쓰면 기본, 틀리면 알리고 기본으로
+    // 신호선 두께(thickness) — 0 보다 큰 px. 안 쓰면 기본, 틀리면 알리고 기본으로
     private static float? SignalWidth(AttrReader r)
     {
-        var text = r.Text("width");
+        var text = r.Text("thickness");
         if (string.IsNullOrWhiteSpace(text))
             return null;
         if (TryCoord(text, out var width) && width > 0)
             return width;
-        Warn($"DvSignal '{r.Raw("from")}'→'{r.Raw("to")}' width='{text}' must be a number greater than 0; drawing with the default width");
+        Warn($"DvSignal '{r.Raw("from")}'→'{r.Raw("to")}' thickness='{text}' must be a number greater than 0; drawing with the default thickness");
         return null;
     }
 

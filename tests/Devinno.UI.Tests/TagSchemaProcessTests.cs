@@ -40,7 +40,7 @@ public class TagSchemaProcessTests
           <DvLine from="SX_U.out" to="SX_V.in"/>
           <DvInstrument name="SX_TI" on="SX_P" tap="SX_P.in" tag="TI" number="101" value="40" panel="true" x="300" y="320" visible="true" onclick="Hit"/>
           <DvInstrument name="SX_PI" on="SX_V"/>
-          <DvSignal from="SX_TI" to="SX_PI" kind="pneumatic" color="#ff0000" width="2" arrow="both" label="S" visible="true"/>
+          <DvSignal from="SX_TI" to="SX_PI" kind="pneumatic" color="#ff0000" thickness="2" arrow="both" label="S" visible="true"/>
         </DvProcess>
         """;
 

@@ -428,17 +428,17 @@ public class ProcessInstrumentTests
     public void Color_PaintsTheLine_InBothKinds(string kind)
     {
         // 굵게 — 가는 선은 안티앨리어싱으로 지정한 색 그대로 찍힌 픽셀이 없다
-        using var bmp = Draw(SignalScene($"{kind} color=\"#D32F2F\" width=\"4\""), DvTheme.Light);
+        using var bmp = Draw(SignalScene($"{kind} color=\"#D32F2F\" thickness=\"4\""), DvTheme.Light);
         Assert.True(LineHasColor(bmp, new SKColor(0xD3, 0x2F, 0x2F)));
     }
 
     [Fact]
     public void Color_AcceptsAThemeToken_UnknownTokenIsMagenta()
     {
-        using var token = Draw(SignalScene("color=\"token(text)\" width=\"4\""), DvTheme.Light);
+        using var token = Draw(SignalScene("color=\"token(text)\" thickness=\"4\""), DvTheme.Light);
         Assert.False(LineHasColor(token, new SKColor(0xFF, 0x00, 0xFF)));
 
-        using var unknown = Draw(SignalScene("color=\"token(no-such-token)\" width=\"4\""), DvTheme.Light);
+        using var unknown = Draw(SignalScene("color=\"token(no-such-token)\" thickness=\"4\""), DvTheme.Light);
         Assert.True(LineHasColor(unknown, new SKColor(0xFF, 0x00, 0xFF)));
     }
 
@@ -447,7 +447,7 @@ public class ProcessInstrumentTests
     {
         // 공압(실선)으로 재서 점선 틈의 영향을 뺀다. x=390 은 빗금 사이가 아니다 — 빗금 자리면 다른 x
         using var thin = Draw(SignalScene("kind=\"pneumatic\""), DvTheme.Light);
-        using var thick = Draw(SignalScene("kind=\"pneumatic\" width=\"6\""), DvTheme.Light);
+        using var thick = Draw(SignalScene("kind=\"pneumatic\" thickness=\"6\""), DvTheme.Light);
         var marks = Painter.SignalMarks([new SKPoint(170, 100), new SKPoint(630, 100)]).Select(m => (int)m.At.X).ToList();
         var x = Enumerable.Range(200, 400).First(v => marks.All(m => Math.Abs(v - m) > 16));
         Assert.True(LineThickness(thick, x) >= LineThickness(thin, x) + 3, $"{LineThickness(thin, x)} → {LineThickness(thick, x)}");
@@ -457,7 +457,7 @@ public class ProcessInstrumentTests
     public void ColorAndWidth_Omitted_AreTheDefaults_AndChangeNoLayout()
     {
         var (_, a) = ProcessTests.Start(Loop);
-        var (_, b) = ProcessTests.Start(Loop.Replace("""<DvSignal from="FIC1" to="V1"/>""", """<DvSignal from="FIC1" to="V1" color="#D32F2F" width="4"/>"""));
+        var (_, b) = ProcessTests.Start(Loop.Replace("""<DvSignal from="FIC1" to="V1"/>""", """<DvSignal from="FIC1" to="V1" color="#D32F2F" thickness="4"/>"""));
         Assert.All(a.Signals, s => Assert.Null(s.Color));
         Assert.All(a.Signals, s => Assert.Null(s.Width));
         var set = b.Signals.Single(s => s.ToRef == "V1");
@@ -468,8 +468,8 @@ public class ProcessInstrumentTests
 
     [Theory]
     [InlineData("color=\"crimson\"", "color='crimson'")]
-    [InlineData("width=\"0\"", "width='0'")]
-    [InlineData("width=\"thick\"", "width='thick'")]
+    [InlineData("thickness=\"0\"", "thickness='0'")]
+    [InlineData("thickness=\"thick\"", "thickness='thick'")]
     public void BadColorOrWidth_Warns_AndUsesTheDefault(string attr, string marker)
     {
         var lines = new List<string>();
@@ -499,7 +499,7 @@ public class ProcessInstrumentTests
     public void ColorAndWidth_CanBeBound()
     {
         var vm = new SignalVm();
-        var (s, d) = ProcessTests.Start(Loop.Replace("""<DvSignal from="FIC1" to="V1"/>""", """<DvSignal from="FIC1" to="V1" color="{Tone}" width="{Thick}"/>"""), vm: vm);
+        var (s, d) = ProcessTests.Start(Loop.Replace("""<DvSignal from="FIC1" to="V1"/>""", """<DvSignal from="FIC1" to="V1" color="{Tone}" thickness="{Thick}"/>"""), vm: vm);
         Assert.Equal(new SKColor(0xD3, 0x2F, 0x2F), d.Signals.Single(x => x.ToRef == "V1").Color);
 
         vm.Tone = "#1976D2";

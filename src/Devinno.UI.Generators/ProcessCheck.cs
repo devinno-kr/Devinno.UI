@@ -123,11 +123,11 @@ internal static class ProcessCheck
     // 신호선 두께 — 0 보다 큰 수
     private static void SignalWidth(XElement signal, Action<DiagnosticDescriptor, XObject, object[]> report)
     {
-        var a = signal.Attribute("width");
+        var a = signal.Attribute("thickness");
         if (a is null || a.Value.Trim().Length == 0 || Dynamic(a.Value))
             return;
         if (!double.TryParse(a.Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var w) || w <= 0)
-            report(Diagnostics.ProcessUnknownValue, a, ["<DvSignal> width", a.Value, "px > 0"]);
+            report(Diagnostics.ProcessUnknownValue, a, ["<DvSignal> thickness", a.Value, "px > 0"]);
     }
 
     // 배관 꺾임점 — "x,y x,y …"
