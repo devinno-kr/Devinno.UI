@@ -41,4 +41,43 @@ public class Stage4NameTests
         Assert.Equal("Total", Label("label"));
         Assert.Equal("", Label("title"));
     }
+
+    private sealed class Capture : System.Diagnostics.TraceListener
+    {
+        public List<string> Lines { get; } = new();
+        public override void Write(string? message) { }
+        public override void WriteLine(string? message)
+        {
+            if (message is not null && message.Contains("Devinno.UI"))
+                lock (Lines) Lines.Add(message);
+        }
+        public override void TraceEvent(System.Diagnostics.TraceEventCache? c, string source, System.Diagnostics.TraceEventType type, int id, string? message) => WriteLine(message);
+    }
+
+    private static List<string> Warnings(Action act)
+    {
+        var cap = new Capture();
+        System.Diagnostics.Trace.Listeners.Add(cap);
+        try
+        {
+            act();
+            lock (cap.Lines) return cap.Lines.ToList();
+        }
+        finally
+        {
+            System.Diagnostics.Trace.Listeners.Remove(cap);
+        }
+    }
+
+    // N6 — DvProcess fit="shrink" → "scale-down" (CSS object-fit). 옛 값은 모르는 값: 줄이지 않고, 경고가 새 값을 보여 준다
+    [Fact]
+    public void ProcessFit_ScaleDown_Shrinks_OldShrinkIsUnknown()
+    {
+        var (_, d) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"scale-down\"", 420, 220);
+        Assert.True(d.Shrink);
+        Devinno.UI.Process.ProcessDiagram? old = null;
+        var w = Warnings(() => old = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"shrink\"", 420, 220).D);
+        Assert.False(old!.Shrink);
+        Assert.Contains(w, x => x.Contains("fit='shrink'") && x.Contains("scale-down"));
+    }
 }

@@ -30,14 +30,14 @@ public class ProcessFitSamples
             """;
         Render($"<DvProcess>{values}</DvProcess>", vm, 900, 420, "fit-values.png");
 
-        // 통째 축소 — 같은 영역(640×340)에서 fit 없음(넘침) / fit="shrink" / font-size 를 키운 축소
+        // 통째 축소 — 같은 영역(640×340)에서 fit 없음(넘침) / fit="scale-down" / font-size 를 키운 축소
         Render($"<DvProcess grow=\"1\" style=\"height:0; border: 1px solid token(border)\">{ProcessInstrumentTests.Loop}</DvProcess>", vm, 640, 340, "fit-overflow.png");
-        Render($"<DvProcess fit=\"shrink\" grow=\"1\" style=\"height:0; border: 1px solid token(border)\">{ProcessInstrumentTests.Loop}</DvProcess>", vm, 640, 340, "fit-shrink.png");
-        Render($"<DvProcess fit=\"shrink\" grow=\"1\" style=\"height:0; font-size:20; border: 1px solid token(border)\">{ProcessInstrumentTests.Loop}</DvProcess>", vm, 640, 340, "fit-shrink-font20.png");
-        Render($"<DvProcess fit=\"shrink\" look=\"rich\" direction=\"tb\" grow=\"1\" style=\"height:0; border: 1px solid token(border)\">{ProcessUnitTests.PlantMarkup}</DvProcess>",
+        Render($"<DvProcess fit=\"scale-down\" grow=\"1\" style=\"height:0; border: 1px solid token(border)\">{ProcessInstrumentTests.Loop}</DvProcess>", vm, 640, 340, "fit-shrink.png");
+        Render($"<DvProcess fit=\"scale-down\" grow=\"1\" style=\"height:0; font-size:20; border: 1px solid token(border)\">{ProcessInstrumentTests.Loop}</DvProcess>", vm, 640, 340, "fit-shrink-font20.png");
+        Render($"<DvProcess fit=\"scale-down\" look=\"rich\" direction=\"tb\" grow=\"1\" style=\"height:0; border: 1px solid token(border)\">{ProcessUnitTests.PlantMarkup}</DvProcess>",
             new ProcessUnitTests.Vm(), 700, 520, "fit-shrink-units.png", ProcessUnitTests.CreateRegistry());
         // 크기 결정 절차(dvml-process 4장) 그대로: 6.1px → 14 × 11 / 6.1 → font-size 26 → 10.3px(붙은 칸 버튼도 함께 커짐)
-        Render($"<DvProcess fit=\"shrink\" look=\"rich\" direction=\"tb\" grow=\"1\" style=\"height:0; font-size:26; border: 1px solid token(border)\">{ProcessUnitTests.PlantMarkup}</DvProcess>",
+        Render($"<DvProcess fit=\"scale-down\" look=\"rich\" direction=\"tb\" grow=\"1\" style=\"height:0; font-size:26; border: 1px solid token(border)\">{ProcessUnitTests.PlantMarkup}</DvProcess>",
             new ProcessUnitTests.Vm(), 700, 520, "fit-shrink-units-font26.png", ProcessUnitTests.CreateRegistry());
 
         // 좌표 배치 — base-size 없이 영역보다 넓은 좌표
@@ -48,7 +48,7 @@ public class ProcessFitSamples
             <DvLine from="IN" to="P1.in"/>
             <DvLine from="P1.out" to="T1.top"/>
             """;
-        Render($"<DvProcess placement=\"fixed\" fit=\"shrink\" grow=\"1\" style=\"height:0; border: 1px solid token(border)\">{fixedMarkup}</DvProcess>", vm, 600, 300, "fit-shrink-fixed.png");
+        Render($"<DvProcess placement=\"fixed\" fit=\"scale-down\" grow=\"1\" style=\"height:0; border: 1px solid token(border)\">{fixedMarkup}</DvProcess>", vm, 600, 300, "fit-shrink-fixed.png");
     }
 
     private static void Render(string process, object vm, int w, int h, string file, ComponentRegistry? registry = null)

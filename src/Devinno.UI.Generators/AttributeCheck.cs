@@ -243,7 +243,7 @@ internal static class AttributeCheck
         ["DvColumn"] = new(StringComparer.Ordinal) { ["align"] = ["left", "center", "right"], ["sort"] = ["asc", "desc"], ["cell-type"] = ["text", "check", "lamp", "button", "input", "select", "datetime", "color"], ["filter"] = ["none", "auto", "text", "values", "range", "date"], ["variant"] = ["primary", "secondary", "danger", "ghost"], ["mode"] = ["date", "time", "datetime"] },
         ["DvSummaryRow"] = new(StringComparer.Ordinal) { ["fn"] = ["sum", "avg", "min", "max", "count"] },
         ["DvSummary"] = new(StringComparer.Ordinal) { ["fn"] = ["sum", "avg", "min", "max", "count"] },
-        ["DvProcess"] = new(StringComparer.Ordinal) { ["direction"] = ["lr", "tb"], ["look"] = ["plain", "rich"], ["align"] = ["auto", "step", "row"], ["placement"] = ["auto", "fixed"], ["fit"] = ["none", "shrink", "contain"] },
+        ["DvProcess"] = new(StringComparer.Ordinal) { ["direction"] = ["lr", "tb"], ["look"] = ["plain", "rich"], ["align"] = ["auto", "step", "row"], ["placement"] = ["auto", "fixed"], ["fit"] = ["none", "scale-down", "contain"] },
         ["DvUnit"] = new(StringComparer.Ordinal) { ["direction"] = ["lr", "tb"], ["placement"] = ["auto"] },
         ["DvPort"] = new(StringComparer.Ordinal) { ["side"] = ["left", "top", "right", "bottom"] },
         ["DvVessel"] = new(StringComparer.Ordinal) { ["kind"] = ["tank", "reactor", "silo", "hopper", "drum", "column", "open"], ["rotate"] = ["0", "90", "180", "270"], ["flip"] = ["h", "v", "hv"] },

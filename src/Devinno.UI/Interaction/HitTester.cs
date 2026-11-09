@@ -87,7 +87,7 @@ public static class HitTester
         path.Add((box, p));
         var inner = box.IsScroller ? new SKPoint(p.X + box.ScrollX, p.Y + box.ScrollY) : p;
         if (box.HasContentTransform)
-            inner = new SKPoint((inner.X - box.ContentOffset.X) / box.ContentScale, (inner.Y - box.ContentOffset.Y) / box.ContentScale); // 줄여 그린 내용(공정도 fit="shrink")
+            inner = new SKPoint((inner.X - box.ContentOffset.X) / box.ContentScale, (inner.Y - box.ContentOffset.Y) / box.ContentScale); // 줄여 그린 내용(공정도 fit="scale-down")
         for (var i = box.Children.Count - 1; i >= 0; i--)
         {
             if (Collect(box.Children[i], inner, path))

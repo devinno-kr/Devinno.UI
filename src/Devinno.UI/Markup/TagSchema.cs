@@ -408,8 +408,8 @@ internal static class TagSchema
             new("placement", AttrKind.Enum, "auto", Values: ["auto", "fixed"], Note: EnumRule + "; a structural switch (the layout cache keys on it)"),
             new("base-size", AttrKind.Text, Note: "\"W H\" px (space or comma); fixed placement only, otherwise ignored + warning; a bad value = ignored + warning"),
             new("flow-animation", AttrKind.Bool, "false", Note: BoolRule),
-            new("fit", AttrKind.Enum, "none", Values: ["none", "shrink", "contain"],
-                Note: "contain without placement=fixed = shrink + warning; " + EnumRule + "; name clash: DvImage/DvVideo fit is contain|cover|fill"),
+            new("fit", AttrKind.Enum, "none", Values: ["none", "scale-down", "contain"],
+                Note: "scale-down = CSS object-fit word (stage 4 N6: was shrink); contain without placement=fixed = scale-down + warning; " + EnumRule + "; name clash: DvImage/DvVideo fit is contain|cover|fill"),
         ],
         ["DvUnit"] =
         [

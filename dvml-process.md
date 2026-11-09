@@ -114,7 +114,7 @@ AI MUST follow the order below exactly. Each step says what to decide.
 | `align` | `auto` · `step` · `row` | `auto` | Row alignment of the next equipment connected to a port that leaves perpendicular to the flow (the bottom port in lr, the right port in tb) (chapter 9, item 5). `step` = staircase, `row` = same row, `auto` = chosen to fit the area. An unknown value gives `auto` + a Trace warning |
 | `placement` | `auto` · `fixed` | `auto` | `auto` = automatic placement (this whole document). `fixed` = every piece of equipment sits at its `x`·`y` (chapter 20). An unknown value gives `auto` + a Trace warning |
 | `base-size` | `"W H"` (px) | — | `fixed` only: the size the coordinates were taken at; positions are scaled to the area (chapter 20.3) |
-| `fit` | `none` · `shrink` · `contain` | `none` | How the drawing meets the area. `none` = overflow with the "Not enough space" warning. `shrink` = draw the whole diagram smaller when it still overflows (see **Size** below). `contain` = `placement="fixed"` only: the drawing at `base-size` is scaled as a whole to the area, smaller or larger, and centered (chapter 20.3); in automatic placement it acts as `shrink` with a Trace warning. An unknown value gives `none` + a Trace warning |
+| `fit` | `none` · `scale-down` · `contain` | `none` | How the drawing meets the area. `none` = overflow with the "Not enough space" warning. `scale-down` = draw the whole diagram smaller when it still overflows (see **Size** below; the CSS `object-fit` word — it was `shrink` before 0.x stage 4). `contain` = `placement="fixed"` only: the drawing at `base-size` is scaled as a whole to the area, smaller or larger, and centered (chapter 20.3); in automatic placement it acts as `scale-down` with a Trace warning. An unknown value gives `none` + a Trace warning |
 | `style` | general style | — | `padding`, `background`, `width`, `height`, `border`, `font-size`, etc. `font-size` sets the size of all diagram text (see **Text size** below) |
 | `grow` and other layout attributes | — | — | Same as for an ordinary box |
 
@@ -130,8 +130,8 @@ AI MUST follow the order below exactly. Each step says what to decide.
 - The placement and the pipe routes are decided **once, at the natural size** (spacing scale 1; with `align="auto"`, the staircase). If a size is given or the parent determines the size, that same drawing is **stretched or shrunk to the area**: only positions move — equipment, text and pipes keep their size — and each axis is scaled on its own (a wider area spreads equipment sideways, a taller one downward). Bends, branch points and the side a pipe passes equipment on do not change with the area size. Equipment joined by a straight pipe moves together, so straight runs stay straight.
 - Shrinking has a limit: bubbles, labels and pipe spacing do not shrink, so below a certain size the shape no longer fits (a segment would fold back, a pipe would run into equipment, or pipes would touch). Only then is placement retried the old way, and the **first one that fits** is used: with `align="auto"` (default), staircase with spacing scale 1 → 0.85 → 0.7 → 0.6 → 0.5, then same-row with 1 → … → 0.5; with `align="step"`·`"row"`, only that mode. The drawing then **looks different from the natural size**, and the Trace warning "The piping no longer fits the diagram's natural-size shape …" is left.
 - If nothing fits, the natural-size shape is kept at its smallest and overflows, with the Trace warning "Not enough space". Equipment and text do not shrink.
-- **`fit="shrink"`** changes only that last case: the whole drawing (equipment, text, lines, attached boxes, instruments) is scaled down to the area, keeping its proportions, and centered. A diagram that fits is not touched, and nothing is ever enlarged. Presses and drags follow the drawn positions. It reports the result as the Trace warning `Shrunk to N% … the smallest diagram text is now X px`.
-- **To make it fill the remaining space**, use `grow="1" style="height:0"` inside a vertical layout (same meaning as CSS `flex-basis:0` — grows from a base height of 0), and `grow="1"` inside a horizontal layout. With only `grow="1"` and no `height:0`, the process diagram does not shrink below its content height and may overflow the screen, and `fit="shrink"` does nothing (the diagram is not given a smaller area).
+- **`fit="scale-down"`** changes only that last case: the whole drawing (equipment, text, lines, attached boxes, instruments) is scaled down to the area, keeping its proportions, and centered. A diagram that fits is not touched, and nothing is ever enlarged. Presses and drags follow the drawn positions. It reports the result as the Trace warning `Shrunk to N% … the smallest diagram text is now X px`.
+- **To make it fill the remaining space**, use `grow="1" style="height:0"` inside a vertical layout (same meaning as CSS `flex-basis:0` — grows from a base height of 0), and `grow="1"` inside a horizontal layout. With only `grow="1"` and no `height:0`, the process diagram does not shrink below its content height and may overflow the screen, and `fit="scale-down"` does nothing (the diagram is not given a smaller area).
 
 **Text size**
 
@@ -147,7 +147,7 @@ Which placement mode and which `fit` to use for a large or complicated process: 
 1. Give the diagram its area: `grow="1" style="height:0"` (above). Do not put `font-size` yet. Automatic placement: no `fit` yet. Coordinate placement (`placement="fixed"`, chapter 20): always `base-size` + `fit="contain"` from the start, then skip to step 2 and read step 5 for the `Shrunk to …` warning.
 2. Render a PNG at the **smallest size the screen is really shown at** (the panel resolution, or the smallest window), and read the Trace warnings.
 3. No size warning → done.
-4. `Not enough space` → add `fit="shrink"` and render again.
+4. `Not enough space` → add `fit="scale-down"` and render again.
 5. `Shrunk to N% … the smallest diagram text is now X px`:
    - X ≥ 10 → done.
    - X < 10 → set `style="font-size:F"` on `DvProcess` with F = (current font-size, 14 if none) × 11 / X, rounded up, and render again. (11, not 10: equipment symbols do not grow with the text, so the result lands a little below the aim.) Repeat step 5 at most twice.
@@ -171,7 +171,7 @@ The minimum readable size is always 10px. Do not use another number.
 After steps 4–5 (the render said `Not enough space`, then `… text is now 7.9px` → F = 14 × 11 / 7.9 = 19.5 → 20):
 
 ```xml
-<DvProcess look="rich" grow="1" fit="shrink" style="height:0; font-size:20">
+<DvProcess look="rich" grow="1" fit="scale-down" style="height:0; font-size:20">
   <DvVessel name="T1" level="40" label="T-101"/>
   <DvPump name="P1" running="true" label="P-101"/>
   <DvLine from="T1.bottom" to="P1.in"/>
@@ -1057,8 +1057,8 @@ Process diagram problems are reported through `System.Diagnostics.Trace`. Keep a
 |---|---|---|---|
 | `'A.out'→'B.in': crosses other piping N time(s)` | Warning | Crossings (drawn with jumps) | Change the order of equipment in the same column with `row`. Arrange declaration order in flow order |
 | `'A.out'→'B.in': no free path, so it overlaps other piping` | Warning | Blocked, drawn overlapping | Enlarge the area, adjust `row`·`rank`, move attached boxes |
-| `Not enough space: needs W×H, area is W×H` | Warning | Overflows even with minimum spacing (the natural-size shape is kept and overflows) | Follow the sizing procedure in chapter 4 (step 4: `fit="shrink"`) |
-| `Shrunk to N% to fit (needs W×H, area is W×H); the smallest diagram text is now X px …` | Warning | `fit="shrink"`: the diagram still overflowed and was drawn smaller as a whole (chapter 4) | Sizing procedure in chapter 4, step 5 (X ≥ 10 is fine; otherwise `font-size` × 11 / X, or split the screen). X counts attached boxes too |
+| `Not enough space: needs W×H, area is W×H` | Warning | Overflows even with minimum spacing (the natural-size shape is kept and overflows) | Follow the sizing procedure in chapter 4 (step 4: `fit="scale-down"`) |
+| `Shrunk to N% to fit (needs W×H, area is W×H); the smallest diagram text is now X px …` | Warning | `fit="scale-down"`: the diagram still overflowed and was drawn smaller as a whole (chapter 4) | Sizing procedure in chapter 4, step 5 (X ≥ 10 is fine; otherwise `font-size` × 11 / X, or split the screen). X counts attached boxes too |
 | `'X' value text overlaps 'Y'` | Warning | An instrument `value` covers other equipment, a name label, another instrument or a pipe (the value is not part of the layout, 7.3) | Shorten the value, move the bubble or the pipe, or show the number on another bubble or with `DvAttach` |
 | `The piping no longer fits the diagram's natural-size shape in this area, so it is laid out again …` | Warning | Automatic placement: the area is too small for the natural-size drawing to shrink into, so alignment and spacing were chosen again and the drawing looks different (chapter 4) | Enlarge the area if the shape must stay the same |
 | `DvLine '…': no equipment named 'X'` | Error | Name typo, or equipment hidden with `visible` | Check the name |
@@ -1225,7 +1225,7 @@ The recirculation pipe branching from `P1.out` routes back into the tank's side.
 - Do not draw signal lines as `DvLine` (pipes) (they interfere with flow and layout). Use `DvSignal`.
 - Do not invent attributes that set an instrument's face (`side`). In automatic placement the position is automatic, next to the `on` equipment; only `placement="fixed"` takes `x`·`y` on instruments (chapter 20.5).
 - Do not try to set pipe color via `style` or color values. Medium colors exist only as the 6 names of `medium`.
-- In automatic placement, do not add `fit="shrink"` before a render has shown `Not enough space`. In coordinate placement, do not use `base-size` without `fit="contain"` to show a drawing. Do not judge a shrunk diagram from the picture — use the `X px` in its warning.
+- In automatic placement, do not add `fit="scale-down"` before a render has shown `Not enough space`. In coordinate placement, do not use `base-size` without `fit="contain"` to show a drawing. Do not judge a shrunk diagram from the picture — use the `X px` in its warning.
 - Do not put `font-size` on a parent box for the diagram, and do not enlarge attached boxes one by one — `DvProcess`'s own `font-size` scales every diagram text, attached boxes included.
 - Do not invent the not-yet-available features in chapter 18 as attributes.
 
@@ -1239,7 +1239,7 @@ Planned for later stages. Do not use them now (they are silently ignored or draw
 |---|---|
 | On hold | `exit` hint (specifying the outgoing direction) — when a real screen needs it |
 
-Other items not planned: specifying bend points in automatic placement, zooming in or enlarging an automatically placed diagram (`fit="shrink"` only shrinks an overflowing one; a coordinate-placed drawing scales both ways with `fit="contain"`, 20.3), pipe click events, dragging equipment.
+Other items not planned: specifying bend points in automatic placement, zooming in or enlarging an automatically placed diagram (`fit="scale-down"` only shrinks an overflowing one; a coordinate-placed drawing scales both ways with `fit="contain"`, 20.3), pipe click events, dragging equipment.
 
 ---
 
@@ -1264,7 +1264,7 @@ This is due to the staircase layout, where equipment after a line leaving the ta
 Lines on the same side and in the same direction are already merged into one nozzle. What appears separate is an incoming and an outgoing line, or different left/right sides (`side`).
 
 **The screen is small and it overflows.**
-Follow the sizing procedure in chapter 4: `fit="shrink"`, then `font-size` if the reported text size is below 10px, and split the screen if that is not enough. (Before `fit` acts, the library already tries moving equipment closer and other alignments by itself.)
+Follow the sizing procedure in chapter 4: `fit="scale-down"`, then `font-size` if the reported text size is below 10px, and split the screen if that is not enough. (Before `fit` acts, the library already tries moving equipment closer and other alignments by itself.)
 
 **I have several identical units of plant (3 blenders).**
 Define a unit component once and use it like `<Blender name="BL1" U="{BL1}"/>` (8.4). To stand them side by side, outer `direction="tb"` + unit outlet port `side="bottom"`.
@@ -1342,7 +1342,7 @@ So a valve on a pipe at y=300 has `y="292"`. `rotate` turns this with the symbol
 
 ### 20.3 Size and `base-size`
 
-- **Without `base-size`**: coordinates are used as they are (scale 1). The diagram's natural size is from the origin to the far edge of the content, plus a 12px margin. If the area is smaller, it overflows and a "Not enough space" warning is left — or, with `fit="shrink"`, the whole drawing is scaled down to the area (chapter 4).
+- **Without `base-size`**: coordinates are used as they are (scale 1). The diagram's natural size is from the origin to the far edge of the content, plus a 12px margin. If the area is smaller, it overflows and a "Not enough space" warning is left — or, with `fit="scale-down"`, the whole drawing is scaled down to the area (chapter 4).
 - **With `base-size="W H"` and `fit="contain"` (use this to show a drawing)**: the drawing is laid out exactly at the coordinates, as a W×H picture, and that picture is scaled **as a whole** — equipment, text, lines, instruments and attached boxes — to the area: `s = min(area width / W, area height / H)`, smaller or larger, and centered on the axis with room left over (a wide area leaves equal margins left and right). Equipment positions and pipe routes are the same at every size, like an image. When it is drawn smaller, the `Shrunk to N% … X px` warning reports the text size (sizing procedure, chapter 4, step 5); larger needs no warning. Without `base-size`, the content extent (origin to the far edge of the content, plus the 12px margin) is the picture. Equipment placed beyond `base-size` is drawn outside the picture and warned (`Equipment reaches … outside base-size`).
 - **With `base-size="W H"` only (no `fit`)**: the natural size is W×H. In an area of another size, the scale `s = min(area width / W, area height / H)` is applied **to the coordinates only**, and the W·s × H·s box is centered in the area. A larger area spreads the equipment apart; a smaller one brings it closer. Equipment, pipes and text keep their size, so in a much smaller area equipment can touch.
 - **Pipe routes are decided once, at base-size.** At other sizes they are not routed again but stretched with the equipment: bends keep their number, order and side, and only their lengths change, so the drawing keeps its shape as the window changes. Equipment keeps its size while positions spread or close up, so that shape can stop fitting (a segment would fold back, a pipe would run into equipment, or pipes would touch): in a much smaller area, and also in a dense drawing at about 1.4 times base-size or more. The pipes are then routed again for that size — they may look different — and the Trace warning "The piping no longer fits its base-size shape …" is left. `fit="contain"` never does this.
@@ -1432,7 +1432,7 @@ Decide this before writing any equipment.
 
 | The screen is … | Use | Size attributes |
 |---|---|---|
-| A new screen, flow mostly goes one way (feed → equipment → product), up to about 15 pieces of equipment, at most one or two lines back to earlier equipment | Automatic placement (default) | `grow="1" style="height:0"`; add `fit="shrink"` only when a render shows `Not enough space` (sizing procedure, chapter 4) |
+| A new screen, flow mostly goes one way (feed → equipment → product), up to about 15 pieces of equipment, at most one or two lines back to earlier equipment | Automatic placement (default) | `grow="1" style="height:0"`; add `fit="scale-down"` only when a render shows `Not enough space` (sizing procedure, chapter 4) |
 | Many lines go **back to earlier equipment** (reflux, reboiler loops, recirculation, heat recovery from product to feed), or about 25 pieces of equipment or more | Coordinate placement `placement="fixed"` (chapter 20) | `base-size="W H"` + `fit="contain"` + `grow="1" style="height:0"` |
 | The user gave a drawing the screen must look like | Coordinate placement `placement="fixed"` | `base-size` = the size of the drawing image (or the size you took the coordinates at) + `fit="contain"` |
 
@@ -1443,8 +1443,8 @@ Why: automatic placement puts equipment in columns along the flow. Every line th
 | `fit` | Placement | Area smaller than the drawing | Area larger | Text |
 |---|---|---|---|---|
 | `none` (default) | both | Automatic: spacing shrinks down to 0.5×, then the diagram overflows (`Not enough space`). Fixed: overflows | Automatic: equipment spreads out. Fixed: the drawing stays at the top left (with `base-size` alone: positions spread, 20.3) | keeps its size |
-| `shrink` | both (meant for automatic) | First everything `none` does; if it still overflows, the whole drawing is scaled down to fit, centered | same as `none` | shrinks with the drawing |
-| `contain` | `fixed` only (automatic: acts as `shrink`, with a warning) | The `base-size` picture is scaled down as a whole, centered | The picture is scaled **up** as a whole, centered | follows the drawing both ways |
+| `scale-down` | both (meant for automatic) | First everything `none` does; if it still overflows, the whole drawing is scaled down to fit, centered | same as `none` | shrinks with the drawing |
+| `contain` | `fixed` only (automatic: acts as `scale-down`, with a warning) | The `base-size` picture is scaled down as a whole, centered | The picture is scaled **up** as a whole, centered | follows the drawing both ways |
 
 - The scaled drawing behaves like the real one: presses, drags (knobs, sliders, custom widgets in `DvAttach`), editing and flow animation all follow the drawn positions.
 - With `contain`, equipment positions and pipe routes are identical at every size — only the scale changes, like an image. A wide area leaves equal margins left and right; a tall one, above and below.

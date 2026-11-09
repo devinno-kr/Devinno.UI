@@ -6,7 +6,7 @@ using Devinno.UI.Styling;
 using SkiaSharp;
 using Xunit;
 
-// 공정도 글자 크기(font-size)·값 글자(배치에 영향 없음)·통째 축소(fit="shrink")
+// 공정도 글자 크기(font-size)·값 글자(배치에 영향 없음)·통째 축소(fit="scale-down")
 public class ProcessFitTests
 {
     private static ProcessNode Node(ProcessDiagram d, string name) => d.Nodes.Single(n => n.Name == name);
@@ -85,7 +85,7 @@ public class ProcessFitTests
     [Fact]
     public void Shrink_Overflowing_ScalesWholeDiagramIntoArea()
     {
-        var (s, d) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"shrink\"", 420, 220);
+        var (s, d) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"scale-down\"", 420, 220);
         var box = ProcessBox(s);
         Assert.True(box.ContentScale < 0.8f, $"배율 {box.ContentScale}");
         var drawn = new ScreenMap(box.ContentScale, box.ContentOffset).Map(d.Drawn);
@@ -101,17 +101,17 @@ public class ProcessFitTests
     {
         // 축소는 마지막 단계 — 장비 배치(내용 좌표)는 fit 이 없을 때와 같다
         var (_, plain) = ProcessTests.Start(ProcessInstrumentTests.Loop, "", 420, 220);
-        var (_, shrunk) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"shrink\"", 420, 220);
+        var (_, shrunk) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"scale-down\"", 420, 220);
         foreach (var n in plain.Nodes)
             Assert.Equal((n.G.X, n.G.Y), (Node(shrunk, n.Name).G.X, Node(shrunk, n.Name).G.Y));
         Assert.StartsWith("Not enough space", plain.Shortage);
-        Assert.Contains("fit=\"shrink\"", plain.Shortage);
+        Assert.Contains("fit=\"scale-down\"", plain.Shortage);
     }
 
     [Fact]
     public void Shrink_FitsAlready_DoesNothing()
     {
-        var (s, d) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"shrink\"");
+        var (s, d) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"scale-down\"");
         Assert.Equal(1f, ProcessBox(s).ContentScale);
         Assert.False(ProcessBox(s).HasContentTransform);
         Assert.Null(d.Shortage);
@@ -120,7 +120,7 @@ public class ProcessFitTests
     [Fact]
     public void Shrink_HitTest_FindsEquipmentWhereItIsDrawn()
     {
-        var (s, d) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"shrink\"", 420, 220);
+        var (s, d) = ProcessTests.Start(ProcessInstrumentTests.Loop, "fit=\"scale-down\"", 420, 220);
         var box = ProcessBox(s);
         var map = new ScreenMap(box.ContentScale, box.ContentOffset);
         foreach (var name in new[] { "P1", "V1", "T2" })
@@ -145,7 +145,7 @@ public class ProcessFitTests
             <DvPump name="P1" label="P-1" x="700" y="60"/>
             <DvLine from="IN" to="P1.in"/>
             """;
-        var (s, d) = ProcessTests.Start(markup, "placement=\"fixed\" fit=\"shrink\"", 500, 300);
+        var (s, d) = ProcessTests.Start(markup, "placement=\"fixed\" fit=\"scale-down\"", 500, 300);
         var box = ProcessBox(s);
         Assert.True(box.ContentScale < 1f);
         var drawn = new ScreenMap(box.ContentScale, box.ContentOffset).Map(d.Drawn);
@@ -159,7 +159,7 @@ public class ProcessFitTests
     {
         var vm = new ProcessTests.Vm();
         var (s, d) = ProcessTests.Start(ProcessInstrumentTests.Loop.Replace("<DvPump name=\"P2\" label=\"P-102\"/>", "<DvPump name=\"P2\" label=\"P-102\" onclick=\"Hit\"/>"),
-            "fit=\"shrink\"", 420, 220, vm: vm);
+            "fit=\"scale-down\"", 420, 220, vm: vm);
         var box = ProcessBox(s);
         var at = new ScreenMap(box.ContentScale, box.ContentOffset).Map(new SKPoint(Node(d, "P2").Box.Rect.MidX, Node(d, "P2").Box.Rect.MidY));
         s.PointerDown(at);
@@ -174,7 +174,7 @@ public class ProcessFitTests
         var vm = new ProcessTests.Vm { Level = 0 };
         var body = ProcessInstrumentTests.Loop.Replace("<DvVessel name=\"T1\" level=\"{Level}\" label=\"T-101\"/>",
             "<DvVessel name=\"T1\" level=\"{Level}\" label=\"T-101\"><DvAttach side=\"left\"><DvSlider value=\"{Bind Level}\" style=\"width:160\"/></DvAttach></DvVessel>");
-        var (s, _) = ProcessTests.Start(body, "fit=\"shrink\"", 420, 220, vm: vm);
+        var (s, _) = ProcessTests.Start(body, "fit=\"scale-down\"", 420, 220, vm: vm);
         var box = ProcessBox(s);
         Assert.True(box.ContentScale < 0.8f);
         var map = new ScreenMap(box.ContentScale, box.ContentOffset);
@@ -230,7 +230,7 @@ public class ProcessFitTests
     public void FontSize_And_Shrink_AttachedButtonStillClicks()
     {
         var vm = new ProcessTests.Vm();
-        var (s, d) = ProcessTests.Start(ProcessTests.Blender, "direction=\"tb\" fit=\"shrink\" style=\"font-size:21\"", 300, 380, vm: vm);
+        var (s, d) = ProcessTests.Start(ProcessTests.Blender, "direction=\"tb\" fit=\"scale-down\" style=\"font-size:21\"", 300, 380, vm: vm);
         var process = ProcessBox(s);
         Assert.True(process.ContentScale < 1f);
         var attach = Node(d, "BL").Attach.Single(x => x.Side == PortSide.Left).Box;
@@ -250,7 +250,7 @@ public class ProcessFitTests
         var body = ProcessTests.Blender.Replace("<DvButton variant=\"secondary\" text=\"Reset\" onclick=\"Hit\"/>",
             "<DvLabel text=\"tiny\" style=\"font-size:8\"/>");
         Assert.NotEqual(ProcessTests.Blender, body);
-        var (s, d) = ProcessTests.Start(body, "direction=\"tb\" fit=\"shrink\"", 200, 260);
+        var (s, d) = ProcessTests.Start(body, "direction=\"tb\" fit=\"scale-down\"", 200, 260);
         var scale = ProcessBox(s).ContentScale;
         Assert.True(scale < 1f);
         Assert.Contains($"text is now {8 * scale:0.#}px", d.Shortage);

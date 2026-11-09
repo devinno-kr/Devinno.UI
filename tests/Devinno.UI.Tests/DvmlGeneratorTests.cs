@@ -864,6 +864,16 @@ public class DvmlGeneratorTests
             """));
     }
 
+    // fit="shrink" → scale-down: 옛 값은 DVML020 이고 값 목록이 새 이름을 보여 준다
+    [Fact]
+    public void Fit_Shrink_IsInvalid_AndListsScaleDown()
+    {
+        var d = Assert.Single(Run("public partial class P { }", ("P.dvml", "<DvProcess fit=\"shrink\"/>")).Ids("DVML020"));
+        Assert.Contains("fit='shrink'", d.GetMessage(Invariant));
+        Assert.Contains("scale-down", d.GetMessage(Invariant));
+        Assert.Empty(Run("public partial class P { }", ("P.dvml", "<DvProcess fit=\"scale-down\"/>")).Ids("DVML020"));
+    }
+
     // 3단계 R10 — 상자가 아닌 하위 요소는 공통 속성을 받지 않는다(id 와 자기 정의에 적은 것만)
     [Fact]
     public void Attribute_CommonOnChildTags_Warns()
@@ -1075,7 +1085,7 @@ public class DvmlGeneratorTests
               <DvLamp color="#00ff0080" state=""/>
               <DvTrend><DvTrendChannel color="var(--tone-info)"/></DvTrend>
               <DvDataGrid header-color="transparent" row-color="#ffffff"><DvColumn field="A" align="right" cell-type="Check" sort="desc"/><DvSummaryRow fn="sum"/></DvDataGrid>
-              <DvProcess fit="shrink"><DvPump name="P" flip="vh" rotate="90"><DvAttach side="left"><DvLabel text="a"/></DvAttach></DvPump><DvLine from="P.in" to="P.out" arrow="end"/></DvProcess>
+              <DvProcess fit="scale-down"><DvPump name="P" flip="vh" rotate="90"><DvAttach side="left"><DvLabel text="a"/></DvAttach></DvPump><DvLine from="P.in" to="P.out" arrow="end"/></DvProcess>
             </DvStack>
             """));
     }

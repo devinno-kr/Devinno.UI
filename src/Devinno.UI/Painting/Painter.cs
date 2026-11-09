@@ -675,7 +675,7 @@ public sealed partial class Painter
         return new SKRect(dx, dy, dx + dw, dy + dh);
     }
 
-    // 내용 배율(공정도 fit="shrink") — 자식·배관을 그 배율로. 없으면 -1(아무것도 안 함), 돌려준 값을 EndContent 에
+    // 내용 배율(공정도 fit="scale-down") — 자식·배관을 그 배율로. 없으면 -1(아무것도 안 함), 돌려준 값을 EndContent 에
     private static int BeginContent(SKCanvas canvas, LayoutBox box)
     {
         if (!box.HasContentTransform)
