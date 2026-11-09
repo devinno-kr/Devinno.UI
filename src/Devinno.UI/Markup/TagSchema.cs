@@ -276,8 +276,7 @@ internal static class TagSchema
         ["DvLamp"] =
         [
             new("on", AttrKind.Bool, "false", Note: BoolRule),
-            new("blink", AttrKind.Bool, "false", Note: BoolRule + "; read only when blink-when is absent"),
-            new("blink-when", AttrKind.Bool, Note: "another name for blink that wins over it; not in the doc table"),
+            new("blink", AttrKind.Bool, "false", Note: BoolRule + " (stage 4 N11: the alias blink-when was removed)"),
             new("blink-interval", AttrKind.Number, "500", Note: "ms, rounded; <= 0 = 500; " + NumberRule),
             new("color", AttrKind.Color, Note: ColorRule + " (the state or text color); wins over state"),
             new("state", AttrKind.Text, Note: "state-{state} token color; valid when the theme has the token state-{state} (built-in: run stop fault warn manual off); " + ThemeWordRule + " (no state color)"),

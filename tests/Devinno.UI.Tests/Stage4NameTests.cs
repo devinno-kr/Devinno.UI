@@ -110,4 +110,15 @@ public class Stage4NameTests
         Assert.False(Col("cell-disabled").IsButtonDisabled(new GridCellTypeTests.Row()));
         Assert.False(Col("enabled").IsButtonDisabled(row));
     }
+
+    // N11 — DvLamp blink-when 삭제(별칭이었다). blink 하나만 읽는다
+    [Fact]
+    public void Lamp_Blink_Only_BlinkWhenIsNotRead()
+    {
+        static bool Blink(string attrs) => Flatten(Surface($"<DvLamp on=\"true\" {attrs}/>").Root!).Single(b => b.Node.Tag == "DvLamp").LampBlink;
+
+        Assert.True(Blink("blink=\"true\""));
+        Assert.False(Blink("blink-when=\"true\""));
+        Assert.True(Blink("blink=\"true\" blink-when=\"false\"")); // 옛: blink-when 이 이겼다
+    }
 }

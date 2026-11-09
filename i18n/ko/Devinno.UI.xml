@@ -3333,9 +3333,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <summary><c>value</c> 없는 <c>DvRadio</c> 의 묶음 열쇠 — <c>group</c> 이름 또는(핸들만 있으면) 요소 노드. 없으면 null(누를 수 없음).</summary>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.LampOn" en-hash="6cc412feb19ba606">
             <summary><c>DvLamp</c> 의 <c>on</c> 속성 값(켜짐 여부). 빌드 때 채워집니다.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.LampBlink" en-hash="6f7eba91a24276e2">
-            <summary><c>DvLamp</c> 점멸 여부(<c>blink-when</c>, 없으면 <c>blink</c> 속성). 켜져 있을 때만 의미가 있으며, 그리기 시각으로 위상을 정합니다.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.BlinkIntervalMs" en-hash="617dc9f49be5a62c">
+        </member><member name="P:Devinno.UI.Layout.LayoutBox.LampBlink" en-hash="1d59dea95d9d1aae"><summary><c>DvLamp</c> 점멸 여부(<c>blink</c> 속성). 켜져 있을 때만 의미가 있으며, 그리기 시각으로 위상을 정합니다.</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.BlinkIntervalMs" en-hash="617dc9f49be5a62c">
             <summary><c>DvLamp</c> 점멸 주기(ms, <c>blink-interval</c> 속성, 기본값 500). 0 이하·숫자 아님은 무시하고 기본값을 씁니다.</summary>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.LampColor" en-hash="cd10a351e1f52a1f">
             <summary><c>DvLamp</c> 의 <c>color</c> 속성으로 지정한 켜짐 색(<c>#색</c> 또는 <c>token(이름)</c> 을 테마로 해석). 지정하지 않았거나 해석할 수 없으면 <see langword="null" /> 이고, <see cref="P:Devinno.UI.Layout.LayoutBox.LampState" /> 또는 글자색을 씁니다.</summary>

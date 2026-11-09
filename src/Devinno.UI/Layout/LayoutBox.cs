@@ -204,7 +204,7 @@ public sealed class LayoutBox
     internal object? RadioGroup { get; set; }
     /// <summary>The <c>on</c> attribute value of a <c>DvLamp</c> (whether it is lit). Filled at build time.</summary>
     public bool LampOn { get; set; }
-    /// <summary>Whether a <c>DvLamp</c> blinks (<c>blink-when</c>, or the <c>blink</c> attribute if absent). Meaningful only while lit; the phase is set by the paint time.</summary>
+    /// <summary>Whether a <c>DvLamp</c> blinks (the <c>blink</c> attribute). Meaningful only while lit; the phase is set by the paint time.</summary>
     public bool LampBlink { get; set; }
     /// <summary><c>DvLamp</c> blink period (ms, <c>blink-interval</c> attribute, default 500). Values of 0 or less and non-numbers are ignored and the default is used.</summary>
     public int BlinkIntervalMs { get; set; } = 500;

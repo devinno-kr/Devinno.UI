@@ -768,7 +768,7 @@ A component cannot be registered under the name of a built-in tag (`DvGauge`, `D
 **DvIcon** — `<DvIcon icon="fa-triangle-exclamation" style="font-size:32; color:token(tone-warning)"/>`. Size = `font-size` (default 24), color = `color` (default `token(text)`). Icon names are in chapter 18.
 
 **DvLamp**
-- On when `on="{Running}"` is true. With `blink="true"`, it blinks while on (every `blink-interval` ms; all blinking on screen shares the same phase). `blink-when` is another name for `blink`.
+- On when `on="{Running}"` is true. With `blink="true"`, it blinks while on (every `blink-interval` ms; all blinking on screen shares the same phase).
 - On-color priority: `color` (`#RRGGBB` or `token(이름)`, bindable) > `state` (`state-{값}` token: `run` `stop` `fault` `warn` `manual` `off` in the built-in themes, or any `state-*` token of your theme) > `color` in `style`. An unreadable `color` or a `state` the theme has no `state-*` token for is ignored with a Trace warning (chapter 2). The off color is the `lamp-off` token (dark gray, light gray in `Graphite`). `blink-interval` is also bound.
 - **Multi-state lamp (equipment state number → color / text / blinking):** there is no separate widget; the VM converts the state into a `state` key, text, and blinking and binds them (state rules are app data that differ per equipment). Lamp + name + status chip is drawn by `DvStatusItem`. For a color not in the theme, use `DvLamp color="{PumpColor}"`.
 ```xml

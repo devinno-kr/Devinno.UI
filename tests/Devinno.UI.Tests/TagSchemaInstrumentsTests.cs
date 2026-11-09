@@ -5,7 +5,7 @@ using Devinno.UI.Trends;
 using Xunit;
 
 // 2.4 계기·차트·알람 — 정의된 속성을 모두 채운 마크업을 빌드하고, 리더로 읽은 이름과 정의를 맞춘다.
-// 한 태그의 속성이 갈래(예: DvLamp blink-when/blink)에 따라 나뉘어 읽히면 같은 태그 요소를 여럿 둔다(읽은 이름은 합친다).
+// 한 태그의 속성이 갈래에 따라 나뉘어 읽히면 같은 태그 요소를 여럿 둔다(읽은 이름은 합친다).
 public class TagSchemaInstrumentsTests
 {
     public sealed class Bar
@@ -38,7 +38,7 @@ public class TagSchemaInstrumentsTests
         { "DvRing", $"<DvRing {Dial}/>" },
         {
             "DvLamp",
-            """<DvLamp on="{On}" blink-when="{On}" blink-interval="300" color="#ff0000" state="ok"/><DvLamp blink="true"/>"""
+            """<DvLamp on="{On}" blink="{On}" blink-interval="300" color="#ff0000" state="ok"/>"""
         },
         { "DvTank", """<DvTank value="40" min="0" max="100" unit="L" format="0" alarm-zones="0:50:#16a34a" show-zone-marks="false"/>""" },
         { "DvSparkline", $$"""<DvSparkline values="{Values}" {{ChartCommon}}/>""" },

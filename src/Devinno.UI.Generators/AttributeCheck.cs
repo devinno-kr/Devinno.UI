@@ -80,7 +80,7 @@ internal static class AttributeCheck
         // 계기·차트·알람
         ["DvGauge"] = ["value", "min", "max", "alarm-zones", "ticks", "minor-ticks", "show-tick-labels", "format", "unit", "show-value"],
         ["DvRing"] = ["value", "min", "max", "alarm-zones", "tone", "unit", "label", "sweep", "thickness", "format", "show-value"],
-        ["DvLamp"] = ["on", "blink", "blink-when", "blink-interval", "color", "state"],
+        ["DvLamp"] = ["on", "blink", "blink-interval", "color", "state"],
         ["DvTank"] = ["value", "min", "max", "alarm-zones", "unit", "format", "show-zone-marks"],
         ["DvSparkline"] = ["values", "tone", "y-min", "y-max", "area"],
         ["DvBarChart"] = ["items", "item-value", "item-text", "tone", "y-min", "y-max", "show-value", "format"],
@@ -150,7 +150,7 @@ internal static class AttributeCheck
         ["DvProgress"] = ["show-value"],
         ["DvGauge"] = ["show-tick-labels", "show-value"],
         ["DvRing"] = ["show-value"],
-        ["DvLamp"] = ["on", "blink", "blink-when"],
+        ["DvLamp"] = ["on", "blink"],
         ["DvTank"] = ["show-zone-marks"],
         ["DvSparkline"] = ["area"],
         ["DvBarChart"] = ["show-value"],
@@ -421,6 +421,7 @@ internal static class AttributeCheck
         [("DvSummaryRow", "title")] = "label",
         [("DvSignal", "width")] = "thickness",
         [("DvColumn", "enabled")] = "cell-disabled",
+        [("DvLamp", "blink-when")] = "blink",
     };
 
     // enabled → cell-disabled 는 뜻도 뒤집혔다 — 그것까지 알린다

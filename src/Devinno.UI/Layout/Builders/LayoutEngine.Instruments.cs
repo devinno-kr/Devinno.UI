@@ -37,7 +37,7 @@ public sealed partial class LayoutEngine
     private void BuildLamp(LayoutBox box, AttrReader r)
     {
         box.LampOn = AttrRules.Bool(r, "on");
-        box.LampBlink = AttrRules.Bool(r, r.Has("blink-when") ? "blink-when" : "blink");
+        box.LampBlink = AttrRules.Bool(r, "blink");
         if (AttrRules.NumberOrNull(r, "blink-interval", "using 500") is > 0 and var bint)
             box.BlinkIntervalMs = (int)Math.Round(bint);
         if (Color(r, "color", "using the state or text color") is { } lampColor)
