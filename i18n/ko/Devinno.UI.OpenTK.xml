@@ -3,7 +3,7 @@
     <assembly>
         <name>Devinno.UI.OpenTK</name>
     </assembly>
-    <members><member name="T:Devinno.UI.OpenTK.ViewWindow" en-hash="7d4a627917e289dd"><summary>
+    <members><member name="T:Devinno.UI.OpenTK.ViewWindow" en-hash="1569cbc6ca1010b4"><summary>
 Devinno 앱(<see cref="T:Devinno.UI.App.DvApp" />) 하나를 OpenTK(GLFW) 창으로 띄우는 호스트입니다. 앱을 넘겨 만들고 <c>Run()</c> 을 부르면 창이 열립니다.
 패널 PC·터치 HMI 처럼 화면 전체를 Devinno 로 그리는 단독 앱에 씁니다.
 </summary>
@@ -23,7 +23,7 @@ Enter·Backspace·Esc·Tab·Shift+Tab 도 그대로 전달됩니다.</para>
 CPU 래스터는 비트맵을 프레임 사이에 남겨 두므로, 시간으로만 바뀌는 프레임(흐름 애니메이션·점멸)은 바뀐 영역만 다시 그리고 그 영역만 텍스처에 올립니다(<see cref="P:Devinno.UI.DvSurface.PartialRender" />). GPU 모드도 화면 밖 GPU 표면에 같은 방식으로 그린 뒤 매 프레임 창으로 통째 복사합니다.</para>
 <para><b>장비</b>: 창을 만들 때 정해져야 하는 것이라 생성자 인자로 고릅니다. <c>gles</c> 는 데스크톱 OpenGL 3.3 대신 OpenGL ES 3.0 을 씁니다(ARM 터치 패널 같은 임베디드 보드).
 <c>fullscreen</c> 은 현재 모니터에 테두리 없는 전체 화면 창을 엽니다(키오스크). <c>fit</c> 은 생성자 크기로 레이아웃한 화면을 비율을 유지한 채 창에 맞춥니다:
-1280×750 으로 만든 화면이 1024×600 패널에 통째로 보이고, 비율이 다르면 가운데에 놓고 여백은 테마 배경색(<c>--bg</c>)으로 채웁니다. 포인터 좌표도 같은 레이아웃 크기로 바꿔 넘깁니다.</para>
+1280×750 으로 만든 화면이 1024×600 패널에 통째로 보이고, 비율이 다르면 가운데에 놓고 여백은 테마 <c>background</c> 색(화면 바탕과 같은 색)으로 채웁니다. 포인터 좌표도 같은 레이아웃 크기로 바꿔 넘깁니다.</para>
 </remarks>
 <example>
 <code>
@@ -40,7 +40,7 @@ using var poll = new System.Threading.Timer(_ =&gt; app.Invalidate(), null, 1000
 
 window.Run();   // 창이 닫힐 때까지 돌아오지 않음
 </code>
-</example></member><member name="M:Devinno.UI.OpenTK.ViewWindow.#ctor(Devinno.UI.App.DvApp,System.Int32,System.Int32,System.String,System.Boolean,System.Boolean,System.Boolean)" en-hash="79383e6636e4cf2a"><summary>앱(<see cref="T:Devinno.UI.App.DvApp" />) 하나를 띄우는 창을 만듭니다. 창은 <c>Run()</c> 을 불러야 보입니다.</summary>
+</example></member><member name="M:Devinno.UI.OpenTK.ViewWindow.#ctor(Devinno.UI.App.DvApp,System.Int32,System.Int32,System.String,System.Boolean,System.Boolean,System.Boolean)" en-hash="3be8d9dc0c3b02fb"><summary>앱(<see cref="T:Devinno.UI.App.DvApp" />) 하나를 띄우는 창을 만듭니다. 창은 <c>Run()</c> 을 불러야 보입니다.</summary>
 <remarks>앱은 한 번에 창 하나에만 붙습니다 — 이미 다른 창·컨트롤에 붙어 있으면 예외입니다. 창이 닫히면(<c>OnUnload</c>) 앱이 떨어져 다른 어댑터에 다시 붙을 수 있습니다.
 테마·다국어·레지스트리는 <see cref="P:Devinno.UI.App.DvApp.Theme" />·<see cref="P:Devinno.UI.App.DvApp.Strings" />·<see cref="P:Devinno.UI.App.DvApp.Registry" /> 로 지정합니다.</remarks>
 <param name="app">보여 줄 앱.</param>
@@ -49,7 +49,7 @@ window.Run();   // 창이 닫힐 때까지 돌아오지 않음
 <param name="title">창 제목.</param>
 <param name="gles"><see langword="true" /> 면 데스크톱 OpenGL 3.3 대신 OpenGL ES 3.0 컨텍스트를 만듭니다(linux-arm64 터치 패널처럼 GLES 만 있는 보드용). CPU 래스터와 <see cref="P:Devinno.UI.OpenTK.ViewWindow.Gpu" /> 모드 모두에 적용됩니다.</param>
 <param name="fullscreen"><see langword="true" /> 면 현재 모니터를 채우는 테두리 없는 창을 엽니다(키오스크). 창 크기는 모니터 해상도이므로 <paramref name="width" />·<paramref name="height" /> 는 <paramref name="fit" /> 을 켰을 때 레이아웃 크기로만 쓰입니다.</param>
-<param name="fit"><see langword="true" /> 면 화면을 늘 <paramref name="width" />×<paramref name="height" /> 로 레이아웃하고 비율을 유지한 채 창에 맞춥니다(비율이 다르면 가운데에 놓고 여백은 테마 <c>--bg</c> 색). 포인터 좌표도 그 크기로 바꿔 넘기므로, 페이지는 창이 딱 그 크기인 것처럼 동작합니다.</param>
+<param name="fit"><see langword="true" /> 면 화면을 늘 <paramref name="width" />×<paramref name="height" /> 로 레이아웃하고 비율을 유지한 채 창에 맞춥니다(비율이 다르면 가운데에 놓고 여백은 테마 <c>background</c> 색). 포인터 좌표도 그 크기로 바꿔 넘기므로, 페이지는 창이 딱 그 크기인 것처럼 동작합니다.</param>
 <exception cref="T:System.ArgumentNullException"><paramref name="app" /> 이 <see langword="null" /> 일 때.</exception>
 <exception cref="T:System.InvalidOperationException"><paramref name="app" /> 이 이미 다른 창·컨트롤에 붙어 있을 때.</exception>
 <example>

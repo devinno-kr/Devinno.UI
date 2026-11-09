@@ -30,7 +30,7 @@ namespace Devinno.UI.OpenTK;
 /// CPU raster keeps the bitmap between frames, so frames that change only with time (flow animation, blinking) redraw only the changed region and upload only that region to the texture (<see cref="DvSurface.PartialRender"/>). GPU mode also draws the same way to an offscreen GPU surface, then copies it whole to the window every frame.</para>
 /// <para><b>Devices</b>: choose these with constructor arguments, because they must be fixed when the window is created. <c>gles</c> uses OpenGL ES 3.0 instead of desktop OpenGL 3.3 (embedded boards such as ARM touch panels).
 /// <c>fullscreen</c> opens a borderless full-screen window on the current monitor (kiosk). <c>fit</c> lays the screen out at the constructor size and scales it to the window, keeping the aspect ratio:
-/// a screen made for 1280×750 shows whole on a 1024×600 panel, and when the ratios differ it is centered with margins in the theme background color (<c>--bg</c>). Pointer coordinates are converted to the same layout size.</para>
+/// a screen made for 1280×750 shows whole on a 1024×600 panel, and when the ratios differ it is centered with margins in the theme <c>background</c> color (the same as the screen canvas). Pointer coordinates are converted to the same layout size.</para>
 /// </remarks>
 /// <example>
 /// <code>
@@ -87,7 +87,7 @@ public sealed class ViewWindow : GameWindow
     /// <param name="title">The window title.</param>
     /// <param name="gles">If <see langword="true"/>, creates an OpenGL ES 3.0 context instead of desktop OpenGL 3.3 (for boards that only have GLES, such as linux-arm64 touch panels). Applies to both CPU raster and <see cref="Gpu"/> mode.</param>
     /// <param name="fullscreen">If <see langword="true"/>, opens a borderless window that fills the current monitor (kiosk). The window size is the monitor resolution, so <paramref name="width"/> and <paramref name="height"/> only matter as the layout size when <paramref name="fit"/> is on.</param>
-    /// <param name="fit">If <see langword="true"/>, the screen is always laid out at <paramref name="width"/>×<paramref name="height"/> and scaled to the window keeping the aspect ratio (centered, with margins in the theme <c>--bg</c> color when the ratios differ). Pointer coordinates are converted to that size, so pages work as if the window were exactly that size.</param>
+    /// <param name="fit">If <see langword="true"/>, the screen is always laid out at <paramref name="width"/>×<paramref name="height"/> and scaled to the window keeping the aspect ratio (centered, with margins in the theme <c>background</c> color when the ratios differ). Pointer coordinates are converted to that size, so pages work as if the window were exactly that size.</param>
     /// <exception cref="ArgumentNullException">When <paramref name="app"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">When <paramref name="app"/> is already attached to another window or control.</exception>
     /// <example>
@@ -517,8 +517,8 @@ public sealed class ViewWindow : GameWindow
             canvas.ClipRect(SKRect.Create(0, 0, view.Width, view.Height));
     }
 
-    private SKColor MarginColor() =>
-        (_app.Theme ?? DvTheme.Default).TryGet("--bg", out var value) && SKColor.TryParse(value, out var color) ? color : SKColors.Black;
+    // 여백 = 화면 바탕과 같은 테마 background 토큰(캔버스·DvRenderer 와 같은 색)
+    private SKColor MarginColor() => ThemeResolver.Color(_app.Theme, "background");
 
     /// <summary>For testing — draws at this scale instead of the monitor scale (to check without a real high-DPI monitor). If null, the monitor scale is used.</summary>
     internal float? ScaleOverride { get; init; }
