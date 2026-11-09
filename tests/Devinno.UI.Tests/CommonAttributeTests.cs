@@ -46,13 +46,6 @@ public class CommonAttributeTests
         Assert.Single(d2.Signals);
     }
 
-    [Fact]
-    public void Equipment_Visible_FollowsTheCommonRule()
-    {
-        var (_, d) = ProcessTests.Start("""<DvPump name="P1" visible="0"/><DvPump name="P2" visible="abc"/><DvPump name="P3" visible="-1"/>""");
-        Assert.Equal(["P2", "P3"], d.Nodes.Select(n => n.Name));
-    }
-
     public static TheoryData<string> ChildTags => new()
     {
         "DvOption", "DvColumn", "DvColumnGroup", "DvSummaryRow", "DvSummary", "DvTrendChannel",

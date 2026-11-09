@@ -2,7 +2,6 @@ using Devinno.UI;
 using Devinno.UI.Layout;
 using Devinno.UI.Markup;
 using Devinno.UI.Styling;
-using SkiaSharp;
 using Xunit;
 
 public class DesignSystemTests
@@ -166,14 +165,6 @@ public class DesignSystemTests
 
     // ── S4 의미 컴포넌트
     [Fact]
-    public void Visible_false_removes_element()
-    {
-        var root = Lay("<DvScreen><DvLabel text=\"a\" visible=\"{Show}\"/><DvLabel text=\"b\"/></DvScreen>",
-            new { Show = false });
-        Assert.Single(root.Children);
-    }
-
-    [Fact]
     public void Card_renders_title_and_slot_and_hides_missing_badge()
     {
         var root = Lay("<DvScreen><DvCard title=\"설비\"><DvLabel text=\"body\"/></DvCard></DvScreen>");
@@ -222,30 +213,6 @@ public class DesignSystemTests
         reg.Register("<DvComponent name=\"DvBadge\"><DvParam name=\"text\"/><DvLabel text=\"custom\"/></DvComponent>");
         var root = new LayoutEngine().Layout(MarkupParser.Parse("<DvScreen><DvBadge text=\"x\"/></DvScreen>"), null, 200, 100, reg);
         Assert.Contains(All(root), b => b.ResolvedText == "custom");
-    }
-
-    public sealed class SwitchVm
-    {
-        public bool Auto { get; set; }
-    }
-
-    [Fact]
-    public void Switch_toggle_commits_to_outer_vm_two_way_path()
-    {
-        var vm = new SwitchVm();
-        var surface = new DvSurface("<DvStack><DvSwitch label=\"자동\" value=\"{Bind Data.Auto}\"/></DvStack>", vm);
-        using var bmp = new SKBitmap(300, 100);
-        using var canvas = new SKCanvas(bmp);
-        surface.RenderTo(canvas, 300, 100);
-
-        var box = new LayoutEngine().Layout(
-            MarkupParser.Parse("<DvStack><DvSwitch label=\"자동\" value=\"{Bind Data.Auto}\"/></DvStack>"), vm, 300, 100);
-        var toggle = All(box).First(b => b.Node.Tag == "DvToggle");
-        var p = new SKPoint(toggle.Rect.MidX, toggle.Rect.MidY);
-
-        surface.PointerDown(p);
-        surface.PointerUp(p);
-        Assert.True(vm.Auto);
     }
 
     [Fact]

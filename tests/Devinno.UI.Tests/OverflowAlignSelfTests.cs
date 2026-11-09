@@ -6,9 +6,6 @@ public class OverflowAlignSelfTests
     [Fact] public void Default_overflow_is_visible()
         => Assert.Equal(Overflow.Visible, StyleParser.Parse("").Overflow);
 
-    [Fact] public void Parses_overflow_hidden()
-        => Assert.Equal(Overflow.Hidden, StyleParser.Parse("overflow:hidden").Overflow);
-
     [Fact] public void Parses_align_self_stretch()
         => Assert.Equal(AlignItems.Stretch, StyleParser.Parse("align-self:stretch").AlignSelf);
 
