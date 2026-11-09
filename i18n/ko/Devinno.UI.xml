@@ -4506,18 +4506,21 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             </summary>
         </member><member name="P:Devinno.UI.Styling.ComputedStyle.FlexDirection" en-hash="726725247a1abf34">
             <summary>flex 주 축 방향. 스타일 키 <c>flex-direction</c>(<c>column</c> 이면 세로, 그 밖은 가로). 기본값 <see cref="F:Devinno.UI.Styling.FlexDirection.Row" />.</summary>
-        </member><member name="P:Devinno.UI.Styling.ComputedStyle.Justify" en-hash="7e8ce818777765c7">
+        </member><member name="P:Devinno.UI.Styling.ComputedStyle.Justify" en-hash="85033b01e41f4dea">
             <summary>
             주 축 정렬. 스타일 키 <c>justify-content</c>(<c>center</c>·<c>end</c>·<c>flex-end</c>·<c>space-between</c>, 그 밖은 시작). 기본값 <see cref="F:Devinno.UI.Styling.JustifyContent.Start" />.
+            grid 에서는 같은 키가 대신 각 자식을 칸 안에서 가로로 놓습니다(<c>start</c>·<c>center</c>·<c>end</c>, 그 밖은 칸 폭으로 늘림).
             </summary>
-        </member><member name="P:Devinno.UI.Styling.ComputedStyle.Align" en-hash="2c29aa08eb9b146e">
+        </member><member name="P:Devinno.UI.Styling.ComputedStyle.Align" en-hash="21b5811ddf643d01">
             <summary>
             교차 축 정렬(자식 전체). 스타일 키 <c>align-items</c>(<c>start</c>·<c>flex-start</c>·<c>center</c>·<c>end</c>·<c>flex-end</c>·<c>stretch</c>). 기본값 <see cref="F:Devinno.UI.Styling.AlignItems.Stretch" /> — CSS 와 같이, 교차 축 크기(width/height)를 주지 않은 자식을 늘립니다.
+            grid 에서는 각 자식을 칸 안에서 세로로 놓습니다: stretch 는 칸을 채우고, 나머지는 자식의 측정 높이를 유지합니다.
             </summary>
-        </member><member name="P:Devinno.UI.Styling.ComputedStyle.AlignSelf" en-hash="e68f8997b9c1b11d">
+        </member><member name="P:Devinno.UI.Styling.ComputedStyle.AlignSelf" en-hash="e8e7bdbb1194806f">
             <summary>
             이 요소만의 교차 축 정렬. 스타일 키 <c>align-self</c>(<c>start</c>·<c>flex-start</c>·<c>center</c>·<c>end</c>·<c>flex-end</c>·<c>stretch</c>).
             기본값 <see langword="null" /> = 부모의 <see cref="P:Devinno.UI.Styling.ComputedStyle.Align" /> 을 따름. 인식하지 못한 값도 <see langword="null" /> 입니다.
+            grid 자식의 값은 칸 안 세로 자리에 대한 grid 의 정렬을 덮어씁니다.
             </summary>
         </member><member name="P:Devinno.UI.Styling.ComputedStyle.Overflow" en-hash="f632b1b1e99cdf49">
             <summary>넘침 처리. 스타일 키 <c>overflow</c>(<c>hidden</c>·<c>scroll</c>, 그 밖은 보임). 기본값 <see cref="F:Devinno.UI.Styling.Overflow.Visible" />.</summary>

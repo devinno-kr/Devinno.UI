@@ -321,17 +321,23 @@ public sealed class ComputedStyle
 
     /// <summary>
     /// Main-axis alignment. Style key <c>justify-content</c> (<c>center</c>, <c>end</c>, <c>flex-end</c>, <c>space-between</c>; anything else is start). Default <see cref="JustifyContent.Start"/>.
+    /// In a grid the same key places each child horizontally in its cell instead (<c>start</c>, <c>center</c>, <c>end</c>; anything else stretches the child to the cell width).
     /// </summary>
     public JustifyContent Justify { get; set; } = JustifyContent.Start;
 
+    // grid 칸 안 가로 자리 — justify-content 를 grid 에서 읽은 값(start·center·end·stretch, 그 밖 = stretch). null = 미지정 = stretch
+    internal AlignItems? JustifyItems { get; set; }
+
     /// <summary>
     /// Cross-axis alignment (all children). Style key <c>align-items</c> (<c>start</c>, <c>flex-start</c>, <c>center</c>, <c>end</c>, <c>flex-end</c>, <c>stretch</c>). Default <see cref="AlignItems.Stretch"/> — as in CSS, stretches children that do not specify a cross-axis size (width/height).
+    /// In a grid it places each child vertically in its cell: stretch fills the cell, the others keep the child's measured height.
     /// </summary>
     public AlignItems Align { get; set; } = AlignItems.Stretch;
 
     /// <summary>
     /// Cross-axis alignment for this element only. Style key <c>align-self</c> (<c>start</c>, <c>flex-start</c>, <c>center</c>, <c>end</c>, <c>flex-end</c>, <c>stretch</c>).
     /// Default <see langword="null"/> = follows the parent's <see cref="Align"/>. Unrecognized values are also <see langword="null"/>.
+    /// A grid child's value overrides the grid's vertical placement in its cell.
     /// </summary>
     public AlignItems? AlignSelf { get; set; }
 

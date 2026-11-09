@@ -100,7 +100,7 @@ public sealed partial class MainPage : DvPage   // the VM of MainPage.dvml; the 
 | `flex-shrink` default | `0` — elements do not shrink even when overflowing; use `flex-shrink:1` or `flex:1`. An `overflow:scroll` box defaults to `1` if unspecified. [size](dvml-layout.md#size) | CSS default is `1` |
 | `DvStack` | Vertical flex, `align-items:stretch`, `gap` 12 — children fill the width. [layout sugar](dvml-layout.md#layout-sugar) | |
 | `DvRow` | Horizontal flex, `align-items:center`, `gap` 12 — children vertically centered. | |
-| `DvGrid` | Each child fills its cell; `align`/`justify` do nothing. Place cell content with `content-align` (label text) or a `DvRow` wrapper. [grid tracks](dvml-layout.md#grid-tracks) | CSS grid aligns items in the cell |
+| `DvGrid` | `align`/`justify` place each child in its cell; default `stretch` fills the cell, and `justify` takes `stretch` instead of `between`. [grid cells](dvml-layout.md#grid-cells) | CSS grid `justify-content` moves the tracks; here it places items like `justify-items` |
 | Root element | Always fills the window; the root's `width`/`height` are ignored. | |
 | Units | All numbers are px; `16`, `16px`, `16dp` are the same. No `%`, `em`, `rem`, `vw`, `auto` — the only exception is `%` in grid tracks and grid column widths. [lengths](dvml-language.md#value-length) | |
 | Unsupported length | `width:50%`, `width:auto`, `height:2em` become **0, not ignored** — the element disappears. Only `font-size` falls back to 14 when it cannot be parsed. | |
@@ -146,7 +146,7 @@ Knowing how mistakes show up finds the cause quickly when you look at the result
 
 | Symptom | Cause | Build | Fix |
 |---|---|---|---|
-| `align`/`justify` on a `DvGrid` does nothing; a label sits at the top of its cell; a toggle sits in the middle of a wide cell | Grid children fill their cell; the grid's `align`/`justify` and the child's own size are not used | — | Label text: `content-align="middle-left"`; other content: wrap it in a `DvRow` — [grid tracks](dvml-layout.md#grid-tracks) |
+| A label sits at the top of its grid cell; a toggle sits in the middle of a wide grid cell | `DvGrid` `align`/`justify` default to `stretch`: every child fills its cell | — | `align="center"` and `justify="start"` on the `DvGrid` (or `align-self` on one child) — [grid cells](dvml-layout.md#grid-cells) |
 | `grow="1"` has no effect | The parent is a non-flex `DvBox` | — | Parent `DvStack`/`DvRow` or `style="display:flex"`; the parent also needs spare space in that direction (height, for a vertical stack) |
 | A widget stretches to the parent's width | `align-items` default `stretch`, as in CSS | — | Parent `align-items:start`, child `align-self:start`, or a `width`. `DvRow` uses `align-items:center`, so no vertical stretch |
 | Spacing with `margin` does nothing | `margin` is not applied | — | Parent `gap` or `padding`, or an empty box `<DvBox style="height:12"/>` |

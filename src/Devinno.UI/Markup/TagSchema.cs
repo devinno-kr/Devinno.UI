@@ -97,7 +97,12 @@ internal static class TagSchema
         [
             new("columns", AttrKind.Text, "2", Note: "an integer N = N equal 1fr columns (N <= 0 gives 2); otherwise a track list used as is"),
             new("rows", AttrKind.Text, Note: "a track list used as is"),
-            .. Sugar("lg", null, null),
+            new("gap", AttrKind.Length, "lg", Note: "step name xs..2xl = token, none = 0, anything else used as is"),
+            new("padding", AttrKind.Length, "0", Note: "1 to 4 values, each mapped like gap"),
+            new("align", AttrKind.Enum, "stretch", Values: ["start", "center", "end", "stretch"],
+                Note: "vertical place of each child in its cell (align-items); stretch fills the cell height, the others keep the child's measured height; a child's align-self overrides; " + EnumRule),
+            new("justify", AttrKind.Enum, "stretch", Values: ["start", "center", "end", "stretch"],
+                Note: "horizontal place of each child in its cell; stretch fills the cell width, the others keep the child's measured width; between = stretch + warning; " + EnumRule),
         ],
         ["DvSpacer"] = Sugar(null, null, null, "applied as on DvStack although a spacer has no children"),
         ["DvRepeat"] =

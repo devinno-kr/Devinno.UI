@@ -144,7 +144,7 @@ public sealed partial class LayoutEngine
             var cs = c.Style;
             c.WidthOverridden = cs.Position == Position.Absolute
                 ? cs.Left is not null && cs.Right is not null
-                : grid || (row ? cs.FlexGrow > 0 : Stretches(c, st, col: true));
+                : grid ? GridJustify(st) == AlignItems.Stretch : row ? cs.FlexGrow > 0 : Stretches(c, st, col: true);
             MarkWidthOverridden(c);
         }
 
@@ -1674,7 +1674,11 @@ public sealed partial class LayoutEngine
             : null;
     }
 
-    // 자식은 칸(열 폭 × 행 높이)을 채운다. position:absolute 자식은 칸 없이 오프셋으로
+    // grid 칸 안 가로 자리(justify) — 미지정 = stretch
+    private static AlignItems GridJustify(ComputedStyle st) => st.JustifyItems ?? AlignItems.Stretch;
+
+    // 자식은 칸(열 폭 × 행 높이) 안에 놓인다 — stretch(기본) = 칸을 채움, start·center·end = 자식의 측정 크기로 칸 안 그 자리.
+    // 세로 = 자식 align-self ?? grid align-items, 가로 = grid justify. position:absolute 자식은 칸 없이 오프셋으로
     private static void ArrangeGrid(LayoutBox box, float x, float y, float w, float h)
     {
         var st = box.Style;
@@ -1699,7 +1703,20 @@ public sealed partial class LayoutEngine
             var cx = innerX;
             for (var c = 0; c < cols && r * cols + c < items.Count; c++)
             {
-                Arrange(items[r * cols + c], cx, rowY, colW[c], rowH[r]);
+                var item = items[r * cols + c];
+                var hAlign = GridJustify(st);
+                var vAlign = item.Style.AlignSelf ?? st.Align;
+                float iw = colW[c], ih = rowH[r];
+                if (hAlign != AlignItems.Stretch || vAlign != AlignItems.Stretch)
+                {
+                    var m = Measure(item, colW[c]);
+                    if (hAlign != AlignItems.Stretch)
+                        iw = m.w;
+                    if (vAlign != AlignItems.Stretch)
+                        ih = m.h;
+                }
+
+                Arrange(item, cx + CrossOffset(hAlign, colW[c], iw), rowY + CrossOffset(vAlign, rowH[r], ih), iw, ih);
                 cx += colW[c] + gap;
             }
 

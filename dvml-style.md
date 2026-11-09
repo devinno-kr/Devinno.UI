@@ -39,8 +39,8 @@ Any other key is ignored at run time, and the build reports it as warning [DVML0
 | `box-shadow` | `dx dy blur color` or `none` | None |
 | `display` | `flex` `grid` (anything else = default flow) | Default flow |
 | `flex-direction` | `row` `column` | `row` (when `display:flex`) |
-| `justify-content` | `start` `center` `end`(`flex-end`) `space-between` | `start` |
-| `align-items` | `start`(`flex-start`) `center` `end`(`flex-end`) `stretch` | `stretch` |
+| `justify-content` | `start` `center` `end`(`flex-end`) `space-between`; in a grid it places children in their cells ([grid cells](dvml-layout.md#grid-cells)) | `start` (`stretch` in a grid) |
+| `align-items` | `start`(`flex-start`) `center` `end`(`flex-end`) `stretch`; in a grid it places children in their cells ([grid cells](dvml-layout.md#grid-cells)) | `stretch` |
 | `align-self` | `start`(`flex-start`) `center` `end`(`flex-end`) `stretch` | Parent's `align-items` |
 | `flex-grow` | Number | 0 |
 | `flex-shrink` | Number | **0** (1 for an `overflow:scroll` box if not specified; [scrolling](dvml-layout.md#scroll)) |

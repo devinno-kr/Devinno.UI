@@ -227,7 +227,7 @@ internal static class AttributeCheck
     {
         ["DvStack"] = new(StringComparer.Ordinal) { ["align"] = ["start", "center", "end", "stretch"], ["justify"] = ["start", "center", "end", "between"] },
         ["DvRow"] = new(StringComparer.Ordinal) { ["align"] = ["start", "center", "end", "stretch"], ["justify"] = ["start", "center", "end", "between"] },
-        ["DvGrid"] = new(StringComparer.Ordinal) { ["align"] = ["start", "center", "end", "stretch"], ["justify"] = ["start", "center", "end", "between"] },
+        ["DvGrid"] = new(StringComparer.Ordinal) { ["align"] = ["start", "center", "end", "stretch"], ["justify"] = ["start", "center", "end", "stretch"] },
         ["DvSpacer"] = new(StringComparer.Ordinal) { ["align"] = ["start", "center", "end", "stretch"], ["justify"] = ["start", "center", "end", "between"] },
         ["DvRepeat"] = new(StringComparer.Ordinal) { ["align"] = ["start", "center", "end", "stretch"], ["justify"] = ["start", "center", "end", "between"] },
         ["DvButton"] = new(StringComparer.Ordinal) { ["variant"] = ["primary", "secondary", "danger", "ghost"], ["size"] = ["sm", "lg"] },

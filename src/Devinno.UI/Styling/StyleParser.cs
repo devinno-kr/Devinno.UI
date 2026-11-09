@@ -212,6 +212,13 @@ public static class StyleParser
                     "space-between" => JustifyContent.SpaceBetween,
                     _ => JustifyContent.Start
                 };
+                s.JustifyItems = v switch
+                {
+                    "start" or "flex-start" => AlignItems.Start,
+                    "center" => AlignItems.Center,
+                    "end" or "flex-end" => AlignItems.End,
+                    _ => AlignItems.Stretch
+                };
                 break;
             case "align-items":
                 s.Align = v switch
