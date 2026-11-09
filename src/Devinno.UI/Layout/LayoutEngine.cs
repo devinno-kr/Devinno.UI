@@ -580,6 +580,9 @@ public sealed partial class LayoutEngine
                 scope[p.Name] = isValue && slot!.HasOverride && !BindingResolver.IsTwoWay(raw)
                     ? slot.CellValue // 단방향·리터럴 위에 코드가 덮어씀
                     : BindingResolver.ResolveValueOrLiteral(outerVm, raw);
+                // 글자로만 보이는 파라미터(내장 컴포넌트) — 바인딩 값도 그 글자로(템플릿이 {이름.Length} 로 있음을 판단)
+                if (component.TextParams.Contains(p.Name) && scope[p.Name] is { } v and not string)
+                    scope[p.Name] = BindingResolver.ToText(v, raw);
                 if (BindingResolver.IsTwoWay(raw))
                     (twoWay ??= new TwoWayParams(instance))[p.Name] = raw;
             }

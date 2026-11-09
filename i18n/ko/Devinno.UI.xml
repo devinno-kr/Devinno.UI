@@ -1058,6 +1058,8 @@
             <summary><c>&lt;DvParam&gt;</c> 으로 선언한 파라미터 목록(선언 순서)입니다.</summary>
         </member><member name="P:Devinno.UI.Components.ComponentDef.Template" en-hash="bd4476075383f9e1">
             <summary>컴포넌트를 쓸 때마다 펼쳐질 템플릿 루트 요소(<c>&lt;DvParam&gt;</c>·<c>&lt;DvStyle&gt;</c> 이 아닌 첫 자식)입니다.</summary>
+        </member><member name="P:Devinno.UI.Components.ComponentDef.TextParams" en-hash="f5ee841ebc08fdf1">
+            <summary>글자로만 보이는 파라미터: 인스턴스를 펼칠 때 바인딩 값을 그 글자로 바꿔, 템플릿이 <c>{name.Length}</c> 로 글자가 있는지 판단하게 한다(내장 컴포넌트만).</summary>
         </member><member name="T:Devinno.UI.Components.ComponentParam" en-hash="b4c2fb768ae2b6e8">
             <summary>
             컴포넌트 파라미터 하나(<c>&lt;DvParam name="…" type="…" default="…"/&gt;</c>)의 정의입니다.

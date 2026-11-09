@@ -17,4 +17,7 @@ public sealed class ComponentDef
 
     // 정의 안 DvStyle 의 CSS(문서 순서). 레이아웃 엔진이 화면 DvStyle 보다 먼저 전역 스타일시트에 더한다.
     internal List<string> Styles { get; } = new();
+
+    /// <summary>Parameters used only as display text: a bound value is turned into its text when the instance is expanded, so the template can test presence with <c>{name.Length}</c> (built-in components only).</summary>
+    internal HashSet<string> TextParams { get; } = new(StringComparer.Ordinal);
 }

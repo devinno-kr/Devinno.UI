@@ -19,6 +19,63 @@ public class DesignSystemTests
         return c;
     }
 
+    // 내장 컴포넌트의 표시용 파라미터는 "글자가 있으면 보임" — 글자 내용("0", 아무 단어)이나 바인딩 값의 형이 참/거짓으로 읽히지 않는다
+    private sealed class Capture(string marker) : System.Diagnostics.TraceListener
+    {
+        public List<string> Lines { get; } = new();
+        public override void Write(string? message) { }
+        public override void WriteLine(string? message)
+        {
+            if (message is not null && message.Contains(marker))
+                lock (Lines) Lines.Add(message);
+        }
+        public override void TraceEvent(System.Diagnostics.TraceEventCache? c, string source, System.Diagnostics.TraceEventType type, int id, string? message)
+            => WriteLine(message);
+    }
+
+    [Fact]
+    public void BuiltIn_components_show_text_params_by_presence_not_truth()
+    {
+        var cap = new Capture("Zq7Title");
+        System.Diagnostics.Trace.Listeners.Add(cap);
+        LayoutBox root;
+        try
+        {
+            root = Lay("<DvScreen><DvCard title=\"Zq7Title\"><DvLabel text=\"x\"/></DvCard>" +
+                       "<DvStat label=\"L\" value=\"5\" unit=\"0\" delta=\"0\"/></DvScreen>");
+        }
+        finally
+        {
+            System.Diagnostics.Trace.Listeners.Remove(cap);
+        }
+        Assert.Empty(cap.Lines);
+        Assert.Contains(All(root), b => b.ResolvedText == "Zq7Title");
+        Assert.Equal(2, All(root).Count(b => b.ResolvedText == "0")); // unit·delta "0" 도 보인다
+    }
+
+    public sealed class NumVm
+    {
+        public double Delta { get; set; } = 3.5;
+        public int Zero { get; set; }
+        public string? None { get; set; }
+    }
+
+    [Fact]
+    public void BuiltIn_components_show_bound_number_params()
+    {
+        var root = Lay("<DvScreen><DvStat label=\"L\" value=\"5\" delta=\"{Delta}\" unit=\"{Zero}\"/></DvScreen>", new NumVm());
+        Assert.Contains(All(root), b => b.ResolvedText == "3.5");
+        Assert.Contains(All(root), b => b.ResolvedText == "0");
+    }
+
+    [Fact]
+    public void BuiltIn_components_hide_empty_text_params()
+    {
+        var root = Lay("<DvScreen><DvStat label=\"L\" value=\"5\" delta=\"{None}\"/><DvCard><DvLabel text=\"x\"/></DvCard></DvScreen>", new NumVm());
+        Assert.DoesNotContain(All(root), b => b.Node.Tag == "DvBadge");
+        Assert.DoesNotContain(All(root), b => b.Node.Tag == "DvRow" && b.Children.Any(c => c.ResolvedText is { Length: 0 }));
+    }
+
     // ── S1 토큰
     [Fact]
     public void Token_canonical_and_var_alias_resolve_to_same_value()

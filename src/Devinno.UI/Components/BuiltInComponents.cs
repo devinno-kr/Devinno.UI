@@ -19,6 +19,12 @@ public static class BuiltInComponents
     /// </summary>
     public static ComponentRegistry Registry => Lazy.Value;
 
+    private static void Text(ComponentRegistry r, string component, params string[] names)
+    {
+        r.TryGet(component, out var def);
+        def!.TextParams.UnionWith(names);
+    }
+
     private static ComponentRegistry Create()
     {
         var r = new ComponentRegistry();
@@ -28,9 +34,9 @@ public static class BuiltInComponents
               <DvParam name="title"/>
               <DvParam name="subtitle"/>
               <DvStack class="page" gap="lg">
-                <DvStack gap="none" visible="{title}">
+                <DvStack gap="none" visible="{title.Length}">
                   <DvLabel class="heading" text="{title}"/>
-                  <DvLabel class="label muted" text="{subtitle}" visible="{subtitle}"/>
+                  <DvLabel class="label muted" text="{subtitle}" visible="{subtitle.Length}"/>
                 </DvStack>
                 <DvSlot/>
               </DvStack>
@@ -43,9 +49,9 @@ public static class BuiltInComponents
               <DvParam name="title"/>
               <DvParam name="subtitle"/>
               <DvStack class="dialog" gap="md">
-                <DvStack gap="none" visible="{title}">
+                <DvStack gap="none" visible="{title.Length}">
                   <DvLabel class="title" text="{title}"/>
-                  <DvLabel class="label muted" text="{subtitle}" visible="{subtitle}"/>
+                  <DvLabel class="label muted" text="{subtitle}" visible="{subtitle.Length}"/>
                 </DvStack>
                 <DvSlot/>
               </DvStack>
@@ -57,10 +63,10 @@ public static class BuiltInComponents
               <DvParam name="title"/>
               <DvParam name="badge"/>
               <DvStack class="card" gap="md">
-                <DvRow gap="sm" visible="{title}">
+                <DvRow gap="sm" visible="{title.Length}">
                   <DvLabel class="title" text="{title}"/>
                   <DvSpacer/>
-                  <DvBadge text="{badge}" visible="{badge}"/>
+                  <DvBadge text="{badge}" visible="{badge.Length}"/>
                 </DvRow>
                 <DvSlot/>
               </DvStack>
@@ -90,11 +96,11 @@ public static class BuiltInComponents
                   <DvRow gap="sm">
                     <DvLabel class="label muted" text="{label}"/>
                     <DvSpacer/>
-                    <DvBadge text="{delta}" tone="{tone}" visible="{delta}"/>
+                    <DvBadge text="{delta}" tone="{tone}" visible="{delta.Length}"/>
                   </DvRow>
                   <DvRow gap="xs" align="end">
                     <DvLabel class="stat-value" text="{value}"/>
-                    <DvLabel class="body subtle" text="{unit}" visible="{unit}" style="padding:0 0 6 0"/>
+                    <DvLabel class="body subtle" text="{unit}" visible="{unit.Length}" style="padding:0 0 6 0"/>
                   </DvRow>
                 </DvStack>
               </DvStack>
@@ -111,7 +117,7 @@ public static class BuiltInComponents
                 <DvLamp on="true" state="{state}" blink="{blink}" blink-interval="450" style="width:12; height:12"/>
                 <DvLabel class="body" text="{label}"/>
                 <DvSpacer/>
-                <DvLabel class="chip" text="{status}" visible="{status}"
+                <DvLabel class="chip" text="{status}" visible="{status.Length}"
                          style="color:token(state-{state}-fg); background:token(state-{state}-soft)"/>
               </DvRow>
             </DvComponent>
@@ -129,6 +135,12 @@ public static class BuiltInComponents
             </DvComponent>
             """);
 
+        // 글자로만 보이는 파라미터 — 템플릿이 {이름.Length} 로 "글자가 있으면 보임" 을 판단한다(바인딩 값이 숫자여도 그 글자로)
+        Text(r, "DvPageFrame", "title", "subtitle");
+        Text(r, "DvDialogFrame", "title", "subtitle");
+        Text(r, "DvCard", "title", "badge");
+        Text(r, "DvStat", "delta", "unit");
+        Text(r, "DvStatusItem", "status");
         return r;
     }
 }
