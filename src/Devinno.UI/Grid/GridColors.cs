@@ -11,26 +11,13 @@ internal sealed record GridColors(
 {
     public static readonly GridColors None = new(null, null, null, null, null, null, null, null, null, null);
 
-    /// <summary><c>header-color</c>, etc. — the value is <c>#rrggbb[aa]</c> or <c>token(이름)</c> (token name). Parse failure = null (theme) + warning.</summary>
+    /// <summary><c>header-color</c>, etc. — the common color rule (<see cref="AttrRules.Color"/>): <c>#rrggbb[aa]</c> or <c>token(이름)</c> (token name); an unknown token = magenta + warning, unparsable = null (theme) + warning.</summary>
     public static GridColors Parse(AttrReader r, DvTheme? theme)
     {
         if (!Names.Any(r.Has))
             return None;
 
-        DvColor? C(string name)
-        {
-            if (r.Text(name) is not { Length: > 0 } raw)
-                return null;
-            var resolved = ThemeResolver.ResolveVars(raw, theme);
-            // 없는 토큰은 ResolveVars 가 자홍(MissingColor)으로 바꾼다 — 그리드 색 속성은 spec 대로 테마 색으로 둔다
-            var missingToken = resolved is not null &&
-                               resolved.Contains(ThemeResolver.MissingColor, StringComparison.OrdinalIgnoreCase) &&
-                               !raw.Contains(ThemeResolver.MissingColor, StringComparison.OrdinalIgnoreCase);
-            if (!missingToken && DvColor.TryParse(resolved, out var c))
-                return c;
-            Warnings.Warn($"Devinno.UI: DvDataGrid {name}=\"{raw}\": not a valid color; using the theme color");
-            return null;
-        }
+        DvColor? C(string name) => AttrRules.Color(r.Value(name), theme, r.Node.Tag, name, "using the theme color");
 
         return new GridColors(C("header-color"), C("header-text-color"), C("text-color"), C("row-color"), C("row-alt-color"),
             C("hover-color"), C("selected-color"), C("line-color"), C("summary-color"), C("summary-text-color"));

@@ -118,7 +118,9 @@ AI MUST follow the order below exactly. Each step says what to decide.
 | `style` | general style | — | `padding`, `background`, `width`, `height`, `border`, `font-size`, etc. `font-size` sets the size of all diagram text (see **Text size** below) |
 | `grow` and other layout attributes | — | — | Same as for an ordinary box |
 
-`direction`·`look` can be bound (`look="{Look}"`).
+`direction`·`look` can be bound (`look="{Look}"`). Word values in this document (`direction`, `look`, `kind`, `rotate`, `flip`, `arrow`, `medium`, `side` …) ignore case and surrounding spaces; any other word gives the default + a Trace warning (ui chapter 2).
+
+**Names and references are written literally, never bound**: equipment, unit, `DvPort` and `DvInstrument` `name`, `DvLine`/`DvSignal` `from`·`to`, and `DvInstrument` `on`·`tap`. The placement is cached by the diagram's structure, so names are fixed text. A `{` in one of them writes a Trace warning and the text is used as written (`name="{N}"` is the name `{N}`).
 
 **The only allowed children are** equipment tags (chapter 5, including registered user symbols), units (`DvUnit`, or a component whose template root is `DvUnit` — chapter 8), `DvLine`, instrument `DvInstrument` and signal line `DvSignal` (7.3·7.4), and `DvStyle`. Any other tag (`DvLabel`, `DvButton`, `DvRepeat` …) placed directly under `DvProcess` is not drawn and leaves a Trace error. Put value displays and buttons inside `DvAttach`.
 
@@ -188,11 +190,11 @@ Usable on every equipment tag (including user symbols). On terminals, `rotate` a
 
 | Attribute | Description |
 |---|---|
-| `name` | **Required.** Must be unique within the process diagram. Without it the equipment cannot be connected by lines (Trace error); if duplicated, the later one cannot be connected (Trace error) |
+| `name` | **Required.** Must be unique within the process diagram. Without it the equipment cannot be connected by lines (Trace error); if duplicated, the later one cannot be connected (Trace error). Written literally (not bound) |
 | `label` | Name tag. For vessels, a rounded chip in the middle of the body. For everything else, placed on a **face not used by lines** — the first free face in the order bottom → top → right → left (the actuator side of a control valve is not free, because signal lines end there; if all four faces are used, bottom — and if it would cover the front of a port on that face, it shifts along the face to stay at least 12px from the port). 4px from the symbol (6px left/right). Font 13 bold (17px tall at `font-size` 14), color is the theme `--text`. One line only: `&#10;` does not break it and draws a box character. Not used on terminals (use `text`) |
 | `kind` | Type (tables below). If omitted, the first kind; an unknown value gives the first kind + a Trace warning |
 | `rotate` | `0` `90` `180` `270` (clockwise). The drawing and the port faces rotate together. Other values give 0 + a Trace warning |
-| `flip` | `h` (flip left-right) · `v` (up-down) · `hv`. Flip is applied, then rotation |
+| `flip` | `h` (flip left-right) · `v` (up-down) · `hv` (`vh` is the same). Flip is applied, then rotation. Other values: no flip + a Trace warning |
 | `row` · `rank` | Placement hints (chapter 11) |
 | `x` · `y` | Only with `placement="fixed"`: the symbol center in px (chapter 20). Ignored with a Trace warning in automatic placement |
 | `visible` | If false, the equipment is not created. **Lines connected to that equipment become "equipment does not exist" errors, so they cannot be hidden along with it** — do not hide equipment that has lines; express it with state instead |
@@ -375,7 +377,7 @@ The heights of `a`·`b` match `in`·`out` of `DvValve` (in line with ordinary va
 |---|---|
 | `from` | The upstream end of the flow: `장비.포트` (equipment.port), or a face position `장비.면@위치` (6.1). For a terminal or a user symbol with only one port, just `장비` (equipment). For a unit, `유닛.포트` (unit.port — the name of that unit's `DvPort`); inside a unit, that unit's own ports are referenced by name only (chapter 8) |
 | `to` | The downstream end of the flow. Same format as `from` |
-| `arrow` | `end` (arrow into the `to` port) · `start` (into the `from` port) · `both` · `none` (default) |
+| `arrow` | `end` (arrow into the `to` port) · `start` (into the `from` port) · `both` · `none` (default). Other values: `none` + a Trace warning |
 | `flow` | The app decides this line's flow (true/false, bindable). If omitted, judged automatically (12.1) |
 | `medium` | Medium color `water`·`steam`·`air`·`gas`·`oil`·`acid` (12.2). Propagates in the flow direction. If omitted, gray |
 | `via` | Only with `placement="fixed"`: the points the pipe runs through, `"x,y x,y …"`, in the same space as equipment `x`·`y` (chapter 20.6). If omitted, routed automatically |
@@ -440,7 +442,7 @@ Instead of a port name, a line end (and an instrument `tap`, 7.3) can name **a p
 
 | Attribute | Description |
 |---|---|
-| `side` | `left` · `right` (default) · `top` · `bottom` |
+| `side` | `left` · `right` (default) · `top` · `bottom`. Other values: `right` + a Trace warning |
 | Content | Any dvml (value displays, buttons, lamps, badges). Stacked vertically (can be changed with e.g. `style="display:flex; flex-direction:row"`) |
 
 - Attached 8px from the symbol. `left`/`right` at the symbol's vertical center, `top` above the accessories and name tag, `bottom` below the name tag (both centered on the symbol). If there are several on the same face, `top`/`bottom` stack in order but `left`/`right` overlap, so use only one per face.

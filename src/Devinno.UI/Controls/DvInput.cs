@@ -14,7 +14,10 @@ public sealed class DvInput : DvControl
 {
     internal DvInput(string id) : base(id) => Slot = new ValueSlot(new ValueCell<string?>(), canOwn: true);
 
-    private bool Numeric => Node?.Attributes.GetValueOrDefault("keyboard-type") == "numeric";
+    // keyboard-type — 빌드와 같은 규칙(바인딩을 화면 VM 으로 풀고 공용 목록 규칙으로 비교, 경고는 빌드가 낸다)
+    private bool Numeric => Node is { } n &&
+                            AttrRules.MatchEnum(Binding.BindingResolver.ResolveText(Surface?.Vm, n.Attributes.GetValueOrDefault("keyboard-type")),
+                                Markup.TagSchema.Find("DvInput", "keyboard-type")?.Values) == "numeric";
 
     internal override void OnAttached()
     {

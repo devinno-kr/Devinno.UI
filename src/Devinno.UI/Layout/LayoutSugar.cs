@@ -20,7 +20,7 @@ internal static class LayoutSugar
         foreach (var k in Names)
         {
             if ((tag == "DvGrid" || !GridNames.Contains(k)) && (isSugar || !SugarNames.Contains(k)) &&
-                r.Text(k) is { } v)
+                (k is "align" or "justify" ? (r.Has(k) ? AttrRules.Enum(r, k) : null) : r.Text(k)) is { } v) // align·justify = 공용 목록 규칙
                 a[k] = v;
         }
         var parts = new List<string>();

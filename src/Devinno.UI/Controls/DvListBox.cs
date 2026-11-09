@@ -13,8 +13,10 @@ public sealed class DvListBox : DvControl
 
     internal DvListBox(string id) : base(id) => Slot = new ValueSlot(new ValueCell<object?>(), canOwn: true);
 
+    // selection-mode — 빌드와 같은 규칙(공용 목록 규칙으로 비교, 경고는 빌드가 낸다)
     private bool Multi => Node is { } n && Surface is { } s &&
-                          BindingResolver.ResolveText(s.Vm, n.Attributes.GetValueOrDefault("selection-mode")) == "multi";
+                          AttrRules.MatchEnum(BindingResolver.ResolveText(s.Vm, n.Attributes.GetValueOrDefault("selection-mode")),
+                              Markup.TagSchema.Find("DvListBox", "selection-mode")?.Values) == "multi";
 
     internal override void OnAttached()
     {

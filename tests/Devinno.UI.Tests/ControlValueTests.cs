@@ -22,6 +22,7 @@ public class ControlValueTests
         public string Mode { get; set; } = "auto";
         public DateOnly Day { get; set; } = new(2026, 1, 2);
         public string Hex { get; set; } = "#112233";
+        public string Kb { get; set; } = "numeric";
         public bool Allow { get; set; } = true;
         public bool Gate(bool proposed) => Allow;
 
@@ -231,6 +232,17 @@ public class ControlValueTests
         s.Layout(W, H);
         Assert.Equal(2d, Box(s, "DvInput").InputValue);
         Assert.Equal(new[] { false, false }, tv);
+    }
+
+    // 3단계 R4 — keyboard-type 은 바인딩되고, 핸들도 같은 값(화면 VM 으로 푼 값, 공용 목록 규칙)을 본다
+    [Fact]
+    public void Input_KeyboardTypeBound_HandleIsNumeric()
+    {
+        var (s, vm) = Start("<DvInput id=\"num\" keyboard-type=\"{Kb}\"/>");
+        Assert.Throws<FormatException>(() => vm.num!.Text = "abc");
+        Assert.Equal(Devinno.UI.DvEditKind.Numeric, Box(s, "DvInput").InputKind);
+        var (_, vm2) = Start("<DvInput id=\"num\" keyboard-type=\" Numeric \"/>");
+        Assert.Throws<FormatException>(() => vm2.num!.Text = "abc");
     }
 
     [Fact]

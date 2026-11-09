@@ -255,7 +255,7 @@ internal static class ProcessBuilder
         Func<ElementNode, object?, LayoutBox> Self,
         Func<ElementNode, object?, LayoutBox?> Child,
         Func<ElementNode, object?, (ElementNode Unit, ElementNode BoxNode, object? Scope)?> ExpandUnit,
-        Func<string?, SKColor?> Color,
+        Func<AttrReader, string, string, SKColor?> Color,
         Func<ElementNode, object?, AttrReader> Reader,
         Action<LayoutBox, ElementNode> LinkInstance);
 
@@ -272,21 +272,18 @@ internal static class ProcessBuilder
         {
             Source = node,
             Vertical = Direction(r),
-            Rich = r.Text("look") is "rich",
+            Rich = AttrRules.Enum(r, "look") is "rich",
         };
-        if (r.Text("look") is { } look && look is not ("plain" or "rich"))
-            Warn($"DvProcess look='{look}' is not a valid value (plain, rich); drawing as plain");
-        d.Align = r.Text("align") switch
+        d.Align = AttrRules.Enum(r, "align") switch
         {
-            null or "" or "auto" => null,
             "step" => ProcessAlign.Step,
             "row" => ProcessAlign.Row,
-            var a => WarnAlign(a),
+            _ => null,
         };
 
         Placement(d, r);
         d.FlowAnimation = AttrRules.Bool(r, "flow-animation");
-        var fit = r.Text("fit");
+        var fit = AttrRules.Enum(r, "fit");
         d.Shrink = fit is "shrink";
         d.Contain = fit is "contain" && d.Fixed;
         if (fit is "contain" && !d.Fixed)
@@ -294,37 +291,33 @@ internal static class ProcessBuilder
             Warn("DvProcess fit=\"contain\" is used only with placement=\"fixed\" (coordinates have a base size); shrinking only when it overflows, as with fit=\"shrink\"");
             d.Shrink = true;
         }
-        if (fit is not (null or "" or "none" or "shrink" or "contain"))
-            Warn($"DvProcess fit='{fit}' is not a valid value (none, shrink, contain); not scaling");
         Fill(d, box, node, vm, registry, b);
         ProcessFlow.Compute(d);
         ProcessMedium.Compute(d);
         box.Process = d;
     }
 
-    private static string? Medium(string? m)
+    // 장비 공통 목록 속성(rotate·flip) — 등록 심볼 태그는 TagSchema 에 없으므로 내장 장비(DvPump)와 같은 정의로 읽는다
+    private static string? EquipmentEnum(AttrReader r, string attr, string? instead)
     {
-        if (string.IsNullOrEmpty(m))
-            return null;
-        if (ProcessMedium.Names.Contains(m))
-            return m;
-        Warn($"DvLine medium='{m}' is not a known medium ({string.Join(", ", ProcessMedium.Names)}); drawing with the default color");
-        return null;
+        var def = TagSchema.Find(r.Node.Tag, attr) ?? TagSchema.Find("DvPump", attr)!;
+        return AttrRules.Enum(r.Value(attr), def.Default, r.Node.Tag, attr, def.Values, instead);
     }
 
-    private static ProcessAlign? WarnAlign(string a)
+    // 공정도 이름·참조(장비·유닛·포트·계기 name, DvLine·DvSignal from/to, DvInstrument on/tap) — 원문 그대로(3단계 D3: 바인딩 안 됨).
+    // { 가 있으면 바인딩을 쓰려 한 것으로 보고 알린다(값은 쓴 그대로)
+    private static string? RawName(AttrReader r, string attr)
     {
-        Warn($"DvProcess align='{a}' is not a valid value (auto, step, row); laying out as auto");
-        return null;
+        var raw = r.Raw(attr);
+        if (raw is not null && raw.Contains('{'))
+            Warnings.Warn($"Devinno.UI: {r.Node.Tag} {attr}='{raw}': process names and references are not bindable; used as written");
+        return raw;
     }
 
     // placement·base-size — 좌표 배치면 align 은 쓰지 않는다
     private static void Placement(ProcessDiagram d, AttrReader r)
     {
-        var placement = r.Text("placement");
-        d.Fixed = placement is "fixed";
-        if (placement is not (null or "" or "auto" or "fixed"))
-            Warn($"DvProcess placement='{placement}' is not a valid value (auto, fixed); laying out as auto");
+        d.Fixed = AttrRules.Enum(r, "placement") is "fixed";
 
         var baseText = r.Text("base-size");
         if (!d.Fixed)
@@ -382,26 +375,8 @@ internal static class ProcessBuilder
         return false;
     }
 
-    // 신호 종류(kind) — electric(기본) · pneumatic. 틀리면 알리고 전기로
-    private static bool SignalKind(AttrReader r)
-    {
-        var kind = r.Text("kind");
-        if (kind is not (null or "" or "electric" or "pneumatic"))
-            Warn($"DvSignal '{r.Raw("from")}'→'{r.Raw("to")}' kind='{kind}' is not a known kind (electric, pneumatic); drawing as electric");
-        return kind is "pneumatic";
-    }
-
-    // 신호선 색(color) — #색 또는 token(이름). 안 쓰면 기본(테마 글자색), 틀리면 알리고 기본으로
-    private static SKColor? SignalColor(AttrReader r, Builders b)
-    {
-        var text = r.Text("color");
-        if (string.IsNullOrWhiteSpace(text))
-            return null;
-        if (b.Color(text) is { } color)
-            return color;
-        Warn($"DvSignal '{r.Raw("from")}'→'{r.Raw("to")}' color='{text}' is not a color (#RRGGBB or token(name)); drawing with the default color");
-        return null;
-    }
+    // 신호선 색(color) — 공용 색 규칙. 안 쓰면 기본(테마 글자색), 모르는 토큰 = 자홍 + 경고, 못 읽으면 기본 + 경고
+    private static SKColor? SignalColor(AttrReader r, Builders b) => b.Color(r, "color", "drawing with the default color");
 
     // 신호선 두께(width) — 0 보다 큰 px. 안 쓰면 기본, 틀리면 알리고 기본으로
     private static float? SignalWidth(AttrReader r)
@@ -422,7 +397,7 @@ internal static class ProcessBuilder
         var ys = r.Text("y");
         if (string.IsNullOrEmpty(xs) && string.IsNullOrEmpty(ys))
             return null;
-        var name = r.Text("name");
+        var name = r.Raw("name");
         if (!d.Fixed)
         {
             Warn($"<DvInstrument name='{name}'>: x/y are used only with <DvProcess placement=\"fixed\">; ignored");
@@ -464,13 +439,16 @@ internal static class ProcessBuilder
         return points;
     }
 
-    private static bool Direction(AttrReader r)
+    private static bool Direction(AttrReader r) => AttrRules.Enum(r, "direction") is "tb";
+
+    // arrow — 공용 목록 규칙(모르는 값 = none + 경고)
+    private static (bool End, bool Start) Arrow(AttrReader r) => AttrRules.Enum(r, "arrow") switch
     {
-        var dir = r.Text("direction");
-        if (dir is not (null or "" or "lr" or "tb"))
-            Warn($"<{r.Node.Tag}> direction='{dir}' is not a valid value (lr, tb); drawing as lr");
-        return dir is "tb";
-    }
+        "end" => (true, false),
+        "start" => (false, true),
+        "both" => (true, true),
+        _ => (false, false),
+    };
 
     // 한 공정도(바깥 또는 유닛 안)의 자식 — 장비 상자·붙은 칸 상자는 owner 의 자식으로
     private static void Fill(ProcessDiagram d, LayoutBox owner, ElementNode container, object? vm, ComponentRegistry? registry, Builders b)
@@ -482,15 +460,16 @@ internal static class ProcessBuilder
             var r = b.Reader(ch, vm);
             if (ch.Tag == "DvLine")
             {
+                var (end, start) = Arrow(r);
                 d.Lines.Add(new ProcessLine
                 {
-                    FromRef = r.Raw("from") ?? "",
-                    ToRef = r.Raw("to") ?? "",
-                    ArrowEnd = r.Text("arrow") is "end" or "both",
-                    ArrowStart = r.Text("arrow") is "start" or "both",
+                    FromRef = RawName(r, "from") ?? "",
+                    ToRef = RawName(r, "to") ?? "",
+                    ArrowEnd = end,
+                    ArrowStart = start,
                     // 바인딩이 null 이면 없는 것과 같다(자동 판단 — 문서에 적힌 3상태 동작), 그 밖은 공용 참/거짓 규칙
                     FlowOverride = r.Has("flow") && r.Value("flow") is { } fv ? AttrRules.Bool(fv, false, ch.Tag, "flow") : null,
-                    MediumSet = Medium(r.Text("medium")),
+                    MediumSet = AttrRules.Enum(r, "medium", "drawing with the default color"),
                     Label = r.Text("label"),
                     Via = Via(d, r),
                 });
@@ -499,14 +478,15 @@ internal static class ProcessBuilder
 
             if (ch.Tag == "DvSignal")
             {
+                var (end, start) = Arrow(r);
                 d.Signals.Add(new ProcessSignal
                 {
-                    FromRef = r.Raw("from") ?? "",
-                    ToRef = r.Raw("to") ?? "",
-                    ArrowEnd = r.Text("arrow") is "end" or "both",
-                    ArrowStart = r.Text("arrow") is "start" or "both",
+                    FromRef = RawName(r, "from") ?? "",
+                    ToRef = RawName(r, "to") ?? "",
+                    ArrowEnd = end,
+                    ArrowStart = start,
                     Label = r.Text("label"),
-                    Pneumatic = SignalKind(r),
+                    Pneumatic = AttrRules.Enum(r, "kind") is "pneumatic",
                     Color = SignalColor(r, b),
                     Width = SignalWidth(r),
                 });
@@ -521,12 +501,12 @@ internal static class ProcessBuilder
                 instruments.Add((new ProcessInstrument
                 {
                     Owner = d,
-                    Name = r.Text("name") ?? "",
+                    Name = RawName(r, "name") ?? "",
                     Letters = r.Text("tag"),
                     Number = r.Text("number"),
                     Value = r.Text("value"),
-                    OnRef = r.Text("on"),
-                    TapRef = r.Text("tap"),
+                    OnRef = RawName(r, "on"),
+                    TapRef = RawName(r, "tap"),
                     Panel = AttrRules.Bool(r, "panel"),
                     Pos = InstrumentPos(d, r),
                 }, ch));
@@ -541,9 +521,10 @@ internal static class ProcessBuilder
                     continue;
                 }
 
-                var side = SymbolDef.ParseSide(r.Text("side"));
-                if (side is null)
+                // side 는 필수 — 없으면 오류, 모르는 값도 오류(공용 목록 규칙, 오류 수준)
+                if (!r.Has("side") || string.IsNullOrWhiteSpace(r.Text("side")))
                     Warn($"<DvPort name='{r.Raw("name")}'> side must be one of left, top, right, bottom; using right", true);
+                var side = SymbolDef.ParseSide(AttrRules.Enum(r, "side", "using right", error: true));
                 var atText = r.Text("at");
                 var at = 0.5f;
                 if (atText is { Length: > 0 } && (!float.TryParse(atText, NumberStyles.Float, CultureInfo.InvariantCulture, out at) || at < 0 || at > 1))
@@ -592,14 +573,15 @@ internal static class ProcessBuilder
                 Terminal = ch.Tag == "DvTerminal",
                 Text = r.Text("text"),
                 Label = r.Text("label"),
-                Rotate = ParseRotate(r.Text("rotate")),
+                Rotate = int.Parse(EquipmentEnum(r, "rotate", null) ?? "0", CultureInfo.InvariantCulture),
                 Row = Int(ch.Tag, "row", r.Text("row")),
                 Rank = Int(ch.Tag, "rank", r.Text("rank")),
                 Pos = pos,
             };
-            var flip = r.Text("flip");
-            pn.FlipH = flip is "h" or "hv" or "vh";
-            pn.FlipV = flip is "v" or "hv" or "vh";
+            // flip — 공용 목록 규칙, vh 는 hv 의 별칭
+            var flip = AttrRules.MatchEnum(r.Value("flip"), ["vh"]) is not null ? "hv" : EquipmentEnum(r, "flip", "no flip");
+            pn.FlipH = flip is "h" or "hv";
+            pn.FlipV = flip is "v" or "hv";
             if (def is not null)
             {
                 foreach (var p in def.Params)
@@ -618,19 +600,13 @@ internal static class ProcessBuilder
                 if (BuiltInSymbols.IsAccessoryTag(sub.Tag))
                 {
                     var running = AttrRules.Bool(sr, "running");
-                    var accKind = sr.Text("kind");
-                    var acc = BuiltInSymbols.Get(sub.Tag, accKind);
-                    if (acc is null)
-                    {
-                        Warn($"<{sub.Tag} kind='{accKind}'> is not a known kind (isa); drawing the default");
-                        acc = BuiltInSymbols.Get(sub.Tag, null)!;
-                    }
+                    var acc = BuiltInSymbols.Get(sub.Tag, AttrRules.Enum(sr, "kind", "drawing the default")) ?? BuiltInSymbols.Get(sub.Tag, null)!;
 
                     pn.Accessories.Add((acc, running));
                 }
                 else if (sub.Tag == "DvAttach")
                 {
-                    var side = SymbolDef.ParseSide(sr.Text("side")) ?? PortSide.Right;
+                    var side = SymbolDef.ParseSide(AttrRules.Enum(sr, "side")) ?? PortSide.Right;
                     if (b.Child(sub, vm) is { } ab)
                     {
                         pn.Attach.Add((side, ab));
@@ -832,8 +808,7 @@ internal static class ProcessBuilder
 
         if (!Coordinates(d, instance.Tag, Attr, out var pos))
             return;
-        if (ru.Text("placement") is { Length: > 0 } up && up != "auto")
-            Warn($"<{instance.Tag} name='{Attr("name")}'>: placement='{up}' is not supported inside a unit; the inside is laid out automatically");
+        _ = AttrRules.Enum(ru, "placement", $"the inside of unit '{Attr("name")}' is always laid out automatically"); // 알리기만 — 안쪽은 늘 자동 배치
 
         var inner = new ProcessDiagram { Source = unitNode, Vertical = Direction(ru), Rich = d.Rich, IsUnit = true, FlowAnimation = d.FlowAnimation };
         var pn = new ProcessNode
@@ -862,7 +837,7 @@ internal static class ProcessBuilder
 
     private static string UniqueName(ProcessDiagram d, AttrReader r)
     {
-        var name = r.Text("name");
+        var name = RawName(r, "name");
         if (string.IsNullOrEmpty(name))
         {
             Warn($"<{r.Node.Tag}> has no name; it cannot be connected by lines", true);
@@ -901,15 +876,9 @@ internal static class ProcessBuilder
         known = true;
         if (ch.Tag == "DvTerminal")
             return null;
-        if (BuiltInSymbols.Kinds.TryGetValue(ch.Tag, out var kinds))
+        if (BuiltInSymbols.Kinds.ContainsKey(ch.Tag))
         {
-            var kind = r.Text("kind");
-            var def = BuiltInSymbols.Get(ch.Tag, kind);
-            if (def is null)
-            {
-                Warn($"<{ch.Tag} kind='{kind}'> is not a known kind ({string.Join(", ", kinds)}); drawing as {kinds[0]}");
-                def = BuiltInSymbols.Get(ch.Tag, null)!;
-            }
+            var def = BuiltInSymbols.Get(ch.Tag, AttrRules.Enum(r, "kind")) ?? BuiltInSymbols.Get(ch.Tag, null)!;
 
             // 용기 크기(width·height) — 머리·바닥 모양은 그대로 두고 몸통만 늘리거나 줄인다(원래 크기의 0.6~4배)
             if (ch.Tag == "DvVessel")
@@ -944,20 +913,7 @@ internal static class ProcessBuilder
         return null;
     }
 
-    private static int ParseRotate(string? s) => s switch
-    {
-        null or "" or "0" => 0,
-        "90" => 90,
-        "180" => 180,
-        "270" => 270,
-        _ => WarnRotate(s),
-    };
 
-    private static int WarnRotate(string s)
-    {
-        Warn($"rotate='{s}' is not a valid value (0, 90, 180, 270); drawing as 0");
-        return 0;
-    }
 
     // 배치 힌트(row·rank) — 정수. 숫자 아님 = 무시 + 경고(공용 숫자 규칙), 소수는 반올림
     private static int? Int(string tag, string attr, string? s) =>

@@ -12,22 +12,16 @@ namespace Devinno.UI.Grid;
 internal static class GridBuilder
 {
 
-    private static GridFilterSetting ParseFilter(string? raw, string? field)
+    // filter — 공용 목록 규칙(모르는 값 = none + 경고)
+    private static GridFilterSetting ParseFilter(string? value) => value switch
     {
-        switch (raw?.Trim().ToLowerInvariant())
-        {
-            case null or "" or "none": return GridFilterSetting.None;
-            case "auto": return GridFilterSetting.Auto;
-            case "text": return GridFilterSetting.Text;
-            case "values": return GridFilterSetting.Values;
-            case "range": return GridFilterSetting.Range;
-            case "date": return GridFilterSetting.Date;
-        }
-
-        Warnings.Warn($"Devinno.UI: DvColumn field '{field}' filter=\"{raw}\": not one of none, auto, text, values, range, date; no filter");
-
-        return GridFilterSetting.None;
-    }
+        "auto" => GridFilterSetting.Auto,
+        "text" => GridFilterSetting.Text,
+        "values" => GridFilterSetting.Values,
+        "range" => GridFilterSetting.Range,
+        "date" => GridFilterSetting.Date,
+        _ => GridFilterSetting.None,
+    };
 
     /// <summary>Builds the grid of <c>r.Node</c>; every attribute (the grid's and each child's) is read through an <see cref="AttrReader"/>.</summary>
     public static GridSpec Build(AttrReader r, DvTheme? theme = null, Func<string, GridCellStyle?>? classStyle = null)
@@ -73,7 +67,8 @@ internal static class GridBuilder
             string? CA(string name) => cr.Raw(name);
             double? Num(string name) => AttrRules.NumberOrNull(cr, name);
             bool Flag(string name) => AttrRules.Bool(cr, name);
-            var cellType = CA("cell-type")?.Trim().ToLowerInvariant() switch
+            string? Enum(string name) => AttrRules.Enum(cr, name);
+            var cellType = Enum("cell-type") switch
             {
                 "check" => GridCellType.Check,
                 "lamp" => GridCellType.Lamp,
@@ -89,35 +84,35 @@ internal static class GridBuilder
                 Header = BindingResolver.ResolveInline(vm, CA("header")) ?? "",
                 Reader = new FieldReader(CA("field") ?? ""),
                 Width = GridWidth.Parse(cr.Text("width")),
-                Align = CA("align")?.Trim().ToLowerInvariant() switch
+                Align = Enum("align") switch
                 {
                     "left" => TextAlign.Left,
                     "center" => TextAlign.Center,
                     "right" => TextAlign.Right,
                     _ => null
                 },
-                Format = CA("format"),
+                Format = cr.Text("format"),
                 Frozen = Flag("frozen"),
                 Sortable = Flag("sortable"),
                 CellClass = CA("cell-class") is { Length: > 0 } cc ? new FieldReader(cc) : null,
                 CellType = cellType,
                 ReadOnly = Flag("readonly"),
                 OnBeforeCommit = CA("onbeforecommit"),
-                OnColor = Color(cr.Text("on-color")),
+                OnColor = AttrRules.Color(cr.Value("on-color"), theme, ch.Tag, "on-color", "using the state-run color"),
                 Blink = Flag("blink"),
                 ButtonText = (cr.Overridden("text") ? cr.Text("text") : BindingResolver.ResolveInline(vm, CA("text"))) ?? "", // 코드 Text 덮어쓰기는 그대로
-                Icon = CA("icon"),
-                Variant = CA("variant")?.Trim().ToLowerInvariant() is { Length: > 0 } variant ? variant : "primary",
+                Icon = cr.Text("icon"),
+                Variant = Enum("variant") ?? "primary",
                 OnClick = CA("onclick"),
-                Filter = ParseFilter(cr.Text("filter"), CA("field")),
+                Filter = ParseFilter(Enum("filter")),
                 Enabled = CA("enabled") is { Length: > 0 } en ? new FieldReader(en) : null,
                 Min = Num("min"),
                 Max = Num("max"),
                 Unit = BindingResolver.ResolveInline(vm, CA("unit")),
-                Mode = cr.Text("mode"),
+                Mode = AttrRules.Enum(cr, "mode", "using the value type's mode"),
                 ShowSeconds = Flag("show-seconds"),
                 OptionsReader = cellType == GridCellType.Select ? cr : null,
-                InitialSortDesc = CA("sort")?.Trim().ToLowerInvariant() switch
+                InitialSortDesc = Enum("sort") switch
                 {
                     "asc" => false,
                     "desc" => true,
@@ -129,19 +124,6 @@ internal static class GridBuilder
             if (col.CellType == GridCellType.Select)
                 _ = col.Options; // 레이아웃 중(다국어 @키 해석 가능)에 항목을 만들어 둔다
             return col;
-        }
-
-        // on-color — 바인딩을 푼 글자(리더의 Text)
-        DvColor? Color(string? resolvedText)
-        {
-            if (resolvedText is not { Length: > 0 } text)
-                return null;
-            var resolved = ThemeResolver.ResolveVars(text, theme);
-            if (resolved is not null && !resolved.Contains(ThemeResolver.MissingColor, StringComparison.OrdinalIgnoreCase) &&
-                DvColor.TryParse(resolved, out var c))
-                return c;
-            Warnings.Warn($"Devinno.UI: DvColumn on-color=\"{text}\": not a valid color; using the default color");
-            return null;
         }
 
         var frozen = 0;
@@ -191,8 +173,8 @@ internal static class GridBuilder
                 }
 
                 var hasValue = sr.Has("value");
-                cells[ci] = new GridSummaryCell(GridSummary.Parse(sr.Raw("fn")),
-                    sr.Raw("format"), hasValue,
+                cells[ci] = new GridSummaryCell(GridSummary.Parse(AttrRules.Enum(sr, "fn", "no aggregate")),
+                    sr.Text("format"), hasValue,
                     hasValue ? sr.Value("value") : null);
             }
 
@@ -200,7 +182,7 @@ internal static class GridBuilder
             summaries.Add(new GridSummaryRow
             {
                 Title = BindingResolver.ResolveInline(vm, rr.Raw("title")) ?? "",
-                Fn = GridSummary.Parse(rr.Raw("fn")),
+                Fn = GridSummary.Parse(AttrRules.Enum(rr, "fn", "no aggregate")),
                 Cells = cells
             });
         }
@@ -217,7 +199,7 @@ internal static class GridBuilder
             Summaries = summaries,
             RowHeight = Positive(r, "row-height", 48f),
             HeaderHeight = Positive(r, "header-height", 40f),
-            Mode = BindingResolver.ToText(r.Value("selection-mode"), r.Raw("selection-mode"))?.Trim().ToLowerInvariant() switch
+            Mode = AttrRules.Enum(r, "selection-mode") switch
             {
                 "single" => GridSelectionMode.Single,
                 "multi" => GridSelectionMode.Multi,

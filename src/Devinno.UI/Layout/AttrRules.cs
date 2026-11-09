@@ -1,11 +1,13 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using Devinno.UI.Binding;
 using Devinno.UI.Interaction;
 using Devinno.UI.Markup;
+using Devinno.UI.Styling;
 
 namespace Devinno.UI.Layout;
 
-// 속성 값 해석 규칙 한 곳(3단계 R1 참/거짓·R7 숫자) — 빌드·공정도·그리드·핸들 변환이 모두 이 함수로 읽는다. 태그마다 다시 짜지 않는다.
+// 속성 값 해석 규칙 한 곳(3단계 R1 참/거짓·R2 색·R3 목록 값·R7 숫자) — 빌드·공정도·그리드·핸들 변환이 모두 이 함수로 읽는다. 태그마다 다시 짜지 않는다.
 // 잘못된 값의 경고는 Warnings.Warn(화면마다 같은 문구 한 번).
 internal static class AttrRules
 {
@@ -117,4 +119,84 @@ internal static class AttrRules
 
     /// <summary>Attribute <paramref name="attr"/> of the element as a number, or <see langword="null"/> (see <see cref="NumberOrNull(object?, string, string, string)"/>).</summary>
     public static double? NumberOrNull(AttrReader r, string attr, string instead = "ignored") => NumberOrNull(r.Value(attr), r.Node.Tag, attr, instead);
+
+    // ── 3단계 R2 색 ──
+
+    // 값 전체가 토큰 하나 — token(이름) 또는 별칭 var(--이름)
+    private static readonly Regex TokenOnly = new(@"^(?:token\(\s*([A-Za-z0-9_.-]+)\s*\)|var\(\s*--([A-Za-z0-9_.-]+)\s*\))$", RegexOptions.Compiled);
+
+    /// <summary>
+    /// The color rule: <c>#RGB</c>, <c>#RRGGBB</c>, <c>#RRGGBBAA</c> or <c>transparent</c> (<see cref="DvColor.TryParse"/>), or a theme token <c>token(name)</c> (alias <c>var(--name)</c>).
+    /// Absent, <see langword="null"/> or empty text = <see langword="null"/>, silently. A token the theme does not have = magenta (<see cref="ThemeResolver.MissingColor"/>) with a warning;
+    /// any other value = <see langword="null"/> (the attribute's default color) with a warning that says <paramref name="instead"/>.
+    /// </summary>
+    public static DvColor? Color(object? value, DvTheme? theme, string tag, string attr, string instead = "using the default color")
+    {
+        var text = BindingResolver.ToText(value, attr)?.Trim();
+        if (string.IsNullOrEmpty(text))
+            return null;
+        if (TryColor(text, theme, tag, attr, out var c))
+            return c;
+        Warnings.Warn($"Devinno.UI: {tag} {attr}='{text}' is not a color (#RRGGBB or token(name)); {instead}");
+        return null;
+    }
+
+    /// <summary>
+    /// Reads <paramref name="text"/> with the color rule without the warning for an unparsable value (the caller reports it).
+    /// A token the theme does not have still gives magenta and a warning.
+    /// </summary>
+    public static bool TryColor(string text, DvTheme? theme, string tag, string attr, out DvColor color)
+    {
+        text = text.Trim();
+        var m = TokenOnly.Match(text);
+        if (!m.Success)
+            return DvColor.TryParse(text, out color);
+
+        var name = m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value;
+        if ((theme ?? DvTheme.Default).TryGet(name, out var tokenValue))
+            return DvColor.TryParse(tokenValue, out color);
+        Warnings.Warn($"Devinno.UI: {tag} {attr}='{text}' uses a token the theme does not have; drawing {ThemeResolver.MissingColor} (magenta)");
+        DvColor.TryParse(ThemeResolver.MissingColor, out color);
+        return true;
+    }
+
+    // ── 3단계 R3 목록 값 ──
+
+    /// <summary>The listed value that <paramref name="value"/> names (surrounding spaces and case ignored), as written in <paramref name="values"/>; <see langword="null"/> when none matches or the value is empty. No warning.</summary>
+    public static string? MatchEnum(object? value, IReadOnlyList<string>? values)
+    {
+        var text = (value as string ?? BindingResolver.ToText(value, null))?.Trim();
+        if (string.IsNullOrEmpty(text) || values is null)
+            return null;
+        foreach (var v in values)
+        {
+            if (string.Equals(v, text, StringComparison.OrdinalIgnoreCase))
+                return v;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The enum rule: one of <paramref name="values"/>, surrounding spaces and case ignored (returned as listed). Absent, <see langword="null"/> or empty text = <paramref name="fallback"/>, silently;
+    /// any other value = <paramref name="fallback"/> with a warning that names the tag and attribute and lists the values (it says <paramref name="instead"/>, by default "using {fallback}" or "ignored").
+    /// </summary>
+    public static string? Enum(object? value, string? fallback, string tag, string attr, IReadOnlyList<string>? values, string? instead = null, bool error = false)
+    {
+        var text = BindingResolver.ToText(value, attr)?.Trim();
+        if (string.IsNullOrEmpty(text))
+            return fallback;
+        if (MatchEnum(text, values) is { } match)
+            return match;
+        var list = values is { Count: > 0 } ? string.Join(", ", values) : "(none)";
+        Warnings.Warn($"Devinno.UI: {tag} {attr}='{text}' is not one of {list}; {instead ?? (fallback is null ? "ignored" : "using " + fallback)}", error);
+        return fallback;
+    }
+
+    /// <summary>Attribute <paramref name="attr"/> of the element with the enum rule, its values and default from <see cref="TagSchema"/>.</summary>
+    public static string? Enum(AttrReader r, string attr, string? instead = null, bool error = false)
+    {
+        var def = TagSchema.Find(r.Node.Tag, attr);
+        return Enum(r.Value(attr), def?.Default, r.Node.Tag, attr, def?.Values, instead, error);
+    }
 }

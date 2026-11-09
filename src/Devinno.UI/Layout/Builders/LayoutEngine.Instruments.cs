@@ -40,9 +40,9 @@ public sealed partial class LayoutEngine
         box.LampBlink = AttrRules.Bool(r, r.Has("blink-when") ? "blink-when" : "blink");
         if (AttrRules.NumberOrNull(r, "blink-interval", "using 500") is > 0 and var bint)
             box.BlinkIntervalMs = (int)Math.Round(bint);
-        if (ParseColor(r.Text("color")) is { } lampColor)
+        if (Color(r, "color", "using the state or text color") is { } lampColor)
             box.LampColor = lampColor;
-        box.LampState = r.Text("state");
+        box.LampState = AttrRules.Enum(r, "state", "no state color");
     }
 
     // DvGauge·DvRing·DvProgress 가 같은 상자 필드(Gauge*·Tone·Unit…)를 쓴다. 셋 다 모든 속성을 읽는다 —
@@ -58,8 +58,8 @@ public sealed partial class LayoutEngine
         if (r.Has("show-tick-labels"))
             box.GaugeTickLabels = AttrRules.Bool(r.Value("show-tick-labels"), true, r.Node.Tag, "show-tick-labels");
 
-        box.Tone = r.Text("tone") is { Length: > 0 } tone ? tone : "info";
-        box.Direction = r.Text("direction") is { Length: > 0 } dir ? dir : "right";
+        box.Tone = AttrRules.Enum(r, "tone") ?? "info";
+        box.Direction = AttrRules.Enum(r, "direction") ?? "right";
         box.ShowValue = AttrRules.Bool(r, "show-value");
         box.Unit = r.Text("unit");
         box.ValueFormat = r.Text("format");
@@ -116,7 +116,7 @@ public sealed partial class LayoutEngine
         };
 
         // 모든 차트 태그가 공용 속성을 다 읽는다(차트가 쓰지 않는 것도 — TagSchema Note "dead read")
-        box.Tone = r.Text("tone") is { Length: > 0 } tone ? tone : "info";
+        box.Tone = AttrRules.Enum(r, "tone") ?? "info";
         box.ShowValue = AttrRules.Bool(r, "show-value");
         box.ChartYMin = Num("y-min");
         box.ChartYMax = Num("y-max");
@@ -174,7 +174,7 @@ public sealed partial class LayoutEngine
             var points = cr.Value("points") is IEnumerable<Trends.TrendPoint> bound
                 ? HandlerErrors.Snapshot(bound, PathOf(cr.Raw("points")), ch.Tag).ToArray()
                 : source?.Snapshot(name) ?? Array.Empty<Trends.TrendPoint>();
-            var color = ParseColor(cr.Text("color"))?.ToSK()
+            var color = Color(cr, "color", "using the palette color")?.ToSK()
                         ?? Trends.TrendSpec.Palette[index % Trends.TrendSpec.Palette.Length];
             spec.Channels.Add(new Trends.TrendChannelData
             {

@@ -73,8 +73,8 @@ public class GridColorTests
         Assert.Equal(Token("tone-danger"), Px(a, NameAt(0)));
         using var b = Render(Surface(new Vm(), "row-color=\"nope\""));
         Assert.Equal(Token("grid-row"), Px(b, NameAt(0)));
-        using var c = Render(Surface(new Vm(), "row-color=\"token(tone-dangr)\"")); // 없는 토큰 = 테마 색(자홍 아님)
-        Assert.Equal(Token("grid-row"), Px(c, NameAt(0)));
+        using var c = Render(Surface(new Vm(), "row-color=\"token(tone-dangr)\"")); // 3단계 R2: 없는 토큰 = 자홍 + 경고(다른 색 속성과 같게)
+        Assert.Equal(new SKColor(0xff, 0x00, 0xff), Px(c, NameAt(0)));
     }
 
     [Fact]

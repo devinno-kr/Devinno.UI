@@ -295,7 +295,7 @@ public sealed partial class LayoutEngine
         (n, ctx) => BuildSelf(n, ctx),
         (n, ctx) => Build(n, ctx, registry, depth + 1),
         (n, ctx) => ExpandUnit(n, ctx, registry),
-        raw => ParseColor(raw)?.ToSK(),
+        (r, attr, instead) => Color(r, attr, instead)?.ToSK(),
         Reader,
         LinkInstance);
 
@@ -358,7 +358,7 @@ public sealed partial class LayoutEngine
         var sugar = ResolveStyle(LayoutSugar.Decls(r), vm);
         var rules = Classes(r, _valueOverride).Select(c => _sheet.TryGet(c, out var rule) ? rule : null).OfType<ClassRule>().ToList();
         var classBase = ResolveStyle(StyleSheet.Join(rules.Select(rule => rule.Base).ToArray()), vm);
-        var attrDecls = r.Text("content-align") is { Length: > 0 } caValue
+        var attrDecls = AttrRules.Enum(r, "content-align") is { } caValue
             ? "content-align:" + caValue
             : null;
         var inline = ResolveStyle(r.Raw("style"), vm);
@@ -406,14 +406,18 @@ public sealed partial class LayoutEngine
         return box;
     }
 
-    // 색 속성 값(바인딩을 푼 뒤) — #색 또는 token(이름)(이 엔진의 테마로 해석, 모르는 토큰은 자홍). 해석 못 하면 null.
-    private DvColor? ParseColor(string? raw)
-        => !string.IsNullOrWhiteSpace(raw) && DvColor.TryParse(ThemeResolver.ResolveVars(raw.Trim(), _theme), out var c) ? c : null;
+    // 색 속성 — 공용 색 규칙(AttrRules.Color, 이 엔진의 테마): 모르는 토큰 = 자홍 + 경고, 해석 못 하면 null(기본색) + 경고(instead)
+    private DvColor? Color(AttrReader r, string attr, string instead)
+        => AttrRules.Color(r.Value(attr), _theme, r.Node.Tag, attr, instead);
 
-    // alarm-zones — 바인딩(문자열 전체)을 풀고 구간 색의 token(이름) 을 테마로 바꾼 뒤 해석. 형식 오류는 GaugeZone.ParseZones 의 예외 그대로.
+    // alarm-zones — 바인딩(문자열 전체)을 풀고 구간마다 해석. 잘못된 구간만 버리고 경고(화면은 뜬다), 구간 색은 공용 색 규칙
     private List<Widgets.GaugeZone> ParseZones(AttrReader r)
-        => Widgets.GaugeZone.ParseZones(ThemeResolver.ResolveVars(
-            r.Text("alarm-zones"), _theme));
+    {
+        var tag = r.Node.Tag;
+        return Widgets.GaugeZone.Parse(r.Text("alarm-zones"),
+            text => AttrRules.TryColor(text, _theme, tag, "alarm-zones", out var c) ? c : null,
+            (zone, why) => Warnings.Warn($"Devinno.UI: {tag} alarm-zones zone '{zone}' is not valid ({why}); the zone is ignored"));
+    }
 
     // row-class·cell-class — 클래스의 기본 규칙에서 background·color·font-weight 만(지정한 것만 값)
     private static readonly System.Text.RegularExpressions.Regex DeclName = new(@"(?:^|[;\s])([a-z-]+)\s*:",
@@ -442,14 +446,13 @@ public sealed partial class LayoutEngine
     {
         var node = r.Node;
         var vm = r.Context;
-        // 의미 속성 → 암묵 클래스 (DvButton variant/size). 바인딩을 풀어 리터럴과 같게 — 값이 없거나 비면 기존 DvButton 그대로.
-        if (node.Tag == "DvButton" && r.Raw("variant") is { } variantRaw &&
-            BindingResolver.ResolveText(vm, variantRaw)?.Trim() is { Length: > 0 } variant)
+        // 의미 속성 → 암묵 클래스 (DvButton variant/size). 바인딩을 풀어 리터럴과 같게 — 값이 없거나 비면 기존 DvButton 그대로,
+        // 정의된 값이 아니면 클래스 없이 + 경고(공용 목록 규칙)
+        if (node.Tag == "DvButton" && AttrRules.Enum(r, "variant", "no variant class") is { } variant)
         {
             yield return "btn";
             yield return "btn-" + variant;
-            if (r.Raw("size") is { } sizeRaw &&
-                BindingResolver.ResolveText(vm, sizeRaw)?.Trim() is { Length: > 0 } size)
+            if (AttrRules.Enum(r, "size", "no size class") is { } size)
                 yield return "btn-" + size;
         }
 
@@ -707,19 +710,7 @@ public sealed partial class LayoutEngine
     /// <summary>The DvVideo boxes of this build that write <c>position</c>/<c>duration</c> to the view model; the surface syncs them every frame.</summary>
     internal List<LayoutBox> BoundVideos { get; } = new();
 
-    // 모르는 input-mode = 경고 후 drag
-    private static KnobInputMode WarnKnobMode(string mode)
-    {
-        Warnings.Warn($"Devinno.UI: DvKnob input-mode='{mode}' is not a valid value (drag, tap, both); using drag");
-        return KnobInputMode.Drag;
-    }
 
-    private static string WarnSliderDirection(string? dir)
-    {
-        if (!string.IsNullOrEmpty(dir))
-            Warnings.Warn($"Devinno.UI: DvSlider direction='{dir}' is not a valid value (right, left, up, down); using right");
-        return "right";
-    }
 
     // 숫자 속성 — 공용 규칙(AttrRules, Invariant · 숫자 아님 = 기본값 + 경고)
     private static float ToFloat(AttrReader r, string attr, float dflt) => (float)AttrRules.Number(r, attr, dflt);

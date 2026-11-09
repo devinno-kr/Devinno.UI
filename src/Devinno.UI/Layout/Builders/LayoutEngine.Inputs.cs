@@ -30,7 +30,7 @@ public sealed partial class LayoutEngine
                 break;
             case "DvImage":
                 box.ImageSrc = r.Text("src");
-                box.ImageFit = Widgets.ImageFitParser.Parse(r.Text("fit"));
+                box.ImageFit = Widgets.ImageFitParser.Parse(AttrRules.Enum(r, "fit"));
                 break;
             case "DvVideo":
                 BuildVideo(box, r);
@@ -172,20 +172,18 @@ public sealed partial class LayoutEngine
         box.KnobUnit = r.Text("unit");
         if (r.Node.Tag == "DvKnob")
         {
-            // input-mode 는 원문 그대로(바인딩 해석 없음 — 지금 동작 그대로)
-            box.KnobInput = r.Raw("input-mode") switch
+            // input-mode — 공용 목록 규칙(바인딩 가능, 모르는 값 = drag + 경고)
+            box.KnobInput = AttrRules.Enum(r, "input-mode") switch
             {
-                null or "drag" => KnobInputMode.Drag,
                 "tap" => KnobInputMode.Tap,
                 "both" => KnobInputMode.Both,
-                var mode => WarnKnobMode(mode),
+                _ => KnobInputMode.Drag,
             };
         }
         else
         {
             // 슬라이더 — direction = 값이 커지는 쪽(DvProgress 와 같은 값), show-value = 손잡이 옆 값 글자
-            var dir = r.Text("direction");
-            box.Direction = dir is "right" or "left" or "up" or "down" ? dir : WarnSliderDirection(dir);
+            box.Direction = AttrRules.Enum(r, "direction") ?? "right";
             box.ShowValue = AttrRules.Bool(r, "show-value");
         }
     }
@@ -203,11 +201,11 @@ public sealed partial class LayoutEngine
             : ve is not null && BindingResolver.IsTwoWay(ve)
             ? BindingResolver.Resolve(target ?? vm, $"{{{BindingResolver.ExtractPath(ve)}}}")
             : BindingResolver.ResolveValueOrLiteral(vm, ve);
-        box.InputKind = Attr("keyboard-type") switch
+        box.InputKind = AttrRules.Enum(r, "keyboard-type") switch
         {
             "numeric" => DvEditKind.Numeric,
             "password" => DvEditKind.Password,
-            _ => DvEditKind.Text // email 등은 text
+            _ => DvEditKind.Text
         };
         box.InputMultiline = AttrRules.Bool(r, "multiline");
         box.InputPlaceholder = Attr("placeholder");
@@ -303,7 +301,7 @@ public sealed partial class LayoutEngine
         box.ReadOnly = InputReadOnly(r, _valueOverride);
         if (r.Node.Tag == "DvDateTimeInput")
         {
-            box.PickerMode = PickerValue.ResolveMode(Attr("mode"), box.PickerValueType);
+            box.PickerMode = PickerValue.ResolveMode(AttrRules.Enum(r, "mode", "using the value type's mode"), box.PickerValueType);
             box.PickerSeconds = AttrRules.Bool(r, "show-seconds");
             box.PickerFormat = Attr("format");
         }
@@ -317,7 +315,7 @@ public sealed partial class LayoutEngine
     {
         var node = r.Node;
         var vm = r.Context;
-        box.ListMulti = r.Text("selection-mode") == "multi";
+        box.ListMulti = AttrRules.Enum(r, "selection-mode") == "multi";
         var attr = box.ListMulti ? "selected-items" : "value";
         var raw = r.Raw(attr);
         var (expr, target, ov) = ValueOf(r, raw);
@@ -514,7 +512,7 @@ public sealed partial class LayoutEngine
     private void BuildVideo(LayoutBox box, AttrReader r)
     {
         var vm = r.Context;
-        box.ImageFit = Widgets.ImageFitParser.Parse(r.Text("fit"));
+        box.ImageFit = Widgets.ImageFitParser.Parse(AttrRules.Enum(r, "fit"));
         var srcExpr = r.Raw("src");
         if (r.Raw("source") is { } sourceExpr)
         {

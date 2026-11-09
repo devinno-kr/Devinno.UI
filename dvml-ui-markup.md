@@ -130,6 +130,10 @@ Below is `MainPage.dvml`. The root `vm` points to the class above (the file name
 
 **Number values** — number attributes (`min`, `max`, `step`, `blink-interval`, `row-height`, `window`…) are read with the invariant culture (`1.5`, never `1,5`, whatever the PC's language). A value that is not a number uses the attribute's default and writes a Trace warning (a literal one is also DVML020); empty text is the same as leaving it out.
 
+**Color values** — color attributes (`DvLamp color`, `DvTrendChannel color`, `DvSignal color`, `DvColumn on-color`, the `DvDataGrid` `*-color` attributes, zone colors in `alarm-zones`) take `#RGB`, `#RRGGBB`, `#RRGGBBAA`, `transparent` or a theme token `token(이름)`. A token the theme does not have draws magenta `#FF00FF` and writes a Trace warning, so a misspelled name stands out. Any other value (`red`, `nope` — color names are not supported) is treated as not given (the attribute's default color) and writes a Trace warning; a literal one is also DVML020. Empty text is the same as leaving it out.
+
+**Word values** — attributes that take one word from a fixed list (`direction`, `fit`, `variant`, `size`, `tone`, `state`, `selection-mode`, `cell-type`, `sort`, `fn`, `input-mode`, `keyboard-type`, `content-align`, the `align`/`justify` of layout tags, process `kind`, `flip`, `arrow`, `side`, …) compare the value ignoring case and surrounding spaces (`" Up "` = `up`). Any other word uses the attribute's default and writes a Trace warning (a literal one is also DVML020); empty text is the same as leaving it out. The lists are in each tag's section.
+
 ---
 
 ## 3. Layout
@@ -582,9 +586,10 @@ Most attributes are bound. The following are **not bound and are used literally*
 | All elements | `onclick` `onbeforecommit` (method names), `id` (control name, chapter 20), `vm` on the root |
 | `DvAlarmBanner` `DvAlarmList` | `onack` |
 | `DvDataGrid` | `row-key` `row-class` `onrowclick` (paths / names), `selection` (the binding expression itself) |
-| `DvColumn` | `field` `cell-type` `align` `format` `icon` `variant` `onclick` `onbeforecommit` `enabled` `cell-class` `sort` |
+| `DvColumn` | `field` `onclick` `onbeforecommit` `enabled` `cell-class` (paths / names) |
 | `DvSelect`, select cell | `item-value` `item-text` `item-icon` (paths inside the item) |
-| `DvSummary` `DvSummaryRow` | `field` `fn` `format` |
+| `DvSummary` | `field` |
+| Process diagram (`dvml-process.md`) | equipment, unit, `DvPort` and `DvInstrument` `name`, `DvLine`/`DvSignal` `from` `to`, `DvInstrument` `on` `tap` (names and references; a `{` in them writes a Trace warning and is used as written) |
 | `DvComponent`/`DvParam` | `name` `default` |
 
 `header`·`text`·`unit` of `DvColumn`, `DvColumnGroup header`, and `DvSummaryRow title` support only text interpolation (`"{X}개"`).
@@ -735,13 +740,13 @@ Built-in components whose appearance is defined by the theme. You rarely need `s
 - `variant` = `primary` `secondary` `danger` `ghost` → themed button look (`.btn .btn-{variant}`), including hover/press/disabled looks. `size` = `sm` `lg` (only when `variant` is set).
 - Without `variant`, it is an unstyled text box (for custom styling).
 - `icon="fa-floppy-disk"` = icon to the left of the text (gap 8). Icon size = `font-size`, color = `color`. An icon alone without text is fine.
-- `variant`·`size` are bound (`variant="{Kind}"` — same look as the literal). If the bound value is null or empty, it is the same as having no `variant`. Changes are applied on `Invalidate()`.
+- `variant`·`size` are bound (`variant="{Kind}"` — same look as the literal). If the bound value is null or empty, it is the same as having no `variant`. Any other word adds no class and writes a Trace warning (`variant="foo"` does not add `.btn-foo`; style your own class with `class`). Changes are applied on `Invalidate()`.
 
 **DvIcon** — `<DvIcon icon="fa-triangle-exclamation" style="font-size:32; color:token(tone-warning)"/>`. Size = `font-size` (default 24), color = `color` (default `token(text)`). Icon names are in chapter 18.
 
 **DvLamp**
 - On when `on="{Running}"` is true. With `blink="true"`, it blinks while on (every `blink-interval` ms; all blinking on screen shares the same phase). `blink-when` is another name for `blink`.
-- On-color priority: `color` (`#RRGGBB` or `token(이름)`, bindable) > `state` (`state-{값}` token) > `color` in `style`. The off color is a fixed dark gray. `blink-interval` is also bound.
+- On-color priority: `color` (`#RRGGBB` or `token(이름)`, bindable) > `state` (`state-{값}` token: `run` `stop` `fault` `warn` `manual` `off`) > `color` in `style`. An unreadable `color` or an unknown `state` is ignored with a Trace warning (chapter 2). The off color is a fixed dark gray. `blink-interval` is also bound.
 - **Multi-state lamp (equipment state number → color / text / blinking):** there is no separate widget; the VM converts the state into a `state` key, text, and blinking and binds them (state rules are app data that differ per equipment). Lamp + name + status chip is drawn by `DvStatusItem`. For a color not in the theme, use `DvLamp color="{PumpColor}"`.
 ```xml
 <DvStatusItem label="2호 펌프" state="{Pump2.StateKey}" status="{Pump2.StateText}" blink="{Pump2.IsFault}"/>
@@ -891,7 +896,7 @@ public sealed class Section(string title, List<Section> all)
 - **DvRing:** thick arc fill. `sweep` = arc angle (1–360; 360 = a full circle starting at 12 o'clock), `thickness` = arc thickness (omitted = 11% of size), value + `unit` in the center, `label` below. Fill color = current zone color, otherwise `tone-{tone}`.
 - **DvProgress:** `direction` = `right` `left` `up` `down`. `show-value="true"` shows the value (+`unit`) in the center (only horizontal and height 14 or more). Fill color = current zone color or `tone-{tone}`. Corners can be changed with `border-radius` (default pill shape).
 - **DvTank:** cylindrical vessel. Value chip in the center (+`unit`), liquid color = current zone color. `show-zone-marks="false"` keeps the zone colors and hides only the boundary ticks and numbers on the right.
-- **DvKnob:** drag to rotate; written once on release (`onbeforecommit` = `bool M(double)`). Rotation is relative to the grab point. `unit` is bound. Choose the input method with `input-mode`: `drag` (default, drag to rotate), `tap` (tap opens a numeric keypad — no rotation), `both` (drag rotates; a tap without movement opens the keypad). The keypad is a built-in number box (same look as 21.5 `InputNumber`) showing the current value, `min`–`max`, and `unit`; a confirmed value goes through the same `step` rounding → range → `onbeforecommit` as dragging before being written. Cancel leaves it unchanged. The keypad appears only on `DvApp` screens (pages, bars, dialogs) — on hosts using `DvSurface` directly, taps are ignored (Trace warning). A tap on a `tap`·`both` knob opens the keypad instead of `onclick`. Read-only (one-way `value`) and `disabled` knobs do not open the keypad. An unknown `input-mode` value logs a warning and falls back to `drag`.
+- **DvKnob:** drag to rotate; written once on release (`onbeforecommit` = `bool M(double)`). Rotation is relative to the grab point. `unit` is bound. Choose the input method with `input-mode`: `drag` (default, drag to rotate), `tap` (tap opens a numeric keypad — no rotation), `both` (drag rotates; a tap without movement opens the keypad). The keypad is a built-in number box (same look as 21.5 `InputNumber`) showing the current value, `min`–`max`, and `unit`; a confirmed value goes through the same `step` rounding → range → `onbeforecommit` as dragging before being written. Cancel leaves it unchanged. The keypad appears only on `DvApp` screens (pages, bars, dialogs) — on hosts using `DvSurface` directly, taps are ignored (Trace warning). A tap on a `tap`·`both` knob opens the keypad instead of `onclick`. Read-only (one-way `value`) and `disabled` knobs do not open the keypad. `input-mode` is bound (`input-mode="{Mode}"`); an unknown value logs a warning and falls back to `drag`.
 - **DvSlider:** track + handle (diameter 24). **Pressing anywhere on the track moves the value there**, it follows while dragging, and it is written **once on release** (same commit as the knob — `step` rounding → `min`–`max` → `onbeforecommit` = `bool M(double)`). A press and release without dragging also writes the value at that spot. `direction` = the side where the value increases (same values as `DvProgress`: `right` default, `left` `up` `down` — vertical for `up`·`down`). `show-value="true"` shows the value above the handle (to the right when vertical) (+`unit`, decimal places = those of `step`). Colors: track `gauge-track`, fill and handle border `knob-fill`. There are no ticks. As with the knob, a drag started on the slider does not scroll. One-way or `disabled` sliders do not move. An unknown `direction` logs a warning and falls back to `right`.
 - **Charts (DvSparkline · DvBarChart · DvPieChart):** display-only widgets that draw one series. For values flowing over time, use `DvTrend` (chapter 12).
   - **DvSparkline** — a small line with no axes or ticks (trend in a table cell or card header). `values` = a number list binding or `"3,5,4,8"` (unreadable values become 0). A dot on the last point; `area="true"` adds a translucent fill under the line. Range is `y-min`·`y-max`; if omitted, data min to max. Color = `tone-{tone}`.
@@ -908,7 +913,7 @@ public sealed class Section(string title, List<Section> all)
 - Format: a space-separated list of `from:to:#색`. `from < to`, with `from` in ascending order.
 - Colors are `#RGB`/`#RRGGBB`/`#RRGGBBAA` or `token(이름)` (a theme color, e.g. `0:85:token(tone-success) 85:100:token(tone-danger)`). Unknown tokens are magenta.
 - The whole attribute can be bound (`alarm-zones="{Zones}"`, a string in the same format). A null or empty bound value means no zones.
-- An invalid format (not three parts, not a number, `from >= to`, descending, not a color), whether literal or bound, throws `InvalidOperationException` at layout time and the screen does not appear.
+- A zone that cannot be read (not three parts, not a number, `from >= to`, a `from` below the previous zone, not a color), whether literal or bound, is dropped with a Trace warning; the other zones are kept and the screen appears. (`GaugeZone.ParseZones`, for custom widgets, still throws `InvalidOperationException` on the first bad zone.)
 
 ---
 
@@ -938,7 +943,7 @@ Common rules:
 <DvInput value="{Bind Speed}" keyboard-type="numeric" min="0" max="100" step="0.5" unit="%" show-stepper="true"/>
 ```
 
-- `keyboard-type` = `text` (default) `numeric` `password`. Any other value is `text`.
+- `keyboard-type` = `text` (default) `numeric` `password`, bindable. Any other value is `text`, with a Trace warning.
 - Pressing starts editing. Enter / Tab / Done key / pressing elsewhere = commit, Esc / Cancel = discard. While typing, only the edit buffer changes.
 - **numeric:** integer vs. real and sign are determined by the **bound property's type** (`int` = signed integer, `uint`·`byte` = unsigned integer, `double`·`decimal` = real, `int?` allowed). The decimal point is `.` (InvariantCulture). Values outside `min`/`max` are **rejected** (not clamped) — an error border and the reason are shown and editing continues. Clearing a nullable number is also rejected. `format` is for display.
 - **password:** starts empty; committing it empty does not change the value.
@@ -1048,7 +1053,7 @@ Expand and collapse hierarchical data (plant → line → equipment) and pick on
 | `row-key` | Property path that identifies a row. Keeps selection and editing even when row objects are replaced |
 | `onrowclick` | Row click method — `M(Row row)` if it exists, otherwise `M()` (called after the selection is updated) |
 | `row-class` | Property path on the row item. Its value = class name applied to the row (11.6) |
-| `header-color` `header-text-color` `text-color` `row-color` `row-alt-color` `hover-color` `selected-color` `line-color` `summary-color` `summary-text-color` | Colors (`#rrggbb[aa]` or `token(이름)`, bindable). Omitted = `grid-*` theme tokens. `row-alt-color` = second stripe color |
+| `header-color` `header-text-color` `text-color` `row-color` `row-alt-color` `hover-color` `selected-color` `line-color` `summary-color` `summary-text-color` | Colors (`#rrggbb[aa]` or `token(이름)`, bindable). Omitted or unreadable = `grid-*` theme tokens (unreadable also warns); an unknown token = magenta, as everywhere (chapter 2). `row-alt-color` = second stripe color |
 
 Default size 480 × (header + 5 rows + summary rows). Rounded corners and borders are set with `style`; cells, header and scrollbars are clipped inside the corners, and the border is drawn on top. Cell text uses the grid's `font-size`.
 
@@ -1108,7 +1113,7 @@ public string? ValueClass => Value > Hi ? "over" : null;
 | `cell-type` | Behavior | Extra attributes |
 |---|---|---|
 | `check` | bool/bool? property. Tapping toggles it and **writes directly to the row item**. A property with no public setter is only displayed, dimmed | `onbeforecommit` (6.5 — without it the value is written directly; if the named method is missing or its signature does not match, nothing is written), `readonly` |
-| `lamp` | Display only. bool → on = `on-color` (default `state-run` token); string/enum → `state-{값}` token (unknown value = off) | `on-color` (`#rrggbb` or `token()`, bindable), `blink="true"` (lit lamp blinks) |
+| `lamp` | Display only. bool → on = `on-color` (default `state-run` token); string/enum → `state-{값}` token (unknown value = off) | `on-color` (`#rrggbb` or `token()`, bindable; unreadable = `state-run` + warning, unknown token = magenta), `blink="true"` (lit lamp blinks) |
 | `button` | `onclick` → `VM.M(Row row)` or `VM.M()` | `text` `icon` `variant` (primary, otherwise secondary danger ghost) `enabled` (bool property path on the row item; false = dimmed and inactive) |
 
 Tapping a check or button cell performs only that action (no selection, no `onrowclick`). Tapping a lamp cell is a normal row tap. The whole cell is the touch area.
@@ -1203,7 +1208,7 @@ Bindable, interpreted the same as literals. Any other value = warning, then `non
 |---|---|
 | `name` | Channel name to look up in the `source` buffer (omitted = `ch0`, `ch1`…) |
 | `label` `unit` | Legend text |
-| `color` | `#RRGGBB` or `token(이름)` (theme color; unknown token = magenta), bindable (omitted or unparseable = default palette order) |
+| `color` | `#RRGGBB` or `token(이름)` (theme color; unknown token = magenta + warning), bindable (omitted = default palette order; unparseable = default palette order + warning) |
 | `points` | `IEnumerable<TrendPoint>` binding — if present, this data is used instead of `source` |
 
 - Real-time: the VM provides a `TrendBuffer`, calls `TrendBuffer.Add(채널, 시각, 값)` (thread-safe), then `Invalidate()`.
@@ -2568,6 +2573,7 @@ Attributes available on all equipment:
 | `onclick` `hold` `disabled` `visible` `class` `style` | Same as ordinary controls. Pressing the equipment triggers `onclick` |
 
 - State attributes are bound: `running="{P1Run}"`, `open="{V1Open}"` (true/false, or a number greater than 0 = open), `level="{T1Level}"`.
+- Names and references are literal, never bound: equipment/unit/port/instrument `name`, `DvLine`/`DvSignal` `from`·`to`, `DvInstrument` `on`·`tap` (a `{` in them writes a Trace warning and is used as written).
 - Three-way valves serve both diverting and mixing (paths are bidirectional). When used for mixing in a left→right process, put the common `a` on the right with `flip="h"`. Details in `dvml-process.md` 5.7·5.8.
 - Layout is not recomputed when values change (if the structure is the same, the previous layout is reused). So updating several times per second is cheap.
 
