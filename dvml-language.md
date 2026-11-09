@@ -1,6 +1,6 @@
 # DVML language
 
-Covers: the smallest program, `vm` and project setup, markup basics, the common attributes and which tags take them, how every value is read (true/false, number, word, color, length, theme word), binding syntax and two-way binding, the value widgets (value attribute, `readonly`, handle, change event), attributes that are not bound, click / `hold` / `disabled`, `onbeforecommit`, VM constants, `HandlerError`, attribute naming and a glossary.
+Covers: the smallest program, the `vm` attribute, markup basics, the common attributes and which tags take them, how every value is read (true/false, number, word, color, length, theme word), binding syntax and two-way binding, the value widgets (value attribute, `readonly`, handle, change event), attributes that are not bound, click / `hold` / `disabled`, `onbeforecommit`, VM constants, `HandlerError`, attribute naming and a glossary.
 Read first: [the rules every screen follows](llm-rules.md#principles) · [the shape of a complete screen](llm-rules.md#screen-shape)
 Not here: [layout and sizes](dvml-layout.md#size) · [style keys](dvml-style.md#style-keys) · [theme tokens](dvml-style.md#theme-tokens) · [each widget's attributes](dvml-widgets.md#semantic-components) · [handles and what the generator creates](dvml-code.md#handles) · [build diagnostics DVML001–021](dvml-diagnostics.md#build-diagnostics) · [threads and `Invalidate()`](llm-rules.md#updates-threads)
 
@@ -64,10 +64,10 @@ Below is `MainPage.dvml`.
 ```
 
 - Multiple pages, a top bar or a sidebar: [the complete DvApp example](dvml-app.md#app-example). Other hosts (WinForms `ViewControl`, self-drawn `DvSurface`, PNG rendering `DvRenderer`): [host summary](dvml-app.md#hosts).
-- Where to put the `.dvml` file and how the generator picks it up: [generator setup](dvml-code.md#generator-setup).
+- The csproj (NuGet packages, or building from source with a `ProjectReference`) and where the `.dvml` files go: [project setup](dvml-code.md#project-setup).
 - Choosing `app.Theme` (`Dark`, `Light`, `Graphite`, `Carbon`): [built-in themes](dvml-style.md#built-in-themes). The window size is decided by the host, not by the markup: [hosts](dvml-app.md#hosts).
 
-<a id="project-setup"></a>
+<a id="vm-attribute"></a>
 ## The `vm` attribute
 
 - The root's `vm` points to the VM class. The file name plays no part in the connection (giving the dvml file the class's name is only a convention).
@@ -325,7 +325,7 @@ Behavior:
 - If the VM property's setter throws after the confirmation (including type conversion failure), it is a write failure and handled exactly like a rejection. The error text for `DvInput` (including grid input cells) is "Could not save the value" (`dv.input.write-failed`); the exception message is not shown on screen.
 - **The rejection text is the same for every rejection** ("This value is not allowed", `dv.input.rejected`; Korean or your own text with `DvStrings`, [localization](dvml-app.md#localization)). A confirmation method cannot return its own reason.
 - To show a specific reason, set a VM property inside the method, bind a label to it, and call `App.Invalidate()` in the method — a rejected commit does not rebuild the screen by itself.
-- When rejected (all cases above): `DvInput` stays in edit mode and shows the error text; picker popups stay open; a `DvSelect` dropdown closes and the value is unchanged (a grid `select` cell stays open); toggles, knobs and `check` cells keep their value; grid row selection (`selected-items="{Bind …}"`) keeps the previous selection. The same holds for every widget and `DvDataGrid` cell.
+- When rejected (all cases above): `DvInput` stays in edit mode and shows the error text, except a stepper −/+ press, which keeps the value and shows nothing ([stepper](dvml-inputs.md#dvinput)); picker popups stay open; a `DvSelect` dropdown closes and the value is unchanged (a grid `select` cell stays open); toggles, knobs and `check` cells keep their value; grid row selection (`selected-items="{Bind …}"`) keeps the previous selection. The same holds for every widget and `DvDataGrid` cell.
 
 <a id="vm-constants"></a>
 ## VM constants (`Styles`, `Values`)
@@ -333,6 +333,8 @@ Behavior:
 Instead of writing keyword values as strings in the VM, use constants. All are the same lowercase strings as in markup.
 
 ```csharp
+using Devinno.UI;
+
 public string LampState { get; set; } = Styles.State.Run;      // "run"
 public string Align { get; set; } = Styles.ContentAlign.MiddleCenter;
 ```

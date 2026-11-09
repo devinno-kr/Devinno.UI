@@ -4,7 +4,40 @@ Covers: process (P&ID-style) screens of tanks, pumps, valves and pipes with `<Dv
 Read first: [the rules every screen follows](llm-rules.md#principles) · [markup basics](dvml-language.md#markup-basics) · [binding syntax](dvml-language.md#binding)
 Not here: [equipment tags, ports, sizes and user symbols](dvml-process-equipment.md#equipment) · [diagram size, `fit` and text size](dvml-process-layout.md#size-fit) · [how automatic placement and pipe routes are computed](dvml-process-layout.md#auto-layout) · [coordinate placement details](dvml-process-layout.md#fixed-placement) · [process Trace messages](dvml-process-layout.md#process-diagnostics) · [build diagnostics DVML008–011](dvml-diagnostics.md#build-diagnostics) · [complete examples and copying a given drawing](dvml-process-examples.md#process-examples) · [the level widget `DvTank`](dvml-instruments.md#dvtank)
 
-These four pages (this one, [equipment](dvml-process-equipment.md#equipment), [layout](dvml-process-layout.md#size-fit) and [examples](dvml-process-examples.md#process-examples)) hold every process rule with exact numbers, so an AI can write a correct process screen from them alone. Any tag, attribute or value not on them **does not exist**. Do not invent them.
+These four pages (this one, [equipment](dvml-process-equipment.md#equipment), [layout](dvml-process-layout.md#size-fit) and [examples](dvml-process-examples.md#process-examples)) hold every process rule with exact numbers, so an AI can write a correct process screen from them alone. Any tag, attribute or value not on them **does not exist**. Do not invent them. A small diagram needs only the [fast path](#process-fast-path) below.
+
+<a id="process-fast-path"></a>
+## Small diagram fast path
+
+For a **small diagram** (one line of up to about 8 pieces of equipment, flow in one direction, no lines back to earlier equipment, no units, no drawing to copy) the rules below are enough. Open a linked section only when you use that feature. For any other diagram, read this whole page.
+
+1. Put `<DvProcess grow="1" style="height:0">` in a vertical layout (`DvPageFrame`, `DvStack`, `DvCard`) to fill the space below the other content. Do not write `placement`, `fit` or `align`.
+2. Directly inside it go only equipment, `DvLine` and `DvInstrument`. Equipment: `DvVessel` (a process tank; `DvTank` is a dashboard widget and is not drawn here), `DvPump`, `DvValve kind="…"`, `DvInline kind="…"` (flowmeter and other in-line items), and a `DvTerminal text="…"` for each pipe entering or leaving the screen ([equipment and kinds](dvml-process-equipment.md#equipment)).
+3. Give every piece of equipment a unique `name` of ASCII letters and digits without `.` (`T1`, `P1`); the text shown goes in `label`.
+4. Write one `<DvLine from="A.port" to="B.port"/>` per pipe, `from` upstream. Ports: pump, valve, inline `in` and `out`; vessel `top` (into the top), `side` (in or out at the side), `bottom` (out of the bottom); a terminal by its name alone. **A tank feeding a horizontal line leaves from `side`** (`from="T1.side"`): the tank then stands on the line. A `bottom` outlet puts the next equipment at another height, and a taller area stretches that step ([why](#process-faq)).
+5. Bind the state: pump `running="{…}"`, valve `open="{…}"`, vessel `level="{…}"` (0–100). Left out, they are drawn stopped, closed and empty.
+6. A reading on a piece of equipment: `<DvInstrument name="FT1" tag="FT" number="101" on="F1" value="{FlowText}"/>` ([`DvInstrument`](#dvinstrument)). Buttons or other dvml beside equipment: `<DvAttach side="…">` on a face with no pipe ([attachments](#attachments)).
+7. Optional look: `look="rich"`, `flow-animation="true"`, `medium="water"` on a line ([look, flow and medium](#look-flow-medium)).
+8. Build (no DVML008–011), render a PNG at the smallest real screen size, and read the Trace warnings ([render and check](#procedure)). Any warning, or a picture that looks wrong, means the diagram needs the full [authoring procedure](#procedure).
+
+```xml
+<DvProcess grow="1" style="height:0" flow-animation="true">
+  <DvVessel name="T1" level="{T1Level}" label="T-101"/>
+  <DvPump name="P1" running="{P1Run}" label="P-101"/>
+  <DvValve name="V1" kind="ball" open="{V1Open}" label="XV-101"/>
+  <DvInline name="F1" kind="flowmeter" label="FE-101"/>
+  <DvTerminal name="OUT" text="TO PROCESS"/>
+
+  <DvLine from="T1.side" to="P1.in" medium="water"/>
+  <DvLine from="P1.out" to="V1.in"/>
+  <DvLine from="V1.out" to="F1.in"/>
+  <DvLine from="F1.out" to="OUT" arrow="end"/>
+
+  <DvInstrument name="FT1" tag="FT" number="101" on="F1" value="{FlowText}"/>
+</DvProcess>
+```
+
+The view model side: [view model and updates](#process-vm).
 
 <a id="process-overview"></a>
 ## At a glance — connections only, no coordinates
@@ -128,7 +161,7 @@ AI MUST follow the order below exactly. Each step says what to decide.
 
 **④ Choose ports and connect.** Write one `<DvLine from="upstreamEquipment.port" to="downstreamEquipment.port"/>` for each segment of flow. **`from` is the front of the flow (upstream), `to` is the back (downstream).** This determines the placement order.
 - Pumps, valves and inline equipment: `in` on the incoming side, `out` on the outgoing side.
-- Vessels: `top` when entering from above, `bottom` when leaving from the bottom, `side` when entering or leaving from the side.
+- Vessels: `top` when entering from above, `side` when entering or leaving from the side, `bottom` when leaving from the bottom. A tank that feeds a horizontal line (tank → pump → valve → out) leaves from `side`: the tank stands on the line and the pipe is straight. From `bottom`, the next equipment is placed at another height than the tank, and a taller area stretches that difference ([staircase FAQ](#process-faq)).
 - Terminals: the name only, with no port (`from="IN"`, `to="OUT"`).
 - For a branch, write several lines from the same `from` port; for a merge, write several lines to the same `to` port.
 
@@ -149,7 +182,7 @@ AI MUST follow the order below exactly. Each step says what to decide.
 | `direction` | `lr` · `tb` | `lr` | yes | Flow direction: `lr` = left → right, `tb` = top → bottom |
 | `look` | `plain` · `rich` | `plain` | yes | Appearance ([look](#look-flow-medium)); units follow it |
 | `flow-animation` | true/false | false | yes | Moving dashes over pipes that have flow ([flow display](#look-flow-medium)); units follow the outer value |
-| `align` | `auto` · `step` · `row` | `auto` | yes | Row alignment of the next equipment connected to a port that leaves perpendicular to the flow (the bottom port in `lr`, the right port in `tb`): `step` = staircase, `row` = same row, `auto` = chosen to fit the area ([automatic placement](dvml-process-layout.md#auto-layout)). Ignored with a Trace warning in `fixed` |
+| `align` | `auto` · `step` · `row` | `auto` | yes | Row alignment of the next equipment connected to a port that leaves perpendicular to the flow (the bottom port in `lr`, the right port in `tb`): `step` = staircase (the next equipment below the tank), `row` = the next equipment's inlet at the tank's mid height (the pipe climbs back up in a U), `auto` = staircase, or same row when the staircase cannot shrink into the area ([automatic placement](dvml-process-layout.md#auto-layout)). It shapes the natural-size drawing only: a taller area stretches the height difference either way ([staircase FAQ](#process-faq)). Ignored with a Trace warning in `fixed` |
 | `placement` | `auto` · `fixed` | `auto` | yes | `auto` = automatic placement; `fixed` = every piece of equipment sits at its `x`·`y` ([placement mode](#placement-mode)) |
 | `base-size` | `"W H"` (px) | — | yes | `fixed` only: the size the coordinates were taken at ([size and `fit`](dvml-process-layout.md#size-fit)). Otherwise ignored with a warning |
 | `fit` | `none` · `scale-down` · `contain` | `none` | yes | How the drawing meets the area ([size and `fit`](dvml-process-layout.md#size-fit)). `contain` is for `fixed`; in automatic placement it acts as `scale-down` with a Trace warning |
@@ -157,7 +190,7 @@ AI MUST follow the order below exactly. Each step says what to decide.
 | `grow` and other layout attributes | — | — | — | Same as for an ordinary box. To fill the area: `grow="1" style="height:0"` in a vertical layout |
 
 - Word values on these pages (`direction`, `look`, `align`, `kind`, `rotate`, `flip`, `arrow`, `medium`, `side` …) ignore case and surrounding spaces; any other word gives the default + a Trace warning ([word values](dvml-language.md#value-word)). Exception: `DvPort side` missing or unknown = `right` + a Trace **error** ([`DvPort`](#dvport)).
-- The drawing's height is set to fit the area by `align` (default `auto`); usually you do not write it.
+- Usually you do not write `align`. For a straight line from a tank, connect from the tank's `side` instead of its `bottom` ([staircase FAQ](#process-faq)).
 - **Names and references are written literally, never bound**: equipment, unit, `DvPort` and `DvInstrument` `name`, `DvLine`/`DvSignal` `from`·`to`, and `DvInstrument` `on`·`tap`. The placement is cached by the diagram's structure, so names are fixed text. A `{` in one of them writes a Trace warning and the text is used as written (`name="{N}"` is the name `{N}`); at build time it is [DVML011](dvml-diagnostics.md#dvml011).
 - **The only allowed children are** equipment tags (including registered user symbols), units (`DvUnit`, or a component whose template root is `DvUnit`), `DvLine`, `DvInstrument`, `DvSignal` and `DvStyle`. Any other tag (`DvLabel`, `DvButton`, `DvRepeat` …) placed directly under `DvProcess` is not drawn and leaves a Trace error. Put value displays and buttons inside `DvAttach`.
 - The background is not painted ([look](#look-flow-medium)).
@@ -764,8 +797,10 @@ In the same column, use `row`. To move one to a different column, first check th
 **I want to choose which side of the tank a line enters.**
 `side` automatically picks the face toward the other equipment. To choose the face yourself, connect to a face position: `to="T1.right@0.5"` ([face position](#face-position)).
 
-**Pipes go down like stairs and the drawing is too tall.**
-This is the staircase layout, where equipment after a line leaving the tank bottom drops below the tank. If the area is too small, `align="auto"` switches to the same-row method. To keep it low regardless of area, use `align="row"`.
+**Pipes go down like stairs, or a long vertical pipe runs from the tank to the pump.**
+A line leaving a port perpendicular to the flow (a vessel's `bottom` in `lr`) places the next equipment at another height than the tank. `align` only chooses which: `step` (and `auto`) puts the next equipment below the tank, a staircase; `row` puts the next equipment's inlet at the tank's mid height, so the bottom outlet is lower and the pipe climbs back up in a U. The drawing is laid out at its natural size and then stretched to the area on each axis ([size and `fit`](dvml-process-layout.md#size-fit)), so in a tall area (`grow="1"`) that height difference grows with it: with `step` the pump ends up at the bottom of the area under a long drop; with `row` the tank ends up at the bottom under a long riser. Changing `align` does not fix it.
+- A tank feeding a horizontal line: connect from `side` (`from="T1.side" to="P1.in"`). Tank and line are on one row and the pipe stays straight at any area height.
+- The pipe must leave from the bottom: do not stretch the diagram. Leave out `grow="1" style="height:0"` so it keeps its natural height, where the step is small.
 
 **Several lines enter the tank top separately and it looks cluttered.**
 Lines on the same face and in the same direction are merged into one nozzle. What appears separate is an incoming and an outgoing line, or different left/right faces ([vessel ports](dvml-process-equipment.md#ports)).

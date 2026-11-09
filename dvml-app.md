@@ -18,6 +18,10 @@ In a program with several screens, a single `DvApp` holds and switches all scree
 Dialogs shown over pages (`DvDialog`) are also held by the app ([dialogs](dvml-dialogs.md#dialog-flow)).
 
 ```csharp
+using Devinno.UI.App;
+using Devinno.UI.OpenTK;
+using Devinno.UI.Styling;
+
 var app = new DvApp { Theme = DvTheme.Dark, Strings = strings };
 app.Pages.Add(new HomePage());          // the first page added = start page
 app.Pages.Add(new MonitorPage());
@@ -215,6 +219,8 @@ This page owns the thread contract. [llm-rules](llm-rules.md#updates-threads) ha
 `Show`, area assignment (`Top`, etc.), setting `Theme`/`Strings`/`Registry`, and `Invalidate` can be called **from any thread**. Requests are queued and applied on the input thread at the adapter's next frame; if called several times in between, only the last one is applied.
 
 ```csharp
+using Devinno.UI.Alarms;
+
 // on a communication thread
 void OnAlarmReceived(AlarmPriority p, string msg)
 {
@@ -274,6 +280,8 @@ Selection indication = a class binding that reads `App.CurrentPage`; page switch
 
 ```csharp
 // MainTopBar.cs
+using Devinno.UI.App;
+
 public sealed partial class MainTopBar : DvBar
 {
     public string MonitorClass => TabClass<MonitorPage>();
@@ -439,6 +447,9 @@ The adapter (window or control) decides the window/control size; the markup does
 | `DvRenderer` | Markup → PNG (check output without a window) | — |
 
 ```csharp
+using Devinno.UI.OpenTK;     // ViewWindow
+using Devinno.UI.WinForms;   // ViewControl
+
 // OpenTK
 using var window = new ViewWindow(app, 1280, 800, "My HMI") { Gpu = true };   // Gpu is optional
 window.Run();

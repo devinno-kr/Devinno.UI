@@ -42,6 +42,7 @@ A 270° needle instrument.
 **Behavior**
 - Default size: 120×120.
 - The value text (+ `unit`) and the needle tip use the current zone color.
+- The value text sits in the open bottom of the arc and scales with the gauge, so a larger gauge gives it no more room. Up to about 7 characters with the unit (`58 %`, `148 rpm`) fit between the arc ends; 8 or more (`1480 rpm`, `12.5 bar`) reach or overlap the arc ends at every size. With `ticks` the text sits lower and smaller. For a longer text, leave `unit` out and put the unit in a `DvLabel` under the gauge, or set `show-value="false"` and show the value in your own label.
 - The gauge has no `tone`, `direction`, `label`, `sweep` or `thickness` (those belong to the ring and progress bar); written on a gauge they are [DVML019](dvml-diagnostics.md#dvml019).
 
 **Example**
@@ -370,6 +371,8 @@ The in-memory real-time store bound to `DvTrend source`.
 
 **Example**
 ```csharp
+using Devinno.UI.Trends;
+
 public TrendBuffer Trend { get; } = new();
 public void OnSample(double temp) { Trend.Add("temp", DateTime.Now, temp); }   // then Invalidate()
 ```
@@ -379,7 +382,7 @@ See also: [DvTrend](#dvtrend)
 <a id="dvalarmbanner"></a>
 ## DvAlarmBanner
 
-A one-line bar showing the top unacknowledged alarm and the unacknowledged count. Raising, storing and ACKing alarms is the app's (server's) job; the alarm widgets only display them and pass ACK requests to the VM.
+A one-line bar showing the top unacknowledged alarm and the unacknowledged count. The whole bar is the ACK target; it draws no ACK button. Raising, storing and ACKing alarms is the app's (server's) job; the alarm widgets only display them and pass ACK requests to the VM.
 
 **Attributes**
 
@@ -387,7 +390,7 @@ A one-line bar showing the top unacknowledged alarm and the unacknowledged count
 |---|---|---|---|---|
 | `items` | `IEnumerable<AlarmRow>` | none | yes | Any other type = no rows, silently |
 | `onack` | method name | none | no | `M(AlarmRow)` or `M(long id)`. A missing method is silent |
-| `show-ack` | bool | shown when `onack` is set | yes | Present = bool rule, default shown (see `DvAlarmList`) |
+| `show-ack` | bool | on when `onack` is set | yes | Whether a press on the bar acknowledges. Present = the [bool rule](dvml-language.md#value-bool) with default on: empty, `false` or `0` = presses do nothing. The drawing is the same either way |
 | `comm-alarm` | text | empty | yes | Non-empty = a blinking communication-fault strip with this text above the banner |
 
 **Behavior**
@@ -395,7 +398,8 @@ A one-line bar showing the top unacknowledged alarm and the unacknowledged count
 - `AlarmRow` = `Id` `Time` `Priority` (`Critical` `Major` `Minor`) `Message` `Source` `Acked` `AckTime`.
 - `items` is read at layout time — call `Invalidate()` when it changes.
 - Order: unacknowledged → priority → newest. The banner shows the first such alarm and the unacknowledged count.
-- ACK on the banner acknowledges that representative alarm.
+- **ACK = pressing the bar.** With `onack` set (and `show-ack` not off), a press anywhere on the banner, the communication-fault strip included, calls `onack` with that representative alarm. There is no ACK button and nothing on the bar marks it as pressable; if operators need a visible ACK control, put a `DvAlarmList` (one ACK button per row) or your own button beside it.
+- With no unacknowledged alarm, a press does nothing.
 - Color tokens: `alarm-critical` `alarm-major` `alarm-minor` (+ `-fg`), `comm-alarm` (+ `comm-alarm-fg` text) ([theme tokens](dvml-style.md#theme-tokens)).
 - Asking for confirmation of an ACK is done in the `onack` handler with a message box, not by an attribute ([confirm-before-ACK pattern](dvml-dialogs.md#dialog-patterns)).
 
@@ -432,6 +436,8 @@ A list of alarms with an ACK button per row.
 <DvAlarmList items="{Alarms}" onack="Ack" show-ack="{CanAck}"/>
 ```
 ```csharp
+using Devinno.UI.Alarms;
+
 public IReadOnlyList<AlarmRow> Alarms { get; set; } = [];
 public bool CanAck { get; set; } = true;
 public async void Ack(AlarmRow row) { await api.AckAsync(row.Id); Alarms = await api.GetAsync(); } // after await in a handler the screen redraws automatically
@@ -452,6 +458,8 @@ An in-memory alarm store for standalone HMIs and demos.
 
 **Example**
 ```csharp
+using Devinno.UI.Alarms;
+
 public AlarmLog Log { get; } = new(maxRows: 200);
 public IReadOnlyList<AlarmRow> Alarms => Log.Rows;
 public void Ack(AlarmRow row) => Log.Ack(row.Id);

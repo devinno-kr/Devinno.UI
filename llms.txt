@@ -13,7 +13,7 @@ The documents below sit in the same folder as this file (the package's `docs/`, 
 
 | Question | Page |
 |---|---|
-| How do I set up the project and the source generator? | [dvml-language.md#project-setup](dvml-language.md#project-setup) |
+| How do I set up the project (csproj: NuGet packages or building from source) and the source generator? | [dvml-code.md#project-setup](dvml-code.md#project-setup) |
 | Layout: stack/row/grid, sizes, absolute position, scrolling, text wrapping | [dvml-layout.md#layout-sugar](dvml-layout.md#layout-sugar), [#scroll](dvml-layout.md#scroll) |
 | Which style keys exist, value formats, classes, state styles, priority, transitions | [dvml-style.md#style-keys](dvml-style.md#style-keys) |
 | Theme tokens and the built-in themes | [dvml-style.md#theme-tokens](dvml-style.md#theme-tokens) |
@@ -26,7 +26,7 @@ The documents below sit in the same folder as this file (the package's `docs/`, 
 | Working with controls from code (`id`, `vm`, handles) | [dvml-code.md#code-id-vm](dvml-code.md#code-id-vm) |
 | Dialogs, message boxes, input boxes, screen lock | [dvml-dialogs.md#dialog-flow](dvml-dialogs.md#dialog-flow) |
 | What does build diagnostic DVML0xx mean? What does a Trace warning mean? Why magenta? | [dvml-diagnostics.md#build-diagnostics](dvml-diagnostics.md#build-diagnostics), [#trace-warnings](dvml-diagnostics.md#trace-warnings), [#magenta](dvml-diagnostics.md#magenta) |
-| Process diagram (P&ID, `DvProcess`) — read the whole page first when building a process screen | [dvml-process.md#process-overview](dvml-process.md#process-overview) |
+| Process diagram (P&ID, `DvProcess`) — a small line of a few pieces of equipment: the fast path; anything bigger: read the whole page first | [dvml-process.md#process-fast-path](dvml-process.md#process-fast-path), [#process-overview](dvml-process.md#process-overview) |
 | Complete process examples; copying a given drawing | [dvml-process-examples.md#process-examples](dvml-process-examples.md#process-examples), [#copy-drawing](dvml-process-examples.md#copy-drawing) |
 | Process equipment ports, sizes, states; user symbols (`DvSymbol`) | [dvml-process-equipment.md#equipment](dvml-process-equipment.md#equipment), [#dvsymbol](dvml-process-equipment.md#dvsymbol) |
 | Process diagram size and fit, automatic layout, coordinate placement, process diagnostics | [dvml-process-layout.md#size-fit](dvml-process-layout.md#size-fit) |
@@ -41,4 +41,4 @@ To show screens, an app also references one host adapter package; each has its o
 
 ## C# API
 
-Devinno.UI.xml (`lib/net9.0/` in the package; the same folder as this file in `.devinno/Devinno.UI/`): C# API reference (XML doc comments, the same text IntelliSense shows). Detailed usage of DvApp, DvPage, DvBar, DvDialog, DvSurface, DvRenderer, DvTheme, AlarmLog, TrendBuffer, DvStrings, ComponentRegistry, DvWidget (custom widgets drawn in C#), FrameSource and VideoPlayer (frames and video files for `DvVideo`) and others.
+Devinno.UI.xml (`lib/net9.0/` in the package; the same folder as this file in `.devinno/Devinno.UI/`): C# API reference (XML doc comments, the same text IntelliSense shows). Detailed usage of DvApp, DvPage, DvBar, DvDialog, DvSurface, DvRenderer, DvTheme, AlarmLog, TrendBuffer, DvStrings, ComponentRegistry, DvWidget (custom widgets drawn in C#), FrameSource and VideoPlayer (frames and video files for `DvVideo`) and others. The namespace of each type (the `using` lines): [llm-rules.md#namespaces](llm-rules.md#namespaces).

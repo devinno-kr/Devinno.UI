@@ -1,8 +1,8 @@
 # Working with controls from code (id, vm)
 
-Covers: `id` and `vm`, what the source generator creates, handles (`DvControl` and value handles), writing values (code owns what it writes), reading values, the `Click` event, where handles cannot be used, and project setup for the generator.
+Covers: `id` and `vm`, what the source generator creates, handles (`DvControl` and value handles), writing values (code owns what it writes), reading values, the `Click` event, where handles cannot be used, and project setup (NuGet packages or building from source, and which dvml files the generator reads).
 Read first: [binding syntax](dvml-language.md#binding) · [pages and the app](dvml-app.md#dvpage)
-Not here: [value widget table (value attribute, two-way, handle type and members)](dvml-language.md#value-widgets) · [two-way binding](dvml-language.md#two-way) · [build diagnostics DVML001–021](dvml-diagnostics.md#build-diagnostics) · [thread contract](dvml-app.md#threads) · [which redraw call to use](llm-rules.md#updates-threads) · [`HandlerError` kinds](dvml-language.md#handler-error)
+Not here: [value widget table (value attribute, two-way, handle type and members)](dvml-language.md#value-widgets) · [two-way binding](dvml-language.md#two-way) · [build diagnostics DVML001–021](dvml-diagnostics.md#build-diagnostics) · [thread contract](dvml-app.md#threads) · [which redraw call to use](llm-rules.md#updates-threads) · [`HandlerError` kinds](dvml-language.md#handler-error) · [C# namespaces](llm-rules.md#namespaces)
 
 <a id="code-id-vm"></a>
 ## id and vm
@@ -18,6 +18,10 @@ Controls given a name (`id`) in markup can be used directly inside the VM as **t
 ```
 
 ```csharp
+using Devinno.UI.App;
+using Devinno.UI.OpenTK;
+using Devinno.UI.Styling;
+
 // MainPage.cs: the only C# file you write. A class deriving from DvPage (or DvBar) is its own VM
 public partial class MainPage : DvPage
 {
@@ -171,18 +175,47 @@ PopX = r.Left;  PopY = r.Bottom + 4;  ShowHint = true;
 - An `id` inside a `DvRepeat`/`DvComponent` template creates no handle (the element is cloned once per item/instance); warning [DVML004](dvml-diagnostics.md#dvml004). Handle such elements with bindings and an `onclick` method that takes the item (`onclick="Select"` → `public void Select(Item item)`) — [click](dvml-language.md#click).
 - An `id` on a component **instance** (`<PumpCard id="p1"/>`) works. `Bounds` and overrides apply only to that instance.
 
-<a id="generator-setup"></a>
+<a id="project-setup"></a>
 ## Project setup
 
-- Put the dvml anywhere in the project as a `.dvml` file; `*.dvml` is automatically a generator input. The generator pairs each `DvPage` subclass (the markup `vm`) with its dvml file.
-- Referencing the NuGet package `Devinno.UI` includes `*.dvml` as `AdditionalFiles` and attaches the generator automatically. Nothing else to do.
-- With a `ProjectReference` inside the repository, the package props do not apply: wire up the generator as an analyzer and the dvml as `AdditionalFiles` yourself.
-- **NativeAOT and trimming are not supported.** Bindings (`{Property}`), `onclick` and grid `field` look up properties/methods by name at runtime (reflection). Publish the app as a normal JIT app (`PublishAot`/`PublishTrimmed` can leave bindings empty or handlers uncalled).
+An app project needs three things: the `Devinno.UI` library, one host package to show screens in a window ([choose a host](llms.txt), [hosts](dvml-app.md#hosts)), and the source generator reading every `.dvml` file. The csproj differs between NuGet packages and building from source.
 
-```csharp
-// *.csproj (ProjectReference wiring)
-// <ProjectReference Include="..\..\src\Devinno.UI.Generators\Devinno.UI.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-// <AdditionalFiles Include="Pages/*.dvml" />
+**From NuGet packages.** Reference `Devinno.UI` and the host package, both at the same version (replace `VERSION`; the title line of `llms.txt` names the version these docs belong to):
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Devinno.UI" Version="VERSION" />
+    <PackageReference Include="Devinno.UI.OpenTK" Version="VERSION" />
+  </ItemGroup>
+</Project>
 ```
 
-See the example `samples/Devinno.UI.Demo/Devinno.UI.Demo.csproj`.
+- The `Devinno.UI` package attaches the generator and adds every `*.dvml` under the project folder (except `bin`, `obj` and the other default excluded folders) as `AdditionalFiles`. Write nothing else for the generator.
+- The WinForms host (`Devinno.UI.WinForms`) needs `<TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>` or later ([choose a host](llms.txt)).
+
+**Building from source (`ProjectReference`).** The package's build files do not apply to a project reference, so the csproj wires the generator as an analyzer and lists the dvml files itself. Paths are relative to your csproj; here the library repository sits next to the app:
+
+```xml
+<ItemGroup>
+  <ProjectReference Include="..\Devinno.UI\src\Devinno.UI.OpenTK\Devinno.UI.OpenTK.csproj" />
+  <ProjectReference Include="..\Devinno.UI\src\Devinno.UI.Generators\Devinno.UI.Generators.csproj"
+                    OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  <AdditionalFiles Include="**/*.dvml" Exclude="$(DefaultItemExcludes)" />
+</ItemGroup>
+```
+
+- The host project references `src/Devinno.UI/Devinno.UI.csproj` itself, so the library comes with it. Without a host (PNG rendering with `DvRenderer` only), reference `src/Devinno.UI/Devinno.UI.csproj` instead.
+- `AdditionalFiles` decides which dvml files the generator reads. `**/*.dvml` with `$(DefaultItemExcludes)` is the same set the package adds; a narrower list (`Pages/*.dvml`) works when every dvml is in the listed folders.
+- A dvml that is not in `AdditionalFiles` gets no generated code: its `id` fields are missing (compile errors) and showing that page, bar or dialog throws `InvalidOperationException` ("No dvml markup is attached").
+- In the library repository, `samples/Devinno.UI.AppSample/Devinno.UI.AppSample.csproj` uses this form.
+
+**Where the dvml goes.** Anywhere in the project. The generator reads the root `vm` of each dvml and creates that class's `partial` (markup link, `id` fields, `OnLoaded`); the file name plays no part ([the `vm` attribute](dvml-language.md#vm-attribute)).
+
+**Publishing.** **NativeAOT and trimming are not supported.** Bindings (`{Property}`), `onclick` and grid `field` look up properties/methods by name at runtime (reflection). Publish the app as a normal JIT app (`PublishAot`/`PublishTrimmed` can leave bindings empty or handlers uncalled).

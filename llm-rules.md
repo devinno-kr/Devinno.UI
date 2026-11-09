@@ -1,6 +1,6 @@
 # Devinno.UI Authoring Rules
 
-Covers: the shape of a screen, core principles, choosing the built-in widget for the job, layout differences from CSS, symptom → cause → fix, code-side MUST/NEVER rules (handles, dialogs), which redraw call to make, how to verify a screen (build, PNG, driving the app without a window), what is not supported, where the C# API is. This is the page to read first when building screens; it is for both humans and AI.
+Covers: the shape of a screen, core principles, choosing the built-in widget for the job, layout differences from CSS, symptom → cause → fix, code-side MUST/NEVER rules (handles, dialogs), which redraw call to make, how to verify a screen (build, PNG, driving the app without a window), what is not supported, where the C# API is and which namespace each type is in. This is the page to read first when building screens; it is for both humans and AI.
 Read first: [the document map in llms.txt](llms.txt) — then this page, then [markup basics, values and binding](dvml-language.md#markup-basics).
 Not here: [style keys](dvml-style.md#style-keys) · [theme tokens](dvml-style.md#theme-tokens) · [widget reference](dvml-widgets.md#semantic-components) · [input widget reference](dvml-inputs.md#input-common) · [build diagnostics DVML001–021](dvml-diagnostics.md#build-diagnostics) · [thread contract](dvml-app.md#threads) · [dialog reference](dvml-dialogs.md#dialog-flow) · [process diagrams](dvml-process.md#process-overview) · [screens from a picture](dvml-image.md#image-method)
 
@@ -49,7 +49,7 @@ public sealed partial class MainPage : DvPage   // the VM of MainPage.dvml; the 
 
 - `vm` is the full class name including the namespace (`vm="MyApp.Pages.MainPage"`); the samples declare classes without a namespace, so they use the bare name.
 - `{X}` reads a VM property; `{Bind X}` on a value widget also writes user input back; `onclick` names a public VM method. Details: [binding](dvml-language.md#binding), [click](dvml-language.md#click).
-- Project setup and the generator: [getting started](dvml-language.md#getting-started). A full app with bars and a dialog: [app example](dvml-app.md#app-example). Choosing the host package: [llms.txt](llms.txt) and [hosts](dvml-app.md#hosts).
+- The csproj and the source generator: [project setup](dvml-code.md#project-setup). A full app with bars and a dialog: [app example](dvml-app.md#app-example). Choosing the host package: [llms.txt](llms.txt) and [hosts](dvml-app.md#hosts).
 
 <a id="principles"></a>
 ## Core principles
@@ -100,6 +100,7 @@ public sealed partial class MainPage : DvPage   // the VM of MainPage.dvml; the 
 | `flex-shrink` default | `0` — elements do not shrink even when overflowing; use `flex-shrink:1` or `flex:1`. An `overflow:scroll` box defaults to `1` if unspecified. [size](dvml-layout.md#size) | CSS default is `1` |
 | `DvStack` | Vertical flex, `align-items:stretch`, `gap` 12 — children fill the width. [layout sugar](dvml-layout.md#layout-sugar) | |
 | `DvRow` | Horizontal flex, `align-items:center`, `gap` 12 — children vertically centered. | |
+| `DvGrid` | Each child fills its cell; `align`/`justify` do nothing. Place cell content with `content-align` (label text) or a `DvRow` wrapper. [grid tracks](dvml-layout.md#grid-tracks) | CSS grid aligns items in the cell |
 | Root element | Always fills the window; the root's `width`/`height` are ignored. | |
 | Units | All numbers are px; `16`, `16px`, `16dp` are the same. No `%`, `em`, `rem`, `vw`, `auto` — the only exception is `%` in grid tracks and grid column widths. [lengths](dvml-language.md#value-length) | |
 | Unsupported length | `width:50%`, `width:auto`, `height:2em` become **0, not ignored** — the element disappears. Only `font-size` falls back to 14 when it cannot be parsed. | |
@@ -139,11 +140,13 @@ Knowing how mistakes show up finds the cause quickly when you look at the result
 | Video box empty | `DvVideo source="{X}"` where X is not an `IFrameSource` (a path string, an `SKImage`); Trace warning | — | A file path goes in `src`; frames from code go through a `FrameSource` |
 | Screen is dark though a light one is wanted | No theme given → `DvTheme.Default` (= `DvTheme.Dark`): style tokens and widget-internal colors (toggles, gauge tracks, tanks, grids, virtual keyboard) are all dark | — | Set `DvTheme.Light` (`DvTheme.Graphite` = ISA-101 style gray for bright control rooms, `DvTheme.Carbon` = dim warm dark for night control rooms) — [built-in themes](dvml-style.md#built-in-themes) |
 | Built-in widget text is English on a Korean screen (alarm columns, input errors, dialog and picker buttons) | Built-in text is English by default | — | Korean: `app.Strings = new DvStrings { Language = "ko" }`; other languages: add the `dv.` keys to your table — [localization](dvml-app.md#localization) |
+| Gauge value text runs into the arc ends | Value + unit of 8 characters or more; the text scales with the gauge, so a bigger gauge does not help | — | Unit in a separate label, or `show-value="false"` — [DvGauge](dvml-instruments.md#dvgauge) |
 
 **Layout**
 
 | Symptom | Cause | Build | Fix |
 |---|---|---|---|
+| `align`/`justify` on a `DvGrid` does nothing; a label sits at the top of its cell; a toggle sits in the middle of a wide cell | Grid children fill their cell; the grid's `align`/`justify` and the child's own size are not used | — | Label text: `content-align="middle-left"`; other content: wrap it in a `DvRow` — [grid tracks](dvml-layout.md#grid-tracks) |
 | `grow="1"` has no effect | The parent is a non-flex `DvBox` | — | Parent `DvStack`/`DvRow` or `style="display:flex"`; the parent also needs spare space in that direction (height, for a vertical stack) |
 | A widget stretches to the parent's width | `align-items` default `stretch`, as in CSS | — | Parent `align-items:start`, child `align-self:start`, or a `width`. `DvRow` uses `align-items:center`, so no vertical stretch |
 | Spacing with `margin` does nothing | `margin` is not applied | — | Parent `gap` or `padding`, or an empty box `<DvBox style="height:12"/>` |
@@ -170,6 +173,9 @@ Knowing how mistakes show up finds the cause quickly when you look at the result
 | The current-page highlight on a bar button does not change | The highlight comes from a class binding | — | Bind `class="{X}"` to a computed property that reads `App.CurrentPage` — [current page](dvml-app.md#current-page) |
 | Reading `App` in a page constructor throws `InvalidOperationException` | There is no app until `Pages.Add` (for bars, until the area assignment) | — | Use `App` in handlers, `OnLoaded`, `OnShown` — [page lifecycle](dvml-app.md#page-lifecycle) |
 | Changed values in existing grid rows, the order did not update | Sorting is re-applied only on a header tap, a different `items` list, a change in row count, or (while a filter is active) every `Repaint()`/`Invalidate()` | — | To re-sort after values change, assign a new list and call `Invalidate()` — [sorting](dvml-grid.md#grid-sorting) |
+| A `DvSummary` shows nothing | It is on the first column, whose summary cell always holds the row's `label` | — | Put it on another column — [summary rows](dvml-grid.md#grid-groups-summary-colors) |
+| `DvAlarmBanner` has no ACK button | By design: the whole bar is the ACK target | — | Press the bar (`onack` set); for a visible button use `DvAlarmList` — [DvAlarmBanner](dvml-instruments.md#dvalarmbanner) |
+| A stepper −/+ press does nothing and shows no error | `onbeforecommit` rejected it (the widget shows nothing), or the value is at `min`/`max` | — | Show the reason through a VM property and a label — [DvInput](dvml-inputs.md#dvinput) |
 | A grid filter on a string column opens as an input box instead of a list | `filter="auto"` on a string column is `text` | — | `filter="values"` to pick from a fixed set — [filters](dvml-grid.md#grid-filters) |
 
 **The screen does not appear (exception)**
@@ -249,7 +255,7 @@ Full usage and examples: [dialog flow](dvml-dialogs.md#dialog-flow); the smalles
 <a id="process-pointer"></a>
 ## Process diagrams
 
-**MUST** read [the process diagram guide](dvml-process.md#process-overview) to the end first when writing a process screen (`DvProcess`, P&ID): procedure, equipment sizes and ports, layout and routing, hints, user symbols (`DvSymbol`), diagnostics and fixes, full examples, checklist. A process diagram states **only equipment + connections**; the library does the layout. Choose the placement mode with [placement mode](dvml-process.md#placement-mode) and size the diagram with [size and fit](dvml-process-layout.md#size-fit). Check the result against the [process checklist](dvml-process.md#process-checklist).
+For a small diagram (one line of a few pieces of equipment, flow in one direction), [the small diagram fast path](dvml-process.md#process-fast-path) is enough. For any other process screen (`DvProcess`, P&ID), **MUST** read [the process diagram guide](dvml-process.md#process-overview) to the end first: procedure, equipment sizes and ports, layout and routing, hints, user symbols (`DvSymbol`), diagnostics and fixes, full examples, checklist. A process diagram states **only equipment + connections**; the library does the layout. Choose the placement mode with [placement mode](dvml-process.md#placement-mode) and size the diagram with [size and fit](dvml-process-layout.md#size-fit). Check the result against the [process checklist](dvml-process.md#process-checklist).
 
 <a id="updates-threads"></a>
 ## Updates and threads
@@ -322,6 +328,42 @@ To test interaction (clicks, input, page switches, dialogs), drive the whole app
 - The virtual keyboard (keypad) slide, `hold` presses and inertial scrolling follow the real clock (`Environment.TickCount64`), not the timestamp: wait real time after the keypad opens or closes, or while holding, then call `RenderTo` (a `hold` press fires inside `RenderTo`, not inside `Layout`).
 - After a test writes the VM directly, call `Invalidate()` ahead of the next press. A value widget compares a press with the value from the last rebuild, so otherwise the press may do nothing.
 
+<a id="verify-targets"></a>
+**Finding where to press.** Never guess pixel positions. Take them from an element's `Bounds`:
+
+- Give the element an `id`. The generator creates a handle field for it, and its `Bounds` is in window coordinates, the same coordinates `app.Surface.PointerDown` takes, on pages, bars and your own dialogs alike ([handles](dvml-code.md#handles)). Every tag takes `id` (tags without their own handle type get a `DvControl`), so this also finds a grid, an alarm widget, an input or a piece of process equipment.
+- The handle field is private: expose what the test needs from the page class. Read `Bounds` after a frame, on the thread that runs the frames.
+
+```csharp
+using Devinno.UI.App;
+using SkiaSharp;
+
+public sealed partial class MaintPage : DvPage           // MaintPage.dvml: <DvButton id="btnReset" text="Reset" onclick="Reset"/>
+{
+    internal SKRect ResetBounds => btnReset.Bounds;
+    public void Reset() { }
+}
+```
+
+```csharp
+// test code (DvApp app, with the page added: var maint = new MaintPage(); app.Pages.Add(maint);)
+app.Surface.Layout(1280, 800);                           // a frame: the page has a layout
+var r = maint.ResetBounds;
+app.Surface.PointerDown(new SKPoint(r.MidX, r.MidY));
+app.Surface.PointerUp(new SKPoint(r.MidX, r.MidY));
+app.Surface.Layout(1280, 800);                           // a frame applies the result
+```
+
+Parts drawn inside a built-in widget have no handle of their own. Where they are, measured from the widget's `Bounds`:
+
+| Target | Where to press |
+|---|---|
+| `DvAlarmBanner` ACK | Anywhere in the banner's `Bounds` — the whole bar is the ACK target; there is no button ([DvAlarmBanner](dvml-instruments.md#dvalarmbanner)) |
+| `DvAlarmList` ACK button of a row | `AlarmListLayout.Compute(bounds, rows, rowHeight).Rows[i].AckButton` (`Devinno.UI.Alarms`) — the geometry the list itself uses; rows in display order, `null` for an acknowledged row |
+| `DvInput show-stepper` − / + | The left 40 px of `Bounds` is −, the right 40 px is + |
+| `DvDataGrid` row `i` (0 = first visible row, not scrolled) | Vertical center = `Bounds.Top` + `header-height` × (header tiers, + 1 when a column has a filter row) + `i` × `row-height` + `row-height` / 2. Horizontally, add your column widths (columns with a fixed `width` are the easy case) |
+| Buttons of the built-in dialogs (`MessageBox`, `InputBox`, `InputNumber`, `SelectBox`) | **No supported way.** These dialogs take no `id` and no API reports their button positions. `app.CloseDialogs()` closes them with the cancel result (`DvDialogResult.Cancel`, or `null` for the input boxes), which covers the cancel path. For OK/Yes/No, render a PNG while the box is open and take the position from it: the buttons sit in the bottom row, right-aligned, OK/Yes on the far right and No to its left |
+
 Then **open the real window** (and, with `fit`, resize it and press something). The OpenTK window reads the real cursor position, so posted OS mouse messages are not a reliable test there.
 
 <a id="not-supported"></a>
@@ -347,3 +389,24 @@ These pages cover the **markup**. On the C# side they list only the minimum tied
 
 - Detailed usage is in each type's XML doc comments: hosts (`ViewWindow`, `ViewControl`, `DvSurface`, `DvRenderer`), themes (`DvTheme`), app, pages and dialogs (`DvApp`, `DvPage`, `DvBar`, `DvDialog`, `DialogCollection`, `DvDialogResult`, `DvMessageButtons`), alarms (`AlarmRow`, `AlarmLog`), trends (`TrendBuffer`, `TrendPoint`), localization (`DvStrings`), component and process-symbol registration (`ComponentRegistry`), custom widgets (`DvWidget`), video (`FrameSource`, `VideoPlayer`), constants (`Styles`, `Values`).
 - View them via IntelliSense in the IDE or, with only the package, in `Devinno.UI.xml` (`lib/net9.0/` in the package; the same folder as these pages in `.devinno/Devinno.UI/`).
+
+<a id="namespaces"></a>
+### C# namespaces
+
+The `using` lines for the C# types these pages use. Handle fields created by the generator need no `using` in the VM.
+
+| Types | Namespace | Package |
+|---|---|---|
+| `DvApp`, `DvPage`, `DvBar`, `DvDialog`, `DvDialog<TResult>`, `DialogCollection`, `DvDialogResult`, `DvMessageButtons`, `DvPageTransition` | `Devinno.UI.App` | Devinno.UI |
+| `DvRenderer`, `DvSurface`, `DvHandlerErrorEventArgs`, `Styles`, `Values` | `Devinno.UI` | Devinno.UI |
+| `DvTheme` | `Devinno.UI.Styling` | Devinno.UI |
+| `DvControl` and the value handles (`DvLabel`, `DvButton`, `DvInput`, `DvToggle`, `DvSelect` …), `DvClickEventArgs`, `DvValueChangedEventArgs` | `Devinno.UI.Controls` | Devinno.UI |
+| `AlarmLog`, `AlarmRow`, `AlarmPriority` | `Devinno.UI.Alarms` | Devinno.UI |
+| `TrendBuffer`, `TrendPoint` | `Devinno.UI.Trends` | Devinno.UI |
+| `DvStrings` | `Devinno.UI.Localization` | Devinno.UI |
+| `ComponentRegistry` | `Devinno.UI.Components` | Devinno.UI |
+| `DvWidget`, `DvWidgetContext`, `ImageCache` | `Devinno.UI.Widgets` | Devinno.UI |
+| `FrameSource`, `VideoPlayer`, `IFrameSource` | `Devinno.UI.Video` | Devinno.UI |
+| `ViewWindow` | `Devinno.UI.OpenTK` | Devinno.UI.OpenTK |
+| `ViewControl` | `Devinno.UI.WinForms` | Devinno.UI.WinForms |
+| `SKCanvas`, `SKRect`, `SKPoint`, `SKPaint`, `SKColor` (`Bounds`, pointer input, custom widget drawing) | `SkiaSharp` | SkiaSharp (comes with Devinno.UI) |

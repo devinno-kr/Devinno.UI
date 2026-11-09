@@ -26,8 +26,8 @@ Sugar-only attributes (`DvStack` `DvRow` `DvGrid` `DvSpacer` `DvRepeat`):
 |---|---|
 | `gap` | `none`(0) `xs`(4) `sm`(8) `md`(12) `lg`(16) `xl`(24) `2xl`(32) or a number |
 | `padding` | 1–4 values, each a step name above or a number (`padding="none md"`) |
-| `align` | Cross-axis alignment: `start` `center` `end` `stretch` |
-| `justify` | Main-axis alignment: `start` `center` `end` `between` |
+| `align` | Cross-axis alignment: `start` `center` `end` `stretch`. **No effect on `DvGrid`** ([grid cells](#grid-tracks)) |
+| `justify` | Main-axis alignment: `start` `center` `end` `between`. **No effect on `DvGrid`** |
 
 `DvGrid` attributes:
 
@@ -35,6 +35,8 @@ Sugar-only attributes (`DvStack` `DvRow` `DvGrid` `DvSpacer` `DvRepeat`):
 |---|---|
 | `columns` | An integer N = N equal columns (N 0 or less = 2; default 2); anything else is a track list used as is ([grid tracks](#grid-tracks)) |
 | `rows` | A track list used as is ([grid tracks](#grid-tracks)) |
+
+- `DvGrid` accepts `align` and `justify` without a build or Trace message, but they do nothing: every child fills its cell. To place content inside a cell, see [grid tracks](#grid-tracks).
 
 - Sugar attributes and the `grow`/`width`/`height` attributes have the lowest priority: a class or inline `style` that sets the same property wins ([priority order](dvml-style.md#priority)).
 - These attributes are bindable. Bound values are interpreted exactly like literals (a number in `columns="{N}"` = column count, `md` in `gap="{G}"` = 12, `between` in `justify="{J}"`). A null value is the same as not setting the attribute.
@@ -74,6 +76,18 @@ Each track of `grid-template-columns`/`grid-template-rows` (or `columns`/`rows` 
 
 - If there are more rows than the row template, the extra rows are `auto`. Giving only rows without a column template makes a 1-column grid that fills the width.
 - Children fill their cell (column width × row height) completely, in document order, left→right, top→bottom. There is no cell merging.
+- Inside a cell, a child's own `width`/`height` and `align-self` are not used, and the grid's `align`/`justify` (and `align-items`/`justify-content`) do nothing. To place content within its cell:
+  - Text of a `DvLabel` or `DvButton`: `content-align` on that element (`content-align="middle-left"` puts a label level with a 40 px input in the next column) ([content-align](dvml-style.md#content-align)).
+  - Anything else: wrap it in a `DvRow` (or `DvStack`). The wrapper fills the cell and its own `align`/`justify` place the child. A fixed-shape widget (toggle, knob, gauge) placed directly in a cell is drawn centered in the whole cell, far from a label in the column to its left; inside a `DvRow` it sits at the start.
+
+```xml
+<DvGrid columns="180 1fr" gap="sm">
+  <DvLabel class="body" text="Recipe name" content-align="middle-left"/>
+  <DvInput value="{Bind Name}"/>
+  <DvLabel class="body" text="Auto start" content-align="middle-left"/>
+  <DvRow><DvToggle value="{Bind AutoStart}"/></DvRow>
+</DvGrid>
+```
 - When the grid itself is content-sized (no width given and not stretched), `%` tracks are measured as `auto`, and `fr` columns as in CSS: `fr × (largest content width per fr)`. With `1fr 1fr`, both columns get the same width, fitted to the widest content. `fr` in rows is the content height during measurement.
 - Track lists may be quoted: `grid-template-columns:"1fr 2fr 120"`.
 

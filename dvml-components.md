@@ -73,6 +73,8 @@ Defines a reusable piece of markup under a new tag name; instances of the tag ex
 - Register in C# with a `ComponentRegistry` and give that registry to the app or surface:
 
 ```csharp
+using Devinno.UI.Components;
+
 var registry = new ComponentRegistry();
 registry.Register(markup);
 app.Registry = registry;   // or new DvSurface(markup, vm, theme, registry) / DvRenderer
@@ -222,6 +224,9 @@ registry.RegisterWidget<BatteryGauge>("BatteryGauge"); // register once at start
 A widget that writes its value:
 
 ```csharp
+using Devinno.UI.Widgets;
+using SkiaSharp;
+
 public sealed class SetpointBar : DvWidget
 {
     private double? _drag; // preview while dragging

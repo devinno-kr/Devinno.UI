@@ -2,7 +2,7 @@
 
 Covers: build diagnostics DVML001–021 (severity, meaning, what is checked, how to fix), the runtime Trace warning index (message form → cause → page that owns the rule), and when the screen draws magenta.
 Read first: [markup basics](dvml-language.md#markup-basics) · [build, then check the output](llm-rules.md#verify-build)
-Not here: [process diagram runtime messages in full](dvml-process-layout.md#process-diagnostics) · [handler exceptions and `HandlerError` kinds](dvml-language.md#handler-error) · [symptom → cause → fix table](llm-rules.md#symptoms) · [theme token list](dvml-style.md#theme-tokens) · [generator project setup](dvml-code.md#generator-setup)
+Not here: [process diagram runtime messages in full](dvml-process-layout.md#process-diagnostics) · [handler exceptions and `HandlerError` kinds](dvml-language.md#handler-error) · [symptom → cause → fix table](llm-rules.md#symptoms) · [theme token list](dvml-style.md#theme-tokens) · [project setup and the generator](dvml-code.md#project-setup)
 
 <a id="build-diagnostics"></a>
 ## Build diagnostics

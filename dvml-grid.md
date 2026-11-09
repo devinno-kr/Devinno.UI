@@ -171,7 +171,7 @@ A summary band at the bottom of the grid.
 | attribute | values | default | bound | notes |
 |---|---|---|---|---|
 | `id` | identifier | none | no | The only common attribute a summary row takes |
-| `label` | text | `""` | interpolation only | Shown in the first column |
+| `label` | text | `""` | interpolation only | Shown in the first column. That cell always holds the label (empty without one), never a summary |
 | `fn` | `sum` `avg` `min` `max` `count` | none | yes | Applies to every numeric column without its own `DvSummary`; unknown = none + warning |
 
 ### Behavior
@@ -193,7 +193,7 @@ One cell of a `DvSummaryRow`, for one column.
 | attribute | values | default | bound | notes |
 |---|---|---|---|---|
 | `id` | identifier | none | no | The only common attribute a summary cell takes |
-| `field` | property path | `""` | no | Exactly the same path as the column's `DvColumn field`; no matching column = warning, the cell is ignored |
+| `field` | property path | `""` | no | Exactly the same path as the column's `DvColumn field`; no matching column = warning, the cell is ignored. The first column's field is ignored without a message (that cell is the row's `label`) |
 | `fn` | `sum` `avg` `min` `max` `count` | none | yes | Unknown = none + warning |
 | `format` | .NET format string | the column's `format` | yes | Unusable format = default text + warning |
 | `value` | any object | none | yes | Present = shown instead of the computed value (server totals); also when it resolves to null |
@@ -246,7 +246,7 @@ See the [DvDataGrid example](#dvdatagrid) (`Average` row).
 
 **Summary rows**
 - `DvSummaryRow label fn` = a summary band at the bottom. `fn` = `sum` `avg` `min` `max` `count`.
-- The row's `fn` applies to all numeric columns; `label` is shown in the first column.
+- The first column of every summary row shows the row's `label` (empty without one). Summaries go only in the other columns: the row's `fn` covers the numeric columns from the second on, and a `DvSummary` on the first column shows nothing, with no build or Trace message. To count rows, put the count on another column: `<DvSummary field="Message" fn="count"/>`.
 - Place `DvSummaryRow` directly under `DvDataGrid`.
 - `DvSummary field fn format` sets one column's cell (`field` is exactly the same path as `DvColumn field`).
 - `DvSummary value="{X}"` shows that value instead of a computed one.
