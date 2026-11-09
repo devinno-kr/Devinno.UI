@@ -19,10 +19,10 @@ public sealed partial class Painter
         var cell = rect.Width / names.Length;
         var cy = rect.Top + 2f + dot / 2f;
         var current = box.StepCurrent;
-        var primary = ThemeColor("primary", new SKColor(0x25, 0x63, 0xeb));
-        var border = ThemeColor("border-strong", new SKColor(0x94, 0xa3, 0xb8));
-        var text = ThemeColor("text", new SKColor(0x22, 0x22, 0x22));
-        var muted = ThemeColor("text-muted", new SKColor(0x64, 0x74, 0x8b));
+        var primary = ThemeColor("primary");
+        var border = ThemeColor("border-strong");
+        var text = ThemeColor("text");
+        var muted = ThemeColor("text-muted");
 
         using var p = new SKPaint { IsAntialias = true, StrokeWidth = 3f };
         for (var i = 0; i + 1 < names.Length; i++)
@@ -31,7 +31,7 @@ public sealed partial class Painter
             var x1 = rect.Left + cell * (i + 1.5f) - dot / 2f - 4f;
             if (x1 <= x0)
                 continue;
-            p.Color = i + 2 <= current ? primary : ThemeColor("border", border);
+            p.Color = i + 2 <= current ? primary : ThemeColor("border");
             canvas.DrawLine(x0, cy, x1, cy, p);
         }
 
@@ -44,7 +44,7 @@ public sealed partial class Painter
             var now = step == current;
 
             p.Style = SKPaintStyle.Fill;
-            p.Color = done ? primary : ThemeColor("surface", SKColors.White);
+            p.Color = done ? primary : ThemeColor("surface");
             canvas.DrawCircle(cx, cy, dot / 2f, p);
             if (!done)
             {
@@ -57,7 +57,7 @@ public sealed partial class Painter
             using var ink = new SKPaint { IsAntialias = true };
             if (done)
             {
-                ink.Color = ThemeColor("primary-fg", SKColors.White);
+                ink.Color = ThemeColor("primary-fg");
                 if (IconFont.TryResolve("fa-check", out var glyph))
                     IconFont.Draw(canvas, glyph, new SKPoint(cx, cy), 13f, ink);
             }

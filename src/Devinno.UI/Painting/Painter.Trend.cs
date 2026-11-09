@@ -17,9 +17,9 @@ public sealed partial class Painter
 
         var content = new SKRect(box.Rect.Left + st.Padding.Left, box.Rect.Top + st.Padding.Top,
             box.Rect.Right - st.Padding.Right, box.Rect.Bottom - st.Padding.Bottom);
-        var muted = ThemeColor("text-muted", new SKColor(0x64, 0x74, 0x8b));
-        var ink = ThemeColor("text", new SKColor(0x0f, 0x17, 0x2a));
-        var grid = ThemeColor("trend-grid", new SKColor(0xe2, 0xe8, 0xf0));
+        var muted = ThemeColor("text-muted");
+        var ink = ThemeColor("text");
+        var grid = ThemeColor("trend-grid");
 
         // ── 시간 창
         var latest = spec.Channels.SelectMany(c => c.Points).Select(p => p.Time).DefaultIfEmpty(DateTime.MinValue).Max();

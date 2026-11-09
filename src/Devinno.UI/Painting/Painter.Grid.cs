@@ -22,16 +22,16 @@ public sealed partial class Painter
         var rect = box.Rect;
         // 그리드 색 속성 > 테마 토큰
         var gc = g.Colors;
-        var cHeader = gc.Header?.ToSK() ?? ThemeColor("grid-header", new SKColor(0xee, 0xf2, 0xf6));
-        var cHeaderFg = gc.HeaderText?.ToSK() ?? ThemeColor("grid-header-fg", new SKColor(0x47, 0x55, 0x69));
-        var cRow = gc.Row?.ToSK() ?? ThemeColor("grid-row", SKColors.White);
-        var cAlt = gc.RowAlt?.ToSK() ?? ThemeColor("grid-row-alt", new SKColor(0xf8, 0xfa, 0xfc));
-        var cHover = gc.Hover?.ToSK() ?? ThemeColor("grid-row-hover", new SKColor(0xef, 0xf6, 0xff));
-        var cSel = gc.Selected?.ToSK() ?? ThemeColor("grid-row-selected", new SKColor(0xdb, 0xea, 0xfe));
-        var cLine = gc.Line?.ToSK() ?? ThemeColor("grid-line", new SKColor(0xe2, 0xe8, 0xf0));
-        var cText = gc.Text?.ToSK() ?? ThemeColor("text", new SKColor(0x0f, 0x17, 0x2a));
-        var cSummary = gc.Summary?.ToSK() ?? ThemeColor("grid-summary", new SKColor(0xe2, 0xe8, 0xf0));
-        var cSummaryFg = gc.SummaryText?.ToSK() ?? ThemeColor("grid-summary-fg", cText);
+        var cHeader = gc.Header?.ToSK() ?? ThemeColor("grid-header");
+        var cHeaderFg = gc.HeaderText?.ToSK() ?? ThemeColor("grid-header-fg");
+        var cRow = gc.Row?.ToSK() ?? ThemeColor("grid-row");
+        var cAlt = gc.RowAlt?.ToSK() ?? ThemeColor("grid-row-alt");
+        var cHover = gc.Hover?.ToSK() ?? ThemeColor("grid-row-hover");
+        var cSel = gc.Selected?.ToSK() ?? ThemeColor("grid-row-selected");
+        var cLine = gc.Line?.ToSK() ?? ThemeColor("grid-line");
+        var cText = gc.Text?.ToSK() ?? ThemeColor("text");
+        var cSummary = gc.Summary?.ToSK() ?? ThemeColor("grid-summary");
+        var cSummaryFg = gc.SummaryText?.ToSK() ?? ThemeColor("grid-summary-fg");
 
         canvas.Save();
         canvas.ClipRoundRect(new SKRoundRect(rect, st.BorderRadius, st.BorderRadius), SKClipOperation.Intersect, antialias: true);
@@ -119,10 +119,10 @@ public sealed partial class Painter
             var band = new SKRect(rect.Left, sTop, rect.Right, sTop + g.SummaryHeight);
             fill.Color = cSummary;
             canvas.DrawRect(band, fill);
-            using (var edge = new SKPaint { Color = ThemeColor("border-strong", new SKColor(0x94, 0xa3, 0xb8)), StrokeWidth = 2f })
+            using (var edge = new SKPaint { Color = ThemeColor("border-strong"), StrokeWidth = 2f })
                 canvas.DrawLine(rect.Left, sTop + 1f, rect.Right, sTop + 1f, edge);
             ink.Color = cSummaryFg;
-            using var sumLine = new SKPaint { Color = ThemeColor("border", new SKColor(0xcb, 0xd5, 0xe1)), StrokeWidth = 1f };
+            using var sumLine = new SKPaint { Color = ThemeColor("border"), StrokeWidth = 1f };
             for (var si = 0; si < g.Summaries.Count; si++)
             {
                 var texts = g.Summaries[si].Texts;
@@ -178,10 +178,10 @@ public sealed partial class Painter
         if (g.HasFilterRow)
         {
             var frow = new SKRect(rect.Left, headBand.Bottom, rect.Right, header.Bottom);
-            fill.Color = ThemeColor("grid-filter", cHeader);
+            fill.Color = ThemeColor("grid-filter");
             canvas.DrawRect(frow, fill);
-            var fg = ThemeColor("grid-filter-fg", cHeaderFg);
-            var act = ThemeColor("grid-filter-active", new SKColor(0x25, 0x63, 0xeb));
+            var fg = ThemeColor("grid-filter-fg");
+            var act = ThemeColor("grid-filter-active");
             canvas.Save();
             canvas.ClipRect(new SKRect(scrollLeft, frow.Top, colsRight, frow.Bottom));
             PaintFilterCells(canvas, g, rect, box.ScrollX, g.FrozenCount, g.Columns.Length, fonts, ink, line, fg, act);
@@ -198,7 +198,7 @@ public sealed partial class Painter
         }
 
         // ⑤ 헤더 아래 2px 진한 경계(요약 행 위 경계와 같음 — 헤더·행·요약이 서로 구분되게), 고정 경계선
-        using (var edge = new SKPaint { Color = ThemeColor("border-strong", new SKColor(0x94, 0xa3, 0xb8)), StrokeWidth = 2f })
+        using (var edge = new SKPaint { Color = ThemeColor("border-strong"), StrokeWidth = 2f })
             canvas.DrawLine(rect.Left, header.Bottom - 1f, rect.Right, header.Bottom - 1f, edge);
         if (g.FrozenCount > 0)
             canvas.DrawLine(scrollLeft - 0.5f, rect.Top, scrollLeft - 0.5f, body.Bottom + g.SummaryHeight, line);
@@ -222,7 +222,7 @@ public sealed partial class Painter
         var mark = g.EditMark is { } m && m.Column == c && g.IsKey(item, m.Key) ? m : null;
         if (mark is not null && col.CellType == GridCellType.Input)
         {
-            fill.Color = ThemeColor("surface", SKColors.White); // 입력 상자처럼(네이티브 편집기 배경과 같음)
+            fill.Color = ThemeColor("surface"); // 입력 상자처럼(네이티브 편집기 배경과 같음)
             canvas.DrawRect(new SKRect(cell.Left, cell.Top, cell.Right, cell.Bottom - 1f), fill);
         }
 
@@ -271,8 +271,8 @@ public sealed partial class Painter
         {
             IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2f,
             Color = mark.Error is null
-                ? ThemeColor("focus", new SKColor(0x25, 0x63, 0xeb, 0x66))
-                : ThemeColor("tone-danger", new SKColor(0xdc, 0x26, 0x26))
+                ? ThemeColor("focus")
+                : ThemeColor("tone-danger")
         };
         canvas.DrawRect(new SKRect(cell.Left + 1.5f, cell.Top + 1.5f, cell.Right - 1.5f, cell.Bottom - 2.5f), p);
     }
@@ -305,7 +305,7 @@ public sealed partial class Painter
         canvas.DrawRoundRect(sw, 4, 4, fill);
         fill.Style = SKPaintStyle.Stroke;
         fill.StrokeWidth = 1;
-        fill.Color = ThemeColor("border", new SKColor(0xcb, 0xd5, 0xe1));
+        fill.Color = ThemeColor("border");
         canvas.DrawRoundRect(sw, 4, 4, fill);
         fill.Style = SKPaintStyle.Fill;
         fill.IsAntialias = false;
@@ -325,20 +325,20 @@ public sealed partial class Painter
 
         if (on)
         {
-            fill.Color = ThemeColor("primary", new SKColor(0x25, 0x63, 0xeb)).WithAlpha(a);
+            fill.Color = ThemeColor("primary").WithAlpha(a);
             canvas.DrawRoundRect(box, 4f, 4f, fill);
-            using var ip = new SKPaint { IsAntialias = true, Color = ThemeColor("primary-fg", SKColors.White).WithAlpha(a) };
+            using var ip = new SKPaint { IsAntialias = true, Color = ThemeColor("primary-fg").WithAlpha(a) };
             if (IconFont.TryResolve("fa-check", out var glyph))
                 IconFont.Draw(canvas, glyph, new SKPoint(box.MidX, box.MidY), 13f, ip);
         }
         else
         {
-            fill.Color = ThemeColor("surface", SKColors.White).WithAlpha(a);
+            fill.Color = ThemeColor("surface").WithAlpha(a);
             canvas.DrawRoundRect(box, 4f, 4f, fill);
             using var sp = new SKPaint
             {
                 IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f,
-                Color = ThemeColor("border-strong", new SKColor(0x94, 0xa3, 0xb8)).WithAlpha(a)
+                Color = ThemeColor("border-strong").WithAlpha(a)
             };
             canvas.DrawRoundRect(box, 4f, 4f, sp);
         }
@@ -352,7 +352,7 @@ public sealed partial class Painter
         var v = col.Reader.Get(item);
         SKColor? lit = v switch
         {
-            bool b => b ? col.OnColor?.ToSK() ?? ToneToken("state-run", new SKColor(0x16, 0xa3, 0x4a)) : null,
+            bool b => b ? col.OnColor?.ToSK() ?? ThemeColor("state-run") : null,
             null => null,
             _ => StateColor(HandlerErrors.Text(v, col.Reader.Path, "DvDataGrid"))
         };
@@ -361,7 +361,7 @@ public sealed partial class Painter
 
         var radius = MathF.Max(3f, MathF.Min(9f, MathF.Min(cell.Width, cell.Height) / 2f - 4f));
         fill.IsAntialias = true;
-        fill.Color = lit ?? new SKColor(0x3a, 0x3f, 0x47); // DvLamp 꺼진 색과 같음
+        fill.Color = lit ?? ThemeColor("lamp-off"); // DvLamp 꺼진 색과 같은 토큰
         canvas.DrawCircle(cell.MidX, cell.MidY, radius, fill);
         if (lit is not null)
         {
@@ -376,8 +376,9 @@ public sealed partial class Painter
     {
         if (string.IsNullOrEmpty(state))
             return null;
-        var theme = _theme;
-        return theme.TryGet("state-" + state.ToLowerInvariant(), out var raw) && DvColor.TryParse(raw, out var c) ? c.ToSK() : null;
+        // 데이터 값이라 테마에 없는 상태 = 꺼짐(문서 그대로) — 있으면 토큰 색
+        var name = "state-" + state.ToLowerInvariant();
+        return _theme.TryGet(name, out _) ? ThemeColor(name) : null;
     }
 
     // 버튼 — 셀 안쪽(가로 6·세로 8 여백) 둥근 사각형 + [아이콘] 글자, variant 색은 DvButton 과 같음, enabled=false 면 흐림
@@ -391,30 +392,30 @@ public sealed partial class Painter
         SKColor? border = null;
         if (!enabled)
         {
-            bg = ThemeColor("surface-raised", new SKColor(0xff, 0xff, 0xff));
-            fg = ThemeColor("text-subtle", new SKColor(0x94, 0xa3, 0xb8));
+            bg = ThemeColor("surface-raised");
+            fg = ThemeColor("text-subtle");
         }
         else
         {
             switch (col.Variant)
             {
                 case "secondary":
-                    bg = ThemeColor("surface-raised", SKColors.White);
-                    fg = ThemeColor("text", new SKColor(0x0f, 0x17, 0x2a));
-                    border = ThemeColor("border-strong", new SKColor(0x94, 0xa3, 0xb8));
+                    bg = ThemeColor("surface-raised");
+                    fg = ThemeColor("text");
+                    border = ThemeColor("border-strong");
                     break;
                 case "danger":
-                    bg = ToneToken("tone-danger-soft", new SKColor(0xfe, 0xe2, 0xe2));
-                    fg = ToneToken("tone-danger-fg", new SKColor(0xb9, 0x1c, 0x1c));
-                    border = ToneToken("tone-danger", new SKColor(0xdc, 0x26, 0x26));
+                    bg = ThemeColor("tone-danger-soft");
+                    fg = ThemeColor("tone-danger-fg");
+                    border = ThemeColor("tone-danger");
                     break;
                 case "ghost":
                     bg = SKColors.Transparent;
-                    fg = ThemeColor("text-muted", new SKColor(0x64, 0x74, 0x8b));
+                    fg = ThemeColor("text-muted");
                     break;
                 default:
-                    bg = ThemeColor("primary", new SKColor(0x25, 0x63, 0xeb));
-                    fg = ThemeColor("primary-fg", SKColors.White);
+                    bg = ThemeColor("primary");
+                    fg = ThemeColor("primary-fg");
                     break;
             }
         }

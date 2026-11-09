@@ -29,10 +29,10 @@ public sealed partial class Painter
         var outer = radius + stroke / 2f;
         PaintReadOnlyEdge(canvas, box, new SKRect(cx - outer, cy - outer, cx + outer, cy + outer), outer);
 
-        var track = ThemeColor("gauge-track", new SKColor(0xe2, 0xe8, 0xf0));
-        var fill = ThemeColor("knob-fill", new SKColor(0x25, 0x63, 0xeb));
-        var face = ThemeColor("knob-face", new SKColor(0xf8, 0xfa, 0xfc));
-        var ink = ThemeColor("knob-indicator", new SKColor(0x0f, 0x17, 0x2a));
+        var track = ThemeColor("gauge-track");
+        var fill = ThemeColor("knob-fill");
+        var face = ThemeColor("knob-face");
+        var ink = ThemeColor("knob-indicator");
 
         using (var p = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = stroke, Color = track })
         using (var path = new SKPath())

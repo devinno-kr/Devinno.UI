@@ -38,9 +38,9 @@ internal sealed class GridCellEditTarget : IEditTarget
     {
         var st = Slot.Style;
         var family = TextFont.ResolveTypeface(sample, st.FontFamily).FamilyName;
-        var text = Slot.GridBox.Grid!.Colors.Text?.ToSK() ?? Slot.Owner.Token("text", new SKColor(0x0f, 0x17, 0x2a));
+        var text = Slot.GridBox.Grid!.Colors.Text?.ToSK() ?? Slot.Owner.Token("text");
         const float pad = Painting.Painter.GridCellPad;
-        return new EditLook(family, st.FontSize, false, text, Slot.Owner.Token("surface", SKColors.White),
+        return new EditLook(family, st.FontSize, false, text, Slot.Owner.Token("surface"),
             new SKRect(pad, 0, pad, 0), Slot.Col.EffectiveAlign);
     }
 

@@ -20,9 +20,9 @@ public sealed partial class Painter
         using var tp = new SKPaint
         {
             IsAntialias = true, StrokeWidth = 2f, StrokeCap = SKStrokeCap.Round,
-            Color = dim ? ThemeColor("text-subtle", SKColors.Gray) : st.Color.ToSK()
+            Color = dim ? ThemeColor("text-subtle") : st.Color.ToSK()
         };
-        using var lp = new SKPaint { IsAntialias = true, StrokeWidth = 1f, Color = ThemeColor("border", new SKColor(0xcb, 0xd5, 0xe1)) };
+        using var lp = new SKPaint { IsAntialias = true, StrokeWidth = 1f, Color = ThemeColor("border") };
         var cy = rect.MidY;
         var arm = MathF.Min(6f, rect.Height / 5f);
         var lx = rect.Left + w / 2;
@@ -49,7 +49,7 @@ public sealed partial class Painter
             using var rp = new SKPaint
             {
                 IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = FocusRingWidth,
-                Color = ThemeColor("focus", new SKColor(0x25, 0x63, 0xeb, 0x66))
+                Color = ThemeColor("focus")
             };
             canvas.DrawRoundRect(ring, r + FocusRingGap, r + FocusRingGap, rp);
         }
@@ -59,7 +59,7 @@ public sealed partial class Painter
             using var ep = new SKPaint
             {
                 IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f,
-                Color = ThemeColor("tone-danger", new SKColor(0xdc, 0x26, 0x26))
+                Color = ThemeColor("tone-danger")
             };
             canvas.DrawRoundRect(rect, r, r, ep);
         }
@@ -69,13 +69,13 @@ public sealed partial class Painter
         if (content.Width <= 0 || content.Height <= 0)
             return;
 
-        var muted = ThemeColor("text-subtle", new SKColor(0x94, 0xa3, 0xb8));
+        var muted = ThemeColor("text-subtle");
 
         // 단위(한 줄만) — 오른쪽, 흐린 색
         if (!box.InputMultiline && box.Unit is { Length: > 0 } unit)
         {
             using var uf = TextFont.Create(unit, st.FontSize, bold: false);
-            using var up = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted", new SKColor(0x64, 0x74, 0x8b)) };
+            using var up = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted") };
             canvas.DrawText(unit, content.Right, Baseline(content, uf), SKTextAlign.Right, uf, up);
             content.Right -= uf.MeasureText(unit) + 6f;
         }

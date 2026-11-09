@@ -142,8 +142,8 @@ internal sealed class DropdownPopup : IPopup
 
     public void Paint(SKCanvas canvas, DvTheme? theme, DvStrings? strings)
     {
-        var text = PopupChrome.Tok(theme, "text", new SKColor(0x0f, 0x17, 0x2a));
-        var primary = PopupChrome.Tok(theme, "primary", new SKColor(0x25, 0x63, 0xeb));
+        var text = PopupChrome.Tok(theme, "text");
+        var primary = PopupChrome.Tok(theme, "primary");
 
         PopupChrome.Begin(canvas, Bounds, theme);
         var size = Slot.Style.FontSize;
@@ -185,7 +185,7 @@ internal sealed class DropdownPopup : IPopup
             var track = Bounds.Height - 2 * Pad;
             var thumb = Math.Max(24, track * Bounds.Height / ContentHeight);
             var y = Bounds.Top + Pad + (track - thumb) * (ScrollY / MaxScroll);
-            using var tp = new SKPaint { IsAntialias = true, Color = PopupChrome.Tok(theme, "scrollbar-thumb", new SKColor(0x64, 0x74, 0x8b, 0x80)) };
+            using var tp = new SKPaint { IsAntialias = true, Color = PopupChrome.Tok(theme, "scrollbar-thumb") };
             canvas.DrawRoundRect(SKRect.Create(Bounds.Right - 6, y, 3, thumb), 1.5f, 1.5f, tp);
         }
 

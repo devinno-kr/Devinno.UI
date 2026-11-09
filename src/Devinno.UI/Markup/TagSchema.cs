@@ -402,7 +402,7 @@ internal static class TagSchema
         ["DvProcess"] =
         [
             Direction(),
-            new("look", AttrKind.Enum, "plain", Values: ["plain", "rich"], Note: EnumRule + "; units inherit it (no per-unit look)"),
+            new("look", AttrKind.Enum, "plain", Values: ["plain", "rich"], Note: EnumRule + "; units inherit it (no per-unit look); the symbol colors are the look's own palette, not theme tokens (the one exception to \"every drawn color is a theme token\")"),
             new("align", AttrKind.Enum, "auto", Values: ["auto", "step", "row"], Note: EnumRule + "; with placement=fixed ignored + warning"),
             new("placement", AttrKind.Enum, "auto", Values: ["auto", "fixed"], Note: EnumRule + "; a structural switch (the layout cache keys on it)"),
             new("base-size", AttrKind.Text, Note: "\"W H\" px (space or comma); fixed placement only, otherwise ignored + warning; a bad value = ignored + warning"),

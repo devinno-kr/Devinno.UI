@@ -29,14 +29,13 @@ internal static class PopupChrome
 {
     public const float Radius = 8f;
 
-    public static SKColor Tok(DvTheme? theme, string name, SKColor fallback)
-        => (theme ?? DvTheme.Default).TryGet(name, out var raw) && DvColor.TryParse(raw, out var c) ? c.ToSK() : fallback;
+    public static SKColor Tok(DvTheme? theme, string name) => ThemeResolver.Color(theme, name);
 
     public static void Begin(SKCanvas canvas, SKRect bounds, DvTheme? theme)
     {
         using (var sp = new SKPaint { IsAntialias = true, Color = new SKColor(0, 0, 0, 0x40), MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 8) })
             canvas.DrawRoundRect(SKRect.Create(bounds.Left, bounds.Top + 4, bounds.Width, bounds.Height), Radius, Radius, sp);
-        using (var bp = new SKPaint { IsAntialias = true, Color = Tok(theme, "surface-overlay", SKColors.White) })
+        using (var bp = new SKPaint { IsAntialias = true, Color = Tok(theme, "surface-overlay") })
             canvas.DrawRoundRect(bounds, Radius, Radius, bp);
         canvas.Save();
         canvas.ClipRoundRect(new SKRoundRect(bounds, Radius, Radius), antialias: true);
@@ -45,7 +44,7 @@ internal static class PopupChrome
     public static void End(SKCanvas canvas, SKRect bounds, DvTheme? theme)
     {
         canvas.Restore();
-        using var bs = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1, Color = Tok(theme, "border", new SKColor(0xcb, 0xd5, 0xe1)) };
+        using var bs = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1, Color = Tok(theme, "border") };
         canvas.DrawRoundRect(bounds, Radius, Radius, bs);
     }
 }

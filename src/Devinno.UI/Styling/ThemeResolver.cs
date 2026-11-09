@@ -49,4 +49,31 @@ public static class ThemeResolver
             return MissingColor;
         });
     }
+
+    // 내장 그리기의 테마 색 한 곳(R11) — 대체색 인자 없음: 없는 토큰·색 아닌 값 = 마젠타 + 경고(화면마다 한 번)
+    /// <summary>
+    /// The color of theme token <paramref name="name"/> for built-in drawing. A token the theme does not have, or a value that is not a color,
+    /// is drawn as <see cref="MissingColor"/> (magenta) with a warning (once per surface) — there is no per-call fallback color.
+    /// </summary>
+    /// <param name="theme">The theme. <see langword="null"/> means <see cref="DvTheme.Default"/>.</param>
+    /// <param name="name">The token name (a leading <c>--</c> is allowed).</param>
+    /// <returns>The token color, or magenta.</returns>
+    internal static SkiaSharp.SKColor Color(DvTheme? theme, string name)
+    {
+        if ((theme ?? DvTheme.Default).TryGet(name, out var raw))
+        {
+            if (DvColor.TryParse(raw, out var c))
+                return c.ToSK();
+
+            Interaction.Warnings.Warn($"Devinno.UI: token '{name}' is not a color ('{raw}'); drawing {MissingColor} (magenta)");
+        }
+        else
+        {
+            Interaction.Warnings.Warn($"Devinno.UI: unresolved token '{name}'; drawing {MissingColor} (magenta)");
+        }
+
+        return Missing;
+    }
+
+    private static readonly SkiaSharp.SKColor Missing = new(0xff, 0x00, 0xff);
 }

@@ -218,8 +218,8 @@ public sealed partial class Painter
             var radius = tr.Height / 2f;
             // 비활성 = 반투명(체크박스·슬라이더와 같음), 읽기 전용 = 점선 테두리(PaintReadOnlyEdge — 모든 값 위젯 같은 모양)
             var a = box.Disabled ? (byte)0x80 : (byte)0xff;
-            var trackOn = ThemeColor("--toggle-on", new SKColor(0x3A, 0x7B, 0xD5)).WithAlpha(a);
-            var trackOff = ThemeColor("--toggle-off", new SKColor(0xC7, 0xCD, 0xD5)).WithAlpha(a);
+            var trackOn = ThemeColor("--toggle-on").WithAlpha(a);
+            var trackOff = ThemeColor("--toggle-off").WithAlpha(a);
             using (var trackPaint = new SKPaint
                    {
                        IsAntialias = true,
@@ -236,7 +236,7 @@ public sealed partial class Painter
             using var knobPaint = new SKPaint
             {
                 IsAntialias = true,
-                Color = ThemeColor("--toggle-knob", SKColors.White).WithAlpha(a)
+                Color = ThemeColor("--toggle-knob").WithAlpha(a)
             };
             canvas.DrawRoundRect(
                 SKRect.Create(knobX, tr.Top + 2, knobDiameter, knobDiameter),
@@ -251,8 +251,8 @@ public sealed partial class Painter
                       (!box.LampBlink || Motion.MotionPhase.BlinkOn(timestampMs, box.BlinkIntervalMs));
             // color 속성 > state(run/fault… → state-* 토큰) > style color
             var onColor = box.LampColor?.ToSK()
-                          ?? (box.LampState is { Length: > 0 } ls ? ToneToken("state-" + ls, st.Color.ToSK()) : st.Color.ToSK());
-            var offColor = new SKColor(0x3a, 0x3f, 0x47);
+                          ?? (box.LampState is { Length: > 0 } ls ? ThemeColor("state-" + ls) : st.Color.ToSK());
+            var offColor = ThemeColor("lamp-off");
             var cx = rect.MidX;
             var cy = rect.MidY;
             var radius = MathF.Max(0, MathF.Min(rect.Width, rect.Height) / 2f - 1f);
@@ -287,7 +287,7 @@ public sealed partial class Painter
                        Style = SKPaintStyle.Stroke,
                        StrokeWidth = gm.Stroke,
                        StrokeCap = SKStrokeCap.Butt,
-                       Color = ThemeColor("gauge-track", new SKColor(0xe2, 0xe8, 0xf0))
+                       Color = ThemeColor("gauge-track")
                    })
             using (var path = new SKPath())
             {
@@ -300,7 +300,7 @@ public sealed partial class Painter
 
             DrawGaugeZones(canvas, box, oval, startAngle, sweep, gm.Stroke);
 
-            var needleColor = ThemeColor("gauge-needle", new SKColor(0x0f, 0x17, 0x2a));
+            var needleColor = ThemeColor("gauge-needle");
             if (box.GaugeTicks > 0)
                 DrawGaugeScale(canvas, box, cx, cy, gm, startAngle, sweep);
             DrawGaugeNeedle(canvas, box, cx, cy, radius * 0.9f, startAngle + t * sweep, needleColor, gm);
@@ -424,8 +424,8 @@ public sealed partial class Painter
                     new SKPoint(body.Left, body.Top), new SKPoint(body.Left, body.Bottom),
                     new[]
                     {
-                        ThemeColor("tank-empty-top", new SKColor(0xf5, 0xf8, 0xfc)),
-                        ThemeColor("tank-empty-bottom", new SKColor(0xe6, 0xec, 0xf3))
+                        ThemeColor("tank-empty-top"),
+                        ThemeColor("tank-empty-bottom")
                     },
                     null, SKShaderTileMode.Clamp);
                 canvas.DrawRect(body, empty);
@@ -477,7 +477,7 @@ public sealed partial class Painter
                        IsAntialias = true,
                        Style = SKPaintStyle.Stroke,
                        StrokeWidth = tm.FrameWidth,
-                       Color = ThemeColor("tank-frame", new SKColor(0xcb, 0xd5, 0xe1))
+                       Color = ThemeColor("tank-frame")
                    })
             {
                 canvas.DrawRoundRect(body, bodyR, bodyR, frame);
@@ -535,14 +535,14 @@ public sealed partial class Painter
                 using (var chipBg = new SKPaint
                        {
                            IsAntialias = true,
-                           Color = ThemeColor("tank-chip-bg", new SKColor(0xff, 0xff, 0xff, 0xdd))
+                           Color = ThemeColor("tank-chip-bg")
                        })
                     canvas.DrawRoundRect(chip, chipH / 2f, chipH / 2f, chipBg);
 
                 using var tp = new SKPaint
                 {
                     IsAntialias = true,
-                    Color = ThemeColor("tank-chip-fg", new SKColor(0x0f, 0x17, 0x2a))
+                    Color = ThemeColor("tank-chip-fg")
                 };
                 var baseline = body.MidY - (font.Metrics.Ascent + font.Metrics.Descent) / 2f;
                 canvas.DrawText(label, body.MidX, baseline, SKTextAlign.Center, font, tp);
@@ -612,7 +612,7 @@ public sealed partial class Painter
         if (box.VideoError is { Length: > 0 } error)
         {
             using var font = TextFont.Create(error, 13f, bold: false);
-            using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted", new SKColor(0x64, 0x74, 0x8b)) };
+            using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted") };
             canvas.Save();
             canvas.ClipRect(rect);
             var lines = WrapError(error, font, rect.Width - 16);
@@ -722,8 +722,8 @@ public sealed partial class Painter
     // 넘치는 축에만 — 옅은 트랙 + 둥근 손잡이(뷰포트 안쪽 가장자리에 겹침)
     private void PaintScrollBars(SKCanvas canvas, LayoutBox box)
     {
-        using var track = new SKPaint { IsAntialias = true, Color = ThemeColor("scrollbar-track", new SKColor(0x0f, 0x17, 0x2a, 0x0f)) };
-        using var thumb = new SKPaint { IsAntialias = true, Color = ThemeColor("scrollbar-thumb", new SKColor(0x64, 0x74, 0x8b, 0x80)) };
+        using var track = new SKPaint { IsAntialias = true, Color = ThemeColor("scrollbar-track") };
+        using var thumb = new SKPaint { IsAntialias = true, Color = ThemeColor("scrollbar-thumb") };
         var rr = Interaction.ScrollBars.Thickness / 2f;
 
         if (Interaction.ScrollBars.VerticalTrack(box) is { } vt)
@@ -752,7 +752,7 @@ public sealed partial class Painter
             canvas.RestoreToCount(saved);
             saved = canvas.Save();
             Interaction.HandlerErrors.ReportRead(ex, "Paint", widget.GetType().Name, box.Node.Tag);
-            using var red = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2, Color = new SKColor(0xdc, 0x26, 0x26) };
+            using var red = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2, Color = ThemeColor("tone-danger") };
             canvas.DrawRect(SKRect.Inflate(rect, -1, -1), red);
         }
         finally
@@ -761,14 +761,7 @@ public sealed partial class Painter
         }
     }
 
-    private SKColor ThemeColor(string token, SKColor fallback)
-    {
-        if (_theme.TryGet(token, out var raw) &&
-            DvColor.TryParse(raw, out var color))
-            return color.ToSK();
-
-        return fallback;
-    }
+    private SKColor ThemeColor(string token) => ThemeResolver.Color(_theme, token);
 
     private static ComputedStyle Effective(LayoutBox box, InteractionState? state)
     {
@@ -834,13 +827,13 @@ public sealed partial class Painter
         return null;
     }
 
-    private static SKColor TankFillColor(LayoutBox box)
+    private SKColor TankFillColor(LayoutBox box)
     {
         foreach (var z in box.TankZones)
             if (box.TankValue >= z.From && box.TankValue <= z.To)
                 return z.Color.ToSK();
 
-        return new SKColor(0x3a, 0x7b, 0xd5);
+        return ThemeColor("tank-fill");
     }
 
     private static SKColor Lighten(SKColor c, float f) => new(

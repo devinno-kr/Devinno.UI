@@ -523,7 +523,7 @@ Changes values gradually when the state changes (same as CSS). This works both w
 ---
 ## 5. Theme tokens
 
-Use `token(이름)` to read a theme value. `var(--이름)` means the same thing, but uses dashes instead of dots (`var(--spacing-md)` = `token(spacing.md)`). Names are case-insensitive. **An unknown token becomes magenta `#FF00FF`**.
+Use `token(이름)` to read a theme value. `var(--이름)` means the same thing, but uses dashes instead of dots (`var(--spacing-md)` = `token(spacing.md)`). Names are case-insensitive. **An unknown token becomes magenta `#FF00FF`**. Built-in widgets draw every part of themselves from these tokens too (no hidden fallback colors), so a theme made from scratch with `new DvTheme(...)` must define all of them — a missing one shows magenta with a Trace warning. Prefer `DvTheme.Dark.With(...)` / `DvTheme.Light.With(...)`. The process diagram (`DvProcess`) is the one exception: its symbol colors follow `look`, not the theme (`dvml-process.md`).
 
 The themes are `DvTheme.Dark` and `DvTheme.Light`. To change only some values: `DvTheme.Dark.With(new Dictionary<string,string>{ ["primary"] = "#0ea5e9" })`.
 
@@ -535,16 +535,18 @@ The themes are `DvTheme.Dark` and `DvTheme.Light`. To change only some values: `
 | Primary color | `primary` `primary-hover` `primary-press` `primary-fg` `focus` |
 | Tone (`neutral` `info` `success` `warning` `danger`) | `tone-{톤}` `tone-{톤}-fg` `tone-{톤}-soft` |
 | Equipment state (`run` `stop` `fault` `warn` `manual` `off`) | `state-{상태}` `state-{상태}-fg` `state-{상태}-soft` |
-| Alarm | `alarm-critical` `alarm-critical-fg` `alarm-major` `alarm-major-fg` `alarm-minor` `alarm-minor-fg` `comm-alarm` |
+| Alarm | `alarm-critical` `alarm-critical-fg` `alarm-major` `alarm-major-fg` `alarm-minor` `alarm-minor-fg` `comm-alarm` `comm-alarm-fg` |
 | Spacing | `spacing.xs` 4 · `spacing.sm` 8 · `spacing.md` 12 · `spacing.lg` 16 · `spacing.xl` 24 · `spacing.2xl` 32 |
 | Corner radius | `radius.sm` 6 · `radius.md` 10 · `radius.lg` 16 · `radius.full` 999 |
 | Shadow | `shadow.sm` `shadow.md` `shadow.lg` (a `dx dy blur 색` string) |
 | Font size | `font.display` 32 · `font.heading` 21 · `font.title` 15 · `font.body` 14 · `font.label` 13 · `font.caption` 11 · `font.mono` 14 |
 | Instrument | `gauge-track` `gauge-needle` `gauge-needle-tip` `gauge-tick` |
-| Tank | `tank-empty-top` `tank-empty-bottom` `tank-frame` `tank-chip-bg` `tank-chip-fg` |
+| Lamp | `lamp-off` (the off color of `DvLamp` and grid lamp cells) |
+| Tank | `tank-empty-top` `tank-empty-bottom` `tank-frame` `tank-chip-bg` `tank-chip-fg` `tank-fill` (liquid when no `alarm-zones` zone applies) |
 | Knob | `knob-face` `knob-fill` `knob-indicator` |
 | Toggle | `toggle-on` `toggle-off` `toggle-knob` |
 | Trend | `trend-grid` |
+| Chart colors | `chart-1` … `chart-6` (trend channels without `color` and pie slices, cycled in order) |
 | Scrollbar | `scrollbar-thumb` `scrollbar-track` |
 | Dialog | `scrim` (the translucent layer covering the whole window just below the topmost dialog, chapter 21) |
 | Data grid | `grid-header` `grid-header-fg` `grid-row` `grid-row-alt` `grid-row-hover` `grid-row-selected` `grid-line` `grid-summary` `grid-summary-fg` |
@@ -758,7 +760,7 @@ A component cannot be registered under the name of a built-in tag (`DvGauge`, `D
 
 **DvLamp**
 - On when `on="{Running}"` is true. With `blink="true"`, it blinks while on (every `blink-interval` ms; all blinking on screen shares the same phase). `blink-when` is another name for `blink`.
-- On-color priority: `color` (`#RRGGBB` or `token(이름)`, bindable) > `state` (`state-{값}` token: `run` `stop` `fault` `warn` `manual` `off` in the built-in themes, or any `state-*` token of your theme) > `color` in `style`. An unreadable `color` or a `state` the theme has no `state-*` token for is ignored with a Trace warning (chapter 2). The off color is a fixed dark gray. `blink-interval` is also bound.
+- On-color priority: `color` (`#RRGGBB` or `token(이름)`, bindable) > `state` (`state-{값}` token: `run` `stop` `fault` `warn` `manual` `off` in the built-in themes, or any `state-*` token of your theme) > `color` in `style`. An unreadable `color` or a `state` the theme has no `state-*` token for is ignored with a Trace warning (chapter 2). The off color is the `lamp-off` token (dark gray in both built-in themes). `blink-interval` is also bound.
 - **Multi-state lamp (equipment state number → color / text / blinking):** there is no separate widget; the VM converts the state into a `state` key, text, and blinking and binds them (state rules are app data that differ per equipment). Lamp + name + status chip is drawn by `DvStatusItem`. For a color not in the theme, use `DvLamp color="{PumpColor}"`.
 ```xml
 <DvStatusItem label="2호 펌프" state="{Pump2.StateKey}" status="{Pump2.StateText}" blink="{Pump2.IsFault}"/>
@@ -909,14 +911,14 @@ public sealed class Section(string title, List<Section> all)
 - **DvGauge:** 270° needle instrument. `ticks` = major tick **interval** (in value units, e.g. `20` gives 0·20·40…), `minor-ticks` = minor tick interval (drawn only when `ticks` is set). `show-tick-labels="false"` hides tick numbers. The value text (+ `unit`) and needle tip use the current zone color. The gauge has no `tone`, `direction`, `label`, `sweep` or `thickness` (those belong to the ring/progress bar; written on a gauge they are DVML019).
 - **DvRing:** thick arc fill. `sweep` = arc angle (1–360; 360 = a full circle starting at 12 o'clock), `thickness` = arc thickness (omitted = 11% of size), value + `unit` in the center (`show-value="false"` hides it), `label` below. Fill color = current zone color, otherwise `tone-{tone}`.
 - **DvProgress:** `direction` = `right` `left` `up` `down`. `show-value="true"` shows the value (+`unit`) in the center (horizontal: height 14 or more; vertical: only when the text fits in the bar's width). Fill color = current zone color or `tone-{tone}`. Corners can be changed with `border-radius` (default pill shape).
-- **DvTank:** cylindrical vessel. Value chip in the center (+`unit`), liquid color = current zone color. `show-zone-marks="false"` keeps the zone colors and hides only the boundary ticks and numbers on the right.
+- **DvTank:** cylindrical vessel. Value chip in the center (+`unit`), liquid color = current zone color (no zone: the `tank-fill` token). `show-zone-marks="false"` keeps the zone colors and hides only the boundary ticks and numbers on the right.
 - **Range (`min`/`max`, knob, slider, gauge, ring, progress bar, tank, numeric `DvInput`, grid input cells):** user input can never produce a value outside the range — drag and the stepper stop at the bound, a typed or keypad value outside is rejected (error shown, like `DvInput`). A value from code or the VM is not changed; instruments only draw it clamped to the range. `min >= max` is not a range: `0`–`100` is used with a Trace warning (for `DvInput` and grid cells only when both are given).
 - **DvKnob:** drag to rotate; written once on release (`onbeforecommit` = `bool M(double)`). Rotation is relative to the grab point. `unit` is bound. Choose the input method with `input-mode`: `drag` (default, drag to rotate), `tap` (tap opens a numeric keypad — no rotation), `both` (drag rotates; a tap without movement opens the keypad). The keypad is a built-in number box (same look as 21.5 `InputNumber`) showing the current value, `min`–`max`, and `unit`; a value outside `min`–`max` is rejected in the keypad (like `DvInput`), and a confirmed value goes through the same `step` rounding → `onbeforecommit` as dragging before being written. Cancel leaves it unchanged. The keypad appears only on `DvApp` screens (pages, bars, dialogs) — on hosts using `DvSurface` directly, taps are ignored (Trace warning). A tap on a `tap`·`both` knob opens the keypad instead of `onclick`. Read-only (one-way `value` or `readonly`) and `disabled` knobs do not rotate or open the keypad. `input-mode` is bound (`input-mode="{Mode}"`); an unknown value logs a warning and falls back to `drag`.
 - **DvSlider:** track + handle (diameter 24). **Pressing anywhere on the track moves the value there**, it follows while dragging, and it is written **once on release** (same commit as the knob — `step` rounding → `min`–`max` → `onbeforecommit` = `bool M(double)`). A press and release without dragging also writes the value at that spot. `direction` = the side where the value increases (same values as `DvProgress`: `right` default, `left` `up` `down` — vertical for `up`·`down`). `show-value="true"` shows the value above the handle (to the right when vertical) (+`unit`, decimal places = those of `step`, or `format`). Colors: track `gauge-track`, fill and handle border `knob-fill`. There are no ticks. As with the knob, a drag started on the slider does not scroll. One-way, `readonly` or `disabled` sliders do not move. An unknown `direction` logs a warning and falls back to `right`.
 - **Charts (DvSparkline · DvBarChart · DvPieChart):** display-only widgets that draw one series. For values flowing over time, use `DvTrend` (chapter 12).
   - **DvSparkline** — a small line with no axes or ticks (trend in a table cell or card header). `values` = a number list binding or `"3,5,4,8"` (unreadable values become 0). A dot on the last point; `area="true"` adds a translucent fill under the line. Range is `y-min`·`y-max`; if omitted, data min to max. Color = `tone-{tone}`.
   - **DvBarChart** — vertical bars. For each item in `items`, `item-value` (number path) and `item-text` (name path, below the bar — ellipsis if longer than the cell). Range is `y-min`·`y-max`; if omitted, includes 0 and the data (negative values go below the baseline). `show-value="true"` shows the value above the bar (integers as integers, otherwise one decimal place). Color = `tone-{tone}`.
-  - **DvPieChart** — circle + legend on the right (color dot, name, percentage; value with `show-value="true"`). Slices go clockwise from 12 o'clock, colored with the trend default colors in order. Values of 0 or less are not drawn. `inner-radius` = center hole ratio (0–0.9, e.g. `0.55` → donut); with `show-value` on a donut, the total is shown in the center. If there is no room for the legend (width − height ≥ 100), only the circle is drawn.
+  - **DvPieChart** — circle + legend on the right (color dot, name, percentage; value with `show-value="true"`). Slices go clockwise from 12 o'clock, colored with the `chart-1` … `chart-6` tokens in order (the trend default colors). Values of 0 or less are not drawn. `inner-radius` = center hole ratio (0–0.9, e.g. `0.55` → donut); with `show-value` on a donut, the total is shown in the center. If there is no room for the legend (width − height ≥ 100), only the circle is drawn.
   - Values are read at layout time — after changing a VM list, call `Invalidate()` (automatic inside a click handler). Pressing does nothing.
 
 ### alarm-zones
@@ -1223,7 +1225,7 @@ Bindable, interpreted the same as literals. Any other value = warning, then `non
 |---|---|
 | `name` | Channel name to look up in the `source` buffer (omitted = `ch0`, `ch1`…) |
 | `label` `unit` | Legend text |
-| `color` | `#RRGGBB` or `token(이름)` (theme color; unknown token = magenta + warning), bindable (omitted = default palette order; unparseable = default palette order + warning) |
+| `color` | `#RRGGBB` or `token(이름)` (theme color; unknown token = magenta + warning), bindable (omitted = `chart-1` … `chart-6` in channel order; unparseable = that color + warning) |
 | `points` | `IEnumerable<TrendPoint>` binding — if present, this data is used instead of `source` |
 
 - Real-time: the VM provides a `TrendBuffer`, calls `TrendBuffer.Add(채널, 시각, 값)` (thread-safe), then `Invalidate()`.
@@ -1247,7 +1249,7 @@ Raising, storing and ACKing alarms is the app's (server's) responsibility. The w
 - `onack="Ack"` → `public void Ack(AlarmRow row)` or `public void Ack(long id)`. The banner ACKs the representative unacknowledged alarm; the list uses the ACK button of the tapped row.
 - `show-ack` = show the ACK button. Omitted = shown when `onack` is present; given = a true/false value (chapter 2 — any other text keeps it shown, with a Trace warning). Bindable (show per permission).
 - `comm-alarm` = if it has text, a communication-fault band is drawn above the banner.
-- Color tokens: `alarm-critical` `alarm-major` `alarm-minor` (+`-fg`), `comm-alarm`.
+- Color tokens: `alarm-critical` `alarm-major` `alarm-minor` (+`-fg`), `comm-alarm` (+`comm-alarm-fg` text).
 
 ```csharp
 public IReadOnlyList<AlarmRow> Alarms { get; set; } = [];
@@ -1763,6 +1765,7 @@ The markup tag for a page background with a header is **`<DvPageFrame>`** (the o
 | `dv.alarm.comm` | Communication fault | 통신 이상 |
 | `dv.alarm.saturated` (the alarm `AlarmLog` adds when its buffer is full; other alarm messages are shown as the app wrote them) | Alarm buffer saturated: acknowledge (ACK) the unacknowledged alarms | 알람 버퍼 포화 — 미확인 알람을 확인(ACK)하세요 |
 | `dv.alarm.col.time` `dv.alarm.col.priority` `dv.alarm.col.message` `dv.alarm.col.ack` | Time / Priority / Message / Ack | 시간 / 등급 / 메시지 / 확인 |
+| `dv.alarm.ack` (row button) | ACK | 확인 |
 | `dv.trend.empty` | No data | 데이터 없음 |
 | `dv.input.required` `dv.input.number` `dv.input.integer` `dv.input.unsigned` | Enter a value / Not a number / Only whole numbers are allowed / Negative numbers are not allowed | 값을 입력하세요 / 숫자 형식이 아닙니다 / 정수만 입력할 수 있습니다 / 음수는 입력할 수 없습니다 |
 | `dv.input.range` `dv.input.overflow` `dv.input.rejected` | Allowed range: {0} to {1} / Out of the allowed range / This value is not allowed | 허용 범위: {0} ~ {1} / 입력할 수 있는 범위를 벗어났습니다 / 허용되지 않는 값입니다 |

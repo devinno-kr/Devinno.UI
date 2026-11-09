@@ -22,7 +22,7 @@ public sealed partial class Painter
             using var rp = new SKPaint
             {
                 IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = FocusRingWidth,
-                Color = ThemeColor("focus", new SKColor(0x25, 0x63, 0xeb, 0x66))
+                Color = ThemeColor("focus")
             };
             canvas.DrawRoundRect(ring, r + FocusRingGap, r + FocusRingGap, rp);
         }
@@ -34,7 +34,7 @@ public sealed partial class Painter
 
         if (IconFont.TryResolve(PickerDisplay.Icon(box), out var icon))
         {
-            using var ap = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted", new SKColor(0x64, 0x74, 0x8b)) };
+            using var ap = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted") };
             IconFont.Draw(canvas, icon, new SKPoint(content.Right - PickerIconSize / 2f, content.MidY), PickerIconSize, ap);
         }
 
@@ -43,7 +43,7 @@ public sealed partial class Painter
         var empty = text.Length == 0;
         if (empty)
             text = box.InputPlaceholder ?? "";
-        var ink = empty ? ThemeColor("text-subtle", new SKColor(0x94, 0xa3, 0xb8)) : st.Color.ToSK();
+        var ink = empty ? ThemeColor("text-subtle") : st.Color.ToSK();
 
         canvas.Save();
         canvas.ClipRect(content);
@@ -53,7 +53,7 @@ public sealed partial class Painter
             var sw = SKRect.Create(x, content.MidY - PickerSwatch / 2f, PickerSwatch, PickerSwatch);
             using (var fp = new SKPaint { IsAntialias = true, Color = new SKColor(c.Red, c.Green, c.Blue) })
                 canvas.DrawRoundRect(sw, 4, 4, fp);
-            using (var bp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1, Color = ThemeColor("border", new SKColor(0xcb, 0xd5, 0xe1)) })
+            using (var bp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1, Color = ThemeColor("border") })
                 canvas.DrawRoundRect(sw, 4, 4, bp);
             x += PickerSwatch + LayoutEngine.IconTextGap;
         }
@@ -73,14 +73,14 @@ public sealed partial class Painter
     {
         var b = p.Bounds;
         var st = p.State;
-        var text = PopupChrome.Tok(theme, "text", new SKColor(0x0f, 0x17, 0x2a));
-        var muted = PopupChrome.Tok(theme, "text-muted", new SKColor(0x64, 0x74, 0x8b));
-        var subtle = PopupChrome.Tok(theme, "text-subtle", new SKColor(0x94, 0xa3, 0xb8));
-        var primary = PopupChrome.Tok(theme, "primary", new SKColor(0x25, 0x63, 0xeb));
-        var primaryFg = PopupChrome.Tok(theme, "primary-fg", SKColors.White);
-        var fault = PopupChrome.Tok(theme, "state-fault", new SKColor(0xdc, 0x26, 0x26));
-        var surface = PopupChrome.Tok(theme, "surface", SKColors.White);
-        var strong = PopupChrome.Tok(theme, "border-strong", new SKColor(0x94, 0xa3, 0xb8)); // .input 테두리
+        var text = PopupChrome.Tok(theme, "text");
+        var muted = PopupChrome.Tok(theme, "text-muted");
+        var subtle = PopupChrome.Tok(theme, "text-subtle");
+        var primary = PopupChrome.Tok(theme, "primary");
+        var primaryFg = PopupChrome.Tok(theme, "primary-fg");
+        var fault = PopupChrome.Tok(theme, "state-fault");
+        var surface = PopupChrome.Tok(theme, "surface");
+        var strong = PopupChrome.Tok(theme, "border-strong"); // .input 테두리
 
         PopupChrome.Begin(canvas, b, theme);
 
@@ -163,11 +163,11 @@ public sealed partial class Painter
     // 취소(DvButton secondary)·확인(primary 채움) — 두 팝업 공용
     private static void PaintPickerButtons(SKCanvas canvas, SKRect cancel, SKRect ok, DvTheme? theme, DvStrings? strings, float fontSize)
     {
-        var text = PopupChrome.Tok(theme, "text", new SKColor(0x0f, 0x17, 0x2a));
-        var primary = PopupChrome.Tok(theme, "primary", new SKColor(0x25, 0x63, 0xeb));
-        var primaryFg = PopupChrome.Tok(theme, "primary-fg", SKColors.White);
-        var raised = PopupChrome.Tok(theme, "surface-raised", SKColors.White);
-        var strong = PopupChrome.Tok(theme, "border-strong", new SKColor(0x94, 0xa3, 0xb8));
+        var text = PopupChrome.Tok(theme, "text");
+        var primary = PopupChrome.Tok(theme, "primary");
+        var primaryFg = PopupChrome.Tok(theme, "primary-fg");
+        var raised = PopupChrome.Tok(theme, "surface-raised");
+        var strong = PopupChrome.Tok(theme, "border-strong");
         using (var fp = new SKPaint { IsAntialias = true, Color = raised })
             canvas.DrawRoundRect(cancel, 6, 6, fp);
         using (var cp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1, Color = strong })
@@ -183,12 +183,12 @@ public sealed partial class Painter
     {
         var b = p.Bounds;
         var st = p.State;
-        var text = PopupChrome.Tok(theme, "text", new SKColor(0x0f, 0x17, 0x2a));
-        var primary = PopupChrome.Tok(theme, "primary", new SKColor(0x25, 0x63, 0xeb));
-        var fault = PopupChrome.Tok(theme, "state-fault", new SKColor(0xdc, 0x26, 0x26));
-        var surface = PopupChrome.Tok(theme, "surface", SKColors.White);
-        var border = PopupChrome.Tok(theme, "border", new SKColor(0xcb, 0xd5, 0xe1));
-        var strong = PopupChrome.Tok(theme, "border-strong", new SKColor(0x94, 0xa3, 0xb8)); // .input 테두리
+        var text = PopupChrome.Tok(theme, "text");
+        var primary = PopupChrome.Tok(theme, "primary");
+        var fault = PopupChrome.Tok(theme, "state-fault");
+        var surface = PopupChrome.Tok(theme, "surface");
+        var border = PopupChrome.Tok(theme, "border");
+        var strong = PopupChrome.Tok(theme, "border-strong"); // .input 테두리
         var edge = new SKColor(0, 0, 0, 0x66);
 
         PopupChrome.Begin(canvas, b, theme);

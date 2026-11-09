@@ -60,7 +60,7 @@ public class VideoTests
         using var bmp = Render(s);
         var r = Video(s).Rect;
         Assert.Equal(SKColors.Red, bmp.GetPixel((int)r.MidX, (int)r.MidY));
-        Assert.Equal(SKColors.White, bmp.GetPixel((int)r.MidX, (int)r.Top + 5)); // 여백
+        Assert.Equal(Devinno.UI.Styling.ThemeResolver.Color(DvTheme.Light, "background"), bmp.GetPixel((int)r.MidX, (int)r.Top + 5)); // 여백 = 캔버스 바탕(3단계 R11: 흰색 → background 토큰)
 
         var cover = Surface("<DvVideo source=\"{Source}\" fit=\"cover\" style=\"width:200; height:200\"/>", vm);
         using var bmp2 = Render(cover);
@@ -75,7 +75,7 @@ public class VideoTests
         var s = Surface("<DvVideo source=\"{Source}\"/><DvVideo/><DvVideo source=\"{Other}\"/>", vm);
         using var bmp = Render(s);
         var r = Video(s).Rect;
-        Assert.Equal(SKColors.White, bmp.GetPixel((int)r.MidX, (int)r.MidY));
+        Assert.Equal(Devinno.UI.Styling.ThemeResolver.Color(DvTheme.Light, "background"), bmp.GetPixel((int)r.MidX, (int)r.MidY)); // 캔버스 바탕(3단계 R11: 흰색 → background 토큰)
     }
 
     [Fact]

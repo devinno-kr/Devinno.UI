@@ -41,7 +41,7 @@ internal sealed class BoxEditTarget : IEditTarget
         var family = TextFont.ResolveTypeface(sample + Box.InputPlaceholder + InputDisplay.Text(Box), st.FontFamily).FamilyName;
         var bg = st.Background?.ToSK()
                  ?? (st.Gradient is { Stops.Count: > 0 } g ? g.Stops[0].ToSK() : (SKColor?)null)
-                 ?? _s.Token("surface", SKColors.White);
+                 ?? _s.Token("surface");
         return new EditLook(family, st.FontSize, st.Bold, st.Color.ToSK(), bg,
             new SKRect(st.Padding.Left, st.Padding.Top, st.Padding.Right, st.Padding.Bottom), st.TextAlign);
     }

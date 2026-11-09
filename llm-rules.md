@@ -72,7 +72,7 @@ Knowing how mistakes show up helps you find the cause quickly when looking at th
 
 ### 3.2 Shows as magenta (`#FF00FF`)
 
-**Unknown theme tokens** inside style strings such as `style`, `class` and `hover-style` turn magenta. The same applies to unknown tokens in color-taking attributes (`DvLamp color`, `DvTrendChannel color`, `DvSignal color`, zone colors in `alarm-zones`). If you see magenta, suspect a misspelled token name (`token(surface-2)`) or an invalid `tone`/`state` value (`DvBadge tone="ok"` → `token(tone-ok-fg)`).
+**Unknown theme tokens** inside style strings such as `style`, `class` and `hover-style` turn magenta. The same applies to unknown tokens in color-taking attributes (`DvLamp color`, `DvTrendChannel color`, `DvSignal color`, zone colors in `alarm-zones`). If you see magenta, suspect a misspelled token name (`token(surface-2)`) or an invalid `tone`/`state` value (`DvBadge tone="ok"` → `token(tone-ok-fg)`). Built-in widgets draw their own parts from theme tokens too (lamp off color `lamp-off`, tank liquid `tank-fill`, chart colors `chart-1`…`chart-6`, keyboard, grid …), so a theme made from scratch with `new DvTheme(...)` that lacks one of them shows magenta there — derive custom themes with `DvTheme.Dark.With(...)` / `DvTheme.Light.With(...)`.
 
 This includes `DvDataGrid`'s `*-color` attributes and `DvColumn on-color` (they also write a Trace warning). A `tone`/`state` on a built-in tag that the theme has no `tone-*`/`state-*` token for (`DvRing tone="ok"`, `DvLamp state="go"`) is not magenta: it uses the default (`info` / no state color) with a Trace warning. A custom theme's own words work (`state-idle` token → `state="idle"`).
 

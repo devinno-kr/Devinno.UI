@@ -299,21 +299,20 @@ internal sealed class SoftKeyboard
         if (!IsShown(now))
             return;
 
-        SKColor Tok(string name, SKColor fb)
-            => (theme ?? DvTheme.Default).TryGet(name, out var raw) && DvColor.TryParse(raw, out var c) ? c.ToSK() : fb;
+        SKColor Tok(string name) => ThemeResolver.Color(theme, name);
 
-        var bg = Tok("kbd-bg", new SKColor(0xe2, 0xe8, 0xf0));
-        var keyBg = Tok("kbd-key", SKColors.White);
-        var keyFg = Tok("kbd-key-fg", new SKColor(0x0f, 0x17, 0x2a));
-        var spBg = Tok("kbd-key-special", new SKColor(0xcb, 0xd5, 0xe1));
-        var spFg = Tok("kbd-key-special-fg", new SKColor(0x0f, 0x17, 0x2a));
-        var primary = Tok("primary", new SKColor(0x25, 0x63, 0xeb));
-        var primaryFg = Tok("primary-fg", SKColors.White);
-        var surface = Tok("surface", SKColors.White);
-        var border = Tok("border-strong", new SKColor(0x94, 0xa3, 0xb8));
-        var muted = Tok("text-muted", new SKColor(0x64, 0x74, 0x8b));
-        var subtle = Tok("text-subtle", new SKColor(0x94, 0xa3, 0xb8));
-        var danger = Tok("tone-danger", new SKColor(0xdc, 0x26, 0x26));
+        var bg = Tok("kbd-bg");
+        var keyBg = Tok("kbd-key");
+        var keyFg = Tok("kbd-key-fg");
+        var spBg = Tok("kbd-key-special");
+        var spFg = Tok("kbd-key-special-fg");
+        var primary = Tok("primary");
+        var primaryFg = Tok("primary-fg");
+        var surface = Tok("surface");
+        var border = Tok("border-strong");
+        var muted = Tok("text-muted");
+        var subtle = Tok("text-subtle");
+        var danger = Tok("tone-danger");
 
         var panel = Panel(w, h, now);
         using (var bp = new SKPaint { Color = bg })

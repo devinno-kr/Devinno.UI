@@ -20,7 +20,7 @@ public sealed partial class Painter
             using var rp = new SKPaint
             {
                 IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = FocusRingWidth,
-                Color = ThemeColor("focus", new SKColor(0x25, 0x63, 0xeb, 0x66))
+                Color = ThemeColor("focus")
             };
             canvas.DrawRoundRect(ring, r + FocusRingGap, r + FocusRingGap, rp);
         }
@@ -30,7 +30,7 @@ public sealed partial class Painter
         if (content.Width <= 0 || content.Height <= 0)
             return;
 
-        var muted = ThemeColor("text-muted", new SKColor(0x64, 0x74, 0x8b));
+        var muted = ThemeColor("text-muted");
         if (IconFont.TryResolve(box.Editing ? "fa-angle-up" : "fa-angle-down", out var arrow))
         {
             using var ap = new SKPaint { IsAntialias = true, Color = muted };
@@ -40,7 +40,7 @@ public sealed partial class Painter
         content.Right -= SelectArrowSize + 8f;
         var selected = SelectDisplay.Selected(box);
         var text = selected?.Text ?? box.InputPlaceholder ?? "";
-        var ink = selected is null ? ThemeColor("text-subtle", new SKColor(0x94, 0xa3, 0xb8)) : st.Color.ToSK();
+        var ink = selected is null ? ThemeColor("text-subtle") : st.Color.ToSK();
 
         canvas.Save();
         canvas.ClipRect(content);

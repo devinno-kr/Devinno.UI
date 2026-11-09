@@ -92,7 +92,7 @@ public static class DvRenderer
         {
             var box = new LayoutEngine(theme, strings).Layout(root, vm, width, height, registry);
             var canvas = surface.Canvas;
-            canvas.Clear(SKColors.White);
+            canvas.Clear(ThemeResolver.Color(theme, "background")); // 화면 밖(루트가 칠하지 않은 곳) = 테마 바탕 (3단계 R11)
             new Painter(theme, strings).Paint(canvas, box, vm, null, timestampMs);
             canvas.Flush();
         }

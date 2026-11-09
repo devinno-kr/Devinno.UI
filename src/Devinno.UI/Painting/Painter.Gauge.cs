@@ -17,7 +17,7 @@ public sealed partial class Painter
         if (range <= 0)
             return;
 
-        var tickColor = ThemeColor("gauge-tick", new SKColor(0x94, 0xa3, 0xb8));
+        var tickColor = ThemeColor("gauge-tick");
         float Angle(double v) => (startAngle + (float)((v - box.GaugeMin) / range) * sweep) * MathF.PI / 180f;
 
         using var p = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, Color = tickColor };
@@ -47,7 +47,7 @@ public sealed partial class Painter
 
         var decimals = Interaction.KnobBinder.Decimals(box.GaugeTicks);
         using var font = TextFont.Create("0", MathF.Max(9f, radius * 0.15f), bold: false);
-        using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted", new SKColor(0x64, 0x74, 0x8b)) };
+        using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted") };
         var labelR = radius - gm.MajorTickEnd - font.Size * 0.95f;
         foreach (var v in major)
         {
@@ -78,7 +78,7 @@ public sealed partial class Painter
         path.LineTo(cx - nrm.X * half, cy - nrm.Y * half);
         path.Close();
 
-        var tip = ZoneColorAt(box) ?? ThemeColor("gauge-needle-tip", new SKColor(0xef, 0x44, 0x44));
+        var tip = ZoneColorAt(box) ?? ThemeColor("gauge-needle-tip");
         using (var p = new SKPaint { IsAntialias = true })
         {
             p.Shader = SKShader.CreateRadialGradient(new SKPoint(cx, cy), length,
@@ -90,7 +90,7 @@ public sealed partial class Painter
 
         using (var hub = new SKPaint { IsAntialias = true, Color = needleColor })
             canvas.DrawCircle(cx, cy, gm.HubRadius, hub);
-        using (var dot = new SKPaint { IsAntialias = true, Color = ThemeColor("gauge-track", new SKColor(0xe2, 0xe8, 0xf0)) })
+        using (var dot = new SKPaint { IsAntialias = true, Color = ThemeColor("gauge-track") })
             canvas.DrawCircle(cx, cy, gm.HubDot, dot);
     }
 }

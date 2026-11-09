@@ -16,20 +16,20 @@ public sealed partial class Painter
         var at = SliderMetrics.PointAt(box, box.KnobValue);
         var a = box.Disabled ? (byte)0x80 : (byte)0xff;
         var hot = !box.Disabled && state is not null && (ReferenceEquals(state.Press, box) || ReferenceEquals(state.Hover, box));
-        var fill = ThemeColor("knob-fill", new SKColor(0x25, 0x63, 0xeb)).WithAlpha(a);
+        var fill = ThemeColor("knob-fill").WithAlpha(a);
         // 읽기 전용 — 손잡이가 다니는 길 둘레 점선
         PaintReadOnlyEdge(canvas, box, new SKRect(MathF.Min(min.X, max.X) - SliderMetrics.Thumb, MathF.Min(min.Y, max.Y) - SliderMetrics.Thumb,
             MathF.Max(min.X, max.X) + SliderMetrics.Thumb, MathF.Max(min.Y, max.Y) + SliderMetrics.Thumb), SliderMetrics.Thumb);
 
         using var p = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = bar, StrokeCap = SKStrokeCap.Round };
-        p.Color = ThemeColor("gauge-track", new SKColor(0xe2, 0xe8, 0xf0)).WithAlpha(a);
+        p.Color = ThemeColor("gauge-track").WithAlpha(a);
         canvas.DrawLine(min, max, p);
         p.Color = fill;
         canvas.DrawLine(min, at, p);
 
         p.StrokeCap = SKStrokeCap.Butt;
         p.Style = SKPaintStyle.Fill;
-        p.Color = ThemeColor("surface", SKColors.White).WithAlpha(a);
+        p.Color = ThemeColor("surface").WithAlpha(a);
         canvas.DrawCircle(at, SliderMetrics.Thumb, p);
         p.Style = SKPaintStyle.Stroke;
         p.StrokeWidth = hot ? 4f : 3f;
@@ -45,7 +45,7 @@ public sealed partial class Painter
         if (!string.IsNullOrEmpty(box.KnobUnit))
             label += " " + box.KnobUnit;
         using var font = TextFont.Create(label, 13f, bold: true);
-        using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text", new SKColor(0x22, 0x22, 0x22)).WithAlpha(a) };
+        using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text").WithAlpha(a) };
         var mid = -(font.Metrics.Ascent + font.Metrics.Descent) / 2f;
         if (SliderMetrics.Vertical(box))
         {

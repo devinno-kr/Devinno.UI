@@ -19,7 +19,7 @@ public sealed partial class Painter
         var r = st.BorderRadius > 0 ? MathF.Min(st.BorderRadius, pill) : pill;
         var t = Fraction(box);
 
-        using (var track = new SKPaint { IsAntialias = true, Color = ThemeColor("gauge-track", new SKColor(0xe2, 0xe8, 0xf0)) })
+        using (var track = new SKPaint { IsAntialias = true, Color = ThemeColor("gauge-track") })
             canvas.DrawRoundRect(rect, r, r, track);
 
         var fill = box.Direction switch
@@ -69,7 +69,7 @@ public sealed partial class Painter
         canvas.Save();
         canvas.ClipRect(rect);
         canvas.ClipRect(fill, SKClipOperation.Difference);
-        using (var onTrack = new SKPaint { IsAntialias = true, Color = ThemeColor("text", new SKColor(0x0f, 0x17, 0x2a)) })
+        using (var onTrack = new SKPaint { IsAntialias = true, Color = ThemeColor("text") })
             canvas.DrawText(text, rect.MidX, baseline, SKTextAlign.Center, font, onTrack);
         canvas.Restore();
     }
@@ -97,7 +97,7 @@ public sealed partial class Painter
                    Style = SKPaintStyle.Stroke,
                    StrokeWidth = th,
                    StrokeCap = SKStrokeCap.Round,
-                   Color = ThemeColor("gauge-track", new SKColor(0xe2, 0xe8, 0xf0))
+                   Color = ThemeColor("gauge-track")
                })
         {
             if (sweep >= 360f)
@@ -135,7 +135,7 @@ public sealed partial class Painter
         {
             var text = FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
             using var font = TextFont.Create(text, MathF.Max(10f, r * 0.42f), bold: true);
-            using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text", new SKColor(0x0f, 0x17, 0x2a)) };
+            using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text") };
             var valueY = cy - (hasLabel ? r * 0.10f : 0f);
             canvas.DrawText(text, cx, valueY - (font.Metrics.Ascent + font.Metrics.Descent) / 2f, SKTextAlign.Center, font, tp);
         }
@@ -143,7 +143,7 @@ public sealed partial class Painter
         if (hasLabel)
         {
             using var lf = TextFont.Create(box.Label!, MathF.Max(9f, r * 0.16f), bold: true);
-            using var lp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted", new SKColor(0x64, 0x74, 0x8b)) };
+            using var lp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted") };
             canvas.DrawText(box.Label!, cx, cy + r * 0.36f, SKTextAlign.Center, lf, lp);
         }
     }
@@ -154,16 +154,9 @@ public sealed partial class Painter
         return range <= 0 ? 0f : Math.Clamp((box.GaugeValue - box.GaugeMin) / range, 0f, 1f);
     }
 
-    // 현재값 zone 색 → 없으면 tone 토큰(무테마면 DvTheme.Default 값)
+    // 현재값 zone 색 → 없으면 tone 토큰(tone 은 빌드 때 테마 낱말로 검사됨 — 모르는 값은 info, R3)
     private SKColor ValueColor(LayoutBox box)
-    {
-        if (ZoneColorAt(box) is { } z)
-            return z;
-        var theme = _theme;
-        return theme.TryGet("tone-" + box.Tone, out var raw) && DvColor.TryParse(raw, out var c)
-            ? c.ToSK()
-            : new SKColor(0x25, 0x63, 0xeb);
-    }
+        => ZoneColorAt(box) ?? ThemeColor("tone-" + box.Tone);
 
     // format(.NET 형식, InvariantCulture — 3단계 R8 공용 규칙 AttrRules.FormatOrNull)이 있으면 그대로, 없거나 쓸 수 없으면(경고) 정수는 정수·아니면 소수 한 자리
     internal static string FormatValue(float v, string? format, string tag)

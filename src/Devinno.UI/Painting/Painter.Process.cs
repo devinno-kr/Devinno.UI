@@ -102,7 +102,7 @@ public sealed partial class Painter
         if (d.Graph is null)
             return;
         ProcessBuilder.Report(d);
-        PaintPipes(canvas, d, timestampMs, ThemeColor("--text", box.Style.Color.ToSK()), box.Style.FontFamily);
+        PaintPipes(canvas, d, timestampMs, ThemeColor("--text"), box.Style.FontFamily);
     }
 
     /// <summary>Flow animation frame interval (ms) — capped at 20 frames per second (saves CPU, since the whole screen is redrawn).</summary>
@@ -420,7 +420,7 @@ public sealed partial class Painter
             var ox = d.Origin.X + host.G.X;
             var oy = d.Origin.Y + host.G.Y;
             using var f = TextFont.Create(inst.Value, d.Text(ProcessBuilder.ValueSize), false, st.FontFamily);
-            using var vp = new SKPaint { IsAntialias = true, Color = ThemeColor("--text", st.Color.ToSK()) };
+            using var vp = new SKPaint { IsAntialias = true, Color = ThemeColor("--text") };
             canvas.DrawText(inst.Value, ox + inst.ValueRect.Left, oy + inst.ValueRect.Top - f.Metrics.Ascent, SKTextAlign.Left, f, vp);
         }
     }
@@ -527,13 +527,13 @@ public sealed partial class Painter
             if (!string.IsNullOrEmpty(n.Label))
             {
                 using var font = TextFont.Create(n.Label, d.Text(ProcessBuilder.LabelSize), true, st.FontFamily);
-                using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("--text", st.Color.ToSK()) };
+                using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("--text") };
                 canvas.DrawText(n.Label, d.Origin.X + n.G.X + n.LabelRect.Left, d.Origin.Y + n.G.Y + n.LabelRect.Top - font.Metrics.Ascent,
                     SKTextAlign.Left, font, tp);
             }
 
             if (unit.Graph is not null)
-                PaintPipes(canvas, unit, timestampMs, ThemeColor("--text", st.Color.ToSK()), st.FontFamily);
+                PaintPipes(canvas, unit, timestampMs, ThemeColor("--text"), st.FontFamily);
             return;
         }
 
@@ -588,7 +588,7 @@ public sealed partial class Painter
                     canvas.Restore();
                 }
 
-                PaintEquipmentLabel(canvas, n, look, st, ThemeColor("--text", st.Color.ToSK()));
+                PaintEquipmentLabel(canvas, n, look, st, ThemeColor("--text"));
             }
 
             if (n.Error)

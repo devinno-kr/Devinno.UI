@@ -25,19 +25,19 @@ public sealed partial class Painter
 
         if (strip is { } s)
         {
-            var comm = ToneToken("comm-alarm", new SKColor(0x7a, 0x1f, 0xa2));
+            var comm = ThemeColor("comm-alarm");
             using (var p = new SKPaint { IsAntialias = true, Color = on ? comm : Mix(comm, SKColors.Black, 0.35f) })
                 canvas.DrawRect(s, p);
-            DrawBannerText(canvas, T("dv.alarm.comm") + " · " + box.CommAlarm, s, s.Left + 14f, SKColors.White, 12f, bold: true);
+            DrawBannerText(canvas, T("dv.alarm.comm") + " · " + box.CommAlarm, s, s.Left + 14f, ThemeColor("comm-alarm-fg"), 12f, bold: true);
         }
 
         var top = AlarmView.Top(box.AlarmItems);
         if (top is null)
         {
-            using (var p = new SKPaint { IsAntialias = true, Color = ToneToken("tone-success-soft", new SKColor(0xdc, 0xfc, 0xe7)) })
+            using (var p = new SKPaint { IsAntialias = true, Color = ThemeColor("tone-success-soft") })
                 canvas.DrawRect(bottom, p);
-            var fg = ToneToken("tone-success-fg", new SKColor(0x15, 0x80, 0x3d));
-            using (var dot = new SKPaint { IsAntialias = true, Color = ToneToken("tone-success", new SKColor(0x16, 0xa3, 0x4a)) })
+            var fg = ThemeColor("tone-success-fg");
+            using (var dot = new SKPaint { IsAntialias = true, Color = ThemeColor("tone-success") })
                 canvas.DrawCircle(bottom.Left + 20f, bottom.MidY, 5f, dot);
             DrawBannerText(canvas, T("dv.alarm.none"), bottom, bottom.Left + 34f, fg, 14f, bold: true);
         }
@@ -80,10 +80,10 @@ public sealed partial class Painter
         var showAck = box.AlarmShowAck;
         var layout = AlarmListLayout.Compute(box.Rect, box.AlarmItems, box.AlarmRowHeight, showAck);
         var on = MotionPhase.BlinkOn(ts, AlarmBlinkMs);
-        var text = ThemeColor("text", new SKColor(0x0f, 0x17, 0x2a));
-        var muted = ThemeColor("text-muted", new SKColor(0x64, 0x74, 0x8b));
-        var subtle = ThemeColor("text-subtle", new SKColor(0x94, 0xa3, 0xb8));
-        var line = ThemeColor("border", new SKColor(0xcb, 0xd5, 0xe1));
+        var text = ThemeColor("text");
+        var muted = ThemeColor("text-muted");
+        var subtle = ThemeColor("text-subtle");
+        var line = ThemeColor("border");
 
         var colTime = box.Rect.Left + 16f;
         var colPrio = colTime + 78f;
@@ -162,9 +162,10 @@ public sealed partial class Painter
                     canvas.DrawRoundRect(b, 8f, 8f, bb);
                 using (var bs = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.2f, Color = prio })
                     canvas.DrawRoundRect(b, 8f, 8f, bs);
-                using var af = TextFont.Create("ACK", 12f, bold: true);
+                var ackText = T("dv.alarm.ack");
+                using var af = TextFont.Create(ackText, 12f, bold: true);
                 using var ap = new SKPaint { IsAntialias = true, Color = prio };
-                canvas.DrawText("ACK", b.MidX, Baseline(b, af), SKTextAlign.Center, af, ap);
+                canvas.DrawText(ackText, b.MidX, Baseline(b, af), SKTextAlign.Center, af, ap);
             }
             else if (showAck && row.AckTime is { } at)
             {
@@ -191,19 +192,12 @@ public sealed partial class Painter
 
     private (SKColor Color, SKColor Fg) PriorityColors(AlarmPriority p) => p switch
     {
-        AlarmPriority.Critical => (ToneToken("alarm-critical", new SKColor(0xdc, 0x26, 0x26)),
-            ToneToken("alarm-critical-fg", SKColors.White)),
-        AlarmPriority.Major => (ToneToken("alarm-major", new SKColor(0xf5, 0x9e, 0x0b)),
-            ToneToken("alarm-major-fg", new SKColor(0x11, 0x18, 0x27))),
-        _ => (ToneToken("alarm-minor", new SKColor(0x3b, 0x82, 0xf6)), ToneToken("alarm-minor-fg", SKColors.White))
+        AlarmPriority.Critical => (ThemeColor("alarm-critical"),
+            ThemeColor("alarm-critical-fg")),
+        AlarmPriority.Major => (ThemeColor("alarm-major"),
+            ThemeColor("alarm-major-fg")),
+        _ => (ThemeColor("alarm-minor"), ThemeColor("alarm-minor-fg"))
     };
-
-    // 토큰(테마 없으면 DvTheme.Default 값) — 알람·톤 색은 무테마에서도 의미색이 필요
-    private SKColor ToneToken(string name, SKColor fallback)
-    {
-        var theme = _theme;
-        return theme.TryGet(name, out var raw) && DvColor.TryParse(raw, out var c) ? c.ToSK() : fallback;
-    }
 
     private static float Baseline(SKRect r, SKFont f) => r.MidY - (f.Metrics.Ascent + f.Metrics.Descent) / 2f;
 

@@ -429,6 +429,5 @@ public sealed partial class DvSurface
         PublishEdit();
     }
 
-    internal SKColor Token(string name, SKColor fallback)
-        => (_theme ?? DvTheme.Default).TryGet(name, out var raw) && DvColor.TryParse(raw, out var c) ? c.ToSK() : fallback;
+    internal SKColor Token(string name) => ThemeResolver.Color(_theme, name);
 }

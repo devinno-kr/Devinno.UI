@@ -126,9 +126,9 @@ public class WidgetTests
         Assert.Same(vm.Series, w.Series);
         Assert.Equal(new SKRect(box.Rect.Left + 8, box.Rect.Top + 8, box.Rect.Right - 8, box.Rect.Bottom - 8), w.Bounds);
 
-        // 잘림 — 상자 안은 빨강, 상자 밖(오른쪽 아래)은 흰 배경 그대로
+        // 잘림 — 상자 안은 빨강, 상자 밖(오른쪽 아래)은 캔버스 바탕 그대로(3단계 R11: 흰색 → background 토큰)
         Assert.Equal(SKColors.Red, bmp.GetPixel((int)box.Rect.MidX, (int)box.Rect.MidY));
-        Assert.Equal(SKColors.White, bmp.GetPixel((int)box.Rect.Right + 20, (int)box.Rect.Bottom + 20));
+        Assert.Equal(Devinno.UI.Styling.ThemeResolver.Color(DvTheme.Light, "background"), bmp.GetPixel((int)box.Rect.Right + 20, (int)box.Rect.Bottom + 20));
     }
 
     [Fact]

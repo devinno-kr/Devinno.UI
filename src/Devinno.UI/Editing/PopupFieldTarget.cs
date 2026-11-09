@@ -66,8 +66,8 @@ internal sealed class PopupFieldTarget : IEditTarget
     {
         var st = Popup.Slot.Style;
         var family = TextFont.ResolveTypeface(sample, st.FontFamily).FamilyName;
-        var text = _w.Token("text", new SKColor(0x0f, 0x17, 0x2a));
-        var surface = _w.Token("surface", SKColors.White);
+        var text = _w.Token("text");
+        var surface = _w.Token("surface");
         return IsTime
             ? new EditLook(family, st.FontSize, false, text, surface, SKRect.Empty, TextAlign.Center)
             : new EditLook(family, st.FontSize, false, text, surface, new SKRect(12, 0, 0, 0), TextAlign.Left);

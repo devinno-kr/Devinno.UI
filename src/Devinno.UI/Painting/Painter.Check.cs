@@ -20,7 +20,7 @@ public sealed partial class Painter
         var radius = radio ? CheckSize / 2f : 5f;
         var a = box.Disabled ? (byte)0x80 : (byte)0xff;
         var hot = !box.Disabled && state is not null && (ReferenceEquals(state.Press, box) || ReferenceEquals(state.Hover, box));
-        var primary = ThemeColor("primary", new SKColor(0x25, 0x63, 0xeb)).WithAlpha(a);
+        var primary = ThemeColor("primary").WithAlpha(a);
         PaintReadOnlyEdge(canvas, box, b, radius);
 
         using var p = new SKPaint { IsAntialias = true };
@@ -28,17 +28,17 @@ public sealed partial class Painter
         {
             p.Color = primary;
             canvas.DrawRoundRect(b, radius, radius, p);
-            using var ip = new SKPaint { IsAntialias = true, Color = ThemeColor("primary-fg", SKColors.White).WithAlpha(a) };
+            using var ip = new SKPaint { IsAntialias = true, Color = ThemeColor("primary-fg").WithAlpha(a) };
             if (IconFont.TryResolve("fa-check", out var glyph))
                 IconFont.Draw(canvas, glyph, new SKPoint(b.MidX, b.MidY), 15f, ip);
             return;
         }
 
-        p.Color = ThemeColor("surface", SKColors.White).WithAlpha(a);
+        p.Color = ThemeColor("surface").WithAlpha(a);
         canvas.DrawRoundRect(b, radius, radius, p);
         p.Style = SKPaintStyle.Stroke;
         p.StrokeWidth = box.ToggleOn || hot ? 2f : 1.5f;
-        p.Color = box.ToggleOn || hot ? primary : ThemeColor("border-strong", new SKColor(0x94, 0xa3, 0xb8)).WithAlpha(a);
+        p.Color = box.ToggleOn || hot ? primary : ThemeColor("border-strong").WithAlpha(a);
         var inset = p.StrokeWidth / 2f;
         var sb = SKRect.Inflate(b, -inset, -inset);
         canvas.DrawRoundRect(sb, radius - inset, radius - inset, p);
@@ -64,7 +64,7 @@ public sealed partial class Painter
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 1.5f,
             PathEffect = dash,
-            Color = ThemeColor("border-strong", new SKColor(0x94, 0xa3, 0xb8))
+            Color = ThemeColor("border-strong")
         };
         var o = SKRect.Inflate(shape, 2.5f, 2.5f);
         canvas.DrawRoundRect(o, radius + 2.5f, radius + 2.5f, edge);

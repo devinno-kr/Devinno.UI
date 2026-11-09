@@ -38,7 +38,7 @@ public sealed partial class Painter
         var (lo, hi) = ChartRange(box, includeZero: false);
         float X(int i) => v.Length == 1 ? r.MidX : r.Left + pad + (r.Width - pad * 2) * i / (v.Length - 1);
         float Y(double d) => (float)(r.Bottom - pad - (r.Height - pad * 2) * Math.Clamp((d - lo) / (hi - lo), 0, 1));
-        var color = ToneToken("tone-" + box.Tone, new SKColor(0x25, 0x63, 0xeb));
+        var color = ThemeColor("tone-" + box.Tone);
 
         using var path = new SKPath();
         path.MoveTo(X(0), Y(v[0]));
@@ -78,15 +78,15 @@ public sealed partial class Painter
         float Y(double d) => (float)(bottom - (bottom - top) * Math.Clamp((d - lo) / (hi - lo), 0, 1));
         var cell = r.Width / v.Length;
         var barW = MathF.Min(cell * 0.6f, 48f);
-        var color = ToneToken("tone-" + box.Tone, new SKColor(0x25, 0x63, 0xeb));
+        var color = ThemeColor("tone-" + box.Tone);
         var baseY = Y(Math.Clamp(0, lo, hi));
 
-        using var axis = new SKPaint { IsAntialias = true, StrokeWidth = 1f, Color = ThemeColor("border-strong", new SKColor(0x94, 0xa3, 0xb8)) };
+        using var axis = new SKPaint { IsAntialias = true, StrokeWidth = 1f, Color = ThemeColor("border-strong") };
         canvas.DrawLine(r.Left, baseY, r.Right, baseY, axis);
 
         using var bp = new SKPaint { IsAntialias = true, Color = color };
-        using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted", new SKColor(0x64, 0x74, 0x8b)) };
-        using var vp = new SKPaint { IsAntialias = true, Color = ThemeColor("text", new SKColor(0x22, 0x22, 0x22)) };
+        using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted") };
+        using var vp = new SKPaint { IsAntialias = true, Color = ThemeColor("text") };
         for (var i = 0; i < v.Length; i++)
         {
             var cx = r.Left + cell * (i + 0.5f);
@@ -118,14 +118,13 @@ public sealed partial class Painter
             return;
         var c = new SKPoint(r.Left + (legend ? size / 2f : r.Width / 2f), r.MidY);
         var oval = new SKRect(c.X - radius, c.Y - radius, c.X + radius, c.Y + radius);
-        var palette = Trends.TrendSpec.Palette;
 
         using var p = new SKPaint { IsAntialias = true };
         if (total <= 0)
         {
             p.Style = SKPaintStyle.Stroke;
             p.StrokeWidth = 2f;
-            p.Color = ThemeColor("border", new SKColor(0xe2, 0xe8, 0xf0));
+            p.Color = ThemeColor("border");
             canvas.DrawCircle(c, radius - 1f, p);
         }
         else
@@ -136,7 +135,7 @@ public sealed partial class Painter
                 if (v[i] <= 0)
                     continue;
                 var sweep = (float)(v[i] / total * 360.0);
-                p.Color = palette[i % palette.Length];
+                p.Color = ThemeColor(Layout.LayoutEngine.ChartToken(i));
                 using var slice = new SKPath();
                 slice.MoveTo(c);
                 slice.ArcTo(oval, start, MathF.Min(sweep, 359.99f), false);
@@ -148,7 +147,7 @@ public sealed partial class Painter
             // 조각 사이 가는 틈(배경색 선)
             if (v.Count(x => x > 0) > 1)
             {
-                using var gap = new SKPaint { IsAntialias = true, StrokeWidth = 2f, Color = ThemeColor("surface", SKColors.White) };
+                using var gap = new SKPaint { IsAntialias = true, StrokeWidth = 2f, Color = ThemeColor("surface") };
                 var a = -90f;
                 foreach (var x in v.Where(x => x > 0))
                 {
@@ -161,13 +160,13 @@ public sealed partial class Painter
 
         if (box.ChartInner > 0)
         {
-            p.Color = ThemeColor("surface", SKColors.White);
+            p.Color = ThemeColor("surface");
             p.Style = SKPaintStyle.Fill;
             canvas.DrawCircle(c, radius * box.ChartInner, p);
             if (box.ShowValue && total > 0) // 도넛 가운데 합계
             {
                 using var big = TextFont.Create("0123456789", MathF.Max(12f, radius * box.ChartInner * 0.5f), bold: true);
-                using var bp = new SKPaint { IsAntialias = true, Color = ThemeColor("text", new SKColor(0x22, 0x22, 0x22)) };
+                using var bp = new SKPaint { IsAntialias = true, Color = ThemeColor("text") };
                 canvas.DrawText(ChartNumber(total, box), c.X, c.Y - (big.Metrics.Ascent + big.Metrics.Descent) / 2f, SKTextAlign.Center, big, bp);
             }
         }
@@ -179,13 +178,13 @@ public sealed partial class Painter
         var rows = v.Length;
         var lineH = font.Spacing + 6f;
         var ly = r.MidY - rows * lineH / 2f + lineH / 2f;
-        using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text", new SKColor(0x22, 0x22, 0x22)) };
-        using var mp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted", new SKColor(0x64, 0x74, 0x8b)) };
+        using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text") };
+        using var mp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted") };
         for (var i = 0; i < rows; i++, ly += lineH)
         {
             if (ly - lineH / 2f < r.Top || ly + lineH / 2f > r.Bottom)
                 continue; // 칸을 넘는 범례 줄은 그리지 않는다
-            p.Color = palette[i % palette.Length];
+            p.Color = ThemeColor(Layout.LayoutEngine.ChartToken(i));
             canvas.DrawCircle(lx + 5f, ly, 5f, p);
             var amount = box.ShowValue ? ChartNumber(v[i], box) : total > 0 && v[i] > 0 ? $"{v[i] / total * 100:0}%" : "0%";
             var aw = font.MeasureText(amount);

@@ -12,7 +12,7 @@ public sealed partial class Painter
     internal static void PaintGridFilterPopup(SKCanvas canvas, GridFilterPopup p, DvTheme? theme, DvStrings? strings, float fontSize)
     {
         var b = p.Bounds;
-        var muted = PopupChrome.Tok(theme, "text-muted", new SKColor(0x64, 0x74, 0x8b));
+        var muted = PopupChrome.Tok(theme, "text-muted");
 
         PopupChrome.Begin(canvas, b, theme);
 
@@ -55,7 +55,7 @@ public sealed partial class Painter
             var msg = p.FieldEdit.Error!;
             var r = p.ErrorRect;
             using var font = TextFont.Create(msg, fontSize - 2, false);
-            using var ep = new SKPaint { IsAntialias = true, Color = PopupChrome.Tok(theme, "state-fault", new SKColor(0xdc, 0x26, 0x26)) };
+            using var ep = new SKPaint { IsAntialias = true, Color = PopupChrome.Tok(theme, "state-fault") };
             canvas.DrawText(font.MeasureText(msg) > r.Width ? Ellipsize(msg, r.Width, font) : msg, r.Left, Baseline(r, font), SKTextAlign.Left, font, ep);
         }
 
@@ -68,15 +68,15 @@ public sealed partial class Painter
     {
         var f = p.FieldRect(field);
         var editing = p.FieldEdit.Field == field;
-        var ink = dim ? PopupChrome.Tok(theme, "text-subtle", new SKColor(0x94, 0xa3, 0xb8)) : PopupChrome.Tok(theme, "text", new SKColor(0x0f, 0x17, 0x2a));
-        var fault = PopupChrome.Tok(theme, "state-fault", new SKColor(0xdc, 0x26, 0x26));
-        var primary = PopupChrome.Tok(theme, "primary", new SKColor(0x25, 0x63, 0xeb));
-        using (var bg = new SKPaint { IsAntialias = true, Color = PopupChrome.Tok(theme, "surface", SKColors.White) })
+        var ink = dim ? PopupChrome.Tok(theme, "text-subtle") : PopupChrome.Tok(theme, "text");
+        var fault = PopupChrome.Tok(theme, "state-fault");
+        var primary = PopupChrome.Tok(theme, "primary");
+        using (var bg = new SKPaint { IsAntialias = true, Color = PopupChrome.Tok(theme, "surface") })
             canvas.DrawRoundRect(f, 6, 6, bg);
         using (var bp = new SKPaint
                {
                    IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = editing ? 2 : 1,
-                   Color = editing ? p.FieldEdit.Error is not null ? fault : primary : PopupChrome.Tok(theme, "border-strong", new SKColor(0x94, 0xa3, 0xb8))
+                   Color = editing ? p.FieldEdit.Error is not null ? fault : primary : PopupChrome.Tok(theme, "border-strong")
                })
             canvas.DrawRoundRect(f, 6, 6, bp);
 
@@ -87,7 +87,7 @@ public sealed partial class Painter
             return;
         var area = new SKRect(f.Left + 12f, f.Top, f.Right - 12f, f.Bottom);
         using var font = TextFont.Create(s, fontSize, false);
-        using var tp = new SKPaint { IsAntialias = true, Color = editing ? PopupChrome.Tok(theme, "text", new SKColor(0x0f, 0x17, 0x2a)) : ink };
+        using var tp = new SKPaint { IsAntialias = true, Color = editing ? PopupChrome.Tok(theme, "text") : ink };
         canvas.Save();
         canvas.ClipRect(area);
         canvas.DrawText(s, area.Left, Baseline(area, font), SKTextAlign.Left, font, tp);
@@ -97,7 +97,7 @@ public sealed partial class Painter
     // values 목록 — 전체 선택 줄 + 항목 줄(체크 상자 + 글자, 넘치면 …), 넘치면 얇은 스크롤 표시, 상한이면 안내 줄
     private static void PaintFilterValues(SKCanvas canvas, GridFilterPopup p, DvTheme? theme, DvStrings? strings, float fontSize)
     {
-        var text = PopupChrome.Tok(theme, "text", new SKColor(0x0f, 0x17, 0x2a));
+        var text = PopupChrome.Tok(theme, "text");
         var list = p.ListRect;
         canvas.Save();
         canvas.ClipRect(list);
@@ -121,7 +121,7 @@ public sealed partial class Painter
             var content = (p.Items.Count + 1) * GridFilterPopup.Row;
             var thumb = Math.Max(24, list.Height * list.Height / content);
             var y = list.Top + (list.Height - thumb) * (p.ScrollY / p.MaxScroll);
-            using var tp = new SKPaint { IsAntialias = true, Color = PopupChrome.Tok(theme, "scrollbar-thumb", new SKColor(0x64, 0x74, 0x8b, 0x80)) };
+            using var tp = new SKPaint { IsAntialias = true, Color = PopupChrome.Tok(theme, "scrollbar-thumb") };
             canvas.DrawRoundRect(SKRect.Create(list.Right - 6, y, 3, thumb), 1.5f, 1.5f, tp);
         }
 
@@ -130,7 +130,7 @@ public sealed partial class Painter
             var more = p.MoreText;
             var r = p.MoreRect;
             using var font = TextFont.Create(more, p.MoreFontSize, false);
-            using var mp = new SKPaint { IsAntialias = true, Color = PopupChrome.Tok(theme, "text-muted", new SKColor(0x64, 0x74, 0x8b)) };
+            using var mp = new SKPaint { IsAntialias = true, Color = PopupChrome.Tok(theme, "text-muted") };
             canvas.DrawText(font.MeasureText(more) > r.Width ? Ellipsize(more, r.Width, font) : more, r.Left, Baseline(r, font), SKTextAlign.Left, font, mp);
         }
     }
@@ -138,14 +138,14 @@ public sealed partial class Painter
     // 체크 상자(0 빈 상자, 1 체크, 2 일부 = 가로줄) + 글자
     private static void PaintFilterRow(SKCanvas canvas, SKRect row, string label, int state, bool bold, DvTheme? theme, float fontSize, SKColor ink)
     {
-        var primary = PopupChrome.Tok(theme, "primary", new SKColor(0x25, 0x63, 0xeb));
+        var primary = PopupChrome.Tok(theme, "primary");
         var box = SKRect.Create(row.Left + 12f, row.MidY - fontSize / 2f, fontSize, fontSize);
         if (state == 0)
         {
             using var bp = new SKPaint
             {
                 IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f,
-                Color = PopupChrome.Tok(theme, "border-strong", new SKColor(0x94, 0xa3, 0xb8))
+                Color = PopupChrome.Tok(theme, "border-strong")
             };
             canvas.DrawRoundRect(SKRect.Inflate(box, -0.75f, -0.75f), 3, 3, bp);
         }
@@ -156,7 +156,7 @@ public sealed partial class Painter
             using var mp = new SKPaint
             {
                 IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2f, StrokeCap = SKStrokeCap.Round, StrokeJoin = SKStrokeJoin.Round,
-                Color = PopupChrome.Tok(theme, "primary-fg", SKColors.White)
+                Color = PopupChrome.Tok(theme, "primary-fg")
             };
             if (state == 1)
             {
@@ -186,9 +186,9 @@ public sealed partial class Painter
     // 취소·지우기(DvButton secondary)·확인(primary 채움) — 선택기 버튼과 같은 색 규칙
     private static void PaintFilterButtons(SKCanvas canvas, GridFilterPopup p, DvTheme? theme, DvStrings? strings, float fontSize)
     {
-        var text = PopupChrome.Tok(theme, "text", new SKColor(0x0f, 0x17, 0x2a));
-        var raised = PopupChrome.Tok(theme, "surface-raised", SKColors.White);
-        var strong = PopupChrome.Tok(theme, "border-strong", new SKColor(0x94, 0xa3, 0xb8));
+        var text = PopupChrome.Tok(theme, "text");
+        var raised = PopupChrome.Tok(theme, "surface-raised");
+        var strong = PopupChrome.Tok(theme, "border-strong");
         foreach (var (r, key) in new[] { (p.CancelRect, "dv.filter.cancel"), (p.ClearRect, "dv.filter.clear") })
         {
             using (var fp = new SKPaint { IsAntialias = true, Color = raised })
@@ -198,8 +198,8 @@ public sealed partial class Painter
             CenterText(canvas, DvStrings.Builtin(strings, key), r, fontSize, false, text);
         }
 
-        using (var op = new SKPaint { IsAntialias = true, Color = PopupChrome.Tok(theme, "primary", new SKColor(0x25, 0x63, 0xeb)) })
+        using (var op = new SKPaint { IsAntialias = true, Color = PopupChrome.Tok(theme, "primary") })
             canvas.DrawRoundRect(p.OkRect, 6, 6, op);
-        CenterText(canvas, DvStrings.Builtin(strings, "dv.filter.ok"), p.OkRect, fontSize, true, PopupChrome.Tok(theme, "primary-fg", SKColors.White));
+        CenterText(canvas, DvStrings.Builtin(strings, "dv.filter.ok"), p.OkRect, fontSize, true, PopupChrome.Tok(theme, "primary-fg"));
     }
 }

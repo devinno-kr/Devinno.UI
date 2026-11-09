@@ -57,6 +57,7 @@ internal static class BuiltInStrings
         ["dv.alarm.col.priority"] = "Priority",
         ["dv.alarm.col.message"] = "Message",
         ["dv.alarm.col.ack"] = "Ack",
+        ["dv.alarm.ack"] = "ACK",
 
         ["dv.trend.empty"] = "No data",
     };
@@ -111,6 +112,7 @@ internal static class BuiltInStrings
         ["dv.alarm.col.priority"] = "등급",
         ["dv.alarm.col.message"] = "메시지",
         ["dv.alarm.col.ack"] = "확인",
+        ["dv.alarm.ack"] = "확인",
 
         ["dv.trend.empty"] = "데이터 없음",
     };

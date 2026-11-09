@@ -11,7 +11,8 @@ namespace Devinno.UI.Trends;
 /// </remarks>
 public sealed class TrendSpec
 {
-    /// <summary>The 6 default colors (blue, cyan, purple, orange, green, red) cycled in channel order when a channel has no <c>color</c>.</summary>
+    /// <summary>The 6 default chart colors (blue, cyan, purple, orange, green, red) — the values of the built-in theme tokens <c>chart-1</c>…<c>chart-6</c>.
+    /// Drawing reads the tokens (cycled in channel/slice order when a channel has no <c>color</c>), so a theme can change them; this array only lists the built-in values.</summary>
     public static readonly SKColor[] Palette =
     {
         new(0x3b, 0x82, 0xf6), new(0x22, 0xd3, 0xee), new(0xa7, 0x8b, 0xfa),
@@ -46,7 +47,7 @@ public sealed class TrendChannelData
     public string? Label { get; init; }
     /// <summary>Unit appended after the latest value in the legend (<c>unit</c>). <see langword="null"/> if none.</summary>
     public string? Unit { get; init; }
-    /// <summary>Line color (<c>color</c>; <c>#색</c> or <c>token(이름)</c> resolved against the theme). If not set or not resolvable, a color from <see cref="TrendSpec.Palette"/>.</summary>
+    /// <summary>Line color (<c>color</c>; <c>#색</c> or <c>token(이름)</c> resolved against the theme). If not set or not resolvable, the theme token <c>chart-1</c>…<c>chart-6</c> in channel order (built-in values: <see cref="TrendSpec.Palette"/>).</summary>
     public required SKColor Color { get; init; }
     /// <summary>Samples to draw: the <c>points</c> binding value if present, otherwise <see cref="TrendBuffer.Snapshot"/> of the <c>source</c> buffer, or an empty array if neither exists.</summary>
     public required TrendPoint[] Points { get; init; }

@@ -14,9 +14,10 @@ namespace Devinno.UI.Styling;
 /// Values are substituted as plain strings, so color tokens use the <see cref="DvColor.TryParse"/> format, size tokens are numbers, and shadow tokens use the <c>dx dy blur color</c> format.</para>
 /// <para><b>Changing only some tokens</b>: pass <see cref="With(IReadOnlyDictionary{string, string})"/> a dictionary containing only the tokens to change, and a new theme is created with the rest unchanged. The original theme is not changed (immutable).</para>
 /// <para><b>Missing tokens</b>: a name not in the theme writes a warning (<see cref="System.Diagnostics.Trace"/>) and is replaced with magenta <c>#FF00FF</c> (<see cref="ThemeResolver.MissingColor"/>), so
-/// it stands out on screen immediately. In non-color positions (e.g. <c>padding</c>) the declaration cannot be resolved and is ignored.</para>
+/// it stands out on screen immediately. Built-in widgets draw their own parts (lamp, tank, chart, grid, keyboard …) from tokens the same way — there is no hidden fallback color,
+/// so a custom theme built from scratch must define every built-in token. In non-color positions (e.g. <c>padding</c>) the declaration cannot be resolved and is ignored.</para>
 /// <para>The token list can be checked in <see cref="Tokens"/>. Main groups: surfaces (<c>background</c>, <c>surface</c>, <c>border</c> …), text (<c>text</c>, <c>text-muted</c> …),
-/// brand (<c>primary</c> …), tones (<c>tone-info</c>, <c>-fg</c>, <c>-soft</c> …), equipment states (<c>state-run</c> …), alarms (<c>alarm-critical</c> …), widget colors (<c>gauge-*</c>, <c>grid-*</c>, <c>kbd-*</c> …).</para>
+/// brand (<c>primary</c> …), tones (<c>tone-info</c>, <c>-fg</c>, <c>-soft</c> …), equipment states (<c>state-run</c> …), alarms (<c>alarm-critical</c> …), chart colors (<c>chart-1</c>…<c>chart-6</c>), widget colors (<c>gauge-*</c>, <c>lamp-off</c>, <c>tank-*</c>, <c>grid-*</c>, <c>kbd-*</c> …).</para>
 /// </remarks>
 /// <example>
 /// <code>
@@ -110,15 +111,18 @@ public sealed class DvTheme
         ["alarm-critical"] = "#dc2626", ["alarm-critical-fg"] = "#ffffff",
         ["alarm-major"] = "#f59e0b", ["alarm-major-fg"] = "#111827",
         ["alarm-minor"] = "#3b82f6", ["alarm-minor-fg"] = "#ffffff",
-        ["comm-alarm"] = "#7a1fa2",
+        ["comm-alarm"] = "#7a1fa2", ["comm-alarm-fg"] = "#ffffff",
 
         // 위젯(Painter) 색
         ["gauge-track"] = "#e2e8f0", ["gauge-needle"] = "#0f172a",
-        ["tank-empty-top"] = "#f5f8fc", ["tank-empty-bottom"] = "#e6ecf3", ["tank-frame"] = "#cbd5e1",
+        ["tank-empty-top"] = "#f5f8fc", ["tank-empty-bottom"] = "#e6ecf3", ["tank-frame"] = "#cbd5e1", ["tank-fill"] = "#3a7bd5",
         ["tank-chip-bg"] = "#ffffffdd", ["tank-chip-fg"] = "#0f172a",
         ["knob-face"] = "#f8fafc", ["knob-fill"] = "#2563eb", ["knob-indicator"] = "#0f172a",
         ["gauge-tick"] = "#94a3b8", ["gauge-needle-tip"] = "#ef4444",
         ["trend-grid"] = "#e2e8f0",
+        ["chart-1"] = "#3b82f6", ["chart-2"] = "#22d3ee", ["chart-3"] = "#a78bfa",
+        ["chart-4"] = "#f59e0b", ["chart-5"] = "#10b981", ["chart-6"] = "#ef4444",
+        ["lamp-off"] = "#3a3f47",
         ["scrollbar-thumb"] = "#64748b80",
         ["scrollbar-track"] = "#0f172a0f",
         ["grid-header"] = "#eef2f6", ["grid-header-fg"] = "#475569",
@@ -186,15 +190,18 @@ public sealed class DvTheme
         ["alarm-critical"] = "#dc2626", ["alarm-critical-fg"] = "#ffffff",
         ["alarm-major"] = "#f59e0b", ["alarm-major-fg"] = "#111827",
         ["alarm-minor"] = "#3b82f6", ["alarm-minor-fg"] = "#ffffff",
-        ["comm-alarm"] = "#7a1fa2",
+        ["comm-alarm"] = "#7a1fa2", ["comm-alarm-fg"] = "#ffffff",
 
         // 위젯(Painter) 색 — 어두운 배경에서 흰 판이 튀지 않게
         ["gauge-track"] = "#334155", ["gauge-needle"] = "#e2e8f0",
-        ["tank-empty-top"] = "#1e293b", ["tank-empty-bottom"] = "#0f172a", ["tank-frame"] = "#475569",
+        ["tank-empty-top"] = "#1e293b", ["tank-empty-bottom"] = "#0f172a", ["tank-frame"] = "#475569", ["tank-fill"] = "#3a7bd5",
         ["tank-chip-bg"] = "#0f172acc", ["tank-chip-fg"] = "#f1f5f9",
         ["knob-face"] = "#273449", ["knob-fill"] = "#3b82f6", ["knob-indicator"] = "#f1f5f9",
         ["gauge-tick"] = "#64748b", ["gauge-needle-tip"] = "#f87171",
         ["trend-grid"] = "#263247",
+        ["chart-1"] = "#3b82f6", ["chart-2"] = "#22d3ee", ["chart-3"] = "#a78bfa",
+        ["chart-4"] = "#f59e0b", ["chart-5"] = "#10b981", ["chart-6"] = "#ef4444",
+        ["lamp-off"] = "#3a3f47",
         ["scrollbar-thumb"] = "#94a3b880",
         ["scrollbar-track"] = "#ffffff0f",
         ["grid-header"] = "#273449", ["grid-header-fg"] = "#cbd5e1",
@@ -218,7 +225,7 @@ public sealed class DvTheme
     /// A leading <c>--</c> on a key is stripped when stored, and names are case-insensitive. For keys containing a dot (<c>spacing.md</c>), a dash alias (<c>spacing-md</c>) is registered as well
     /// (if a dash key with the same name already exists, its value is kept). <paramref name="tokens"/> is copied, so later changes to the original dictionary do not affect the theme.
     /// </remarks>
-    /// <param name="tokens">Token name → value string. If tokens used by built-in widgets are missing, those parts are drawn in magenta (<c>#FF00FF</c>) or a per-widget fallback color.</param>
+    /// <param name="tokens">Token name → value string. If tokens used by built-in widgets are missing, those parts are drawn in magenta (<c>#FF00FF</c>) with a warning.</param>
     /// <param name="stylesheet">
     /// The class stylesheet (CSS-like; see <see cref="StyleSheet"/> for the format). If <see langword="null"/>, <see cref="BuiltInStyles.Sheet"/> is used.
     /// A value <b>replaces</b> the built-in stylesheet, so to keep the built-in classes and add to them, concatenate like <c>BuiltInStyles.Sheet + 내 CSS</c> (your CSS).

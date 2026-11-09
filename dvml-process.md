@@ -792,7 +792,7 @@ Caveats:
 | Pipe spacing | 12px | 16px |
 | Suitable background | Light theme / gray | Dark theme |
 
-- Colors are a fixed process-diagram palette, not theme tokens. Name-label text, signal lines and instrument connection lines (`tap`) use theme `--text` instead, and a signal line can set its own `color` (7.4).
+- Colors are a fixed process-diagram palette, not theme tokens — the one exception to "every color a built-in widget draws is a theme token" (`dvml-ui-markup.md` chapter 5). Name-label text, signal lines and instrument connection lines (`tap`) use theme `--text` instead, and a signal line can set its own `color` (7.4).
 - The process diagram does not decide alarm colors (red, etc.). Alarms are shown with `DvLamp`·`DvBadge` inside `DvAttach`, or with alarm widgets.
 - Pipes are not colored by medium (water, steam, etc.) **by default** (ISA-101 recommendation — chapter 18). Opt in per line with `medium` (12.2).
 

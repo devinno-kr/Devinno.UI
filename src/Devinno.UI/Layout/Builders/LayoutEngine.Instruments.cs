@@ -46,6 +46,11 @@ public sealed partial class LayoutEngine
     }
 
     // tone — 지금 테마에 tone-{값} 토큰이 있으면 그 값(사용자 테마 단어 허용), 없으면 info + 경고
+    // 차트 기본 색(트렌드 채널·파이 조각) = 테마 토큰 chart-1…chart-6 순환 (3단계 R11)
+    internal static string ChartToken(int index) => "chart-" + (index % ChartColors + 1).ToString(CultureInfo.InvariantCulture);
+
+    internal const int ChartColors = 6;
+
     private string Tone(AttrReader r) => AttrRules.ThemeWord(r.Value("tone"), "tone", _theme, "info", r.Node.Tag, "tone") ?? "info";
 
     // DvGauge·DvRing·DvProgress 가 같은 상자 필드(Gauge*·Tone·Unit…)를 쓴다. 공용 부분(값·범위·구간·show-value·unit·format)만 셋이 읽고,
@@ -193,7 +198,7 @@ public sealed partial class LayoutEngine
                 ? HandlerErrors.Snapshot(bound, PathOf(cr.Raw("points")), ch.Tag).ToArray()
                 : source?.Snapshot(name) ?? Array.Empty<Trends.TrendPoint>();
             var color = Color(cr, "color", "using the palette color")?.ToSK()
-                        ?? Trends.TrendSpec.Palette[index % Trends.TrendSpec.Palette.Length];
+                        ?? Styling.ThemeResolver.Color(_theme, ChartToken(index));
             spec.Channels.Add(new Trends.TrendChannelData
             {
                 Name = name,

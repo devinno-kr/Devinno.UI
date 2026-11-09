@@ -944,7 +944,7 @@ public sealed partial class DvSurface
         }
 
         if (!IsOverlay)
-            canvas.Clear(SKColors.White); // 다이얼로그 칸은 지우지 않는다 — 둥근 모서리 밖·그림자 자리에 아래(막)가 비친다
+            canvas.Clear(Token("background")); // 테마 바탕(3단계 R11). 다이얼로그 칸은 지우지 않는다 — 둥근 모서리 밖·그림자 자리에 아래(막)가 비친다
         canvas.Save();
         if (pan > 0)
             canvas.Translate(0, -pan); // 키보드가 입력 대상을 가리지 않게 화면을 올림
@@ -1132,12 +1132,10 @@ public sealed partial class DvSurface
         return r;
     }
 
-    // 다이얼로그 막 — 테마 토큰 scrim(없으면 반투명 남색)
+    // 다이얼로그 막 — 테마 토큰 scrim
     private void PaintScrim(SKCanvas canvas, float w, float h)
     {
-        var color = (_theme ?? DvTheme.Default).TryGet("scrim", out var raw) && DvColor.TryParse(raw, out var c)
-            ? c.ToSK()
-            : new SKColor(0x0f, 0x17, 0x2a, 0x66);
+        var color = Token("scrim");
         using var paint = new SKPaint { Color = color };
         canvas.DrawRect(0, 0, w, h, paint);
     }
