@@ -74,6 +74,22 @@ public class InstanceStateTests
         Assert.Equal(["two", "one"], Bodies(s));
     }
 
+    // 인스턴스에 전달 속성(grow·style 등)이 있으면 틀 루트가 매번 사본 노드로 만들어진다 — 상태는 인스턴스 기준이어야 한다
+    [Fact]
+    public void Tabs_ComponentRootWithPassthrough_KeepSelectionAndStaySeparate()
+    {
+        var reg = new ComponentRegistry();
+        reg.Register($"<DvComponent name=\"TabCard\">{Tabs}</DvComponent>");
+        var s = Start("<TabCard grow=\"1\"/><TabCard grow=\"1\"/>", reg);
+
+        Tap(s, Flatten(s.Root!).Where(b => b.Node.Tag == "DvTabItem").ElementAt(1));
+        Assert.Equal(["two", "one"], Bodies(s));
+
+        s.Invalidate();
+        s.Layout(W, H);
+        Assert.Equal(["two", "one"], Bodies(s));
+    }
+
     [Fact]
     public void Tabs_Plain_KeepSelectionAcrossRebuilds()
     {

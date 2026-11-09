@@ -718,10 +718,11 @@ public sealed class LayoutEngine
         var style = StyleParser.Parse(baseDecls);
         var box = new LayoutBox
         {
-            Node = node, Style = style, ItemScope = vm as ItemScope ?? _rootItemScope, Instance = NextInstance(node),
+            Node = node, Style = style, ItemScope = vm as ItemScope ?? _rootItemScope, Instance = NextInstance(_rootInstance ?? node),
             ComponentScope = vm as ComponentScope ?? (vm as ItemScope)?.Outer as ComponentScope,
         };
         _rootItemScope = null;
+        _rootInstance = null;
 
         ComputedStyle? State(Func<ClassRule, string?> pick, string attr)
         {
@@ -1323,6 +1324,7 @@ public sealed class LayoutEngine
         var passedClick = instance.Attributes.ContainsKey("onclick") &&
                           !component.Params.Any(p => string.Equals(p.Name, "onclick", StringComparison.OrdinalIgnoreCase));
         _rootItemScope = passedClick ? outerVm as ItemScope ?? _rootItemScope : null; // 루트가 또 컴포넌트면 바깥 항목을 이어 준다
+        _rootInstance ??= instance;
         try
         {
             var box = Build(root, scope, registry, depth + 1, new TemplateContext(instance.Children, slotBuilder, twoWay));
@@ -1333,6 +1335,7 @@ public sealed class LayoutEngine
         finally
         {
             _rootItemScope = null;
+            _rootInstance = null; // 루트가 안 보여서(visible) 상자를 안 만든 경우 다음 요소로 새지 않게
         }
     }
 
@@ -1341,6 +1344,10 @@ public sealed class LayoutEngine
 
     // 전달된 인스턴스 onclick 의 DvRepeat 항목 범위 — 템플릿 루트 박스를 만들 때 한 번 쓰고 비운다
     private ItemScope? _rootItemScope;
+
+    // 컴포넌트 인스턴스 노드 — 틀 루트 상자의 인스턴스 키로 쓴다(루트가 전달 속성 사본이면 노드가 매번 새것이라).
+    // 루트가 또 컴포넌트면 가장 바깥 인스턴스가 키(안쪽 인스턴스 노드가 그 사본일 수 있음). 루트 상자를 만들 때 한 번 쓰고 비운다.
+    private ElementNode? _rootInstance;
 
     private static ElementNode WithPassthrough(ComponentDef component, ElementNode instance, object? outerVm)
     {
