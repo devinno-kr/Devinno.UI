@@ -93,8 +93,8 @@ public sealed partial class DvSurface
 
     // DvKnob 회전 드래그 — 미리보기 값은 LayoutBox 에만, VM 은 pointer-up 에서 1회 커밋
     private IValueDrag? _knobDrag; // 노브·슬라이더 끌기
-    private readonly Widgets.WidgetStore _widgetStore = new(); // 커스텀 위젯 인스턴스 — 재빌드에도 같은 것
-    private readonly Video.VideoStore _videoStore = new(); // DvVideo src 재생기 — 재빌드에도 같은 것, 빠지면 닫힘
+    private readonly Layout.InstanceStore<Widgets.DvWidget> _widgetStore = new(); // 커스텀 위젯 인스턴스 — 재빌드에도 같은 것
+    private readonly Layout.InstanceStore<Video.VideoPlayer> _videoStore = new(disposeDropped: true); // DvVideo src 재생기 — 재빌드에도 같은 것, 빠지면 닫힘
     private LayoutBox? _widgetDrag; // 누름을 잡은 커스텀 위젯(뗌·취소까지 이동을 받는다)
     private SKPoint _widgetShift;   // 화면 점 → 위젯 상자 좌표(스크롤 보정), 노브의 _knobShift 와 같음
 

@@ -94,8 +94,9 @@ public sealed class LayoutEngine
         var prevTag = readScope.Tag;
         try
         {
-            _widgets = WidgetStore ?? new Widgets.WidgetStore(); // 서피스가 없으면(직접 호출·DvRenderer) 이번 배치만 쓰는 새 인스턴스
-            _videos = VideoStore ?? new Video.VideoStore(); // 서피스가 없으면 첫 프레임만 만든 재생기(바로 닫힘)
+            _widgets = WidgetStore ?? new InstanceStore<Widgets.DvWidget>(); // 서피스가 없으면(직접 호출·DvRenderer) 이번 배치만 쓰는 새 인스턴스
+            _videos = VideoStore ?? new InstanceStore<Video.VideoPlayer>(disposeDropped: true); // 서피스가 없으면 첫 프레임만 만든 재생기(바로 닫힘)
+            _nth.Clear();
             _widgets.Begin();
             _videos.Begin();
             var box = Build(root, vm, registry, 0) ?? new LayoutBox { Node = root, Style = new ComputedStyle() };
@@ -230,20 +231,20 @@ public sealed class LayoutEngine
     }
 
     /// <summary>Keeps custom widget instances between builds (set by the surface). If <see langword="null"/>, each layout creates new instances.</summary>
-    internal Widgets.WidgetStore? WidgetStore { get; set; }
+    internal InstanceStore<Widgets.DvWidget>? WidgetStore { get; set; }
 
-    private Widgets.WidgetStore _widgets = null!;
+    private InstanceStore<Widgets.DvWidget> _widgets = null!;
 
     /// <summary>Keeps the players of <c>&lt;DvVideo src&gt;</c> between builds (set by the surface). If <see langword="null"/>, only the first frame is decoded (one-off render).</summary>
-    internal Video.VideoStore? VideoStore { get; set; }
+    internal InstanceStore<Video.VideoPlayer>? VideoStore { get; set; }
 
-    private Video.VideoStore _videos = null!;
+    private InstanceStore<Video.VideoPlayer> _videos = null!;
 
     // 커스텀 위젯 — 상자(스타일·onclick 등은 보통 요소와 같음) + 인스턴스(재빌드에도 같은 것) + 모든 속성을 바인딩 푼 값. 자식은 쓰지 않는다
     private LayoutBox BuildWidget(ElementNode node, object? vm, Func<Widgets.DvWidget> create)
     {
         var box = BuildSelf(node, vm);
-        box.Widget = _widgets.Get(node, create);
+        box.Widget = _widgets.Get(box.Instance, create);
         box.ValueBindExpr = _valueOverride ?? node.Attributes.GetValueOrDefault("value"); // ctx.Commit 이 쓰는 경로(컴포넌트 양방향 파라미터면 바깥 경로)
         box.WidgetValues = node.Attributes.ToDictionary(a => a.Key, a => (BindingResolver.ResolveValueOrLiteral(vm, a.Value), (string?)a.Value), StringComparer.Ordinal);
         if (node.Children.Count > 0)
@@ -643,6 +644,16 @@ public sealed class LayoutEngine
         return box;
     }
 
+    // 이번 빌드에서 요소마다 몇 번째로 만들어지는지 — 인스턴스 키(위젯·비디오·화면 상태가 함께 씀)
+    private readonly Dictionary<ElementNode, int> _nth = new();
+
+    private InstanceKey NextInstance(ElementNode node)
+    {
+        var nth = _nth.GetValueOrDefault(node);
+        _nth[node] = nth + 1;
+        return new InstanceKey(node, nth);
+    }
+
     private LayoutBox BuildSelf(ElementNode node, object? vm)
     {
         // cascade: 레이아웃 슈가 < 클래스 < 클래스:상태 < content-align 속성 < inline style < inline *-style
@@ -659,7 +670,7 @@ public sealed class LayoutEngine
         var style = StyleParser.Parse(baseDecls);
         var box = new LayoutBox
         {
-            Node = node, Style = style, ItemScope = vm as ItemScope ?? _rootItemScope,
+            Node = node, Style = style, ItemScope = vm as ItemScope ?? _rootItemScope, Instance = NextInstance(node),
             ComponentScope = vm as ComponentScope ?? (vm as ItemScope)?.Outer as ComponentScope,
         };
         _rootItemScope = null;
@@ -1515,7 +1526,8 @@ public sealed class LayoutEngine
             return;
         var playing = !node.Attributes.TryGetValue("playing", out var p) || ToBool(BindingResolver.ResolveValueOrLiteral(vm, p));
         var loop = node.Attributes.TryGetValue("loop", out var l) && ToBool(BindingResolver.ResolveValueOrLiteral(vm, l));
-        var player = _videos.Get(node, path, VideoStore is not null);
+        var live = VideoStore is not null;
+        var player = _videos.Get(box.Instance, () => new Video.VideoPlayer(path, poster: !live), p => p.Path == path);
         player.Playing = playing;
         player.Loop = loop;
         box.VideoSource = player;
