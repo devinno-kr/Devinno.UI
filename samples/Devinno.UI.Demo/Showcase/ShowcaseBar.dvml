@@ -21,7 +21,12 @@
   <DvBadge tone="{UnackedTone}" text="{UnackedText}"/>
   <DvIcon icon="fa-clock" style="font-size:15; color: token(text-muted)"/>
   <DvLabel class="clock" text="{Clock}"/>
-  <DvBox style="width:4"/>
+  <DvSelect value="{Bind ThemeName}" style="width:104">
+    <DvOption value="Dark" text="Dark"/>
+    <DvOption value="Light" text="Light"/>
+    <DvOption value="Graphite" text="Graphite"/>
+    <DvOption value="Carbon" text="Carbon"/>
+  </DvSelect>
   <DvButton variant="secondary" icon="fa-check-double" text="Ack all" onclick="AckAll"/>
   <DvButton variant="danger" icon="fa-power-off" text="E-STOP" hold="1000" onclick="EmergencyStop" visible="{Running}"/>
   <DvButton variant="primary" icon="fa-rotate-left" text="Reset" hold="1000" onclick="ResetPlant" visible="{Stopped}"/>
