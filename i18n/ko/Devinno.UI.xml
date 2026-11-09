@@ -2484,7 +2484,7 @@
             <summary>DvSelect 값 ↔ 항목 — 바인딩 속성 타입으로 변환해 비교·쓰기(문자열 "1" → int, "Left" → enum, Nullable).</summary>
         </member><member name="M:Devinno.UI.SelectValue.Options(Devinno.UI.Markup.ElementNode,System.Object,System.Type)" en-hash="175b10ef30a21e7b">
             <summary>항목 목록: items(경로) &gt; DvOption 자식 &gt; enum 자동.</summary>
-        </member><member name="M:Devinno.UI.SelectDisplay.IsOpenable(Devinno.UI.Layout.LayoutBox)" en-hash="421d29af928017d9">
+        </member><member name="M:Devinno.UI.SelectValue.Options(Devinno.UI.Layout.AttrReader,System.Type)" en-hash="d485666cdbbf198d"><summary><paramref name="r" />(요소 자신의 속성)로 읽는 항목 목록: items(경로) &gt; DvOption 자식 &gt; enum 자동.</summary></member><member name="M:Devinno.UI.SelectDisplay.IsOpenable(Devinno.UI.Layout.LayoutBox)" en-hash="421d29af928017d9">
             <summary>양방향 바인딩이고 비활성·읽기 전용이 아니면 열 수 있다.</summary>
         </member><member name="T:Devinno.UI.Grid.FieldAccessor" en-hash="ab7de6f28dd59580">
             <summary>
@@ -3037,7 +3037,133 @@
             </summary></member><member name="M:Devinno.UI.Layout.AttrReader.#ctor(Devinno.UI.Markup.ElementNode,System.Object,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object})" en-hash="6e611975ce0cd230"><summary>
             빌드 중 요소 하나의 속성을 읽는다 — 코드가 쓴 값(핸들의 덮어쓰기)이 있으면 바인딩 풀이 없이 그대로, 없으면 마크업 값을 문맥으로 푼다.
             식(<c>onclick</c>, 양방향 <c>value</c> 경로)은 <see cref="M:Devinno.UI.Layout.AttrReader.Raw(System.String)" /> 로 읽고 덮어쓰지 않는다.
-            </summary></member><member name="F:Devinno.UI.Layout.AttrReader.Watch" en-hash="f50e4a853f968146"><summary>테스트용 훅: 읽을 때마다 요소와 속성 이름으로 불린다(이 스레드만).</summary></member><member name="P:Devinno.UI.Layout.AttrReader.Node" en-hash="4b6dc083adcd73f0"><summary>읽고 있는 요소.</summary></member><member name="P:Devinno.UI.Layout.AttrReader.Context" en-hash="f4e26d874443b5d7"><summary>바인딩 문맥(화면 VM, 반복 항목 범위 또는 컴포넌트 파라미터 범위).</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Overridden(System.String)" en-hash="ee195d771e1b98f9"><summary>코드가 <paramref name="name" /> 을 덮어썼는지.</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Has(System.String)" en-hash="63fc144d07e34a92"><summary>속성이 있는지 — 마크업에 있거나 코드가 덮어썼으면 참.</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Raw(System.String)" en-hash="4548b2b6e9aa1ff0"><summary>마크업에 적힌 글자 그대로(풀지 않음, 덮어쓰기 무시). 식과 주인 판별용.</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Value(System.String)" en-hash="631ab17aeba951e5"><summary>값: 코드 덮어쓰기, 없으면 마크업 값을 푼 것(바인딩 하나면 타입 유지). 없으면 <see langword="null" />.</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Text(System.String)" en-hash="1ad19afcb727651e"><summary>값을 글자로(<see cref="M:Devinno.UI.Layout.AttrReader.Value(System.String)" /> 참고).</summary></member><member name="T:Devinno.UI.Layout.InstanceKey" en-hash="86c12fc995f455d4"><summary>상자가 마크업 요소의 몇 번째 빌드인지 — 요소와, 같은 빌드에서 그 요소가 앞서 몇 번 만들어졌는지. <c>DvRepeat</c> 나 컴포넌트 틀 안의 요소는 항목·인스턴스마다 한 번씩 만들어지므로 각자 번호(순서)를 갖습니다.</summary></member><member name="M:Devinno.UI.Layout.InstanceKey.#ctor(Devinno.UI.Markup.ElementNode,System.Int32)" en-hash="86c12fc995f455d4"><summary>상자가 마크업 요소의 몇 번째 빌드인지 — 요소와, 같은 빌드에서 그 요소가 앞서 몇 번 만들어졌는지. <c>DvRepeat</c> 나 컴포넌트 틀 안의 요소는 항목·인스턴스마다 한 번씩 만들어지므로 각자 번호(순서)를 갖습니다.</summary></member><member name="T:Devinno.UI.Layout.InstanceStore`1" en-hash="ccc9d7cb3e0a4cf7"><summary>한 화면의 다시 만들기 사이에 요소 인스턴스마다 객체 하나를 유지합니다(커스텀 위젯 인스턴스, 비디오 재생기). <c>disposeDropped</c> 이면 빌드 중 요청되지 않았거나 <c>reuse</c> 가 거절해 바뀐 객체를 <see cref="M:Devinno.UI.Layout.InstanceStore`1.End" /> 에서 Dispose 합니다(<see cref="T:System.IDisposable" /> 일 때).</summary></member><member name="M:Devinno.UI.Layout.InstanceStore`1.#ctor(System.Boolean)" en-hash="ccc9d7cb3e0a4cf7"><summary>한 화면의 다시 만들기 사이에 요소 인스턴스마다 객체 하나를 유지합니다(커스텀 위젯 인스턴스, 비디오 재생기). <c>disposeDropped</c> 이면 빌드 중 요청되지 않았거나 <c>reuse</c> 가 거절해 바뀐 객체를 <see cref="M:Devinno.UI.Layout.InstanceStore`1.End" /> 에서 Dispose 합니다(<see cref="T:System.IDisposable" /> 일 때).</summary></member><member name="M:Devinno.UI.Layout.InstanceStore`1.Begin" en-hash="ec9788876c1d74a8"><summary>빌드를 시작합니다.</summary></member><member name="M:Devinno.UI.Layout.InstanceStore`1.Get(Devinno.UI.Layout.InstanceKey,System.Func{`0},System.Func{`0,System.Boolean})" en-hash="0e8d30f640efc5c8"><summary><paramref name="key" /> 에 유지된 객체를 돌려줍니다. 없거나 <paramref name="reuse" /> 가 거절하면 <paramref name="create" /> 로 새로 만듭니다.</summary></member><member name="M:Devinno.UI.Layout.InstanceStore`1.End" en-hash="adc8c4762b3c2e2a"><summary>빌드를 끝냅니다 — 이어지지 않은 것을 버립니다(<c>disposeDropped</c> 이면 Dispose).</summary></member><member name="T:Devinno.UI.Layout.KnobInputMode" en-hash="e1249f05490dafbe">
+            </summary></member><member name="F:Devinno.UI.Layout.AttrReader.Watch" en-hash="f50e4a853f968146"><summary>테스트용 훅: 읽을 때마다 요소와 속성 이름으로 불린다(이 스레드만).</summary></member><member name="P:Devinno.UI.Layout.AttrReader.Node" en-hash="4b6dc083adcd73f0"><summary>읽고 있는 요소.</summary></member><member name="P:Devinno.UI.Layout.AttrReader.Context" en-hash="f4e26d874443b5d7"><summary>바인딩 문맥(화면 VM, 반복 항목 범위 또는 컴포넌트 파라미터 범위).</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Overridden(System.String)" en-hash="ee195d771e1b98f9"><summary>코드가 <paramref name="name" /> 을 덮어썼는지.</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Has(System.String)" en-hash="63fc144d07e34a92"><summary>속성이 있는지 — 마크업에 있거나 코드가 덮어썼으면 참.</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Raw(System.String)" en-hash="4548b2b6e9aa1ff0"><summary>마크업에 적힌 글자 그대로(풀지 않음, 덮어쓰기 무시). 식과 주인 판별용.</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Value(System.String)" en-hash="631ab17aeba951e5"><summary>값: 코드 덮어쓰기, 없으면 마크업 값을 푼 것(바인딩 하나면 타입 유지). 없으면 <see langword="null" />.</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Text(System.String)" en-hash="1ad19afcb727651e"><summary>값을 글자로(<see cref="M:Devinno.UI.Layout.AttrReader.Value(System.String)" /> 참고).</summary></member><member name="T:Devinno.UI.Layout.LayoutEngine" en-hash="efc960bf6b277669">
+             <summary>
+             <see cref="T:Devinno.UI.Markup.ElementNode" /> 트리와 뷰모델로 <see cref="T:Devinno.UI.Layout.LayoutBox" /> 트리를 만들고 각 박스의 위치·크기(px)를 계산하는 레이아웃 엔진입니다.
+             </summary>
+             <remarks>
+             <para>엔진 내부 단계입니다. 보통 앱 코드는 직접 쓰지 않고 <see cref="T:Devinno.UI.DvSurface" />/<see cref="T:Devinno.UI.DvRenderer" /> 를 씁니다.
+             테스트·도구에서 레이아웃 결과(박스 위치, 바인딩된 값)를 확인하거나, 결과를 <see cref="T:Devinno.UI.Painting.Painter" /> 로 직접 그릴 때 쓸 수 있습니다.</para>
+             <para><see cref="M:Devinno.UI.Layout.LayoutEngine.Layout(Devinno.UI.Markup.ElementNode,System.Object,System.Single,System.Single,Devinno.UI.Components.ComponentRegistry)" /> 한 번에 다음 단계를 차례로 수행합니다.
+             ① 빌드: 테마 스타일시트, 레지스트리 컴포넌트 정의 안 <c>DvStyle</c>, 마크업 안 <c>DvStyle</c> 을 차례로 모으고, 요소마다 박스를 만들어 바인딩·클래스·인라인 스타일을 해석하고 위젯 값을 채웁니다
+             (<c>visible</c> 이 거짓인 요소는 만들지 않고, 컴포넌트는 펼치고, <c>DvRepeat</c> 은 항목마다 반복합니다).
+             ② 글자 속성 상속: <c>font-family</c>·<c>white-space</c> 를 부모에서 자식으로 물려줍니다.
+             ③ 측정·배치: flex/grid 규칙으로 각 박스의 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 를 정하고, 스크롤 상자의 내용 크기를 계산합니다.</para>
+             <para>바인딩 값은 호출 시점의 스냅샷입니다. 뷰모델이 바뀌면 다시 호출해 새 트리를 만들어야 합니다(<see cref="T:Devinno.UI.DvSurface" /> 는 Invalidate 때 이렇게 합니다).
+             인스턴스는 호출 중 내부 상태를 바꾸므로 한 인스턴스를 여러 스레드에서 동시에 쓰지 마세요. 서로 다른 스레드는 각자 인스턴스를 만들면 됩니다.</para>
+             </remarks>
+             <example>
+             <code>
+             using Devinno.UI.Layout;
+             using Devinno.UI.Markup;
+            
+             var root = MarkupParser.Parse("&lt;DvRow&gt;&lt;DvButton text=\"시작\"/&gt;&lt;DvButton text=\"정지\"/&gt;&lt;/DvRow&gt;");
+             LayoutBox tree = new LayoutEngine().Layout(root, vm: null, width: 800, height: 480);
+             foreach (var b in tree.Children)
+                 Console.WriteLine($"{b.ResolvedText}: {b.Rect}");
+             </code>
+             </example>
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.BuildRepeat(Devinno.UI.Markup.ElementNode,System.Object,System.Func{Devinno.UI.Markup.ElementNode,System.Object,System.Collections.Generic.IEnumerable{Devinno.UI.Layout.LayoutBox}})" en-hash="bfc3d2ff8482d176">
+            <summary>
+            DvRepeat — <c>items</c> 의 항목마다 자식(템플릿)을 그 항목 범위(<see cref="T:Devinno.UI.Binding.ItemScope" />)로 만든다.
+            빈·null·컬렉션 아님 = 자식 없음(높이 0). 문자열은 컬렉션으로 보지 않는다.
+            </summary>
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.#ctor" en-hash="5820e9b87cf41e59">
+            <summary>기본 테마(<see cref="P:Devinno.UI.Styling.DvTheme.Default" />)와 다국어 테이블 없이 엔진을 만듭니다.</summary>
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.#ctor(Devinno.UI.Styling.DvTheme)" en-hash="867eafd24ba453fd">
+            <summary>지정한 테마로 엔진을 만듭니다(다국어 테이블 없음).</summary>
+            <param name="theme">스타일시트·토큰을 가져올 테마. <see langword="null" /> 이면 <see cref="P:Devinno.UI.Styling.DvTheme.Default" />.</param>
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.#ctor(Devinno.UI.Styling.DvTheme,Devinno.UI.Localization.DvStrings)" en-hash="0c9ef30629ce3f38">
+            <summary>지정한 테마와 다국어 테이블로 엔진을 만듭니다.</summary>
+            <param name="theme">스타일시트·토큰을 가져올 테마. <see langword="null" /> 이면 <see cref="P:Devinno.UI.Styling.DvTheme.Default" />.</param>
+            <param name="strings">
+            다국어 문자열 테이블. 레이아웃 동안 바인딩에서 다국어 키를 풀 때 쓰고, 루트 요소의 <c>font-lang-{언어}</c> 속성으로 그 언어의 기본 글꼴을 고릅니다.
+            <see langword="null" /> 이면 둘 다 쓰지 않습니다.
+            </param>
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.Layout(Devinno.UI.Markup.ElementNode,System.Object,System.Single,System.Single,Devinno.UI.Components.ComponentRegistry)" en-hash="260ae7df59a125e8">
+            <summary>
+            요소 트리를 뷰모델에 바인딩해 박스 트리를 만들고, 루트를 (0, 0, <paramref name="width" />, <paramref name="height" />) 영역에 배치합니다.
+            </summary>
+            <param name="root"><see cref="M:Devinno.UI.Markup.MarkupParser.Parse(System.String)" /> 로 만든 루트 요소.</param>
+            <param name="vm">바인딩 식(<c>{Path}</c>)을 풀 뷰모델. <see langword="null" /> 이면 바인딩 값은 비어 있는 것으로 처리됩니다.</param>
+            <param name="width">루트 영역의 너비(px).</param>
+            <param name="height">루트 영역의 높이(px).</param>
+            <param name="registry">사용자 컴포넌트 정의. 태그가 등록된 컴포넌트면 그 템플릿으로 펼칩니다. <see langword="null" /> 이면 컴포넌트를 쓰지 않습니다.</param>
+            <returns>배치까지 끝난 루트 박스. 루트 요소가 <c>visible</c> 거짓으로 빠지면 빈 스타일의 루트 박스 하나를 돌려줍니다.</returns>
+            <exception cref="T:System.InvalidOperationException">컴포넌트 펼침이 64단계를 넘을 때(컴포넌트가 자기 자신을 순환 참조하는 경우).</exception>
+        </member><member name="P:Devinno.UI.Layout.LayoutEngine.WidgetStore" en-hash="f9fe51a9cb368399"><summary>빌드 사이에 커스텀 위젯 인스턴스를 유지한다(서피스가 설정). <see langword="null" /> 이면 레이아웃마다 새 인스턴스.</summary></member><member name="P:Devinno.UI.Layout.LayoutEngine.VideoStore" en-hash="a7227b71bd042429"><summary><c>&lt;DvVideo src&gt;</c> 의 재생기를 빌드 사이에 유지한다(서피스가 정함). <see langword="null" /> 이면 첫 프레임만 디코드한다(한 번 그리기).</summary></member><member name="P:Devinno.UI.Layout.LayoutEngine.TabIndexOf" en-hash="60b4819b4724f1b8">
+            <summary><c>value</c> 가 없는 DvTabs 의 선택 번호(화면이 기억 — 다시 만들어도 유지). 없으면 0.</summary>
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.BuildChart(Devinno.UI.Layout.LayoutBox,Devinno.UI.Markup.ElementNode,System.Object)" en-hash="6d5bb0580a386493">
+            <summary>
+            그래프(계열 하나) — DvSparkline 은 <c>values</c>(숫자 목록 또는 "1,2,3"), DvBarChart·DvPieChart 는 <c>items</c> + <c>item-value</c>(숫자) + <c>item-text</c>(이름).
+            공통 <c>tone</c>(info), <c>show-value</c>, 스파크라인·막대 <c>y-min</c>·<c>y-max</c>(생략 = 자동), 스파크라인 <c>area</c>, 원형 <c>inner-radius</c>(0~0.9 비율, 도넛).
+            숫자로 못 읽는 값은 0(원형은 빼기 전 음수·0 조각을 그리지 않음).
+            </summary>
+        </member><member name="P:Devinno.UI.Layout.LayoutEngine.ExpanderOf" en-hash="1026b8c9aae5df2a">
+            <summary><c>expanded</c> 가 없는 DvExpander 의 펼침 상태(화면이 기억 — 다시 만들어도 유지). 없으면 접힘.</summary>
+        </member><member name="P:Devinno.UI.Layout.LayoutEngine.ExpanderRevealOf" en-hash="b81fcbe63003f6a9"><summary>
+            펼침 움직임 — (요소 인스턴스, 지금 펼침)을 받아 움직이는 중이면 지금 보이는 비율(0~1), 아니면 null.
+            화면이 지난 상태와 비교해 바뀌었으면 움직임을 시작한다. 접히는 중에도 내용을 만든다(비율만큼 보임).
+            </summary></member><member name="P:Devinno.UI.Layout.LayoutEngine.TreeExpandedOf" en-hash="4b40c849809df04e"><summary><c>DvTreeView</c> 의 펼친 항목(화면이 기억 — 요소 인스턴스 + 항목 객체). 없으면 접힘.</summary></member><member name="M:Devinno.UI.Layout.LayoutEngine.BuildTreeView(Devinno.UI.Layout.LayoutBox,Devinno.UI.Markup.ElementNode,System.Object)" en-hash="fdd182db0267e69b">
+            <summary>
+            <c>DvTreeView</c> — <c>items</c>(뿌리 목록) + <c>item-children</c>(자식 목록 경로) + <c>item-text</c> + <c>item-value</c>(생략 = 항목 자체).
+            펼친 가지만 행으로 만든다(행 높이 40, 깊이마다 들여쓰기). 고르기는 한 개 — <c>value</c> 에 고른 항목의 값(값의 주인 규칙은 다른 값 위젯과 같음).
+            펼침은 화면이 기억한다(항목 객체 기준). 순환 참조(조상과 같은 객체가 다시 나옴)는 그 가지를 건너뛰고, 깊이는 64 까지.
+            </summary>
+        </member><member name="F:Devinno.UI.Layout.LayoutEngine.TreeIndentBase" en-hash="50f33bc2996fd881">
+            <summary>트리 행 왼쪽 여백·깊이마다 들여쓰기·펼침 아이콘 폭(px).</summary>
+        </member><member name="F:Devinno.UI.Layout.LayoutEngine.TreeIndentStep" en-hash="50f33bc2996fd881">
+            <summary>트리 행 왼쪽 여백·깊이마다 들여쓰기·펼침 아이콘 폭(px).</summary>
+        </member><member name="F:Devinno.UI.Layout.LayoutEngine.TreeChevron" en-hash="50f33bc2996fd881">
+            <summary>트리 행 왼쪽 여백·깊이마다 들여쓰기·펼침 아이콘 폭(px).</summary>
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.BuildListBox(Devinno.UI.Layout.LayoutBox,Devinno.UI.Markup.ElementNode,System.Object)" en-hash="d1eaccf99c4ee71c">
+            <summary>
+            <c>DvListBox</c> 값 — 한 개 고르기는 <c>value</c>(DvSelect 와 같음), <c>selection-mode="multi"</c> 면 <c>selected-items</c>(값 목록).
+            값의 주인 규칙은 다른 값 위젯과 같다(바인딩 = VM, 속성 없음 + 핸들 = 핸들 칸, 단방향·고정 = 읽기 전용).
+            </summary>
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.BuildRadio(Devinno.UI.Layout.LayoutBox,Devinno.UI.Markup.ElementNode,System.Object)" en-hash="8f76af6f24fadc73">
+            <summary>
+            <c>DvRadio</c> — 켜짐 = 묶음 값이 이 버튼의 <c>option</c> 과 같음. 묶음 값은 <c>value</c>(양방향이면 VM 속성, 단방향·고정이면 그 값 또는 핸들이 덮어쓴 값),
+            <c>value</c> 가 없으면 화면이 기억하는 묶음(<c>group</c> 이름, 없고 핸들만 있으면 이 요소 혼자)의 값.
+            </summary>
+        </member><member name="P:Devinno.UI.Layout.LayoutEngine.RadioGroupOf" en-hash="23907da84798079f">
+            <summary><c>value</c> 없는 <c>DvRadio</c> 묶음(이름 또는 요소)의 고른 <c>option</c> — 화면(<see cref="T:Devinno.UI.DvSurface" />)이 기억한다.</summary>
+        </member><member name="P:Devinno.UI.Layout.LayoutEngine.ControlOf" en-hash="27d0da8e8c613f5d">
+            <summary>코드에서 컨트롤 핸들로 덮어쓴 값을 찾는 조회 함수. <see langword="null" /> 이면 조회하지 않습니다(핸들이 없는 화면).</summary>
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.IsVisible(Devinno.UI.Layout.AttrReader)" en-hash="1641505a4de177d8"><summary><c>visible</c> 속성이 거짓/빈 값이면 해당 요소를 만들지 않는다.</summary></member><member name="M:Devinno.UI.Layout.LayoutEngine.IsDisabledValue(System.Object,System.String)" en-hash="10fdbadaa87c3cf0"><summary><c>disabled</c>: bool 은 그대로, 숫자는 0 이 아니면, 글자는 <c>true</c>(대소문자 무시) 또는 <c>1</c> 이면 비활성입니다. 그 밖에는 활성입니다.</summary></member><member name="T:Devinno.UI.Layout.LayoutEngine.TwoWayParams" en-hash="66ed67e10b9ee0d8">
+            <summary>컴포넌트 양방향 파라미터(이름 → 바깥 식). 인스턴스 핸들이 주인인 파라미터는 <see cref="P:Devinno.UI.Layout.LayoutEngine.TwoWayParams.Targets" /> 에 그 칸.</summary>
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.TwoWayParams.#ctor(Devinno.UI.Markup.ElementNode)" en-hash="66ed67e10b9ee0d8">
+            <summary>컴포넌트 양방향 파라미터(이름 → 바깥 식). 인스턴스 핸들이 주인인 파라미터는 <see cref="P:Devinno.UI.Layout.LayoutEngine.TwoWayParams.Targets" /> 에 그 칸.</summary>
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.ValueOf(Devinno.UI.Markup.ElementNode,System.String)" en-hash="68e585e2f17da789">
+            <summary>
+            값의 주인(설계 4.1) — <c>{Bind X}</c> = VM, <c>value</c> 없음 + 값 핸들 = 핸들 칸(가짜 <c>{Bind Value}</c>, 쓰는 대상은 칸),
+            단방향·리터럴 = 마크업(핸들이 덮어썼으면 그 값). Expr = 박스의 ValueBindExpr, Target = 쓰기·읽기 대상(칸, 아니면 null = VM·항목 범위),
+            Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니면 null).
+            </summary>
+        </member><member name="F:Devinno.UI.Layout.LayoutEngine.IconTextGap" en-hash="9ee8a06c89f73492">
+            <summary>버튼 아이콘과 글자 사이 간격.</summary>
+        </member><member name="P:Devinno.UI.Layout.LayoutEngine.BoundVideos" en-hash="d92ae4e44a6424ce"><summary>이번 빌드의 DvVideo 상자 중 <c>position</c>/<c>duration</c> 을 뷰모델에 써 넣는 것입니다. 서피스가 프레임마다 맞춥니다.</summary></member><member name="M:Devinno.UI.Layout.LayoutEngine.ClearMeasure(Devinno.UI.Layout.LayoutBox)" en-hash="624156b6da05d62c">
+            <summary>이미 만든 트리를 새 크기로 다시 배치만 한다(빌드·바인딩·스타일 해석 없음) — 창 크기만 바뀐 경우.</summary>
+            <summary>잰 크기 캐시를 모두 지운다 — 크기가 시간에 따라 바뀌는 상자(펼침 움직임)가 있을 때 <see cref="M:Devinno.UI.Layout.LayoutEngine.Rearrange(Devinno.UI.Layout.LayoutBox,System.Single,System.Single)" /> 전에.</summary>
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.MeasureBox(Devinno.UI.Layout.LayoutBox,System.Nullable{System.Single})" en-hash="72cbc762923766ff">
+            <summary>
+            상자의 자기 크기(스타일 width/height, 없으면 내용 크기). DvApp 영역·다이얼로그 루트 크기 계산용.
+            <paramref name="availableWidth" /> 를 주면 그 폭(바깥 폭)에 맞춰 글자를 줄바꿈해 잰다 — 없으면 한 줄(배치 영역과 상관없음).
+            </summary>
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.TextLinesFor(Devinno.UI.Layout.LayoutBox,Devinno.UI.Styling.ComputedStyle,SkiaSharp.SKFont,System.Single)" en-hash="110cc83fe8b1b363">
+            <summary>
+            글자 상자를 안쪽 폭 <paramref name="contentWidth" /> 에 그릴 줄 — <c>white-space:nowrap</c> 이면 <c>\n</c> 에서만 나눈다.
+            측정 때 같은 폭으로 나눈 줄이 있으면 그대로 쓴다(Painter 용).
+            </summary>
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.ArrangeBox(Devinno.UI.Layout.LayoutBox,System.Single,System.Single,System.Single,System.Single)" en-hash="0b840f053e1be7f7">
+            <summary>상자 하나를 주어진 영역에 배치(공정도가 붙은 칸 상자를 놓을 때).</summary>
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.ResolveTracks(System.String[],System.Single[],System.Single,System.Single,System.Boolean)" en-hash="c506c40f8d17038c">
+            <summary>
+            트랙 크기 해석. px(숫자)·auto(내용 크기) 를 먼저 빼고, 남은 공간(gap 제외)을 % 가 나눈다
+            (합이 100% 를 넘으면 비율로 정규화), 그 나머지를 fr 가 비율로 나눈다.
+            템플릿보다 트랙이 많으면 나머지는 auto. 내용 크기 측정(<paramref name="measuring" />) 때는 %·fr 도 auto.
+            </summary>
+        </member><member name="T:Devinno.UI.Layout.InstanceKey" en-hash="86c12fc995f455d4"><summary>상자가 마크업 요소의 몇 번째 빌드인지 — 요소와, 같은 빌드에서 그 요소가 앞서 몇 번 만들어졌는지. <c>DvRepeat</c> 나 컴포넌트 틀 안의 요소는 항목·인스턴스마다 한 번씩 만들어지므로 각자 번호(순서)를 갖습니다.</summary></member><member name="M:Devinno.UI.Layout.InstanceKey.#ctor(Devinno.UI.Markup.ElementNode,System.Int32)" en-hash="86c12fc995f455d4"><summary>상자가 마크업 요소의 몇 번째 빌드인지 — 요소와, 같은 빌드에서 그 요소가 앞서 몇 번 만들어졌는지. <c>DvRepeat</c> 나 컴포넌트 틀 안의 요소는 항목·인스턴스마다 한 번씩 만들어지므로 각자 번호(순서)를 갖습니다.</summary></member><member name="T:Devinno.UI.Layout.InstanceStore`1" en-hash="ccc9d7cb3e0a4cf7"><summary>한 화면의 다시 만들기 사이에 요소 인스턴스마다 객체 하나를 유지합니다(커스텀 위젯 인스턴스, 비디오 재생기). <c>disposeDropped</c> 이면 빌드 중 요청되지 않았거나 <c>reuse</c> 가 거절해 바뀐 객체를 <see cref="M:Devinno.UI.Layout.InstanceStore`1.End" /> 에서 Dispose 합니다(<see cref="T:System.IDisposable" /> 일 때).</summary></member><member name="M:Devinno.UI.Layout.InstanceStore`1.#ctor(System.Boolean)" en-hash="ccc9d7cb3e0a4cf7"><summary>한 화면의 다시 만들기 사이에 요소 인스턴스마다 객체 하나를 유지합니다(커스텀 위젯 인스턴스, 비디오 재생기). <c>disposeDropped</c> 이면 빌드 중 요청되지 않았거나 <c>reuse</c> 가 거절해 바뀐 객체를 <see cref="M:Devinno.UI.Layout.InstanceStore`1.End" /> 에서 Dispose 합니다(<see cref="T:System.IDisposable" /> 일 때).</summary></member><member name="M:Devinno.UI.Layout.InstanceStore`1.Begin" en-hash="ec9788876c1d74a8"><summary>빌드를 시작합니다.</summary></member><member name="M:Devinno.UI.Layout.InstanceStore`1.Get(Devinno.UI.Layout.InstanceKey,System.Func{`0},System.Func{`0,System.Boolean})" en-hash="0e8d30f640efc5c8"><summary><paramref name="key" /> 에 유지된 객체를 돌려줍니다. 없거나 <paramref name="reuse" /> 가 거절하면 <paramref name="create" /> 로 새로 만듭니다.</summary></member><member name="M:Devinno.UI.Layout.InstanceStore`1.End" en-hash="adc8c4762b3c2e2a"><summary>빌드를 끝냅니다 — 이어지지 않은 것을 버립니다(<c>disposeDropped</c> 이면 Dispose).</summary></member><member name="T:Devinno.UI.Layout.KnobInputMode" en-hash="e1249f05490dafbe">
             <summary><c>DvKnob</c> 의 <c>input-mode</c>: 끌어서 돌리기, 탭해서 키패드, 둘 다.</summary>
         </member><member name="F:Devinno.UI.Layout.KnobInputMode.Drag" en-hash="f8d299add1bd2c46">
             <summary>끌어서 돌리기만(기본).</summary>
@@ -3340,132 +3466,6 @@
             <summary><c>DvTreeView</c> 항목 하나 — 항목 객체·값·글자·부모 항목·깊이·자식 있음·펼침.</summary>
         </member><member name="M:Devinno.UI.Layout.TreeRow.#ctor(System.Object,System.Object,System.String,System.Object,System.Int32,System.Boolean,System.Boolean)" en-hash="4d07abe77b6b8950">
             <summary><c>DvTreeView</c> 항목 하나 — 항목 객체·값·글자·부모 항목·깊이·자식 있음·펼침.</summary>
-        </member><member name="T:Devinno.UI.Layout.LayoutEngine" en-hash="efc960bf6b277669">
-             <summary>
-             <see cref="T:Devinno.UI.Markup.ElementNode" /> 트리와 뷰모델로 <see cref="T:Devinno.UI.Layout.LayoutBox" /> 트리를 만들고 각 박스의 위치·크기(px)를 계산하는 레이아웃 엔진입니다.
-             </summary>
-             <remarks>
-             <para>엔진 내부 단계입니다. 보통 앱 코드는 직접 쓰지 않고 <see cref="T:Devinno.UI.DvSurface" />/<see cref="T:Devinno.UI.DvRenderer" /> 를 씁니다.
-             테스트·도구에서 레이아웃 결과(박스 위치, 바인딩된 값)를 확인하거나, 결과를 <see cref="T:Devinno.UI.Painting.Painter" /> 로 직접 그릴 때 쓸 수 있습니다.</para>
-             <para><see cref="M:Devinno.UI.Layout.LayoutEngine.Layout(Devinno.UI.Markup.ElementNode,System.Object,System.Single,System.Single,Devinno.UI.Components.ComponentRegistry)" /> 한 번에 다음 단계를 차례로 수행합니다.
-             ① 빌드: 테마 스타일시트, 레지스트리 컴포넌트 정의 안 <c>DvStyle</c>, 마크업 안 <c>DvStyle</c> 을 차례로 모으고, 요소마다 박스를 만들어 바인딩·클래스·인라인 스타일을 해석하고 위젯 값을 채웁니다
-             (<c>visible</c> 이 거짓인 요소는 만들지 않고, 컴포넌트는 펼치고, <c>DvRepeat</c> 은 항목마다 반복합니다).
-             ② 글자 속성 상속: <c>font-family</c>·<c>white-space</c> 를 부모에서 자식으로 물려줍니다.
-             ③ 측정·배치: flex/grid 규칙으로 각 박스의 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 를 정하고, 스크롤 상자의 내용 크기를 계산합니다.</para>
-             <para>바인딩 값은 호출 시점의 스냅샷입니다. 뷰모델이 바뀌면 다시 호출해 새 트리를 만들어야 합니다(<see cref="T:Devinno.UI.DvSurface" /> 는 Invalidate 때 이렇게 합니다).
-             인스턴스는 호출 중 내부 상태를 바꾸므로 한 인스턴스를 여러 스레드에서 동시에 쓰지 마세요. 서로 다른 스레드는 각자 인스턴스를 만들면 됩니다.</para>
-             </remarks>
-             <example>
-             <code>
-             using Devinno.UI.Layout;
-             using Devinno.UI.Markup;
-            
-             var root = MarkupParser.Parse("&lt;DvRow&gt;&lt;DvButton text=\"시작\"/&gt;&lt;DvButton text=\"정지\"/&gt;&lt;/DvRow&gt;");
-             LayoutBox tree = new LayoutEngine().Layout(root, vm: null, width: 800, height: 480);
-             foreach (var b in tree.Children)
-                 Console.WriteLine($"{b.ResolvedText}: {b.Rect}");
-             </code>
-             </example>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.#ctor" en-hash="5820e9b87cf41e59">
-            <summary>기본 테마(<see cref="P:Devinno.UI.Styling.DvTheme.Default" />)와 다국어 테이블 없이 엔진을 만듭니다.</summary>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.#ctor(Devinno.UI.Styling.DvTheme)" en-hash="867eafd24ba453fd">
-            <summary>지정한 테마로 엔진을 만듭니다(다국어 테이블 없음).</summary>
-            <param name="theme">스타일시트·토큰을 가져올 테마. <see langword="null" /> 이면 <see cref="P:Devinno.UI.Styling.DvTheme.Default" />.</param>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.#ctor(Devinno.UI.Styling.DvTheme,Devinno.UI.Localization.DvStrings)" en-hash="0c9ef30629ce3f38">
-            <summary>지정한 테마와 다국어 테이블로 엔진을 만듭니다.</summary>
-            <param name="theme">스타일시트·토큰을 가져올 테마. <see langword="null" /> 이면 <see cref="P:Devinno.UI.Styling.DvTheme.Default" />.</param>
-            <param name="strings">
-            다국어 문자열 테이블. 레이아웃 동안 바인딩에서 다국어 키를 풀 때 쓰고, 루트 요소의 <c>font-lang-{언어}</c> 속성으로 그 언어의 기본 글꼴을 고릅니다.
-            <see langword="null" /> 이면 둘 다 쓰지 않습니다.
-            </param>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.Layout(Devinno.UI.Markup.ElementNode,System.Object,System.Single,System.Single,Devinno.UI.Components.ComponentRegistry)" en-hash="260ae7df59a125e8">
-            <summary>
-            요소 트리를 뷰모델에 바인딩해 박스 트리를 만들고, 루트를 (0, 0, <paramref name="width" />, <paramref name="height" />) 영역에 배치합니다.
-            </summary>
-            <param name="root"><see cref="M:Devinno.UI.Markup.MarkupParser.Parse(System.String)" /> 로 만든 루트 요소.</param>
-            <param name="vm">바인딩 식(<c>{Path}</c>)을 풀 뷰모델. <see langword="null" /> 이면 바인딩 값은 비어 있는 것으로 처리됩니다.</param>
-            <param name="width">루트 영역의 너비(px).</param>
-            <param name="height">루트 영역의 높이(px).</param>
-            <param name="registry">사용자 컴포넌트 정의. 태그가 등록된 컴포넌트면 그 템플릿으로 펼칩니다. <see langword="null" /> 이면 컴포넌트를 쓰지 않습니다.</param>
-            <returns>배치까지 끝난 루트 박스. 루트 요소가 <c>visible</c> 거짓으로 빠지면 빈 스타일의 루트 박스 하나를 돌려줍니다.</returns>
-            <exception cref="T:System.InvalidOperationException">컴포넌트 펼침이 64단계를 넘을 때(컴포넌트가 자기 자신을 순환 참조하는 경우).</exception>
-        </member><member name="P:Devinno.UI.Layout.LayoutEngine.WidgetStore" en-hash="f9fe51a9cb368399"><summary>빌드 사이에 커스텀 위젯 인스턴스를 유지한다(서피스가 설정). <see langword="null" /> 이면 레이아웃마다 새 인스턴스.</summary></member><member name="P:Devinno.UI.Layout.LayoutEngine.VideoStore" en-hash="a7227b71bd042429"><summary><c>&lt;DvVideo src&gt;</c> 의 재생기를 빌드 사이에 유지한다(서피스가 정함). <see langword="null" /> 이면 첫 프레임만 디코드한다(한 번 그리기).</summary></member><member name="P:Devinno.UI.Layout.LayoutEngine.TabIndexOf" en-hash="60b4819b4724f1b8">
-            <summary><c>value</c> 가 없는 DvTabs 의 선택 번호(화면이 기억 — 다시 만들어도 유지). 없으면 0.</summary>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.BuildChart(Devinno.UI.Layout.LayoutBox,Devinno.UI.Markup.ElementNode,System.Object)" en-hash="6d5bb0580a386493">
-            <summary>
-            그래프(계열 하나) — DvSparkline 은 <c>values</c>(숫자 목록 또는 "1,2,3"), DvBarChart·DvPieChart 는 <c>items</c> + <c>item-value</c>(숫자) + <c>item-text</c>(이름).
-            공통 <c>tone</c>(info), <c>show-value</c>, 스파크라인·막대 <c>y-min</c>·<c>y-max</c>(생략 = 자동), 스파크라인 <c>area</c>, 원형 <c>inner-radius</c>(0~0.9 비율, 도넛).
-            숫자로 못 읽는 값은 0(원형은 빼기 전 음수·0 조각을 그리지 않음).
-            </summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutEngine.ExpanderOf" en-hash="1026b8c9aae5df2a">
-            <summary><c>expanded</c> 가 없는 DvExpander 의 펼침 상태(화면이 기억 — 다시 만들어도 유지). 없으면 접힘.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutEngine.ExpanderRevealOf" en-hash="b81fcbe63003f6a9"><summary>
-            펼침 움직임 — (요소 인스턴스, 지금 펼침)을 받아 움직이는 중이면 지금 보이는 비율(0~1), 아니면 null.
-            화면이 지난 상태와 비교해 바뀌었으면 움직임을 시작한다. 접히는 중에도 내용을 만든다(비율만큼 보임).
-            </summary></member><member name="P:Devinno.UI.Layout.LayoutEngine.TreeExpandedOf" en-hash="4b40c849809df04e"><summary><c>DvTreeView</c> 의 펼친 항목(화면이 기억 — 요소 인스턴스 + 항목 객체). 없으면 접힘.</summary></member><member name="M:Devinno.UI.Layout.LayoutEngine.BuildTreeView(Devinno.UI.Layout.LayoutBox,Devinno.UI.Markup.ElementNode,System.Object)" en-hash="fdd182db0267e69b">
-            <summary>
-            <c>DvTreeView</c> — <c>items</c>(뿌리 목록) + <c>item-children</c>(자식 목록 경로) + <c>item-text</c> + <c>item-value</c>(생략 = 항목 자체).
-            펼친 가지만 행으로 만든다(행 높이 40, 깊이마다 들여쓰기). 고르기는 한 개 — <c>value</c> 에 고른 항목의 값(값의 주인 규칙은 다른 값 위젯과 같음).
-            펼침은 화면이 기억한다(항목 객체 기준). 순환 참조(조상과 같은 객체가 다시 나옴)는 그 가지를 건너뛰고, 깊이는 64 까지.
-            </summary>
-        </member><member name="F:Devinno.UI.Layout.LayoutEngine.TreeIndentBase" en-hash="50f33bc2996fd881">
-            <summary>트리 행 왼쪽 여백·깊이마다 들여쓰기·펼침 아이콘 폭(px).</summary>
-        </member><member name="F:Devinno.UI.Layout.LayoutEngine.TreeIndentStep" en-hash="50f33bc2996fd881">
-            <summary>트리 행 왼쪽 여백·깊이마다 들여쓰기·펼침 아이콘 폭(px).</summary>
-        </member><member name="F:Devinno.UI.Layout.LayoutEngine.TreeChevron" en-hash="50f33bc2996fd881">
-            <summary>트리 행 왼쪽 여백·깊이마다 들여쓰기·펼침 아이콘 폭(px).</summary>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.BuildListBox(Devinno.UI.Layout.LayoutBox,Devinno.UI.Markup.ElementNode,System.Object)" en-hash="d1eaccf99c4ee71c">
-            <summary>
-            <c>DvListBox</c> 값 — 한 개 고르기는 <c>value</c>(DvSelect 와 같음), <c>selection-mode="multi"</c> 면 <c>selected-items</c>(값 목록).
-            값의 주인 규칙은 다른 값 위젯과 같다(바인딩 = VM, 속성 없음 + 핸들 = 핸들 칸, 단방향·고정 = 읽기 전용).
-            </summary>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.BuildRepeat(Devinno.UI.Markup.ElementNode,System.Object,System.Func{Devinno.UI.Markup.ElementNode,System.Object,System.Collections.Generic.IEnumerable{Devinno.UI.Layout.LayoutBox}})" en-hash="bfc3d2ff8482d176">
-            <summary>
-            DvRepeat — <c>items</c> 의 항목마다 자식(템플릿)을 그 항목 범위(<see cref="T:Devinno.UI.Binding.ItemScope" />)로 만든다.
-            빈·null·컬렉션 아님 = 자식 없음(높이 0). 문자열은 컬렉션으로 보지 않는다.
-            </summary>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.BuildRadio(Devinno.UI.Layout.LayoutBox,Devinno.UI.Markup.ElementNode,System.Object)" en-hash="8f76af6f24fadc73">
-            <summary>
-            <c>DvRadio</c> — 켜짐 = 묶음 값이 이 버튼의 <c>option</c> 과 같음. 묶음 값은 <c>value</c>(양방향이면 VM 속성, 단방향·고정이면 그 값 또는 핸들이 덮어쓴 값),
-            <c>value</c> 가 없으면 화면이 기억하는 묶음(<c>group</c> 이름, 없고 핸들만 있으면 이 요소 혼자)의 값.
-            </summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutEngine.RadioGroupOf" en-hash="23907da84798079f">
-            <summary><c>value</c> 없는 <c>DvRadio</c> 묶음(이름 또는 요소)의 고른 <c>option</c> — 화면(<see cref="T:Devinno.UI.DvSurface" />)이 기억한다.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutEngine.ControlOf" en-hash="27d0da8e8c613f5d">
-            <summary>코드에서 컨트롤 핸들로 덮어쓴 값을 찾는 조회 함수. <see langword="null" /> 이면 조회하지 않습니다(핸들이 없는 화면).</summary>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.IsVisible(Devinno.UI.Layout.AttrReader)" en-hash="1641505a4de177d8"><summary><c>visible</c> 속성이 거짓/빈 값이면 해당 요소를 만들지 않는다.</summary></member><member name="M:Devinno.UI.Layout.LayoutEngine.IsDisabledValue(System.Object,System.String)" en-hash="10fdbadaa87c3cf0"><summary><c>disabled</c>: bool 은 그대로, 숫자는 0 이 아니면, 글자는 <c>true</c>(대소문자 무시) 또는 <c>1</c> 이면 비활성입니다. 그 밖에는 활성입니다.</summary></member><member name="T:Devinno.UI.Layout.LayoutEngine.TwoWayParams" en-hash="66ed67e10b9ee0d8">
-            <summary>컴포넌트 양방향 파라미터(이름 → 바깥 식). 인스턴스 핸들이 주인인 파라미터는 <see cref="P:Devinno.UI.Layout.LayoutEngine.TwoWayParams.Targets" /> 에 그 칸.</summary>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.TwoWayParams.#ctor(Devinno.UI.Markup.ElementNode)" en-hash="66ed67e10b9ee0d8">
-            <summary>컴포넌트 양방향 파라미터(이름 → 바깥 식). 인스턴스 핸들이 주인인 파라미터는 <see cref="P:Devinno.UI.Layout.LayoutEngine.TwoWayParams.Targets" /> 에 그 칸.</summary>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.ValueOf(Devinno.UI.Markup.ElementNode,System.String)" en-hash="68e585e2f17da789">
-            <summary>
-            값의 주인(설계 4.1) — <c>{Bind X}</c> = VM, <c>value</c> 없음 + 값 핸들 = 핸들 칸(가짜 <c>{Bind Value}</c>, 쓰는 대상은 칸),
-            단방향·리터럴 = 마크업(핸들이 덮어썼으면 그 값). Expr = 박스의 ValueBindExpr, Target = 쓰기·읽기 대상(칸, 아니면 null = VM·항목 범위),
-            Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니면 null).
-            </summary>
-        </member><member name="F:Devinno.UI.Layout.LayoutEngine.IconTextGap" en-hash="9ee8a06c89f73492">
-            <summary>버튼 아이콘과 글자 사이 간격.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutEngine.BoundVideos" en-hash="d92ae4e44a6424ce"><summary>이번 빌드의 DvVideo 상자 중 <c>position</c>/<c>duration</c> 을 뷰모델에 써 넣는 것입니다. 서피스가 프레임마다 맞춥니다.</summary></member><member name="M:Devinno.UI.Layout.LayoutEngine.ClearMeasure(Devinno.UI.Layout.LayoutBox)" en-hash="624156b6da05d62c">
-            <summary>이미 만든 트리를 새 크기로 다시 배치만 한다(빌드·바인딩·스타일 해석 없음) — 창 크기만 바뀐 경우.</summary>
-            <summary>잰 크기 캐시를 모두 지운다 — 크기가 시간에 따라 바뀌는 상자(펼침 움직임)가 있을 때 <see cref="M:Devinno.UI.Layout.LayoutEngine.Rearrange(Devinno.UI.Layout.LayoutBox,System.Single,System.Single)" /> 전에.</summary>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.MeasureBox(Devinno.UI.Layout.LayoutBox,System.Nullable{System.Single})" en-hash="72cbc762923766ff">
-            <summary>
-            상자의 자기 크기(스타일 width/height, 없으면 내용 크기). DvApp 영역·다이얼로그 루트 크기 계산용.
-            <paramref name="availableWidth" /> 를 주면 그 폭(바깥 폭)에 맞춰 글자를 줄바꿈해 잰다 — 없으면 한 줄(배치 영역과 상관없음).
-            </summary>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.TextLinesFor(Devinno.UI.Layout.LayoutBox,Devinno.UI.Styling.ComputedStyle,SkiaSharp.SKFont,System.Single)" en-hash="110cc83fe8b1b363">
-            <summary>
-            글자 상자를 안쪽 폭 <paramref name="contentWidth" /> 에 그릴 줄 — <c>white-space:nowrap</c> 이면 <c>\n</c> 에서만 나눈다.
-            측정 때 같은 폭으로 나눈 줄이 있으면 그대로 쓴다(Painter 용).
-            </summary>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.ArrangeBox(Devinno.UI.Layout.LayoutBox,System.Single,System.Single,System.Single,System.Single)" en-hash="0b840f053e1be7f7">
-            <summary>상자 하나를 주어진 영역에 배치(공정도가 붙은 칸 상자를 놓을 때).</summary>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.ResolveTracks(System.String[],System.Single[],System.Single,System.Single,System.Boolean)" en-hash="c506c40f8d17038c">
-            <summary>
-            트랙 크기 해석. px(숫자)·auto(내용 크기) 를 먼저 빼고, 남은 공간(gap 제외)을 % 가 나눈다
-            (합이 100% 를 넘으면 비율로 정규화), 그 나머지를 fr 가 비율로 나눈다.
-            템플릿보다 트랙이 많으면 나머지는 auto. 내용 크기 측정(<paramref name="measuring" />) 때는 %·fr 도 auto.
-            </summary>
         </member><member name="T:Devinno.UI.Layout.LayoutQuery" en-hash="8d14f3938ce0c1f5">
              <summary>
              계산이 끝난 <see cref="T:Devinno.UI.Layout.LayoutBox" /> 트리에서 박스를 찾는 도우미입니다.

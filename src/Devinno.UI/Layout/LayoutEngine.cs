@@ -34,7 +34,7 @@ namespace Devinno.UI.Layout;
 ///     Console.WriteLine($"{b.ResolvedText}: {b.Rect}");
 /// </code>
 /// </example>
-public sealed class LayoutEngine
+public sealed partial class LayoutEngine
 {
     private const int MaxComponentDepth = 64;
 
@@ -218,7 +218,7 @@ public sealed class LayoutEngine
         object? outerTarget = null;
         var twoWay = tc?.TwoWay;
         if ((isWidget || TagCatalog.TemplateTwoWayTags.Contains(node.Tag)) && twoWay is not null &&
-            node.Attributes.TryGetValue("value", out var ve) && BindingResolver.IsBinding(ve) &&
+            Reader(node, vm).Raw("value") is { } ve && BindingResolver.IsBinding(ve) &&
             twoWay.TryGetValue(ve[1..^1].Trim(), out var oe))
         {
             outerExpr = oe;
@@ -323,53 +323,6 @@ public sealed class LayoutEngine
     /// <summary>The selected index of a DvTabs without <c>value</c> (remembered by the screen, so it survives rebuilds). 0 if none.</summary>
     internal Func<InstanceKey, int?>? TabIndexOf { get; set; }
 
-    // DvTabs — [머리글 줄(.tab-header: 탭마다 .tab / 선택 .tab-on) · 구분선(.tab-rule) · 선택된 DvTab 내용(.tab-body)].
-    // 선택: value 가 있으면 VM 값과 맞는 탭(없으면 첫 탭), 없으면 화면이 기억한 번호. 나머지 탭 내용은 만들지 않는다.
-    // 머리글을 누르면 DvSurface 가 그 탭 value 를 쓰거나(양방향) 기억한 번호를 바꾼다(value 없음).
-    private LayoutBox BuildTabs(LayoutBox box, object? vm, Func<ElementNode, IEnumerable<LayoutBox>> buildChild)
-    {
-        var tabs = box.Node.Children.Where(c => c.Tag == "DvTab" && IsVisibleOf(c, vm)).ToList();
-        var bound = box.Node.Attributes.ContainsKey("value");
-        box.SelectOptions = tabs.Select(t =>
-        {
-            var raw = BindingResolver.ResolveText(vm, t.Attributes.GetValueOrDefault("value"));
-            var value = SelectValue.TryConvert(raw, box.SelectValueType, out var converted) ? converted : raw;
-            return new SelectOption(value, BindingResolver.ResolveText(vm, t.Attributes.GetValueOrDefault("text")) ?? raw ?? "", null);
-        }).ToList();
-        var selected = bound
-            ? box.SelectOptions.FindIndex(o => SelectValue.Matches(o.Value, box.InputValue, box.SelectValueType))
-            : TabIndexOf?.Invoke(box.Instance) ?? 0;
-        if (selected < 0 || selected >= tabs.Count)
-            selected = 0;
-        box.SelectedIndex = tabs.Count == 0 ? -1 : selected;
-
-        var header = BuildSelf(new ElementNode { Tag = "DvTabHeader", Attributes = { ["class"] = "tab-header" } }, vm);
-        for (var i = 0; i < tabs.Count; i++)
-        {
-            var item = new ElementNode { Tag = "DvTabItem" };
-            item.Attributes["class"] = i == box.SelectedIndex ? "tab tab-on" : "tab";
-            if (tabs[i].Attributes.TryGetValue("disabled", out var dis))
-                item.Attributes["disabled"] = dis;
-            var itemBox = BuildSelf(item, vm);
-            itemBox.ResolvedText = box.SelectOptions[i].Text;
-            itemBox.SegmentOwner = box;
-            itemBox.SegmentIndex = i;
-            header.Children.Add(itemBox);
-        }
-        box.Children.Add(header);
-        box.Children.Add(BuildSelf(new ElementNode { Tag = "DvTabRule", Attributes = { ["class"] = "tab-rule" } }, vm));
-
-        if (box.SelectedIndex >= 0)
-        {
-            var tab = tabs[box.SelectedIndex];
-            var body = BuildSelf(tab, vm);
-            foreach (var ch in tab.Children)
-                body.Children.AddRange(buildChild(ch));
-            box.Children.Add(body);
-        }
-        return box;
-    }
-
     /// <summary>
     /// Charts (single series): DvSparkline uses <c>values</c> (a list of numbers or "1,2,3"); DvBarChart and DvPieChart use <c>items</c> + <c>item-value</c> (number) + <c>item-text</c> (name).
     /// Common: <c>tone</c> (info), <c>show-value</c>; sparkline and bar: <c>y-min</c>/<c>y-max</c> (omitted = automatic); sparkline: <c>area</c>; pie: <c>inner-radius</c> (ratio 0 to 0.9, donut).
@@ -430,45 +383,6 @@ public sealed class LayoutEngine
     /// The screen starts the animation if the state changed compared with the previous one. Content is still built while collapsing (visible according to the ratio).
     /// </summary>
     internal Func<InstanceKey, bool, float?>? ExpanderRevealOf { get; set; }
-
-    // DvExpander — [제목 줄(.expander-header: ▶/▼ 아이콘 + header 글자) · 펼쳤으면 내용(.expander-body)]. 접으면 내용은 만들지 않는다(탭과 같음).
-    // 펼침: expanded 가 양방향이면 VM 값, 단방향·고정이면 그 값(핸들이 덮어쓰면 그 값 — 제목을 눌러도 안 바뀜), 없으면 화면이 기억.
-    // 제목을 누르면 DvSurface 가 뒤집어 쓴다.
-    private LayoutBox BuildExpander(LayoutBox box, object? vm, Func<ElementNode, IEnumerable<LayoutBox>> buildChild)
-    {
-        var node = box.Node;
-        var raw = node.Attributes.GetValueOrDefault("expanded");
-        var (expr, _, ov) = ValueOf(node, raw);
-        box.ValueBindExpr = expr;
-        box.ToggleOn = ov is not null ? ToBool(ov.CellValue)
-            : expr is not null && BindingResolver.IsTwoWay(expr) ? ToBool(BindingResolver.Resolve(vm, $"{{{BindingResolver.ExtractPath(expr)}}}"))
-            : raw is not null ? ToBool(BindingResolver.ResolveValueOrLiteral(vm, raw))
-            : ExpanderOf?.Invoke(box.Instance) ?? false;
-
-        var header = BuildSelf(new ElementNode { Tag = "DvExpanderHeader", Attributes = { ["class"] = "expander-header" } }, vm);
-        header.ResolvedText = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("header")) ?? "";
-        header.Icon = box.ToggleOn ? "fa-chevron-down" : "fa-chevron-right";
-        header.ExpanderOwner = box;
-        if (box.Disabled)
-            header.Disabled = true;
-        box.Children.Add(header);
-
-        var reveal = ExpanderRevealOf?.Invoke(box.Instance, box.ToggleOn);
-        if (box.ToggleOn || reveal is not null)
-        {
-            var body = BuildSelf(new ElementNode { Tag = "DvExpanderBody", Attributes = { ["class"] = "expander-body" } }, vm);
-            foreach (var ch in node.Children)
-                body.Children.AddRange(buildChild(ch));
-            if (reveal is not null)
-            {
-                body.Reveal = reveal;
-                body.Style.Overflow = Overflow.Hidden; // 보이는 높이 밖은 잘림(움직임이 끝나면 다시 만들어 원래대로)
-            }
-            body.RevealKey = box.Instance;
-            box.Children.Add(body);
-        }
-        return box;
-    }
 
     // DvSegment — 선택지(DvOption)마다 항목 상자(DvSegmentItem, .segment-item / 선택된 것 .segment-item-on)를 만들어 한 줄로 붙인다.
     // 누르면 그 선택지 값을 세그먼트의 value 에 쓴다(DvSurface — DvSelect 와 같은 커밋 경로).
@@ -669,29 +583,6 @@ public sealed class LayoutEngine
                        ToBool(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("readonly")));
     }
 
-    /// <summary>
-    /// DvRepeat: for each item in <c>items</c>, builds the children (template) in that item's scope (<see cref="ItemScope"/>).
-    /// Empty, null, or not a collection = no children (height 0). Strings are not treated as collections.
-    /// </summary>
-    private LayoutBox BuildRepeat(ElementNode node, object? ctx, Func<ElementNode, object?, IEnumerable<LayoutBox>> buildChild)
-    {
-        var box = BuildSelf(node, ctx);
-        var itemsRaw = node.Attributes.GetValueOrDefault("items");
-        if (BindingResolver.ResolveValueOrLiteral(ctx, itemsRaw) is not System.Collections.IEnumerable items || items is string)
-            return box;
-
-        // 먼저 끝까지 읽는다 — 열거 중 VM 예외면 항목 없음(일부만 만든 화면을 남기지 않음)
-        var index = 0;
-        foreach (var item in HandlerErrors.Snapshot(items.Cast<object?>(), PathOf(itemsRaw), node.Tag))
-        {
-            var scope = new ItemScope(ctx, item, index++);
-            foreach (var ch in node.Children)
-                box.Children.AddRange(buildChild(ch, scope));
-        }
-
-        return box;
-    }
-
     // 이번 빌드에서 요소마다 몇 번째로 만들어지는지 — 인스턴스 키(위젯·비디오·화면 상태가 함께 씀)
     private readonly Dictionary<ElementNode, int> _nth = new();
 
@@ -706,14 +597,16 @@ public sealed class LayoutEngine
     {
         // cascade: 레이아웃 슈가 < 클래스 < 클래스:상태 < content-align 속성 < inline style < inline *-style
         // (content-align 속성은 슈가와 달리 클래스를 이긴다 — 테마 .btn 기본값을 요소에서 바꿀 수 있게)
-        var sugar = ResolveStyle(LayoutSugar.Decls(node, vm), vm);
-        var rules = Classes(node, vm, _valueOverride).Select(c => _sheet.TryGet(c, out var r) ? r : null).OfType<ClassRule>().ToList();
-        var classBase = ResolveStyle(StyleSheet.Join(rules.Select(r => r.Base).ToArray()), vm);
-        var attrDecls = node.Attributes.TryGetValue("content-align", out var ca) &&
-                        BindingResolver.ResolveText(vm, ca) is { Length: > 0 } caValue
+        // 속성 읽기 한 통로 — 핸들이 코드로 쓴 값(Enabled·Visible·Text)이 마크업 값을 이긴다
+        var control = ControlOf?.Invoke(node);
+        var r = new AttrReader(node, vm, control?.AttrOverrides);
+        var sugar = ResolveStyle(LayoutSugar.Decls(r), vm);
+        var rules = Classes(r, _valueOverride).Select(c => _sheet.TryGet(c, out var rule) ? rule : null).OfType<ClassRule>().ToList();
+        var classBase = ResolveStyle(StyleSheet.Join(rules.Select(rule => rule.Base).ToArray()), vm);
+        var attrDecls = r.Text("content-align") is { Length: > 0 } caValue
             ? "content-align:" + caValue
             : null;
-        var inline = ResolveStyle(node.Attributes.GetValueOrDefault("style"), vm);
+        var inline = ResolveStyle(r.Raw("style"), vm);
         var baseDecls = StyleSheet.Join(sugar, classBase, attrDecls, inline);
         var style = StyleParser.Parse(baseDecls);
         var box = new LayoutBox
@@ -727,27 +620,24 @@ public sealed class LayoutEngine
         ComputedStyle? State(Func<ClassRule, string?> pick, string attr)
         {
             var cls = ResolveStyle(StyleSheet.Join(rules.Select(pick).ToArray()), vm);
-            var own = node.Attributes.TryGetValue(attr, out var raw) ? ResolveStyle(raw, vm) : null;
+            var own = r.Raw(attr) is { } raw ? ResolveStyle(raw, vm) : null;
             if (cls is null && own is null)
                 return null;
             return StyleParser.Parse(StyleSheet.Join(sugar, classBase, cls, attrDecls, inline, own));
         }
 
-        box.StyleHover = State(r => r.Hover, "hover-style");
-        box.StylePress = State(r => r.Press, "press-style");
-        box.StyleDisabled = State(r => r.Disabled, "disabled-style");
-        // 속성 읽기 한 통로 — 핸들이 코드로 쓴 값(Enabled·Visible·Text)이 마크업 값을 이긴다
-        var control = ControlOf?.Invoke(node);
-        var r = new AttrReader(node, vm, control?.AttrOverrides);
+        box.StyleHover = State(rule => rule.Hover, "hover-style");
+        box.StylePress = State(rule => rule.Press, "press-style");
+        box.StyleDisabled = State(rule => rule.Disabled, "disabled-style");
         if (r.Has("disabled"))
             box.Disabled = IsDisabledValue(r.Value("disabled"), r.Raw("disabled") ?? "disabled");
         box.HasCodeClick = control?.Overrides.HasClick == true;
 
-        box.OnClick = node.Attributes.GetValueOrDefault("onclick");
+        box.OnClick = r.Raw("onclick");
         if (r.Text("hold") is { } holdText &&
             int.TryParse(holdText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var holdMs) && holdMs > 0)
             box.HoldMs = holdMs;
-        box.OnBeforeCommit = node.Attributes.GetValueOrDefault("onbeforecommit");
+        box.OnBeforeCommit = r.Raw("onbeforecommit");
 
         if (node.Tag == "DvButton" && node.Attributes.TryGetValue("value", out var latchExpr))
         {
@@ -770,18 +660,7 @@ public sealed class LayoutEngine
             BuildChart(box, node, vm);
 
         if (node.Tag == "DvStepBar")
-        {
-            // steps = 목록(항목 글자) 또는 "가,나,다"(쉼표로 나눔), current = 1부터(0 = 시작 전, 개수보다 크면 모두 끝)
-            var stepsRaw = node.Attributes.GetValueOrDefault("steps");
-            box.StepNames = BindingResolver.ResolveValueOrLiteral(vm, stepsRaw) switch
-            {
-                string text => text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries),
-                System.Collections.IEnumerable list => HandlerErrors.Snapshot(list.Cast<object?>(), PathOf(stepsRaw), node.Tag)
-                    .Select(o => HandlerErrors.Text(o, PathOf(stepsRaw), node.Tag) ?? "").ToArray(),
-                _ => Array.Empty<string>(),
-            };
-            box.StepCurrent = (int)MathF.Round(ToFloat(r.Value("current"), 0f));
-        }
+            BuildStepBar(box, r);
 
         if (node.Tag is "DvToggle" or "DvCheckBox")
         {
@@ -930,7 +809,7 @@ public sealed class LayoutEngine
             box.InputMin = Num("min");
             box.InputMax = Num("max");
             box.Unit = Attr("unit");
-            box.ReadOnly = InputReadOnly(node, vm, _valueOverride);
+            box.ReadOnly = InputReadOnly(r, _valueOverride);
             box.InputStep = Num("step") is > 0 and var step ? step : 1d;
             if (box.InputKind == DvEditKind.Numeric && ToBool(Attr("show-stepper")))
             {
@@ -948,7 +827,7 @@ public sealed class LayoutEngine
 
         if (node.Tag is "DvSelect" or "DvSegment" or "DvTabs")
         {
-            var ve = node.Attributes.GetValueOrDefault("value");
+            var ve = r.Raw("value");
             var (sx, target, vov) = ValueOf(node, ve);
             box.ValueBindExpr = _valueOverride ?? sx;
             box.ValueTarget = target;
@@ -974,10 +853,10 @@ public sealed class LayoutEngine
             }
 
             box.InputValue = current;
-            box.SelectOptions = SelectValue.Options(node, vm, box.SelectValueType);
+            box.SelectOptions = SelectValue.Options(r, box.SelectValueType);
             box.SelectedIndex = box.SelectOptions.FindIndex(o => SelectValue.Matches(o.Value, current, box.SelectValueType));
             box.InputPlaceholder = r.Text("placeholder");
-            box.ReadOnly = InputReadOnly(node, vm, _valueOverride);
+            box.ReadOnly = InputReadOnly(r, _valueOverride);
             if (node.Tag == "DvSegment")
                 box.SegmentFill = ToBool(r.Text("fill"));
         }
@@ -1011,7 +890,7 @@ public sealed class LayoutEngine
             string? Attr(string name) => r.Text(name);
             box.InputValue = current;
             box.InputPlaceholder = Attr("placeholder");
-            box.ReadOnly = InputReadOnly(node, vm, _valueOverride);
+            box.ReadOnly = InputReadOnly(r, _valueOverride);
             if (node.Tag == "DvDateTimeInput")
             {
                 box.PickerMode = PickerValue.ResolveMode(Attr("mode"), box.PickerValueType);
@@ -1168,8 +1047,10 @@ public sealed class LayoutEngine
     private string? ResolveStyle(string? style, object? vm)
         => ThemeResolver.ResolveVars(BindingResolver.ResolveInline(vm, style), _theme);
 
-    private IEnumerable<string> Classes(ElementNode node, object? vm, string? valueOverride)
+    private IEnumerable<string> Classes(AttrReader r, string? valueOverride)
     {
+        var node = r.Node;
+        var vm = r.Context;
         // 의미 속성 → 암묵 클래스 (DvButton variant/size). 바인딩을 풀어 리터럴과 같게 — 값이 없거나 비면 기존 DvButton 그대로.
         if (node.Tag == "DvButton" && node.Attributes.TryGetValue("variant", out var variantRaw) &&
             BindingResolver.ResolveText(vm, variantRaw)?.Trim() is { Length: > 0 } variant)
@@ -1220,15 +1101,14 @@ public sealed class LayoutEngine
         if (node.Tag is "DvInput" or "DvSelect" or "DvDateTimeInput" or "DvColorInput")
         {
             yield return "input";
-            if (InputReadOnly(node, vm, valueOverride))
+            if (InputReadOnly(r, valueOverride))
                 yield return "input-readonly";
         }
 
         if (node.Tag == "DvIcon")
             yield return "icon";
 
-        if (node.Attributes.TryGetValue("class", out var raw) &&
-            BindingResolver.ResolveText(vm, raw) is { } list)
+        if (r.Text("class") is { } list)
         {
             foreach (var c in list.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                 yield return c;
@@ -1412,10 +1292,10 @@ public sealed class LayoutEngine
 
     // 읽기 전용 = readonly 참, 또는 값이 양방향 바인딩이 아님(단방향·리터럴)
     // 쓸 수 있는 값 = 양방향 바인딩이거나 핸들이 주인(value 없음 + 값 핸들)
-    private bool InputReadOnly(ElementNode node, object? vm, string? valueOverride)
-        => !(BindingResolver.IsTwoWay(valueOverride ?? node.Attributes.GetValueOrDefault("value")) ||
-             valueOverride is null && OwnerSlot(node) is not null) ||
-           ToBool(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("readonly")));
+    private bool InputReadOnly(AttrReader r, string? valueOverride)
+        => !(BindingResolver.IsTwoWay(valueOverride ?? r.Raw("value")) ||
+             valueOverride is null && OwnerSlot(r.Node) is not null) ||
+           ToBool(BindingResolver.ResolveValueOrLiteral(r.Context, r.Raw("readonly")));
 
     // value 없음 + 값 핸들 = 핸들이 주인인 칸(설계 4.1). 아니면 null.
     private Controls.ValueSlot? OwnerSlot(ElementNode node)

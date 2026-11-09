@@ -60,18 +60,24 @@ internal static class SelectValue
 
     /// <summary>Option list: items (path) &gt; DvOption children &gt; automatic enum.</summary>
     public static List<SelectOption> Options(Markup.ElementNode node, object? ctx, Type? valueType)
+        => Options(new AttrReader(node, ctx, null), valueType);
+
+    /// <summary>Option list read through <paramref name="r"/> (the element's own attributes): items (path) &gt; DvOption children &gt; automatic enum.</summary>
+    public static List<SelectOption> Options(AttrReader r, Type? valueType)
     {
+        var node = r.Node;
+        var ctx = r.Context;
         var list = new List<SelectOption>();
         string? Attr(Markup.ElementNode n, string name)
             => BindingResolver.ResolveText(ctx, n.Attributes.GetValueOrDefault(name));
 
-        if (node.Attributes.TryGetValue("items", out var itemsRaw))
+        if (r.Raw("items") is { } itemsRaw)
         {
             if (BindingResolver.ResolveValueOrLiteral(ctx, itemsRaw) is System.Collections.IEnumerable items and not string)
             {
-                var valuePath = node.Attributes.GetValueOrDefault("item-value");
-                var textPath = node.Attributes.GetValueOrDefault("item-text");
-                var iconPath = node.Attributes.GetValueOrDefault("item-icon");
+                var valuePath = r.Raw("item-value");
+                var textPath = r.Raw("item-text");
+                var iconPath = r.Raw("item-icon");
                 var member = BindingResolver.IsBinding(itemsRaw) ? BindingResolver.ExtractPath(itemsRaw) : itemsRaw;
                 foreach (var item in Interaction.HandlerErrors.Snapshot(items.Cast<object?>(), member)) // 열거 중 VM 예외 = 항목 없음
                 {

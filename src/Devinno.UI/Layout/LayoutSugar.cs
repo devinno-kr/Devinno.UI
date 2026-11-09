@@ -11,19 +11,21 @@ namespace Devinno.UI.Layout;
 /// </summary>
 internal static class LayoutSugar
 {
-    public static string? Decls(ElementNode node, object? vm)
+    public static string? Decls(AttrReader r)
     {
+        // 그 태그가 쓰는 속성만 읽는다(TagSchema 정의와 같게): grow·width·height = 모든 요소, gap·padding·align·justify = 슈가 태그, columns·rows = DvGrid
+        var tag = r.Node.Tag;
+        var isSugar = tag is "DvStack" or "DvRepeat" or "DvRow" or "DvGrid" or "DvSpacer";
         var a = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var k in Names)
         {
-            if (node.Attributes.TryGetValue(k, out var raw) &&
-                BindingResolver.ResolveText(vm, raw) is { } v)
+            if ((tag == "DvGrid" || !GridNames.Contains(k)) && (isSugar || !SugarNames.Contains(k)) &&
+                r.Text(k) is { } v)
                 a[k] = v;
         }
         var parts = new List<string>();
 
-        var isSugar = true;
-        switch (node.Tag)
+        switch (tag)
         {
             case "DvStack":
             case "DvRepeat": // 기본은 세로 스택 — style 로 row/grid 도 가능
@@ -44,9 +46,6 @@ internal static class LayoutSugar
                 break;
             case "DvSpacer":
                 parts.Add("flex-grow:1");
-                break;
-            default:
-                isSugar = false;
                 break;
         }
 
@@ -75,6 +74,8 @@ internal static class LayoutSugar
 
     // 슈가가 읽는 속성 — 이것만 바인딩을 풀어 둔다
     private static readonly string[] Names = { "columns", "rows", "gap", "padding", "align", "justify", "grow", "width", "height" };
+    private static readonly string[] GridNames = { "columns", "rows" };
+    private static readonly string[] SugarNames = { "columns", "rows", "gap", "padding", "align", "justify" };
 
     /// <summary>Spacing step name (xs to 2xl) → token, none → 0, any other number is used as is.</summary>
     private static string Space(string v) => v switch
