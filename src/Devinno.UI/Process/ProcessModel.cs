@@ -290,15 +290,16 @@ internal static class ProcessBuilder
     public static void Build(LayoutBox box, object? vm, ComponentRegistry? registry, Builders b)
     {
         var node = box.Node;
+        var r = new AttrReader(node, vm, null);
         var d = new ProcessDiagram
         {
             Source = node,
-            Vertical = Direction(node, vm),
-            Rich = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("look")) is "rich",
+            Vertical = Direction(r),
+            Rich = r.Text("look") is "rich",
         };
-        if (BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("look")) is { } look && look is not ("plain" or "rich"))
+        if (r.Text("look") is { } look && look is not ("plain" or "rich"))
             Warn($"DvProcess look='{look}' is not a valid value (plain, rich); drawing as plain");
-        d.Align = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("align")) switch
+        d.Align = r.Text("align") switch
         {
             null or "" or "auto" => null,
             "step" => ProcessAlign.Step,
@@ -306,9 +307,9 @@ internal static class ProcessBuilder
             var a => WarnAlign(a),
         };
 
-        Placement(d, node, vm);
-        d.FlowAnimation = BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("flow-animation")) is { } fa && ProcessNode.Truthy(fa);
-        var fit = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("fit"));
+        Placement(d, r);
+        d.FlowAnimation = r.Value("flow-animation") is { } fa && ProcessNode.Truthy(fa);
+        var fit = r.Text("fit");
         d.Shrink = fit is "shrink";
         d.Contain = fit is "contain" && d.Fixed;
         if (fit is "contain" && !d.Fixed)
@@ -341,14 +342,14 @@ internal static class ProcessBuilder
     }
 
     // placement·base-size — 좌표 배치면 align 은 쓰지 않는다
-    private static void Placement(ProcessDiagram d, ElementNode node, object? vm)
+    private static void Placement(ProcessDiagram d, AttrReader r)
     {
-        var placement = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("placement"));
+        var placement = r.Text("placement");
         d.Fixed = placement is "fixed";
         if (placement is not (null or "" or "auto" or "fixed"))
             Warn($"DvProcess placement='{placement}' is not a valid value (auto, fixed); laying out as auto");
 
-        var baseText = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("base-size"));
+        var baseText = r.Text("base-size");
         if (!d.Fixed)
         {
             if (!string.IsNullOrEmpty(baseText))
@@ -405,46 +406,46 @@ internal static class ProcessBuilder
     }
 
     // 신호 종류(kind) — electric(기본) · pneumatic. 틀리면 알리고 전기로
-    private static bool SignalKind(ElementNode ch, object? vm)
+    private static bool SignalKind(AttrReader r)
     {
-        var kind = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("kind"));
+        var kind = r.Text("kind");
         if (kind is not (null or "" or "electric" or "pneumatic"))
-            Warn($"DvSignal '{ch.Attributes.GetValueOrDefault("from")}'→'{ch.Attributes.GetValueOrDefault("to")}' kind='{kind}' is not a known kind (electric, pneumatic); drawing as electric");
+            Warn($"DvSignal '{r.Raw("from")}'→'{r.Raw("to")}' kind='{kind}' is not a known kind (electric, pneumatic); drawing as electric");
         return kind is "pneumatic";
     }
 
     // 신호선 색(color) — #색 또는 token(이름). 안 쓰면 기본(테마 글자색), 틀리면 알리고 기본으로
-    private static SKColor? SignalColor(ElementNode ch, object? vm, Builders b)
+    private static SKColor? SignalColor(AttrReader r, Builders b)
     {
-        var text = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("color"));
+        var text = r.Text("color");
         if (string.IsNullOrWhiteSpace(text))
             return null;
         if (b.Color(text) is { } color)
             return color;
-        Warn($"DvSignal '{ch.Attributes.GetValueOrDefault("from")}'→'{ch.Attributes.GetValueOrDefault("to")}' color='{text}' is not a color (#RRGGBB or token(name)); drawing with the default color");
+        Warn($"DvSignal '{r.Raw("from")}'→'{r.Raw("to")}' color='{text}' is not a color (#RRGGBB or token(name)); drawing with the default color");
         return null;
     }
 
     // 신호선 두께(width) — 0 보다 큰 px. 안 쓰면 기본, 틀리면 알리고 기본으로
-    private static float? SignalWidth(ElementNode ch, object? vm)
+    private static float? SignalWidth(AttrReader r)
     {
-        var text = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("width"));
+        var text = r.Text("width");
         if (string.IsNullOrWhiteSpace(text))
             return null;
         if (TryCoord(text, out var width) && width > 0)
             return width;
-        Warn($"DvSignal '{ch.Attributes.GetValueOrDefault("from")}'→'{ch.Attributes.GetValueOrDefault("to")}' width='{text}' must be a number greater than 0; drawing with the default width");
+        Warn($"DvSignal '{r.Raw("from")}'→'{r.Raw("to")}' width='{text}' must be a number greater than 0; drawing with the default width");
         return null;
     }
 
     // 계기 좌표(x·y) — 좌표 배치에서 둘 다 있을 때만. 아니면 알리고 장비 옆 자동 자리로(계기는 좌표가 없어도 그린다)
-    private static SKPoint? InstrumentPos(ProcessDiagram d, ElementNode ch, object? vm)
+    private static SKPoint? InstrumentPos(ProcessDiagram d, AttrReader r)
     {
-        var xs = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("x"));
-        var ys = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("y"));
+        var xs = r.Text("x");
+        var ys = r.Text("y");
         if (string.IsNullOrEmpty(xs) && string.IsNullOrEmpty(ys))
             return null;
-        var name = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("name"));
+        var name = r.Text("name");
         if (!d.Fixed)
         {
             Warn($"<DvInstrument name='{name}'>: x/y are used only with <DvProcess placement=\"fixed\">; ignored");
@@ -458,12 +459,12 @@ internal static class ProcessBuilder
     }
 
     // 배관 꺾임점(via) — "x,y x,y …". 좌표 배치 전용, 틀리면 알리고 자동 경로로
-    private static List<SKPoint>? Via(ProcessDiagram d, ElementNode ch, object? vm)
+    private static List<SKPoint>? Via(ProcessDiagram d, AttrReader r)
     {
-        var text = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("via"));
+        var text = r.Text("via");
         if (string.IsNullOrWhiteSpace(text))
             return null;
-        var where = $"DvLine '{ch.Attributes.GetValueOrDefault("from")}'→'{ch.Attributes.GetValueOrDefault("to")}' via='{text}'";
+        var where = $"DvLine '{r.Raw("from")}'→'{r.Raw("to")}' via='{text}'";
         if (!d.Fixed)
         {
             Warn($"{where}: via is used only with <DvProcess placement=\"fixed\">; ignored");
@@ -486,11 +487,11 @@ internal static class ProcessBuilder
         return points;
     }
 
-    private static bool Direction(ElementNode node, object? vm)
+    private static bool Direction(AttrReader r)
     {
-        var dir = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("direction"));
+        var dir = r.Text("direction");
         if (dir is not (null or "" or "lr" or "tb"))
-            Warn($"<{node.Tag}> direction='{dir}' is not a valid value (lr, tb); drawing as lr");
+            Warn($"<{r.Node.Tag}> direction='{dir}' is not a valid value (lr, tb); drawing as lr");
         return dir is "tb";
     }
 
@@ -501,20 +502,21 @@ internal static class ProcessBuilder
         var instruments = new List<(ProcessInstrument I, ElementNode Node)>();
         foreach (var ch in container.Children)
         {
+            var r = new AttrReader(ch, vm, null);
             if (ch.Tag == "DvLine")
             {
                 d.Lines.Add(new ProcessLine
                 {
-                    FromRef = ch.Attributes.GetValueOrDefault("from") ?? "",
-                    ToRef = ch.Attributes.GetValueOrDefault("to") ?? "",
-                    ArrowEnd = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("arrow")) is "end" or "both",
-                    ArrowStart = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("arrow")) is "start" or "both",
-                    FlowOverride = ch.Attributes.TryGetValue("flow", out var flowRaw) && BindingResolver.ResolveValueOrLiteral(vm, flowRaw) is { } fv
+                    FromRef = r.Raw("from") ?? "",
+                    ToRef = r.Raw("to") ?? "",
+                    ArrowEnd = r.Text("arrow") is "end" or "both",
+                    ArrowStart = r.Text("arrow") is "start" or "both",
+                    FlowOverride = r.Has("flow") && r.Value("flow") is { } fv
                         ? ProcessNode.Truthy(fv)
                         : null,
-                    MediumSet = Medium(BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("medium"))),
-                    Label = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("label")),
-                    Via = Via(d, ch, vm),
+                    MediumSet = Medium(r.Text("medium")),
+                    Label = r.Text("label"),
+                    Via = Via(d, r),
                 });
                 continue;
             }
@@ -523,19 +525,19 @@ internal static class ProcessBuilder
             {
                 d.Signals.Add(new ProcessSignal
                 {
-                    FromRef = ch.Attributes.GetValueOrDefault("from") ?? "",
-                    ToRef = ch.Attributes.GetValueOrDefault("to") ?? "",
-                    ArrowEnd = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("arrow")) is "end" or "both",
-                    ArrowStart = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("arrow")) is "start" or "both",
-                    Label = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("label")),
-                    Pneumatic = SignalKind(ch, vm),
-                    Color = SignalColor(ch, vm, b),
-                    Width = SignalWidth(ch, vm),
+                    FromRef = r.Raw("from") ?? "",
+                    ToRef = r.Raw("to") ?? "",
+                    ArrowEnd = r.Text("arrow") is "end" or "both",
+                    ArrowStart = r.Text("arrow") is "start" or "both",
+                    Label = r.Text("label"),
+                    Pneumatic = SignalKind(r),
+                    Color = SignalColor(r, b),
+                    Width = SignalWidth(r),
                 });
                 continue;
             }
 
-            if (ch.Tag == "DvStyle" || !Visible(ch, vm, b))
+            if (ch.Tag == "DvStyle" || !Visible(r, b))
                 continue;
 
             if (ch.Tag == "DvInstrument")
@@ -543,14 +545,14 @@ internal static class ProcessBuilder
                 instruments.Add((new ProcessInstrument
                 {
                     Owner = d,
-                    Name = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("name")) ?? "",
-                    Letters = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("tag")),
-                    Number = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("number")),
-                    Value = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("value")),
-                    OnRef = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("on")),
-                    TapRef = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("tap")),
-                    Panel = BindingResolver.ResolveValueOrLiteral(vm, ch.Attributes.GetValueOrDefault("panel")) is { } pv && ProcessNode.Truthy(pv),
-                    Pos = InstrumentPos(d, ch, vm),
+                    Name = r.Text("name") ?? "",
+                    Letters = r.Text("tag"),
+                    Number = r.Text("number"),
+                    Value = r.Text("value"),
+                    OnRef = r.Text("on"),
+                    TapRef = r.Text("tap"),
+                    Panel = r.Value("panel") is { } pv && ProcessNode.Truthy(pv),
+                    Pos = InstrumentPos(d, r),
                 }, ch));
                 continue;
             }
@@ -563,20 +565,20 @@ internal static class ProcessBuilder
                     continue;
                 }
 
-                var side = SymbolDef.ParseSide(BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("side")));
+                var side = SymbolDef.ParseSide(r.Text("side"));
                 if (side is null)
-                    Warn($"<DvPort name='{ch.Attributes.GetValueOrDefault("name")}'> side must be one of left, top, right, bottom; using right", true);
-                var atText = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("at"));
+                    Warn($"<DvPort name='{r.Raw("name")}'> side must be one of left, top, right, bottom; using right", true);
+                var atText = r.Text("at");
                 var at = 0.5f;
                 if (atText is { Length: > 0 } && (!float.TryParse(atText, NumberStyles.Float, CultureInfo.InvariantCulture, out at) || at < 0 || at > 1))
                 {
-                    Warn($"<DvPort name='{ch.Attributes.GetValueOrDefault("name")}'> at='{atText}' must be between 0 and 1; using 0.5", true);
+                    Warn($"<DvPort name='{r.Raw("name")}'> at='{atText}' must be between 0 and 1; using 0.5", true);
                     at = 0.5f;
                 }
 
                 d.Nodes.Add(new ProcessNode
                 {
-                    Owner = d, Name = UniqueName(d, ch, vm), Tag = "DvPort", IsPort = true, PortSide = side ?? PortSide.Right, PortAt = at,
+                    Owner = d, Name = UniqueName(d, r), Tag = "DvPort", IsPort = true, PortSide = side ?? PortSide.Right, PortAt = at,
                 });
                 continue;
             }
@@ -595,37 +597,37 @@ internal static class ProcessBuilder
                 continue;
             }
 
-            var def = ResolveDef(ch, vm, registry, out var known);
+            var def = ResolveDef(r, registry, out var known);
             if (!known)
             {
                 Warn($"<{ch.Tag}> is not process equipment (DvVessel, DvPump, DvValve, DvInline, DvTerminal, DvUnit, DvInstrument, a registered DvSymbol, or a DvUnit component); not drawn", true);
                 continue;
             }
 
-            if (!Coordinates(d, ch.Tag, k => BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault(k)), out var pos))
+            if (!Coordinates(d, ch.Tag, k => r.Text(k), out var pos))
                 continue;
 
             var pn = new ProcessNode
             {
                 Owner = d,
-                Name = UniqueName(d, ch, vm),
+                Name = UniqueName(d, r),
                 Tag = ch.Tag,
                 Def = def,
                 Terminal = ch.Tag == "DvTerminal",
-                Text = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("text")),
-                Label = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("label")),
-                Rotate = ParseRotate(BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("rotate"))),
-                Row = Int(BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("row"))),
-                Rank = Int(BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("rank"))),
+                Text = r.Text("text"),
+                Label = r.Text("label"),
+                Rotate = ParseRotate(r.Text("rotate")),
+                Row = Int(r.Text("row")),
+                Rank = Int(r.Text("rank")),
                 Pos = pos,
             };
-            var flip = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("flip"));
+            var flip = r.Text("flip");
             pn.FlipH = flip is "h" or "hv" or "vh";
             pn.FlipV = flip is "v" or "hv" or "vh";
             if (def is not null)
             {
                 foreach (var p in def.Params)
-                    pn.Values[p.Name] = ch.Attributes.TryGetValue(p.Name, out var raw) ? BindingResolver.ResolveValueOrLiteral(vm, raw) : p.Default;
+                    pn.Values[p.Name] = r.Has(p.Name) ? r.Value(p.Name) : p.Default;
             }
 
             pn.Box = b.Self(ch, vm);
@@ -634,13 +636,13 @@ internal static class ProcessBuilder
 
             foreach (var sub in ch.Children)
             {
-                if (!Visible(sub, vm, b))
+                var sr = new AttrReader(sub, vm, null);
+                if (!Visible(sr, b))
                     continue;
                 if (BuiltInSymbols.IsAccessoryTag(sub.Tag))
                 {
-                    var running = sub.Attributes.TryGetValue("running", out var rr) &&
-                                  BindingResolver.ResolveValueOrLiteral(vm, rr) is { } rv && ProcessNode.Truthy(rv);
-                    var accKind = BindingResolver.ResolveText(vm, sub.Attributes.GetValueOrDefault("kind"));
+                    var running = sr.Has("running") && sr.Value("running") is { } rv && ProcessNode.Truthy(rv);
+                    var accKind = sr.Text("kind");
                     var acc = BuiltInSymbols.Get(sub.Tag, accKind);
                     if (acc is null)
                     {
@@ -652,7 +654,7 @@ internal static class ProcessBuilder
                 }
                 else if (sub.Tag == "DvAttach")
                 {
-                    var side = SymbolDef.ParseSide(BindingResolver.ResolveText(vm, sub.Attributes.GetValueOrDefault("side"))) ?? PortSide.Right;
+                    var side = SymbolDef.ParseSide(sr.Text("side")) ?? PortSide.Right;
                     if (b.Child(sub, vm) is { } ab)
                     {
                         pn.Attach.Add((side, ab));
@@ -848,20 +850,20 @@ internal static class ProcessBuilder
     private static void AddUnit(ProcessDiagram d, LayoutBox owner, ElementNode instance, ElementNode unitNode, ElementNode boxNode, object? scope,
         object? outerVm, ComponentRegistry? registry, Builders b)
     {
-        string? Attr(string name) =>
-            instance.Attributes.ContainsKey(name) ? BindingResolver.ResolveText(outerVm, instance.Attributes[name])
-            : BindingResolver.ResolveText(scope, unitNode.Attributes.GetValueOrDefault(name));
+        var ri = new AttrReader(instance, outerVm, null);
+        var ru = new AttrReader(unitNode, scope, null);
+        string? Attr(string name) => ri.Has(name) ? ri.Text(name) : ru.Text(name);
 
         if (!Coordinates(d, instance.Tag, Attr, out var pos))
             return;
-        if (BindingResolver.ResolveText(scope, unitNode.Attributes.GetValueOrDefault("placement")) is { Length: > 0 } up && up != "auto")
+        if (ru.Text("placement") is { Length: > 0 } up && up != "auto")
             Warn($"<{instance.Tag} name='{Attr("name")}'>: placement='{up}' is not supported inside a unit; the inside is laid out automatically");
 
-        var inner = new ProcessDiagram { Source = unitNode, Vertical = Direction(unitNode, scope), Rich = d.Rich, IsUnit = true, FlowAnimation = d.FlowAnimation };
+        var inner = new ProcessDiagram { Source = unitNode, Vertical = Direction(ru), Rich = d.Rich, IsUnit = true, FlowAnimation = d.FlowAnimation };
         var pn = new ProcessNode
         {
             Owner = d,
-            Name = UniqueName(d, instance, outerVm),
+            Name = UniqueName(d, ri),
             Tag = "DvUnit",
             Label = Attr("label"),
             Row = Int(Attr("row")),
@@ -882,12 +884,12 @@ internal static class ProcessBuilder
         d.Nodes.Add(pn);
     }
 
-    private static string UniqueName(ProcessDiagram d, ElementNode ch, object? vm)
+    private static string UniqueName(ProcessDiagram d, AttrReader r)
     {
-        var name = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("name"));
+        var name = r.Text("name");
         if (string.IsNullOrEmpty(name))
         {
-            Warn($"<{ch.Tag}> has no name; it cannot be connected by lines", true);
+            Warn($"<{r.Node.Tag}> has no name; it cannot be connected by lines", true);
             return $"#{d.Nodes.Count}";
         }
 
@@ -901,24 +903,25 @@ internal static class ProcessBuilder
     }
 
     // 핸들의 Visible 덮어쓰기가 마크업 visible 보다 우선(일반 요소와 같음)
-    private static bool Visible(ElementNode n, object? vm, Builders b)
+    private static bool Visible(AttrReader r, Builders b)
     {
-        if (b.VisibleOverride(n) is { } ov)
+        if (b.VisibleOverride(r.Node) is { } ov)
             return ov;
-        if (!n.Attributes.TryGetValue("visible", out var raw))
+        if (!r.Has("visible"))
             return true;
-        var v = BindingResolver.ResolveValueOrLiteral(vm, raw);
+        var v = r.Value("visible");
         return v is not null && ProcessNode.Truthy(v) || v is string s && s.Length > 0 && s != "false" && s != "0";
     }
 
-    private static SymbolDef? ResolveDef(ElementNode ch, object? vm, ComponentRegistry? registry, out bool known)
+    private static SymbolDef? ResolveDef(AttrReader r, ComponentRegistry? registry, out bool known)
     {
+        var ch = r.Node;
         known = true;
         if (ch.Tag == "DvTerminal")
             return null;
         if (BuiltInSymbols.Kinds.TryGetValue(ch.Tag, out var kinds))
         {
-            var kind = BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault("kind"));
+            var kind = r.Text("kind");
             var def = BuiltInSymbols.Get(ch.Tag, kind);
             if (def is null)
             {
@@ -931,7 +934,7 @@ internal static class ProcessBuilder
             {
                 float Size(string attr, float natural)
                 {
-                    if (BindingResolver.ResolveText(vm, ch.Attributes.GetValueOrDefault(attr)) is not { Length: > 0 } text)
+                    if (r.Text(attr) is not { Length: > 0 } text)
                         return natural;
                     if (!float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) || !float.IsFinite(v))
                     {

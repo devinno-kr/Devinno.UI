@@ -383,7 +383,154 @@ internal static class TagSchema
             new("format", AttrKind.Text, Bindable: false, Note: ".NET format; read raw"),
             new("value", AttrKind.Object, Note: "present = shown instead of the computed value (also when it resolves to null)"),
         ],
+
+        // 공정도 (2.6) — 읽기는 ProcessBuilder(ProcessModel.cs). DvSymbol 정의(SymbolDef, 등록 시점)와 사용자 심볼 인스턴스의 DvParam 속성은 대상이 아니다
+        ["DvProcess"] =
+        [
+            Direction(),
+            new("look", AttrKind.Enum, "plain", Values: ["plain", "rich"], Note: "read twice; an unknown value = plain + warning; units inherit it (no per-unit look)"),
+            new("align", AttrKind.Enum, "auto", Values: ["auto", "step", "row"], Note: "an unknown value = auto + warning; with placement=fixed ignored + warning"),
+            new("placement", AttrKind.Enum, "auto", Values: ["auto", "fixed"], Note: "an unknown value = auto + warning; a structural switch (the layout cache keys on it)"),
+            new("base-size", AttrKind.Text, Note: "\"W H\" px (space or comma); fixed placement only, otherwise ignored + warning; a bad value = ignored + warning"),
+            new("flow-animation", AttrKind.Bool, "false", Note: Truthy),
+            new("fit", AttrKind.Enum, "none", Values: ["none", "shrink", "contain"],
+                Note: "contain without placement=fixed = shrink + warning; an unknown value = none + warning; name clash: DvImage/DvVideo fit is contain|cover|fill"),
+        ],
+        ["DvUnit"] =
+        [
+            new("name", AttrKind.Text, Note: "required, unique among the outer equipment (missing = placeholder + error); for a unit component read from the instance only, not the template"),
+            Direction(),
+            new("label", AttrKind.Text, Note: "title at the top-left; for a unit component the instance wins over the template DvUnit"),
+            ProcessInt("row", "for a unit component the instance wins over the template DvUnit"),
+            ProcessInt("rank", "for a unit component the instance wins over the template DvUnit"),
+            ProcessCoord("x", "unit frame center; for a unit component the instance wins over the template DvUnit"),
+            ProcessCoord("y", "unit frame center; for a unit component the instance wins over the template DvUnit"),
+            new("placement", AttrKind.Enum, "auto", Values: ["auto"], Note: "read only to warn: anything but auto = warning, the inside is always laid out automatically"),
+            ProcessVisible(),
+        ],
+        ["DvPort"] =
+        [
+            new("name", AttrKind.Text, Note: "unit outer port (inside DvUnit only; elsewhere ignored + error); DvPort inside DvSymbol (name side at role) is parsed at registration and throws instead"),
+            new("side", AttrKind.Enum, Values: ["left", "top", "right", "bottom"], Note: "required; missing or unknown = right + error"),
+            new("at", AttrKind.Number, "0.5", Note: "0-1 along the side; not a number or outside = 0.5 + error"),
+            ProcessVisible(),
+        ],
+        ["DvVessel"] =
+        [
+            .. Equipment("DvVessel"),
+            VesselSize("width"),
+            VesselSize("height"),
+            new("level", AttrKind.Number, "0", Note: "state param (DvParam level): 0-100, clamped; not a number = 0; DvTank uses value/min/max instead"),
+        ],
+        ["DvPump"] = [.. Equipment("DvPump"), StateBool("running")],
+        ["DvValve"] = [.. Equipment("DvValve"), StateBool("open", "check has no open param")],
+        ["DvValve3"] = [.. Equipment("DvValve3"), StateBool("open-b"), StateBool("open-c")],
+        ["DvInline"] = Equipment("DvInline"),
+        ["DvExchanger"] = Equipment("DvExchanger"),
+        ["DvTerminal"] = Equipment("DvTerminal", "multi-line end-point text (&#10;)"),
+        ["DvAgitator"] = Accessory(null),
+        ["DvMotor"] = Accessory(["isa"]),
+        ["DvAttach"] =
+        [
+            new("side", AttrKind.Enum, "right", Values: ["left", "right", "top", "bottom"], Note: "an unknown value = right, silently"),
+            new("visible", AttrKind.Bool, "true", Note: "checked twice: the process parser (" + Truthy + "; any other non-empty text but false and 0 also shows) and then the common one"),
+        ],
+        ["DvLine"] =
+        [
+            ProcessRef("from", "eq.port, eq, eq.face@0-1, unit.port or a port name inside a unit"),
+            ProcessRef("to", "eq.port, eq, eq.face@0-1, unit.port or a port name inside a unit"),
+            ProcessArrow(),
+            new("flow", AttrKind.Bool, Note: "absent = computed; " + Truthy),
+            new("medium", AttrKind.Enum, Values: Process.ProcessMedium.Names, Note: "absent = default gray; an unknown value = default + warning; a fixed palette (no color attribute)"),
+            new("via", AttrKind.Text, Note: "\"x,y x,y\" bend points; fixed placement only, otherwise ignored + warning; a bad format = automatic route + warning"),
+            new("label", AttrKind.Text),
+            new("visible", AttrKind.Bool, Note: "unused: lines are always drawn"),
+        ],
+        ["DvSignal"] =
+        [
+            ProcessRef("from", "an instrument or equipment name, no port"),
+            ProcessRef("to", "an instrument or equipment name, no port"),
+            ProcessArrow(),
+            new("label", AttrKind.Text, Note: "small text beside the from end"),
+            new("kind", AttrKind.Enum, "electric", Values: ["electric", "pneumatic"], Note: "an unknown value = electric + warning"),
+            new("color", AttrKind.Color, Note: "#hex or token(name), absent = theme text color; unparsable = default + warning; the only process color attribute (the rest use a fixed palette)"),
+            new("width", AttrKind.Number, "1.6", Note: "stroke px > 0; not a number or <= 0 = default + warning; name clash: DvVessel width is the body width"),
+            new("visible", AttrKind.Bool, Note: "unused: signal lines are always drawn"),
+        ],
+        ["DvInstrument"] =
+        [
+            new("name", AttrKind.Text, Note: "required, unique together with equipment names (missing or duplicate = error, not connectable)"),
+            new("on", AttrKind.Text, Note: "equipment name; bound (DvLine/DvSignal refs are raw); required unless tap; no such equipment = not drawn + error"),
+            new("tap", AttrKind.Text, Note: "eq.port or eq.face@pos; wins over on (a different on = warning); bad = not drawn + error"),
+            new("tag", AttrKind.Text, Note: "ISA letters (TI, PIC); name clash: not an element tag"),
+            new("number", AttrKind.Text),
+            new("value", AttrKind.Text, Note: "display text in the bubble; name clash: elsewhere value is the control value"),
+            new("panel", AttrKind.Bool, "false", Note: Truthy),
+            ProcessCoord("x", "bubble center; one of x/y missing = placed automatically + warning (still drawn)"),
+            ProcessCoord("y", "bubble center; one of x/y missing = placed automatically + warning (still drawn)"),
+            ProcessVisible(),
+        ],
     };
+
+    // 2.6 공정도 공용 조각
+    private const string Truthy = "Truthy: bool, a number > 0 or text true (case-insensitive)";
+
+    private static AttrDef Direction() =>
+        new("direction", AttrKind.Enum, "lr", Values: ["lr", "tb"], Note: "an unknown value = lr + warning; name clash: flex direction is row|column");
+
+    private static AttrDef ProcessVisible() =>
+        new("visible", AttrKind.Bool, "true", Note: "process parser: " + Truthy + "; any other non-empty text but false and 0 also shows (a bound number <= 0 hides); a handle Visible override wins");
+
+    private static AttrDef ProcessInt(string name, string? note = null) =>
+        new(name, AttrKind.Number, Note: "layout hint (integer); not an integer = ignored, silently; with placement=fixed ignored + warning" + (note is null ? "" : "; " + note));
+
+    private static AttrDef ProcessCoord(string name, string where) =>
+        new(name, AttrKind.Number, Note: $"px, {where}; placement=fixed only (otherwise ignored + warning)");
+
+    private static AttrDef ProcessRef(string name, string what) =>
+        new(name, AttrKind.Text, Bindable: false, Note: $"read raw (not bound, unlike equipment name and DvInstrument on/tap): {what}");
+
+    private static AttrDef ProcessArrow() =>
+        new("arrow", AttrKind.Enum, "none", Values: ["end", "start", "both", "none"], Note: "read twice; an unknown value = none, silently");
+
+    private static AttrDef StateBool(string name, string? note = null) =>
+        new(name, AttrKind.Bool, Note: $"state param (DvParam {name}): {Truthy}; a boolean, not the UI state words (state=run|stop|fault)" + (note is null ? "" : "; " + note));
+
+    private static AttrDef VesselSize(string name) =>
+        new(name, AttrKind.Number, Note: $"body {name} px, 0.6-4x the kind's natural size (outside = clamped + warning; not a number = natural + warning); "
+            + $"the common layout also applies it as the box CSS {name}; name clash: DvSignal width is the stroke");
+
+    // 장비 공통 — name·label·kind·rotate·flip·row·rank·x·y·text·visible (상태 속성은 태그마다)
+    private static AttrDef[] Equipment(string tag, string? textNote = null)
+    {
+        List<AttrDef> list =
+        [
+            new("name", AttrKind.Text, Note: "required, unique within the diagram or unit (missing = placeholder + error, duplicate = error); bound, while DvLine from/to are read raw"),
+            new("label", AttrKind.Text, Note: "one-line name chip"),
+        ];
+        if (Process.BuiltInSymbols.Kinds.TryGetValue(tag, out var kinds))
+            list.Add(new("kind", AttrKind.Enum, kinds[0], Values: kinds, Note: "an unknown value = the first kind + warning; elsewhere the look selector is variant"));
+        list.AddRange(
+        [
+            new("rotate", AttrKind.Enum, "0", Values: ["0", "90", "180", "270"], Note: "an unknown value = 0 + warning" + (tag == "DvTerminal" ? "; read, but a terminal does not rotate" : "")),
+            new("flip", AttrKind.Enum, Values: ["h", "v", "hv"], Note: "vh is also accepted; an unknown value = none, silently (rotate warns)"),
+            ProcessInt("row"),
+            ProcessInt("rank"),
+            ProcessCoord("x", "symbol center (both needed, otherwise not drawn + error)"),
+            ProcessCoord("y", "symbol center (both needed, otherwise not drawn + error)"),
+            new("text", AttrKind.Text, Note: textNote ?? "dead read: read on every equipment tag, drawn only by DvTerminal"),
+            ProcessVisible(),
+        ]);
+        return [.. list];
+    }
+
+    // 부속(DvAgitator·DvMotor) — 상자가 없어 공통 속성(class·style·onclick)은 읽지 않는다
+    private static AttrDef[] Accessory(string[]? kinds) =>
+    [
+        new("running", AttrKind.Bool, "false", Note: Truthy + "; a boolean, not the UI state words"),
+        new("kind", AttrKind.Enum, Values: kinds, Note: kinds is null ? "no kinds: any non-empty value = the default shape + warning" : "absent = the default shape; an unknown value = default + warning"),
+        ProcessVisible(),
+    ];
 
     // 2.5 그리드 공용 조각
     private static AttrDef GridColor(string name) =>
