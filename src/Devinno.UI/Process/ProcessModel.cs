@@ -130,14 +130,8 @@ internal sealed class ProcessNode
 
     public float Level => Values.GetValueOrDefault(Def?.FillValue ?? "level") is { } v && TryFloat(v, out var f) ? Math.Clamp(f, 0, 100) : 0;
 
-    public bool On(string? param) => param is not null && Values.GetValueOrDefault(param) is { } v && Truthy(v);
-
-    internal static bool Truthy(object v) => v switch
-    {
-        bool b => b,
-        _ when TryFloat(v, out var f) => f > 0,
-        _ => string.Equals(v.ToString(), "true", StringComparison.OrdinalIgnoreCase),
-    };
+    /// <summary>A state parameter as a boolean (the common rule, <see cref="Layout.AttrRules.ParseBool"/>); any other value is off. Built-in boolean attributes are already read (and warned about) when the diagram is built.</summary>
+    public bool On(string? param) => param is not null && Layout.AttrRules.ParseBool(Values.GetValueOrDefault(param)) == true;
 
     internal static bool TryFloat(object v, out float f)
     {
@@ -291,7 +285,7 @@ internal static class ProcessBuilder
         };
 
         Placement(d, r);
-        d.FlowAnimation = r.Value("flow-animation") is { } fa && ProcessNode.Truthy(fa);
+        d.FlowAnimation = AttrRules.Bool(r, "flow-animation");
         var fit = r.Text("fit");
         d.Shrink = fit is "shrink";
         d.Contain = fit is "contain" && d.Fixed;
@@ -494,9 +488,8 @@ internal static class ProcessBuilder
                     ToRef = r.Raw("to") ?? "",
                     ArrowEnd = r.Text("arrow") is "end" or "both",
                     ArrowStart = r.Text("arrow") is "start" or "both",
-                    FlowOverride = r.Has("flow") && r.Value("flow") is { } fv
-                        ? ProcessNode.Truthy(fv)
-                        : null,
+                    // 바인딩이 null 이면 없는 것과 같다(자동 판단 — 문서에 적힌 3상태 동작), 그 밖은 공용 참/거짓 규칙
+                    FlowOverride = r.Has("flow") && r.Value("flow") is { } fv ? AttrRules.Bool(fv, false, ch.Tag, "flow") : null,
                     MediumSet = Medium(r.Text("medium")),
                     Label = r.Text("label"),
                     Via = Via(d, r),
@@ -534,7 +527,7 @@ internal static class ProcessBuilder
                     Value = r.Text("value"),
                     OnRef = r.Text("on"),
                     TapRef = r.Text("tap"),
-                    Panel = r.Value("panel") is { } pv && ProcessNode.Truthy(pv),
+                    Panel = AttrRules.Bool(r, "panel"),
                     Pos = InstrumentPos(d, r),
                 }, ch));
                 continue;
@@ -600,8 +593,8 @@ internal static class ProcessBuilder
                 Text = r.Text("text"),
                 Label = r.Text("label"),
                 Rotate = ParseRotate(r.Text("rotate")),
-                Row = Int(r.Text("row")),
-                Rank = Int(r.Text("rank")),
+                Row = Int(ch.Tag, "row", r.Text("row")),
+                Rank = Int(ch.Tag, "rank", r.Text("rank")),
                 Pos = pos,
             };
             var flip = r.Text("flip");
@@ -610,7 +603,7 @@ internal static class ProcessBuilder
             if (def is not null)
             {
                 foreach (var p in def.Params)
-                    pn.Values[p.Name] = r.Has(p.Name) ? r.Value(p.Name) : p.Default;
+                    pn.Values[p.Name] = StateValue(r, p);
             }
 
             pn.Box = b.Self(ch, vm);
@@ -624,7 +617,7 @@ internal static class ProcessBuilder
                     continue;
                 if (BuiltInSymbols.IsAccessoryTag(sub.Tag))
                 {
-                    var running = sr.Has("running") && sr.Value("running") is { } rv && ProcessNode.Truthy(rv);
+                    var running = AttrRules.Bool(sr, "running");
                     var accKind = sr.Text("kind");
                     var acc = BuiltInSymbols.Get(sub.Tag, accKind);
                     if (acc is null)
@@ -849,8 +842,8 @@ internal static class ProcessBuilder
             Name = UniqueName(d, ri),
             Tag = "DvUnit",
             Label = Attr("label"),
-            Row = Int(Attr("row")),
-            Rank = Int(Attr("rank")),
+            Row = Int(instance.Tag, "row", Attr("row")),
+            Rank = Int(instance.Tag, "rank", Attr("rank")),
             Pos = pos,
             Unit = inner,
         };
@@ -885,13 +878,21 @@ internal static class ProcessBuilder
         return name;
     }
 
-    // 핸들의 Visible 덮어쓰기가 마크업 visible 보다 우선(일반 요소와 같음) — 리더가 덮어쓴 값을 bool 로 돌려준다
-    private static bool Visible(AttrReader r)
+    // 공통 visible 규칙 그대로(핸들의 Visible 덮어쓰기가 마크업 visible 보다 우선 — 리더가 덮어쓴 값을 돌려준다)
+    private static bool Visible(AttrReader r) => AttrRules.Visible(r);
+
+    // 상태 파라미터 값 — 내장 태그의 참/거짓·숫자 속성(TagSchema)은 여기서 공용 규칙으로 읽어 잘못된 값을 빌드 때 한 번 알린다.
+    // 사용자 심볼의 DvParam 은 정의가 없으니 값 그대로(On 이 공용 규칙으로 읽는다).
+    private static object? StateValue(AttrReader r, SymbolParam p)
     {
-        if (!r.Has("visible"))
-            return true;
-        var v = r.Value("visible");
-        return v is not null && ProcessNode.Truthy(v) || v is string s && s.Length > 0 && s != "false" && s != "0";
+        if (!r.Has(p.Name))
+            return p.Default;
+        return TagSchema.Find(r.Node.Tag, p.Name)?.Kind switch
+        {
+            AttrKind.Bool => AttrRules.Bool(r.Value(p.Name), false, r.Node.Tag, p.Name),
+            AttrKind.Number => AttrRules.NumberOrNull(r.Value(p.Name), r.Node.Tag, p.Name, "using 0") ?? 0d,
+            _ => r.Value(p.Name),
+        };
     }
 
     private static SymbolDef? ResolveDef(AttrReader r, ComponentRegistry? registry, out bool known)
@@ -958,8 +959,9 @@ internal static class ProcessBuilder
         return 0;
     }
 
-    private static int? Int(string? s) =>
-        int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : null;
+    // 배치 힌트(row·rank) — 정수. 숫자 아님 = 무시 + 경고(공용 숫자 규칙), 소수는 반올림
+    private static int? Int(string tag, string attr, string? s) =>
+        AttrRules.NumberOrNull(s, tag, attr) is { } v ? (int)Math.Round(v) : null;
 
     // from/to 참조 확인 — "장비.포트", 포트가 하나뿐인 장비(끝점)는 "장비" 만
     private static void ResolveLines(ProcessDiagram d)

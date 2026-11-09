@@ -52,10 +52,10 @@ internal static class TagSchema
         new("grow", AttrKind.Number, "0"),
         new("width", AttrKind.Length),
         new("height", AttrKind.Length),
-        new("visible", AttrKind.Bool, "true", Note: "false, empty, 0 or false hide; other text shows"),
-        new("disabled", AttrKind.Bool, "false", Note: "true, 1 or a non-zero number disable; inherited downward"),
+        new("visible", AttrKind.Bool, "true", Note: BoolRule + "; absent = shown"),
+        new("disabled", AttrKind.Bool, "false", Note: BoolRule + "; inherited downward"),
         new("onclick", AttrKind.Expr, Bindable: false),
-        new("hold", AttrKind.Number, "0", Note: "ms; ignored on tags in TagCatalog.HoldIgnored"),
+        new("hold", AttrKind.Number, "0", Note: "ms, rounded; <= 0 = none; " + NumberRule + "; ignored on tags in TagCatalog.HoldIgnored"),
         new("onbeforecommit", AttrKind.Expr, Bindable: false, Note: "used by value widgets only"),
     ];
 
@@ -98,7 +98,7 @@ internal static class TagSchema
         ],
         ["DvExpander"] =
         [
-            new("expanded", AttrKind.Bool, Note: "two-way {Bind X} follows the VM; one-way/literal locks it (true, case-insensitive); absent = the screen remembers (collapsed)"),
+            new("expanded", AttrKind.Bool, Note: "two-way {Bind X} follows the VM; one-way/literal locks it (" + BoolRule + "); absent = the screen remembers (collapsed)"),
             new("header", AttrKind.Text, ""),
         ],
         ["DvStepBar"] =
@@ -115,7 +115,7 @@ internal static class TagSchema
             Icon(),
             new("variant", AttrKind.Enum, Values: ["primary", "secondary", "danger", "ghost"], Note: "adds the classes btn btn-{variant} unvalidated; empty after resolving = unstyled button"),
             new("size", AttrKind.Enum, Values: ["sm", "lg"], Note: "adds btn-{size} unvalidated; only when variant is set"),
-            new("value", AttrKind.Bool, Note: "present = latching button: on = bool true or text true (case-insensitive); {Bind X} flips on press; without variant adds btn btn-secondary, on adds btn-on; a handle cannot own it"),
+            new("value", AttrKind.Bool, Note: "present = latching button: on = " + BoolRule + "; {Bind X} flips on press; without variant adds btn btn-secondary, on adds btn-on; a handle cannot own it"),
         ],
         ["DvIcon"] = [Icon()],
         ["DvImage"] =
@@ -164,7 +164,7 @@ internal static class TagSchema
             new("max", AttrKind.Number, Note: "out of range is rejected (not clamped)"),
             new("unit", AttrKind.Text),
             ReadOnly(),
-            new("step", AttrKind.Number, "1", Note: "<= 0 or not a number = 1"),
+            new("step", AttrKind.Number, "1", Note: "<= 0 = 1; " + NumberRule),
             new("show-stepper", AttrKind.Bool, "false", Note: "read only when keyboard-type is numeric"),
         ],
         ["DvSelect"] = [OwnedValue("converted to the bound property type"), Placeholder(), ReadOnly(), .. Items()],
@@ -229,7 +229,7 @@ internal static class TagSchema
             .. DialRange(),
             new("ticks", AttrKind.Number, "0", Note: "major tick interval; 0 = no scale"),
             new("minor-ticks", AttrKind.Number, "0", Note: "minor tick interval; drawn only when ticks is set"),
-            new("show-tick-labels", AttrKind.Bool, "true", Note: "present = anything but false (case-insensitive) shows the labels; absent = shown"),
+            new("show-tick-labels", AttrKind.Bool, "true", Note: BoolRule),
             new("format", AttrKind.Text, Note: ".NET number format"),
             DialDead("unit", AttrKind.Text, "the gauge"), DialDead("tone", AttrKind.Text, "the gauge", "the needle tip uses the zone color or gauge-needle-tip"),
             DialDead("direction", AttrKind.Text, "the gauge"), DialDead("show-value", AttrKind.Bool, "the gauge", "the value is always drawn"),
@@ -242,8 +242,8 @@ internal static class TagSchema
             new("tone", AttrKind.Text, "info", Note: "empty = info; tone-{tone} token; a zone color wins"),
             new("unit", AttrKind.Text),
             new("label", AttrKind.Text, Note: "drawn below the value"),
-            new("sweep", AttrKind.Number, "270", Note: "degrees, clamped to 1..360; not a number = 270"),
-            new("thickness", AttrKind.Number, Note: "px; absent, <= 0 or not a number = 11% of the size"),
+            new("sweep", AttrKind.Number, "270", Note: "degrees, clamped to 1..360; " + NumberRule),
+            new("thickness", AttrKind.Number, Note: "px; absent or <= 0 = 11% of the size; " + NumberRule),
             new("format", AttrKind.Text, Note: ".NET number format"),
             DialDead("show-value", AttrKind.Bool, "the ring", "the value is always drawn"),
             DialDead("ticks", AttrKind.Number, "the ring"), DialDead("minor-ticks", AttrKind.Number, "the ring"),
@@ -251,10 +251,10 @@ internal static class TagSchema
         ],
         ["DvLamp"] =
         [
-            new("on", AttrKind.Bool, "false", Note: "on = bool true or text true (case-insensitive); anything else is off"),
-            new("blink", AttrKind.Bool, "false", Note: "same rule as on; read only when blink-when is absent"),
+            new("on", AttrKind.Bool, "false", Note: BoolRule),
+            new("blink", AttrKind.Bool, "false", Note: BoolRule + "; read only when blink-when is absent"),
             new("blink-when", AttrKind.Bool, Note: "another name for blink that wins over it; not in the doc table"),
-            new("blink-interval", AttrKind.Number, "500", Note: "ms; an integer > 0, parsed with the current culture (hold uses the invariant culture)"),
+            new("blink-interval", AttrKind.Number, "500", Note: "ms, rounded; <= 0 = 500; " + NumberRule),
             new("color", AttrKind.Color, Note: "#hex or token(name); an unknown token = magenta; unparsable = ignored silently; wins over state"),
             new("state", AttrKind.Text, Note: "state-{state} token color"),
         ],
@@ -263,13 +263,13 @@ internal static class TagSchema
             .. DialRange("separate fields from DvGauge/DvRing/DvProgress (TankValue/TankMin/TankMax)"),
             new("unit", AttrKind.Text),
             new("format", AttrKind.Text, Note: ".NET number format"),
-            new("show-zone-marks", AttrKind.Bool, "true", Note: "present = anything but false (case-insensitive) shows the zone boundary marks; absent = shown; the zone colors stay either way"),
+            new("show-zone-marks", AttrKind.Bool, "true", Note: BoolRule + "; off hides the zone boundary marks; the zone colors stay either way"),
         ],
         ["DvSparkline"] =
         [
             new("values", AttrKind.Items, Note: "a list of numbers or comma-separated text; anything else = no values; an unreadable number = 0"),
             .. ChartCommon(),
-            new("area", AttrKind.Bool, "false", Note: "on = bool true or text true (case-insensitive) (DvTrend area: anything but false)"),
+            new("area", AttrKind.Bool, "false", Note: BoolRule),
             ChartDead("show-value", AttrKind.Bool, "the sparkline"),
             ChartDead("inner-radius", AttrKind.Number, "the sparkline"),
         ],
@@ -277,15 +277,15 @@ internal static class TagSchema
         [
             .. ChartItems(),
             .. ChartCommon(),
-            new("show-value", AttrKind.Bool, "false", Note: "on = bool true or text true (case-insensitive)"),
+            new("show-value", AttrKind.Bool, "false", Note: BoolRule),
             ChartDead("area", AttrKind.Bool, "the bar chart"),
             ChartDead("inner-radius", AttrKind.Number, "the bar chart"),
         ],
         ["DvPieChart"] =
         [
             .. ChartItems(),
-            new("show-value", AttrKind.Bool, "false", Note: "on = bool true or text true (case-insensitive); shows the numbers (and the donut total) instead of percentages"),
-            new("inner-radius", AttrKind.Number, "0", Note: "ratio, clamped to 0..0.9 (donut); not a number = 0"),
+            new("show-value", AttrKind.Bool, "false", Note: BoolRule + "; shows the numbers (and the donut total) instead of percentages"),
+            new("inner-radius", AttrKind.Number, "0", Note: "ratio, clamped to 0..0.9 (donut); " + NumberRule),
             ChartDead("tone", AttrKind.Text, "the pie chart", "slices use the fixed palette"),
             ChartDead("y-min", AttrKind.Number, "the pie chart"), ChartDead("y-max", AttrKind.Number, "the pie chart"),
             ChartDead("area", AttrKind.Bool, "the pie chart"),
@@ -293,12 +293,12 @@ internal static class TagSchema
         ["DvTrend"] =
         [
             new("source", AttrKind.Object, Note: "a TrendBuffer; any other type = no buffer data, silently"),
-            new("window", AttrKind.Number, "60", Note: "seconds; <= 0 or not a number = 60"),
+            new("window", AttrKind.Number, "60", Note: "seconds; <= 0 = 60; " + NumberRule),
             new("end", AttrKind.Object, Note: "a DateTime (absent = the latest sample); any other type (DateTimeOffset, text) is ignored silently"),
-            new("y-min", AttrKind.Number, Note: "absent or not a number = automatic"),
-            new("y-max", AttrKind.Number, Note: "absent or not a number = automatic"),
-            new("area", AttrKind.Bool, "false", Note: "non-empty = anything but false (case-insensitive) is on (DvSparkline area needs true)"),
-            new("smooth", AttrKind.Bool, "true", Note: "non-empty = anything but false (case-insensitive) is on; empty = true"),
+            new("y-min", AttrKind.Number, Note: "absent = automatic; " + NumberRule + " (automatic)"),
+            new("y-max", AttrKind.Number, Note: "absent = automatic; " + NumberRule + " (automatic)"),
+            new("area", AttrKind.Bool, "false", Note: BoolRule),
+            new("smooth", AttrKind.Bool, "true", Note: BoolRule + "; empty = off"),
         ],
         ["DvTrendChannel"] =
         [
@@ -317,7 +317,7 @@ internal static class TagSchema
         ["DvAlarmList"] =
         [
             .. AlarmCommon(),
-            new("row-height", AttrKind.Number, "36", Note: "px; <= 0 or not a number = 36 (the geometry keeps at least 24)"),
+            new("row-height", AttrKind.Number, "36", Note: "px; <= 0 = 36; " + NumberRule + " (the geometry keeps at least 24)"),
             new("comm-alarm", AttrKind.Text, Note: "dead read: the block shared with DvAlarmBanner reads it; not drawn (and since f841ebe it no longer keeps the blink timer running)"),
         ],
 
@@ -325,8 +325,8 @@ internal static class TagSchema
         ["DvDataGrid"] =
         [
             new("items", AttrKind.Items, Note: "an IList; another IEnumerable is copied on every layout (warning); a string or a non-collection = header only"),
-            new("row-height", AttrKind.Number, "48", Note: "px; <= 0 or not a number = 48, silently"),
-            new("header-height", AttrKind.Number, "40", Note: "px; <= 0 or not a number = 40, silently"),
+            new("row-height", AttrKind.Number, "48", Note: "px; <= 0 = 48, silently; " + NumberRule),
+            new("header-height", AttrKind.Number, "40", Note: "px; <= 0 = 40, silently; " + NumberRule),
             new("selection-mode", AttrKind.Enum, "none", Values: ["none", "single", "multi"], Note: "an unknown value = none, silently (DvColumn filter warns)"),
             new("selection", AttrKind.Expr, Note: "read as written; {Bind X} = two-way list, otherwise resolved one-way; a single object = one row; applied only when selection-mode is not none"),
             new("row-key", AttrKind.Path, Bindable: false, Note: "read raw; absent = the item reference"),
@@ -360,8 +360,8 @@ internal static class TagSchema
                 Note: "button cells; read raw and lower-cased; empty = primary; other values passed on unvalidated"),
             new("onclick", AttrKind.Expr, Bindable: false, Note: "button cells; M(row) or M()"),
             new("enabled", AttrKind.Path, Bindable: false, Note: "button cells; read raw; an item bool property path (the common disabled is the inverse sense and is not read here)"),
-            new("min", AttrKind.Number, Note: "input cells; not a number = ignored + warning (once per screen)"),
-            new("max", AttrKind.Number, Note: "input cells; not a number = ignored + warning (once per screen)"),
+            new("min", AttrKind.Number, Note: "input cells; " + NumberRule + " (ignored)"),
+            new("max", AttrKind.Number, Note: "input cells; " + NumberRule + " (ignored)"),
             new("unit", AttrKind.Text, Note: "input cells; inline interpolation only"),
             new("mode", AttrKind.Enum, Values: ["date", "time", "datetime"], Note: "datetime cells; bound (as text); absent = by value type; a mismatch = by value type + warning"),
             GridFlag("show-seconds", "datetime cells"),
@@ -392,7 +392,7 @@ internal static class TagSchema
             new("align", AttrKind.Enum, "auto", Values: ["auto", "step", "row"], Note: "an unknown value = auto + warning; with placement=fixed ignored + warning"),
             new("placement", AttrKind.Enum, "auto", Values: ["auto", "fixed"], Note: "an unknown value = auto + warning; a structural switch (the layout cache keys on it)"),
             new("base-size", AttrKind.Text, Note: "\"W H\" px (space or comma); fixed placement only, otherwise ignored + warning; a bad value = ignored + warning"),
-            new("flow-animation", AttrKind.Bool, "false", Note: Truthy),
+            new("flow-animation", AttrKind.Bool, "false", Note: BoolRule),
             new("fit", AttrKind.Enum, "none", Values: ["none", "shrink", "contain"],
                 Note: "contain without placement=fixed = shrink + warning; an unknown value = none + warning; name clash: DvImage/DvVideo fit is contain|cover|fill"),
         ],
@@ -420,7 +420,7 @@ internal static class TagSchema
             .. Equipment("DvVessel"),
             VesselSize("width"),
             VesselSize("height"),
-            new("level", AttrKind.Number, "0", Note: "state param (DvParam level): 0-100, clamped; not a number = 0; DvTank uses value/min/max instead"),
+            new("level", AttrKind.Number, "0", Note: "state param (DvParam level): 0-100, clamped; " + NumberRule + "; DvTank uses value/min/max instead"),
         ],
         ["DvPump"] = [.. Equipment("DvPump"), StateBool("running")],
         ["DvValve"] = [.. Equipment("DvValve"), StateBool("open", "check has no open param")],
@@ -433,14 +433,14 @@ internal static class TagSchema
         ["DvAttach"] =
         [
             new("side", AttrKind.Enum, "right", Values: ["left", "right", "top", "bottom"], Note: "an unknown value = right, silently"),
-            new("visible", AttrKind.Bool, "true", Note: "checked twice: the process parser (" + Truthy + "; any other non-empty text but false and 0 also shows) and then the common one"),
+            new("visible", AttrKind.Bool, "true", Note: "the common visible rule (" + BoolRule + "), read by the process parser and the common build alike"),
         ],
         ["DvLine"] =
         [
             ProcessRef("from", "eq.port, eq, eq.face@0-1, unit.port or a port name inside a unit"),
             ProcessRef("to", "eq.port, eq, eq.face@0-1, unit.port or a port name inside a unit"),
             ProcessArrow(),
-            new("flow", AttrKind.Bool, Note: "absent = computed; " + Truthy),
+            new("flow", AttrKind.Bool, Note: "absent or a null binding = computed; otherwise " + BoolRule),
             new("medium", AttrKind.Enum, Values: Process.ProcessMedium.Names, Note: "absent = default gray; an unknown value = default + warning; a fixed palette (no color attribute)"),
             new("via", AttrKind.Text, Note: "\"x,y x,y\" bend points; fixed placement only, otherwise ignored + warning; a bad format = automatic route + warning"),
             new("label", AttrKind.Text),
@@ -465,7 +465,7 @@ internal static class TagSchema
             new("tag", AttrKind.Text, Note: "ISA letters (TI, PIC); name clash: not an element tag"),
             new("number", AttrKind.Text),
             new("value", AttrKind.Text, Note: "display text in the bubble; name clash: elsewhere value is the control value"),
-            new("panel", AttrKind.Bool, "false", Note: Truthy),
+            new("panel", AttrKind.Bool, "false", Note: BoolRule),
             ProcessCoord("x", "bubble center; one of x/y missing = placed automatically + warning (still drawn)"),
             ProcessCoord("y", "bubble center; one of x/y missing = placed automatically + warning (still drawn)"),
             ProcessVisible(),
@@ -473,16 +473,18 @@ internal static class TagSchema
     };
 
     // 2.6 공정도 공용 조각
-    private const string Truthy = "Truthy: bool, a number > 0 or text true (case-insensitive)";
+    // 3단계 R1·R7 — 모든 Bool·Number 속성의 공용 해석(Layout.AttrRules)
+    private const string BoolRule = "common boolean rule: true, a non-zero number = on; false, 0, empty or null = off; any other text = the default + warning";
+    private const string NumberRule = "invariant culture; not a number = the default + warning";
 
     private static AttrDef Direction() =>
         new("direction", AttrKind.Enum, "lr", Values: ["lr", "tb"], Note: "an unknown value = lr + warning; name clash: flex direction is row|column");
 
     private static AttrDef ProcessVisible() =>
-        new("visible", AttrKind.Bool, "true", Note: "process parser: " + Truthy + "; any other non-empty text but false and 0 also shows (a bound number <= 0 hides); a handle Visible override wins");
+        new("visible", AttrKind.Bool, "true", Note: "the common visible rule (" + BoolRule + "); a handle Visible override wins");
 
     private static AttrDef ProcessInt(string name, string? note = null) =>
-        new(name, AttrKind.Number, Note: "layout hint (integer); not an integer = ignored, silently; with placement=fixed ignored + warning" + (note is null ? "" : "; " + note));
+        new(name, AttrKind.Number, Note: "layout hint (integer, rounded); not a number = ignored + warning; with placement=fixed ignored + warning" + (note is null ? "" : "; " + note));
 
     private static AttrDef ProcessCoord(string name, string where) =>
         new(name, AttrKind.Number, Note: $"px, {where}; placement=fixed only (otherwise ignored + warning)");
@@ -494,7 +496,7 @@ internal static class TagSchema
         new("arrow", AttrKind.Enum, "none", Values: ["end", "start", "both", "none"], Note: "read twice; an unknown value = none, silently");
 
     private static AttrDef StateBool(string name, string? note = null) =>
-        new(name, AttrKind.Bool, Note: $"state param (DvParam {name}): {Truthy}; a boolean, not the UI state words (state=run|stop|fault)" + (note is null ? "" : "; " + note));
+        new(name, AttrKind.Bool, Note: $"state param (DvParam {name}): {BoolRule}; a boolean, not the UI state words (state=run|stop|fault)" + (note is null ? "" : "; " + note));
 
     private static AttrDef VesselSize(string name) =>
         new(name, AttrKind.Number, Note: $"body {name} px, 0.6-4x the kind's natural size (outside = clamped + warning; not a number = natural + warning); "
@@ -527,7 +529,7 @@ internal static class TagSchema
     // 부속(DvAgitator·DvMotor) — 상자가 없어 공통 속성(class·style·onclick)은 읽지 않는다
     private static AttrDef[] Accessory(string[]? kinds) =>
     [
-        new("running", AttrKind.Bool, "false", Note: Truthy + "; a boolean, not the UI state words"),
+        new("running", AttrKind.Bool, "false", Note: BoolRule + "; a boolean, not the UI state words"),
         new("kind", AttrKind.Enum, Values: kinds, Note: kinds is null ? "no kinds: any non-empty value = the default shape + warning" : "absent = the default shape; an unknown value = default + warning"),
         ProcessVisible(),
     ];
@@ -537,7 +539,7 @@ internal static class TagSchema
         new(name, AttrKind.Color, Note: "#hex or token(name); unparsable or an unknown token = the grid-* theme token + warning (not magenta, unlike other color attributes)");
 
     private static AttrDef GridFlag(string name, string? note = null) =>
-        new(name, AttrKind.Bool, "false", Note: (note is null ? "" : note + "; ") + "on = bool true or text true (case-insensitive)");
+        new(name, AttrKind.Bool, "false", Note: (note is null ? "" : note + "; ") + BoolRule);
 
     // 2.3 공용 조각 — 같은 해석을 여러 태그가 쓴다
     private static AttrDef Text(string? note = null) =>
@@ -548,7 +550,7 @@ internal static class TagSchema
     private static AttrDef Fit() => new("fit", AttrKind.Enum, "contain", Values: ["contain", "cover", "fill"], Note: "an unknown value = contain, silently");
 
     private static AttrDef BoolValue() =>
-        new("value", AttrKind.Bool, Note: "on = bool true or text true (case-insensitive); {Bind X} = VM; absent + a handle = the handle owns it; one-way/literal = read-only");
+        new("value", AttrKind.Bool, Note: "on = " + BoolRule + "; {Bind X} = VM; absent + a handle = the handle owns it; one-way/literal = read-only");
 
     private static AttrDef OwnedValue(string what) =>
         new("value", AttrKind.Object, Note: what + "; {Bind X} = VM; absent + a handle = the handle owns it; one-way/literal = read-only");
@@ -578,7 +580,7 @@ internal static class TagSchema
     // 2.4 공용 조각
     private static AttrDef[] DialRange(string? note = null) =>
     [
-        new("value", AttrKind.Number, "0", Note: (note is null ? "" : note + "; ") + "one-way; not a number = 0"),
+        new("value", AttrKind.Number, "0", Note: (note is null ? "" : note + "; ") + "one-way; " + NumberRule),
         new("min", AttrKind.Number, "0"),
         new("max", AttrKind.Number, "100"),
         new("alarm-zones", AttrKind.Text, Note: "\"from:to:#color ...\"; token(name) colors resolved; a bad format throws"),
@@ -592,8 +594,8 @@ internal static class TagSchema
     private static AttrDef[] ChartCommon() =>
     [
         new("tone", AttrKind.Text, "info", Note: "empty = info; tone-{tone} token"),
-        new("y-min", AttrKind.Number, Note: "absent or not a number = automatic"),
-        new("y-max", AttrKind.Number, Note: "absent or not a number = automatic"),
+        new("y-min", AttrKind.Number, Note: "absent = automatic; " + NumberRule + " (automatic)"),
+        new("y-max", AttrKind.Number, Note: "absent = automatic; " + NumberRule + " (automatic)"),
     ];
 
     private static AttrDef[] ChartItems() =>
@@ -611,7 +613,7 @@ internal static class TagSchema
     [
         new("items", AttrKind.Items, Note: "an IEnumerable<AlarmRow>; any other type = no rows, silently"),
         new("onack", AttrKind.Expr, Bindable: false, Note: "method M(AlarmRow) or M(long id); a missing method is silent"),
-        new("show-ack", AttrKind.Bool, Note: "present = anything but false (case-insensitive) shows the ACK button; absent = shown only when onack is set"),
+        new("show-ack", AttrKind.Bool, Note: "absent = shown only when onack is set; present = " + BoolRule + " (default shown)"),
     ];
 
     // DvProgress 가 계기 공용 블록에서 읽기만 하고 그리지 않는 속성

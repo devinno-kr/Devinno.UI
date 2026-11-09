@@ -88,7 +88,7 @@ Conversely, **exceptions thrown by VM code do not stop the screen.** Exceptions 
 
 ### 3.4 Other diagnostics
 
-Some problems are reported only as `System.Diagnostics.Trace` warnings (unknown icons, unparsed `content-align`, unsupported selectors, DvDataGrid column path/type mismatches, etc.). Keep a Trace listener on during development.
+Some problems are reported only as `System.Diagnostics.Trace` warnings (unknown icons, unparsed `content-align`, unsupported selectors, DvDataGrid column path/type mismatches, a true/false attribute with other text such as `yes`, a number attribute that is not a number, etc.). Keep a Trace listener on during development. True/false attributes take only `true`/`false` (or a number: non-zero = true; empty = false); anything else is the default. Numbers are invariant culture (`1.5`).
 
 If the `onbeforecommit` method is missing from the VM (a misspelled name is build error DVML018 in a dvml with `vm`) or has a different signature (including a return type other than `bool`), **the value is not written** (rejected). A Trace warning is logged once per screen for each method name and signature. If the method throws, the value is also rejected and a Trace error is logged (also reported via `HandlerError`). If, after passing the check, **the VM property's setter throws**, it is handled the same as a rejection (`DvInput` keeps editing + shows the message "Could not save the value", picker popups stay open, toggles, knobs and check cells keep their value). This is the same for all widgets (DvToggle, DvKnob, DvInput, DvSelect, pickers) and DvDataGrid cells. A misspelled name makes the value look like it "does not change", so check Trace. Signature: `dvml-ui-markup.md` section 6.
 

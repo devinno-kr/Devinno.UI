@@ -71,17 +71,8 @@ internal static class GridBuilder
         {
             var cr = r.Child(ch);
             string? CA(string name) => cr.Raw(name);
-            double? Num(string name)
-            {
-                if (cr.Value(name) is not { } v)
-                    return null;
-                var text = Convert.ToString(v, CultureInfo.InvariantCulture) ?? "";
-                if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var d))
-                    return d;
-                Warnings.Warn($"Devinno.UI: DvColumn field '{CA("field")}' {name}=\"{text}\": not a number; ignored");
-
-                return null;
-            }
+            double? Num(string name) => AttrRules.NumberOrNull(cr, name);
+            bool Flag(string name) => AttrRules.Bool(cr, name);
             var cellType = CA("cell-type")?.Trim().ToLowerInvariant() switch
             {
                 "check" => GridCellType.Check,
@@ -106,14 +97,14 @@ internal static class GridBuilder
                     _ => null
                 },
                 Format = CA("format"),
-                Frozen = IsTrue(cr.Value("frozen")),
-                Sortable = IsTrue(cr.Value("sortable")),
+                Frozen = Flag("frozen"),
+                Sortable = Flag("sortable"),
                 CellClass = CA("cell-class") is { Length: > 0 } cc ? new FieldReader(cc) : null,
                 CellType = cellType,
-                ReadOnly = IsTrue(cr.Value("readonly")),
+                ReadOnly = Flag("readonly"),
                 OnBeforeCommit = CA("onbeforecommit"),
                 OnColor = Color(cr.Text("on-color")),
-                Blink = IsTrue(cr.Value("blink")),
+                Blink = Flag("blink"),
                 ButtonText = (cr.Overridden("text") ? cr.Text("text") : BindingResolver.ResolveInline(vm, CA("text"))) ?? "", // 코드 Text 덮어쓰기는 그대로
                 Icon = CA("icon"),
                 Variant = CA("variant")?.Trim().ToLowerInvariant() is { Length: > 0 } variant ? variant : "primary",
@@ -124,7 +115,7 @@ internal static class GridBuilder
                 Max = Num("max"),
                 Unit = BindingResolver.ResolveInline(vm, CA("unit")),
                 Mode = cr.Text("mode"),
-                ShowSeconds = IsTrue(cr.Value("show-seconds")),
+                ShowSeconds = Flag("show-seconds"),
                 OptionsReader = cellType == GridCellType.Select ? cr : null,
                 InitialSortDesc = CA("sort")?.Trim().ToLowerInvariant() switch
                 {
@@ -224,8 +215,8 @@ internal static class GridBuilder
             FrozenCount = frozen,
             Header = header,
             Summaries = summaries,
-            RowHeight = Positive(r.Value("row-height"), 48f),
-            HeaderHeight = Positive(r.Value("header-height"), 40f),
+            RowHeight = Positive(r, "row-height", 48f),
+            HeaderHeight = Positive(r, "header-height", 40f),
             Mode = BindingResolver.ToText(r.Value("selection-mode"), r.Raw("selection-mode"))?.Trim().ToLowerInvariant() switch
             {
                 "single" => GridSelectionMode.Single,
@@ -299,9 +290,7 @@ internal static class GridBuilder
 
     private static string? Member(string? raw) => raw is not null && BindingResolver.IsBinding(raw) ? BindingResolver.ExtractPath(raw) : raw;
 
-    private static float Positive(object? v, float fallback)
-        => v is not null && float.TryParse(v is IConvertible ? Convert.ToString(v, CultureInfo.InvariantCulture) : HandlerErrors.Text(v, "row-height"),
-            NumberStyles.Float, CultureInfo.InvariantCulture, out var f) && f > 0 ? f : fallback; // VM 형식의 ToString 예외 = 기본값
-
-    private static bool IsTrue(object? v) => v is bool b ? b : string.Equals(BindingResolver.ToText(v, null), "true", StringComparison.OrdinalIgnoreCase);
+    // px 속성 — 공용 숫자 규칙(숫자 아님 = 기본값 + 경고), 0 이하 = 기본값(조용히)
+    private static float Positive(AttrReader r, string attr, float fallback)
+        => AttrRules.NumberOrNull(r, attr, "using " + fallback.ToString(CultureInfo.InvariantCulture)) is > 0 and var f ? (float)f : fallback;
 }

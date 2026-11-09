@@ -90,10 +90,10 @@ public sealed partial class LayoutEngine
             return;
         var (lx, _, lov) = ValueOf(r, latchExpr);
         box.ValueBindExpr = _valueOverride ?? lx;
-        box.ToggleOn = lov is not null ? ToBool(lov.CellValue) : LatchOn(r);
+        box.ToggleOn = lov is not null ? AttrRules.Bool(lov.CellValue, false, r.Node.Tag, "value") : LatchOn(r);
     }
 
-    // 래칭 버튼 켜짐 — value 가 bool true 또는 "true"
+    // 래칭 버튼 켜짐 — value 가 참(공용 규칙)
     private static bool LatchOn(AttrReader r)
     {
         var vm = r.Context;
@@ -101,7 +101,7 @@ public sealed partial class LayoutEngine
         var cur = ve is not null && BindingResolver.IsTwoWay(ve)
             ? BindingResolver.Resolve(vm, $"{{{BindingResolver.ExtractPath(ve)}}}")
             : BindingResolver.ResolveValueOrLiteral(vm, ve);
-        return cur is bool b && b || string.Equals(BindingResolver.ToText(cur, ve), "true", StringComparison.OrdinalIgnoreCase);
+        return AttrRules.Bool(cur, false, r.Node.Tag, "value");
     }
 
     private void BuildToggle(LayoutBox box, AttrReader r)
@@ -117,8 +117,7 @@ public sealed partial class LayoutEngine
             cur = BindingResolver.Resolve(target ?? vm, $"{{{BindingResolver.ExtractPath(ve)}}}");
         else
             cur = BindingResolver.ResolveValueOrLiteral(vm, ve);
-        box.ToggleOn = cur is bool b && b ||
-                       string.Equals(BindingResolver.ToText(cur, ve), "true", StringComparison.OrdinalIgnoreCase);
+        box.ToggleOn = AttrRules.Bool(cur, false, r.Node.Tag, "value");
     }
 
     /// <summary>
@@ -143,7 +142,7 @@ public sealed partial class LayoutEngine
         {
             var cur = BindingResolver.ResolveValueOrLiteral(vm, ve);
             box.ToggleOn = ControlOf?.Invoke(node)?.Slot is { HasOverride: true } ov
-                ? ToBool(ov.CellValue)
+                ? AttrRules.ParseBool(ov.CellValue) == true
                 : SelectValue.Matches(option, cur, cur?.GetType());
         }
         else
@@ -165,10 +164,10 @@ public sealed partial class LayoutEngine
             : ve is not null && BindingResolver.IsTwoWay(ve)
             ? BindingResolver.Resolve(target ?? vm, $"{{{BindingResolver.ExtractPath(ve)}}}")
             : BindingResolver.ResolveValueOrLiteral(vm, ve);
-        box.KnobValue = ToFloat(cur, 0f);
-        box.KnobMin = ToFloat(r.Value("min"), 0f);
-        box.KnobMax = ToFloat(r.Value("max"), 100f);
-        var step = ToFloat(r.Value("step"), 1f);
+        box.KnobValue = (float)AttrRules.Number(cur, 0, r.Node.Tag, "value");
+        box.KnobMin = ToFloat(r, "min", 0f);
+        box.KnobMax = ToFloat(r, "max", 100f);
+        var step = ToFloat(r, "step", 1f);
         box.KnobStep = step > 0 ? step : 1f;
         box.KnobUnit = r.Text("unit");
         if (r.Node.Tag == "DvKnob")
@@ -187,7 +186,7 @@ public sealed partial class LayoutEngine
             // 슬라이더 — direction = 값이 커지는 쪽(DvProgress 와 같은 값), show-value = 손잡이 옆 값 글자
             var dir = r.Text("direction");
             box.Direction = dir is "right" or "left" or "up" or "down" ? dir : WarnSliderDirection(dir);
-            box.ShowValue = ToBool(r.Text("show-value"));
+            box.ShowValue = AttrRules.Bool(r, "show-value");
         }
     }
 
@@ -195,8 +194,7 @@ public sealed partial class LayoutEngine
     {
         var vm = r.Context;
         string? Attr(string name) => r.Text(name);
-        double? Num(string name) => double.TryParse(Attr(name), NumberStyles.Float, CultureInfo.InvariantCulture, out var d)
-            ? d : null;
+        double? Num(string name) => AttrRules.NumberOrNull(r, name);
 
         var (ve, target, vov) = ValueOf(r, r.Raw("value"));
         box.ValueBindExpr = ve;
@@ -211,7 +209,7 @@ public sealed partial class LayoutEngine
             "password" => DvEditKind.Password,
             _ => DvEditKind.Text // email 등은 text
         };
-        box.InputMultiline = ToBool(Attr("multiline"));
+        box.InputMultiline = AttrRules.Bool(r, "multiline");
         box.InputPlaceholder = Attr("placeholder");
         box.InputFormat = Attr("format");
         box.InputMin = Num("min");
@@ -219,7 +217,7 @@ public sealed partial class LayoutEngine
         box.Unit = Attr("unit");
         box.ReadOnly = InputReadOnly(r, _valueOverride);
         box.InputStep = Num("step") is > 0 and var step ? step : 1d;
-        if (box.InputKind == DvEditKind.Numeric && ToBool(Attr("show-stepper")))
+        if (box.InputKind == DvEditKind.Numeric && AttrRules.Bool(r, "show-stepper"))
         {
             // −/+ 자리 — 좌우 padding 에 버튼 폭을 더해 글자·커서·네이티브 편집기 위치가 그대로 맞게 한다
             box.InputStepper = true;
@@ -268,7 +266,7 @@ public sealed partial class LayoutEngine
         box.InputPlaceholder = r.Text("placeholder");
         box.ReadOnly = InputReadOnly(r, _valueOverride);
         if (r.Node.Tag == "DvSegment")
-            box.SegmentFill = ToBool(r.Text("fill"));
+            box.SegmentFill = AttrRules.Bool(r, "fill");
     }
 
     // DvDateTimeInput·DvColorInput — 팝업 선택기
@@ -306,7 +304,7 @@ public sealed partial class LayoutEngine
         if (r.Node.Tag == "DvDateTimeInput")
         {
             box.PickerMode = PickerValue.ResolveMode(Attr("mode"), box.PickerValueType);
-            box.PickerSeconds = ToBool(Attr("show-seconds"));
+            box.PickerSeconds = AttrRules.Bool(r, "show-seconds");
             box.PickerFormat = Attr("format");
         }
     }
@@ -368,7 +366,7 @@ public sealed partial class LayoutEngine
         }
 
         box.ReadOnly = !(twoWay || target is not null) ||
-                       ToBool(BindingResolver.ResolveValueOrLiteral(vm, r.Raw("readonly")));
+                       AttrRules.Bool(BindingResolver.ResolveValueOrLiteral(vm, r.Raw("readonly")), false, node.Tag, "readonly");
     }
 
     /// <summary>
@@ -399,7 +397,7 @@ public sealed partial class LayoutEngine
             current = BindingResolver.ResolveValueOrLiteral(vm, raw);
         box.InputValue = current;
         box.ReadOnly = !(twoWay || target is not null) ||
-                       ToBool(BindingResolver.ResolveValueOrLiteral(vm, r.Raw("readonly")));
+                       AttrRules.Bool(BindingResolver.ResolveValueOrLiteral(vm, r.Raw("readonly")), false, node.Tag, "readonly");
 
         var itemsRaw = r.Raw("items");
         var textPath = r.Raw("item-text");
@@ -534,8 +532,8 @@ public sealed partial class LayoutEngine
         var path = BindingResolver.ResolveText(vm, srcExpr);
         if (string.IsNullOrWhiteSpace(path))
             return;
-        var playing = r.Raw("playing") is not { } p || ToBool(BindingResolver.ResolveValueOrLiteral(vm, p));
-        var loop = r.Raw("loop") is { } l && ToBool(BindingResolver.ResolveValueOrLiteral(vm, l));
+        var playing = AttrRules.Bool(r, "playing");
+        var loop = AttrRules.Bool(r, "loop");
         var live = VideoStore is not null;
         var player = _videos.Get(box.Instance, () => new Video.VideoPlayer(path, poster: !live), vp => vp.Path == path);
         player.Playing = playing;
@@ -551,7 +549,7 @@ public sealed partial class LayoutEngine
     {
         if (r.Raw("position") is { } posExpr)
         {
-            var v = ToSeconds(BindingResolver.ResolveValueOrLiteral(r.Context, posExpr));
+            var v = AttrRules.Number(BindingResolver.ResolveValueOrLiteral(r.Context, posExpr), 0, r.Node.Tag, "position");
             if (double.IsNaN(player.BoundPosition))
                 player.BoundPosition = v;
             else if (Math.Abs(v - player.BoundPosition) > 0.0005)

@@ -36,12 +36,8 @@ public sealed class DvToggle : DvControl
 /// <summary>Handle value conversion — converts a raw binding value (bool, "true", number) to the handle's type.</summary>
 internal static class ValueConvert
 {
-    public static bool ToBool(object? v) => v switch
-    {
-        bool b => b,
-        null => false,
-        _ => string.Equals(v.ToString(), "true", StringComparison.OrdinalIgnoreCase),
-    };
+    /// <summary>The common boolean rule (<see cref="AttrRules.ParseBool"/>); a value that is not a boolean is <see langword="false"/> (the build warns about it).</summary>
+    public static bool ToBool(object? v) => AttrRules.ParseBool(v) == true;
 
     public static double? ToDouble(object? v)
     {

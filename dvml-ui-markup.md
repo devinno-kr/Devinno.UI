@@ -120,11 +120,15 @@ Below is `MainPage.dvml`. The root `vm` points to the class above (the file name
 | `grow` | Same as `flex-grow` | Yes |
 | `width` `height` | Same as style `width`/`height` (lower priority, 4.7) | Yes |
 | `content-align` | Text/icon position (4.4) | Yes |
-| `visible` | If false, empty, `0` or `false` (any case, surrounding spaces ignored), the element is not created at all | Yes |
-| `disabled` | If `true` (any case), `1` or a non-zero number, blocks clicks and commits (the press does not leak to an outer `onclick` either), no hover/press look, `disabled-style` applied. **Inherited downward** — if an ancestor is disabled, the child is disabled even if its own value is `false` | Yes |
+| `visible` | If false (true/false values below — `false`, `0`, empty or a null binding), the element is not created at all. Any other text (`abc`) shows it, with a Trace warning | Yes |
+| `disabled` | If true (`true`, a non-zero number — true/false values below), blocks clicks and commits (the press does not leak to an outer `onclick` either), no hover/press look, `disabled-style` applied. **Inherited downward** — if an ancestor is disabled, the child is disabled even if its own value is `false` | Yes |
 | `onclick` | VM method name to call on click (6.4) | No (name as is) |
 | `hold` | Long press (ms) — must be held this long for `onclick` to fire (prevents accidental operation, 6.4) | Yes |
 | `id` | Name of the control to grab from code (chapter 20). Does not affect how the screen looks | No (literal text, C# identifier) |
+
+**True/false values** — every true/false attribute (`visible`, `disabled`, `DvLamp on`·`blink`, `area`, `smooth`, `show-ack`, `show-value`, grid column flags, process `running`·`open`·`panel`…) and the `value` of on/off widgets read a value the same way. True = `true` (any case), a non-zero number (`1`, `-1`, also as text) or a bool `true` binding. False = `false`, `0`, empty text or a binding that resolves to null. Surrounding spaces are ignored. Any other text (`yes`, `on`, `abc`) uses the attribute's default and writes a Trace warning. An attribute left out uses its default.
+
+**Number values** — number attributes (`min`, `max`, `step`, `blink-interval`, `row-height`, `window`…) are read with the invariant culture (`1.5`, never `1,5`, whatever the PC's language). A value that is not a number uses the attribute's default and writes a Trace warning; empty text is the same as leaving it out.
 
 ---
 
@@ -1221,7 +1225,7 @@ Raising, storing and ACKing alarms is the app's (server's) responsibility. The w
 - `items` = `IEnumerable<AlarmRow>` (`AlarmRow` = `Id` `Time` `Priority` (Critical·Major·Minor) `Message` `Source` `Acked` `AckTime`). Read at layout time, so call `Invalidate()` when it changes. There is also an in-memory store `AlarmLog` for standalone HMIs and demos (`items="{Alarms}"` + `Alarms => Log.Rows`). `AlarmLog` is thread-safe, so `Raise`/`Ack` from any thread, then `Invalidate()`.
 - Order: unacknowledged → priority → newest. The banner shows the first such alarm and the unacknowledged count.
 - `onack="Ack"` → `public void Ack(AlarmRow row)` or `public void Ack(long id)`. The banner ACKs the representative unacknowledged alarm; the list uses the ACK button of the tapped row.
-- `show-ack` = show the ACK button. Omitted = shown when `onack` is present. Bindable (show per permission).
+- `show-ack` = show the ACK button. Omitted = shown when `onack` is present; given = a true/false value (chapter 2 — any other text keeps it shown, with a Trace warning). Bindable (show per permission).
 - `comm-alarm` = if it has text, a communication-fault band is drawn above the banner.
 - Color tokens: `alarm-critical` `alarm-major` `alarm-minor` (+`-fg`), `comm-alarm`.
 

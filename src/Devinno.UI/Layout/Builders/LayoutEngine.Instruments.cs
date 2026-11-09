@@ -36,12 +36,10 @@ public sealed partial class LayoutEngine
 
     private void BuildLamp(LayoutBox box, AttrReader r)
     {
-        box.LampOn = ToBool(r.Value("on"));
-        var blinkExpr = r.Raw("blink-when") ?? r.Raw("blink");
-        box.LampBlink = ToBool(BindingResolver.ResolveValueOrLiteral(r.Context, blinkExpr));
-        if (r.Text("blink-interval") is { } bi &&
-            int.TryParse(bi, out var bint) && bint > 0)
-            box.BlinkIntervalMs = bint;
+        box.LampOn = AttrRules.Bool(r, "on");
+        box.LampBlink = AttrRules.Bool(r, r.Has("blink-when") ? "blink-when" : "blink");
+        if (AttrRules.NumberOrNull(r, "blink-interval", "using 500") is > 0 and var bint)
+            box.BlinkIntervalMs = (int)Math.Round(bint);
         if (ParseColor(r.Text("color")) is { } lampColor)
             box.LampColor = lampColor;
         box.LampState = r.Text("state");
@@ -51,40 +49,37 @@ public sealed partial class LayoutEngine
     // 태그가 그리지 않는 속성도(TagSchema Note "dead read"; 읽기를 빼는 건 3단계).
     private void BuildDial(LayoutBox box, AttrReader r)
     {
-        box.GaugeValue = ToFloat(r.Value("value"), 0f);
-        box.GaugeMin = ToFloat(r.Value("min"), 0f);
-        box.GaugeMax = ToFloat(r.Value("max"), 100f);
+        box.GaugeValue = ToFloat(r, "value", 0f);
+        box.GaugeMin = ToFloat(r, "min", 0f);
+        box.GaugeMax = ToFloat(r, "max", 100f);
         box.GaugeZones = ParseZones(r);
-        box.GaugeTicks = ToFloat(r.Value("ticks"), 0f);
-        box.GaugeMinorTicks = ToFloat(r.Value("minor-ticks"), 0f);
+        box.GaugeTicks = ToFloat(r, "ticks", 0f);
+        box.GaugeMinorTicks = ToFloat(r, "minor-ticks", 0f);
         if (r.Has("show-tick-labels"))
-            box.GaugeTickLabels = !string.Equals(
-                r.Text("show-tick-labels"), "false", StringComparison.OrdinalIgnoreCase);
+            box.GaugeTickLabels = AttrRules.Bool(r.Value("show-tick-labels"), true, r.Node.Tag, "show-tick-labels");
 
         box.Tone = r.Text("tone") is { Length: > 0 } tone ? tone : "info";
         box.Direction = r.Text("direction") is { Length: > 0 } dir ? dir : "right";
-        box.ShowValue = ToBool(r.Text("show-value"));
+        box.ShowValue = AttrRules.Bool(r, "show-value");
         box.Unit = r.Text("unit");
         box.ValueFormat = r.Text("format");
         box.Label = r.Text("label");
-        var sweep = ToFloat(r.Text("sweep"), 270f);
+        var sweep = ToFloat(r, "sweep", 270f);
         box.RingSweep = Math.Clamp(sweep, 1f, 360f);
-        if (r.Text("thickness") is { Length: > 0 } th)
-            box.RingThickness = ToFloat(th, 0f) is > 0 and var t ? t : null;
+        if (AttrRules.NumberOrNull(r, "thickness") is { } th)
+            box.RingThickness = th > 0 ? (float)th : null;
     }
 
     private void BuildTank(LayoutBox box, AttrReader r)
     {
-        box.TankValue = ToFloat(r.Value("value"), 0f);
-        box.TankMin = ToFloat(r.Value("min"), 0f);
-        box.TankMax = ToFloat(r.Value("max"), 100f);
+        box.TankValue = ToFloat(r, "value", 0f);
+        box.TankMin = ToFloat(r, "min", 0f);
+        box.TankMax = ToFloat(r, "max", 100f);
         box.TankUnit = r.Text("unit");
         box.ValueFormat = r.Text("format");
         box.TankZones = ParseZones(r);
-        // show-zone-marks="false" → 구간 색은 유지하고 경계 눈금·숫자만 숨김 (없으면 true)
-        if (r.Has("show-zone-marks"))
-            box.TankZoneMarks = !string.Equals(
-                r.Text("show-zone-marks"), "false", StringComparison.OrdinalIgnoreCase);
+        // show-zone-marks 거짓 → 구간 색은 유지하고 경계 눈금·숫자만 숨김 (없으면 true)
+        box.TankZoneMarks = AttrRules.Bool(r, "show-zone-marks");
     }
 
     private static void BuildAlarms(LayoutBox box, AttrReader r)
@@ -96,11 +91,11 @@ public sealed partial class LayoutEngine
             is IEnumerable<Alarms.AlarmRow> items ? HandlerErrors.Snapshot(items, PathOf(alarmsRaw), node.Tag) : Array.Empty<Alarms.AlarmRow>();
         box.CommAlarm = r.Text("comm-alarm");
         box.OnAck = r.Raw("onack");
-        // show-ack: 지정 시 그 값(바인딩 가능 — 권한별 표시), 미지정 시 onack 이 있을 때만 표시
+        // show-ack: 지정 시 그 값(바인딩 가능 — 권한별 표시, 공용 참/거짓 규칙 · 그 밖의 글자 = 보임 + 경고), 미지정 시 onack 이 있을 때만 표시
         box.AlarmShowAck = r.Has("show-ack")
-            ? !string.Equals(r.Text("show-ack"), "false", StringComparison.OrdinalIgnoreCase)
+            ? AttrRules.Bool(r.Value("show-ack"), true, r.Node.Tag, "show-ack")
             : !string.IsNullOrEmpty(box.OnAck);
-        var rh = ToFloat(r.Value("row-height"), 36f);
+        var rh = ToFloat(r, "row-height", 36f);
         box.AlarmRowHeight = rh > 0 ? rh : 36f;
     }
 
@@ -112,7 +107,7 @@ public sealed partial class LayoutEngine
     private static void BuildChart(LayoutBox box, AttrReader r)
     {
         var node = r.Node;
-        double? Num(string name) => double.TryParse(r.Text(name), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : null;
+        double? Num(string name) => AttrRules.NumberOrNull(r, name);
         static double ToNum(object? v) => v switch
         {
             null => 0,
@@ -122,10 +117,10 @@ public sealed partial class LayoutEngine
 
         // 모든 차트 태그가 공용 속성을 다 읽는다(차트가 쓰지 않는 것도 — TagSchema Note "dead read")
         box.Tone = r.Text("tone") is { Length: > 0 } tone ? tone : "info";
-        box.ShowValue = ToBool(r.Text("show-value"));
+        box.ShowValue = AttrRules.Bool(r, "show-value");
         box.ChartYMin = Num("y-min");
         box.ChartYMax = Num("y-max");
-        box.ChartArea = ToBool(r.Text("area"));
+        box.ChartArea = AttrRules.Bool(r, "area");
         box.ChartInner = Math.Clamp((float)(Num("inner-radius") ?? 0), 0f, 0.9f);
 
         if (node.Tag == "DvSparkline")
@@ -160,19 +155,14 @@ public sealed partial class LayoutEngine
     // DvTrend 설정 + 채널 데이터 스냅샷 (points 바인딩 우선, 없으면 source 버퍼에서 채널 이름으로). 채널은 그 노드의 리더로 읽는다.
     private Trends.TrendSpec BuildTrend(AttrReader r)
     {
-        static double? Num(AttrReader x, string name) => x.Value(name) is { } v &&
-            double.TryParse(BindingResolver.ToText(v, null), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : null;
-        bool Flag(string name, bool dflt) => r.Text(name) is { Length: > 0 } s
-            ? !string.Equals(s, "false", StringComparison.OrdinalIgnoreCase) : dflt;
-
         var spec = new Trends.TrendSpec
         {
-            WindowSeconds = Num(r, "window") is > 0 and var w ? w : 60,
+            WindowSeconds = AttrRules.NumberOrNull(r, "window", "using 60") is > 0 and var w ? w : 60,
             End = r.Value("end") switch { DateTime dt => dt, _ => null },
-            YMin = Num(r, "y-min"),
-            YMax = Num(r, "y-max"),
-            Area = Flag("area", false),
-            Smooth = Flag("smooth", true)
+            YMin = AttrRules.NumberOrNull(r, "y-min", "using automatic"),
+            YMax = AttrRules.NumberOrNull(r, "y-max", "using automatic"),
+            Area = AttrRules.Bool(r, "area"),
+            Smooth = AttrRules.Bool(r, "smooth")
         };
 
         var source = r.Value("source") as Trends.TrendBuffer;

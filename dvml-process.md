@@ -243,7 +243,7 @@ Usable on every equipment tag (including user symbols). On terminals, `rotate` a
 
 | State attribute | Values | If omitted |
 |---|---|---|
-| `running` | true/false, or a number (greater than 0 = running) | Stopped |
+| `running` | true/false, or a number (non-zero = running) | Stopped |
 
 - **For a pump whose flow is right → left**, use `flip="h"` to put `in` on the right.
 - In a top → bottom (`tb`) process, pumps are still drawn horizontal by default (inlet left, outlet right). Parallel pumps stack vertically (chapter 9).
@@ -267,7 +267,7 @@ Straight kinds are 60 × 48px, with `in` on the left and `out` on the right, bot
 
 | State attribute | Values | If omitted |
 |---|---|---|
-| `open` | true/false, or an opening number (greater than 0 = open) | **Closed** |
+| `open` | true/false, or an opening number (non-zero = open) | **Closed** |
 
 - Give `open="true"` even to an always-open valve. Without it, the valve is drawn closed.
 - A valve on a vertical pipe uses `rotate="90"` (enters from the top, leaves at the bottom).
@@ -320,7 +320,7 @@ The heights of `a`·`b` match `in`·`out` of `DvValve` (in line with ordinary va
 
 | State attribute | Values | If omitted |
 |---|---|---|
-| `open-b` | true/false, or a number (greater than 0 = open) — `a`↔`b` passes | Closed |
+| `open-b` | true/false, or a number (non-zero = open) — `a`↔`b` passes | Closed |
 | `open-c` | Same format — `a`↔`c` passes | Closed |
 
 - If both are true, both paths are open (mixing or modulating); if both are false, it is blocked. Only the triangles of open branches are painted in the state color (the common `a` side is always the same color).
@@ -818,7 +818,7 @@ Caveats:
 **Automatic decision rules** (an inference for display, not a measurement)
 
 1. **Sources**: terminals used as a line's `from` (coming in from outside), vessels with level greater than 0. **Sinks**: terminals used as a line's `to`, vessels. A user symbol with `DvFill` counts as a vessel.
-2. **Paths**: lines only in the `from` → `to` direction. Inside equipment, the symbol's flow rules (`DvPass`) — pumps when running, valves when open (`open` true or greater than 0), check valves one-way `in` → `out`, inline equipment always. Vessels are buffers and do not pass through internally (incoming and outgoing are separate). A user symbol with neither `DvPass` nor `DvFill` stops the flow: the pipes into it do not flow either. Unit ports connect inside and outside.
+2. **Paths**: lines only in the `from` → `to` direction. Inside equipment, the symbol's flow rules (`DvPass`) — pumps when running, valves when open (`open` true or a non-zero number), check valves one-way `in` → `out`, inline equipment always. Vessels are buffers and do not pass through internally (incoming and outgoing are separate). A user symbol with neither `DvPass` nor `DvFill` stops the flow: the pipes into it do not flow either. Unit ports connect inside and outside.
 3. **Flow**: a line flows **only when it is reached from a source and continues from that line to a sink**. So a pipe ending before a closed valve, the branch toward a stopped pump, and the downstream side of an empty tank do not flow.
 4. **Override**: a line with `flow="false"` is treated as blocked, and its downstream side also stops. A line with `flow="true"` always flows. It also counts as a source for what follows it and a sink for what comes before it: the lines after it flow as far as they reach a sink (even behind a stopped pump, if a flowmeter shows flow), and the lines before it flow if a source reaches them.
 5. Re-decided every time values change and the screen is rebuilt (layout unchanged, almost no cost).

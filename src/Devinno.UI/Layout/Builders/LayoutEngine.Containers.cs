@@ -100,9 +100,10 @@ public sealed partial class LayoutEngine
         var raw = r.Raw("expanded");
         var (expr, _, ov) = ValueOf(r, raw);
         box.ValueBindExpr = expr;
-        box.ToggleOn = ov is not null ? ToBool(ov.CellValue)
-            : expr is not null && BindingResolver.IsTwoWay(expr) ? ToBool(BindingResolver.Resolve(vm, $"{{{BindingResolver.ExtractPath(expr)}}}"))
-            : raw is not null ? ToBool(BindingResolver.ResolveValueOrLiteral(vm, raw))
+        bool Expanded(object? v) => AttrRules.Bool(v, false, node.Tag, "expanded");
+        box.ToggleOn = ov is not null ? Expanded(ov.CellValue)
+            : expr is not null && BindingResolver.IsTwoWay(expr) ? Expanded(BindingResolver.Resolve(vm, $"{{{BindingResolver.ExtractPath(expr)}}}"))
+            : raw is not null ? Expanded(BindingResolver.ResolveValueOrLiteral(vm, raw))
             : ExpanderOf?.Invoke(box.Instance) ?? false;
 
         var header = BuildSelf(Synthetic("DvExpanderHeader", "expander-header"), vm);
@@ -142,6 +143,6 @@ public sealed partial class LayoutEngine
                 .Select(o => HandlerErrors.Text(o, PathOf(stepsRaw), node.Tag) ?? "").ToArray(),
             _ => Array.Empty<string>(),
         };
-        box.StepCurrent = (int)MathF.Round(ToFloat(r.Value("current"), 0f));
+        box.StepCurrent = (int)MathF.Round(ToFloat(r, "current", 0f));
     }
 }

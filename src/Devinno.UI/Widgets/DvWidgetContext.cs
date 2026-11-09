@@ -125,15 +125,13 @@ public sealed class DvWidgetContext
         }
     }
 
-    /// <summary>Gets an attribute as a flag (<c>true</c>/<c>false</c>, a bool binding). Returns <paramref name="fallback"/> if missing.</summary>
+    /// <summary>
+    /// Gets an attribute as a flag, with the same rule as built-in attributes: <c>true</c>, a non-zero number or a bool <see langword="true"/> binding is on;
+    /// <c>false</c>, <c>0</c> or empty text is off. Returns <paramref name="fallback"/> if missing or any other text (<c>yes</c>).
+    /// </summary>
     /// <param name="attr">The attribute name.</param>
-    /// <param name="fallback">The value to use when the attribute is missing.</param>
-    public bool Flag(string attr, bool fallback = false) => Value(attr) switch
-    {
-        null => fallback,
-        bool b => b,
-        _ => string.Equals(Text(attr), "true", StringComparison.OrdinalIgnoreCase),
-    };
+    /// <param name="fallback">The value to use when the attribute is missing or not a flag.</param>
+    public bool Flag(string attr, bool fallback = false) => Value(attr) is { } v ? Layout.AttrRules.ParseBool(v) ?? fallback : fallback;
 
     /// <summary>
     /// Gets a theme color token (<c>primary</c>, <c>text</c>, <c>tone-danger</c>, <c>gauge-track</c>, <c>state-run</c> …) as a color — the same tokens as <c>token(…)</c> in styles,

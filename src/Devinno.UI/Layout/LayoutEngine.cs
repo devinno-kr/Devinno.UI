@@ -385,13 +385,12 @@ public sealed partial class LayoutEngine
         box.StylePress = State(rule => rule.Press, "press-style");
         box.StyleDisabled = State(rule => rule.Disabled, "disabled-style");
         if (r.Has("disabled"))
-            box.Disabled = IsDisabledValue(r.Value("disabled"), r.Raw("disabled") ?? "disabled");
+            box.Disabled = AttrRules.Bool(r.Value("disabled"), false, node.Tag, "disabled");
         box.HasCodeClick = control?.Overrides.HasClick == true;
 
         box.OnClick = r.Raw("onclick");
-        if (r.Text("hold") is { } holdText &&
-            int.TryParse(holdText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var holdMs) && holdMs > 0)
-            box.HoldMs = holdMs;
+        if (AttrRules.NumberOrNull(r, "hold") is > 0 and var holdMs)
+            box.HoldMs = (int)Math.Round(holdMs);
         box.OnBeforeCommit = r.Raw("onbeforecommit");
 
         BuildInputTag(box, r);
@@ -517,32 +516,8 @@ public sealed partial class LayoutEngine
     // 핸들의 Visible 덮어쓰기가 마크업 visible 보다 우선
     private bool IsVisibleOf(ElementNode node, object? ctx) => IsVisible(Reader(node, ctx));
 
-    /// <summary>If the <c>visible</c> attribute is false or empty, the element is not created.</summary>
-    private static bool IsVisible(AttrReader r)
-    {
-        if (!r.Has("visible"))
-            return true;
-
-        var raw = r.Raw("visible") ?? "visible";
-        var v = r.Value("visible");
-        return v switch
-        {
-            null => false,
-            bool b => b,
-            _ => BindingResolver.ToText(v, raw)?.Trim() is { Length: > 0 } s &&
-                 !s.Equals("false", StringComparison.OrdinalIgnoreCase) && s != "0"
-        };
-    }
-
-    /// <summary><c>disabled</c>: bool as is, a number when not 0, text <c>true</c> (any case) or <c>1</c>. Anything else is enabled.</summary>
-    private static bool IsDisabledValue(object? v, string raw) => v switch
-    {
-        bool b => b,
-        null => false,
-        sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal =>
-            Convert.ToDouble(v, System.Globalization.CultureInfo.InvariantCulture) != 0,
-        _ => (BindingResolver.ToText(v, raw) ?? "").Trim() is var s && (s.Equals("true", StringComparison.OrdinalIgnoreCase) || s == "1"),
-    };
+    /// <summary>If the <c>visible</c> attribute is false (<see cref="AttrRules.Visible"/>), the element is not created.</summary>
+    private static bool IsVisible(AttrReader r) => AttrRules.Visible(r);
 
     private static bool TryGetComponent(ComponentRegistry? registry, string tag, out ComponentDef def)
     {
@@ -691,7 +666,7 @@ public sealed partial class LayoutEngine
     private bool InputReadOnly(AttrReader r, string? valueOverride)
         => !(BindingResolver.IsTwoWay(valueOverride ?? r.Raw("value")) ||
              valueOverride is null && OwnerSlot(r) is not null) ||
-           ToBool(BindingResolver.ResolveValueOrLiteral(r.Context, r.Raw("readonly")));
+           AttrRules.Bool(BindingResolver.ResolveValueOrLiteral(r.Context, r.Raw("readonly")), false, r.Node.Tag, "readonly");
 
     // value 없음 + 값 핸들 = 핸들이 주인인 칸(설계 4.1). 아니면 null.
     private Controls.ValueSlot? OwnerSlot(AttrReader r)
@@ -732,26 +707,6 @@ public sealed partial class LayoutEngine
     /// <summary>The DvVideo boxes of this build that write <c>position</c>/<c>duration</c> to the view model; the surface syncs them every frame.</summary>
     internal List<LayoutBox> BoundVideos { get; } = new();
 
-    private static double ToSeconds(object? v)
-    {
-        try
-        {
-            return v switch
-            {
-                null => 0,
-                string s => double.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d) ? d : 0,
-                _ => Convert.ToDouble(v, System.Globalization.CultureInfo.InvariantCulture)
-            };
-        }
-        catch (Exception)
-        {
-            return 0;
-        }
-    }
-
-    private static bool ToBool(object? v)
-        => v is bool b ? b : string.Equals(BindingResolver.ToText(v, null), "true", StringComparison.OrdinalIgnoreCase);
-
     // 모르는 input-mode = 경고 후 drag
     private static KnobInputMode WarnKnobMode(string mode)
     {
@@ -766,13 +721,8 @@ public sealed partial class LayoutEngine
         return "right";
     }
 
-    private static float ToFloat(object? v, float dflt)
-        => v is null
-            ? dflt
-            : float.TryParse(BindingResolver.ToText(v, null), System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture, out var f)
-                ? f
-                : dflt;
+    // 숫자 속성 — 공용 규칙(AttrRules, Invariant · 숫자 아님 = 기본값 + 경고)
+    private static float ToFloat(AttrReader r, string attr, float dflt) => (float)AttrRules.Number(r, attr, dflt);
 
     /// <summary>Only re-arranges an already built tree at a new size (no build, binding or style resolution); for when only the window size changed.</summary>
     /// <summary>Clears all measured size caches; call before <see cref="Rearrange"/> when there are boxes whose size changes over time (expand animation).</summary>
