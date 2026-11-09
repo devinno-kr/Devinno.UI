@@ -11,7 +11,8 @@ namespace Devinno.UI.Generators;
 /// 없는 속성 검사(DVML019) — 내장 태그에 그 태그의 속성도 공통 속성도 아닌 이름(오타 등)이 있으면 경고. 실행 때는 조용히 무시된다.
 /// 값 검사(DVML020) — 참/거짓·숫자·목록 값·색 속성에 리터럴로 쓴 값이 그 종류가 아니면 경고(실행 때는 기본값 + Trace). 바인딩(<c>{</c> 포함)은 건너뛴다.
 /// 표에 없는 태그(사용자 컴포넌트 인스턴스·등록 위젯·심볼·DvCard 같은 내장 컴포넌트)와 <c>DvSymbol</c> 정의 안은 건너뛴다.
-/// 표에 있는 내장 컴포넌트(DvPageFrame·DvDialogFrame — 매개변수 title·subtitle)는 검사하되, 같은 파일이 그 이름의 DvComponent 로 바꾸면 건너뛴다.
+/// 표에 있는 내장 컴포넌트(DvPageFrame·DvDialogFrame — 매개변수 title·subtitle)는 앱이 C# 으로 바꿀 수 있어(생성기는 모른다) 없는 속성은 알리지 않고 공통 속성 값만 본다.
+/// 그 진단은 따로 모아(reportFrame) 프로젝트의 어느 dvml 이든 그 이름의 DvComponent 로 바꾸면 생성기가 버린다(DvmlGenerator).
 /// 내장 태그 검사(DVML021) — <c>&lt;DvComponent name&gt;</c> 이 내장 태그 이름이면 오류(라이브러리 ComponentRegistry.Register 가 예외).
 /// </summary>
 internal static class AttributeCheck
@@ -282,10 +283,14 @@ internal static class AttributeCheck
     // 그 태그가 받는 공통 속성인가 — 상자가 아닌 하위 요소는 id 만
     private static bool TakesCommon(string tag, string name) => CommonSet.Contains(name) && (name == "id" || !ChildSet.Contains(tag));
 
-    public static void Check(XElement root, Action<DiagnosticDescriptor, XObject, object[]> report)
+    /// <summary>
+    /// Checks one dvml. <paramref name="reportFrame"/> gets the diagnostics on <see cref="ComponentTags"/> instances with the tag
+    /// (the generator drops them when any dvml of the project replaces that tag); <paramref name="components"/> gets the names of this file's <c>DvComponent</c>s.
+    /// </summary>
+    public static void Check(XElement root, Action<DiagnosticDescriptor, XObject, object[]> report,
+        Action<string, DiagnosticDescriptor, XObject, object[]> reportFrame, ISet<string> components)
     {
-        // 이 파일이 정의한 컴포넌트 — 내장 컴포넌트 이름(DvPageFrame…)을 바꾼 것이면 그 인스턴스 속성은 그 정의의 매개변수다
-        var replaced = new HashSet<string>(StringComparer.Ordinal);
+        // 이 파일이 정의한 컴포넌트 — 내장 컴포넌트 이름(DvPageFrame…)을 바꾼 것이면 그 인스턴스 속성은 그 정의의 매개변수다(다른 파일의 것도 — 생성기가 모아서 거른다)
         foreach (var c in root.DescendantsAndSelf().Where(x => x.Name.LocalName == "DvComponent"))
         {
             if (c.Attribute("name") is not { } n)
@@ -294,19 +299,29 @@ internal static class AttributeCheck
             if (Tags.ContainsKey(name) && Array.IndexOf(ComponentTags, name) < 0)
                 report(Diagnostics.ComponentBuiltInName, n, new object[] { name });
             else
-                replaced.Add(name);
+                components.Add(name);
         }
 
-        Walk(root, true, replaced, report);
+        Walk(root, true, report, reportFrame);
     }
 
-    private static void Walk(XElement e, bool isRoot, HashSet<string> replaced, Action<DiagnosticDescriptor, XObject, object[]> report)
+    private static void Walk(XElement e, bool isRoot, Action<DiagnosticDescriptor, XObject, object[]> report, Action<string, DiagnosticDescriptor, XObject, object[]> reportFrame)
     {
         var tag = e.Name.LocalName;
         if (tag == "DvSymbol")
             return; // 심볼 정의 — 그 안의 요소는 그림 정의라 속성 규칙이 다르다
 
-        if (!replaced.Contains(tag) && Tags.TryGetValue(tag, out var own))
+        if (Array.IndexOf(ComponentTags, tag) >= 0)
+        {
+            // 틀 — C# 으로 바꾼 컴포넌트는 생성기가 모르므로 없는 속성(매개변수일 수 있다)은 알리지 않고, 공통 속성 값만
+            foreach (var a in e.Attributes())
+            {
+                if (a.IsNamespaceDeclaration || a.Name.Namespace != XNamespace.None || !TakesCommon(tag, a.Name.LocalName))
+                    continue;
+                CheckValue(tag, a.Name.LocalName, a, (d, at, args) => reportFrame(tag, d, at, args));
+            }
+        }
+        else if (Tags.TryGetValue(tag, out var own))
         {
             foreach (var a in e.Attributes())
             {
@@ -325,7 +340,7 @@ internal static class AttributeCheck
         }
 
         foreach (var c in e.Elements())
-            Walk(c, false, replaced, report);
+            Walk(c, false, report, reportFrame);
     }
 
     // DVML020 — 리터럴 값이 속성 종류에 맞는지. 규칙은 라이브러리 Layout.AttrRules 와 같다:

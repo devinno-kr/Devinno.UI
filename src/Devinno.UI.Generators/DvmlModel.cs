@@ -30,6 +30,12 @@ internal sealed class DvmlModel
     /// <summary>이 파일의 DvComponent 중 onclick 을 매개변수로 받는 것 — 그 인스턴스의 onclick 은 핸들러로 전달되지 않는다.</summary>
     public HashSet<string> ClickParamComponents { get; } = new(System.StringComparer.Ordinal);
 
+    /// <summary>이 파일의 DvComponent 이름 — 내장 틀(DvPageFrame·DvDialogFrame)을 바꾼 것이면 프로젝트 모든 파일의 그 인스턴스 검사를 버린다.</summary>
+    public HashSet<string> ComponentNames { get; } = new(System.StringComparer.Ordinal);
+
+    /// <summary>틀(DvPageFrame·DvDialogFrame) 인스턴스의 값 진단 — 생성기가 프로젝트의 DvComponent 이름을 모은 뒤, 바꾸지 않은 틀의 것만 낸다.</summary>
+    public List<(string Tag, Diagnostic Diagnostic)> FrameReports { get; } = new();
+
     private static readonly string[] HandlerAttrs = { "onclick", "onbeforecommit", "onack", "onrowclick" };
 
     // 핸들 형식 = 태그 이름(라이브러리 TagCatalog.HandleKinds 와 같은 목록 — 테스트로 대조). 그 밖의 태그는 DvControl.
@@ -66,7 +72,8 @@ internal sealed class DvmlModel
         // 공정도 연결 검사 — vm 이 없는 dvml 도. 생성(필드·Markup)은 막지 않는다(막으면 엉뚱한 컴파일 오류가 겹친다)
         ProcessCheck.Check(root, (d, at, args) => m.Reports.Add(Diagnostic.Create(d, m.At(at), args)));
         WidgetCheck.Check(root, (d, at, args) => m.Reports.Add(Diagnostic.Create(d, m.At(at), args)));
-        AttributeCheck.Check(root, (d, at, args) => m.Reports.Add(Diagnostic.Create(d, m.At(at), args)));
+        AttributeCheck.Check(root, (d, at, args) => m.Reports.Add(Diagnostic.Create(d, m.At(at), args)),
+            (tag, d, at, args) => m.FrameReports.Add((tag, Diagnostic.Create(d, m.At(at), args))), m.ComponentNames);
         var uses = new List<(string Name, XAttribute At)>();
         StyleCheck.Check(root, (d, at, off, len, args) => m.Reports.Add(Diagnostic.Create(d, m.At(at, off, len), args)), uses, m.ClassDefs);
         foreach (var (name, at) in uses)

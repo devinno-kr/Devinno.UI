@@ -77,8 +77,9 @@ internal static class TagSchema
     public static IReadOnlyList<AttrDef> CommonOf(string tag) => ChildTags.Contains(tag) ? IdOnly : Common;
 
     /// <summary>
-    /// Tags in <see cref="Tags"/> that are built-in components (<c>BuiltInComponents</c>): described here so their parameters are checked,
-    /// but an app registry may replace them with its own component of the same name. Every other tag in <see cref="Tags"/> is a built-in element
+    /// Tags in <see cref="Tags"/> that are built-in components (<c>BuiltInComponents</c>): described here with their parameters,
+    /// but an app registry may replace them with its own component of the same name — so the build reports no unknown attribute on them (DVML019),
+    /// only invalid common attribute values (DVML020). Every other tag in <see cref="Tags"/> is a built-in element
     /// whose name a component cannot take (<see cref="IsBuiltInElement"/>).
     /// </summary>
     public static readonly IReadOnlySet<string> ComponentTags = new HashSet<string>(StringComparer.Ordinal) { "DvPageFrame", "DvDialogFrame" };

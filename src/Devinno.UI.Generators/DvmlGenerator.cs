@@ -49,6 +49,15 @@ public sealed class DvmlGenerator : IIncrementalGenerator
         foreach (var f in files)
             clickParamComponents.UnionWith(f.ClickParamComponents);
 
+        // 틀(DvPageFrame·DvDialogFrame) 값 진단 — 프로젝트 어느 dvml 이든 그 이름의 DvComponent 로 바꿨으면 버린다(그 인스턴스 속성은 그 정의의 매개변수)
+        var components = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var f in files)
+            components.UnionWith(f.ComponentNames);
+        foreach (var f in files)
+            foreach (var (tag, d) in f.FrameReports)
+                if (!components.Contains(tag))
+                    spc.ReportDiagnostic(d);
+
         foreach (var group in files.Where(f => f.Vm is not null).GroupBy(f => f.Vm!, StringComparer.Ordinal))
         {
             var list = group.ToList();

@@ -856,15 +856,31 @@ public class DvmlGeneratorTests
             d.Select(x => System.Text.RegularExpressions.Regex.Match(x.GetMessage(Invariant), @"^(\S+) has no attribute '([^']+)'")).Select(m => $"{m.Groups[1]} {m.Groups[2]}"));
     }
 
-    // 남은 2단계 구멍 — DvScreen·DvPageFrame·DvDialogFrame 도 검사한다(틀 = 내장 컴포넌트: 매개변수 title·subtitle)
+    // 남은 2단계 구멍 — DvScreen 은 검사한다. 틀(DvPageFrame·DvDialogFrame = 내장 컴포넌트)은 앱이 C# 으로 바꿀 수 있어(생성기는 모른다)
+    // 없는 속성은 알리지 않고 공통 속성 값만 본다(리뷰 I3 — 옛: titel·gap 을 DVML019 로 알림)
     [Fact]
-    public void Attribute_ScreenAndFrames_AreChecked()
+    public void Attribute_ScreenChecked_FramesOnlyCommonValues()
     {
         var d = Attrs("""<DvScreen vm="MyApp.P" padding="8"><DvPageFrame title="T" subtitle="S" titel="x" class="c"/><DvDialogFrame title="D" gap="md" style="width:300"/></DvScreen>""");
-        Assert.Equal(["DvScreen padding", "DvPageFrame titel", "DvDialogFrame gap"],
+        Assert.Equal(["DvScreen padding"],
             d.Select(x => System.Text.RegularExpressions.Regex.Match(x.GetMessage(Invariant), @"^(\S+) has no attribute '([^']+)'")).Select(m => $"{m.Groups[1]} {m.Groups[2]}"));
-        // 같은 파일이 틀을 자기 컴포넌트로 바꾸면 그 매개변수를 안다
+        var v = Values("""<DvScreen><DvPageFrame title="T" icon="fa-x" visible="abc"/><DvDialogFrame title="D" grow="many"/></DvScreen>""");
+        Assert.Equal(2, v.Length);
+        Assert.Contains(v, x => x.GetMessage(Invariant).Contains("visible"));
+        Assert.Contains(v, x => x.GetMessage(Invariant).Contains("grow"));
+        // 같은 파일이 틀을 자기 컴포넌트로 바꾸면 그 인스턴스는 건너뛴다
         Assert.Empty(Attrs("""<DvScreen><DvComponent name="DvPageFrame"><DvParam name="title"/><DvParam name="icon"/><DvStack><DvSlot/></DvStack></DvComponent><DvPageFrame title="T" icon="fa-x"/></DvScreen>"""));
+    }
+
+    // 리뷰 I3 — 틀을 다른 dvml 의 DvComponent 로 바꿔도 건너뛴다(전: 파일마다 모아 다른 파일의 바꾸기를 몰랐다)
+    [Fact]
+    public void Attribute_FrameReplacedInAnotherFile_IsSkipped()
+    {
+        var r = Run("public partial class P { }",
+            ("Frames.dvml", """<DvStack><DvComponent name="DvPageFrame"><DvParam name="title"/><DvParam name="visible"/><DvStack><DvSlot/></DvStack></DvComponent></DvStack>"""),
+            ("P.dvml", """<DvPageFrame title="T" visible="abc" icon="fa-x"><DvLabel text="a"/></DvPageFrame>"""));
+        Assert.Empty(r.Ids("DVML019"));
+        Assert.Empty(r.Ids("DVML020"));
     }
 
     // 3단계 D4 — 내장 태그 이름의 컴포넌트는 빌드 오류(DVML021). 내장 컴포넌트(DvCard·DvPageFrame…)를 바꾸는 것은 된다
