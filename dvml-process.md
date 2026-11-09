@@ -74,6 +74,28 @@ This automatic placement is the default and the right choice for almost every sc
 | A panel of numbers and gauges | General widgets such as `DvGauge`·`DvStat` |
 
 - The process vessel is **`DvVessel`**. Its name differs from the level widget `DvTank`. If you put a `DvTank` inside `DvProcess`, it is not equipment and is not drawn.
+
+**`DvTank` or `DvVessel`?** Two tags draw a tank because they are used in different places:
+
+| | `DvTank` | `DvVessel` |
+|---|---|---|
+| What it is | An instrument widget (dashboard gauge) | A P&ID equipment symbol |
+| Where it goes | Anywhere in ordinary dvml | Only directly inside `DvProcess` (or a `DvUnit`) |
+| Value | `value` between `min`·`max` (default 0–100) + `unit` | `level` 0–100 % (fixed range) |
+| Extras | `alarm-zones` (colored bands), value chip, `format` | Pipes connect to its ports; `kind`, `width`·`height` body size |
+| Chapter | `dvml-ui-markup.md` 9 | 5 |
+
+**State words and process booleans.** UI widgets show a state with a **word** that picks a theme color (`state="run|stop|fault|warn|manual|off"`, `DvLamp`, `DvStatusItem`); process equipment is moved by **booleans** that drive the drawing and animation (`running`, `open`, `level`). They are two systems on purpose — link them in the view model, not in markup:
+
+```xml
+<DvPump name="P1" running="{IsRun}" label="P-101">
+  <DvAttach side="right"><DvStatusItem label="P-101" state="{RunState}"/></DvAttach>
+</DvPump>
+```
+```csharp
+public bool IsRun { get; set; }
+public string RunState => IsFault ? "fault" : IsRun ? "run" : "stop"; // the word for the theme color
+```
 - Do not draw a process picture yourself with `position:absolute`, `DvImage` or line-shaped boxes. The pipes will not follow the equipment, and things drift out of place when the resolution changes.
 
 ---

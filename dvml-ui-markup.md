@@ -136,6 +136,16 @@ These attributes mean the same on every element that is a box — layout tags, w
 
 **Word values** — attributes that take one word from a fixed list (`direction`, `fit`, `variant`, `size`, `selection-mode`, `cell-type`, `sort`, `fn`, `input-mode`, `keyboard-type`, `content-align`, the `align`/`justify` of layout tags, process `kind`, `flip`, `arrow`, `side`, …) compare the value ignoring case and surrounding spaces (`" Up "` = `up`). Any other word uses the attribute's default and writes a Trace warning (a literal one is also DVML020); empty text is the same as leaving it out. The lists are in each tag's section. `tone` and `DvLamp state` are theme words: a value is valid when the current theme has the token `tone-{값}` / `state-{값}` (built-in themes: `neutral` `info` `success` `warning` `danger` / `run` `stop` `fault` `warn` `manual` `off`; a custom theme can add its own, e.g. `state-idle`). A word ending in `-fg` or `-soft` is never a word (`tone-info-fg`, `state-run-soft` are the derived colors of a word). Same case/space rule; a word without a token uses the default with a Trace warning. They are not checked at build time (the theme belongs to the app).
 
+**Naming — what an attribute name means** (the same name means the same thing on every tag):
+
+- `text` = the text the control itself shows (`DvLabel`, `DvButton`, `DvCheckBox`, `DvTab`, a `DvColumn` button). `label` = a name tag beside or under a value (`DvRing`, `DvStat`, `DvStatusItem`, process equipment, `DvSignal`, `DvSummaryRow`). `title` = the heading of a group (`DvCard`, `DvPageFrame`, `DvDialogFrame`, `DvExpander`). `title` here is a heading, **not an HTML tooltip** — a future hover hint would be named `tooltip`. Grid column headings keep the grid word `header` (`DvColumn`, `DvColumnGroup`).
+- `min`·`max` = the value range of a widget (gauge, knob, slider, input, grid input cell). `y-min`·`y-max` = the range of a chart's vertical axis (the horizontal axis is time or items); `DvVessel level` is always 0–100 %.
+- `direction` has one meaning per kind of tag: on `DvSlider`·`DvProgress` it is the side the value grows toward (`right` `left` `up` `down`); on `DvProcess`·`DvUnit` it is the flow direction (`lr` `tb`). Box layout uses the style key `flex-direction` instead.
+- `kind` = *what* a thing is (process equipment and signals: `centrifugal`, `gear`, `pneumatic` …); `variant` = *how it looks* (`DvButton`: `primary`, `danger` …).
+- `DvInput`'s handle `Text` **is its value** (the typed string, as WPF `TextBox.Text`); `Value` is the same value as a number. On `DvLabel`, `Text` overrides the shown text.
+- Lists of picked items are `selected-items` (`DvListBox`, `DvDataGrid`); a path read from each row item is `<scope>-<what>` (`item-text`, `row-key`, `cell-class`, `cell-disabled`). C# handle members are the markup name in PascalCase (`expanded` → `Expanded`).
+- State words (`state="run"`, theme colors) and process booleans (`running`, `open`) are different systems — see `dvml-process.md` chapter 2 for how to link them, and for `DvTank` vs `DvVessel`.
+
 ---
 
 ## 3. Layout
