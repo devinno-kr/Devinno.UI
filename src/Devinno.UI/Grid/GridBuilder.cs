@@ -79,6 +79,10 @@ internal static class GridBuilder
                 "color" => GridCellType.Color,
                 _ => GridCellType.Text
             };
+            // 입력 셀 min ≥ max = 경고 + 0~100 (3단계 R6 — DvInput 과 같은 규칙)
+            var (min, max) = (Num("min"), Num("max"));
+            if (cellType == GridCellType.Input)
+                (min, max) = AttrRules.Range(min, max, ch.Tag);
             var col = new GridColumn
             {
                 Header = BindingResolver.ResolveInline(vm, CA("header")) ?? "",
@@ -106,8 +110,8 @@ internal static class GridBuilder
                 OnClick = CA("onclick"),
                 Filter = ParseFilter(Enum("filter")),
                 Enabled = CA("enabled") is { Length: > 0 } en ? new FieldReader(en) : null,
-                Min = Num("min"),
-                Max = Num("max"),
+                Min = min,
+                Max = max,
                 Unit = BindingResolver.ResolveInline(vm, CA("unit")),
                 Mode = AttrRules.Enum(cr, "mode", "using the value type's mode"),
                 ShowSeconds = Flag("show-seconds"),

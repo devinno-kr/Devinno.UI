@@ -164,8 +164,8 @@ internal static class TagSchema
             new("multiline", AttrKind.Bool, "false"),
             Placeholder(),
             new("format", AttrKind.Text, Note: ".NET number format"),
-            new("min", AttrKind.Number, Note: "out of range is rejected (not clamped)"),
-            new("max", AttrKind.Number, Note: "out of range is rejected (not clamped)"),
+            new("min", AttrKind.Number, Note: "typed values out of range are rejected (not clamped), the stepper stops at the bound; numeric only: both given and min >= max = 0..100 + warning; " + NumberRule),
+            new("max", AttrKind.Number, Note: "typed values out of range are rejected (not clamped), the stepper stops at the bound; numeric only: both given and min >= max = 0..100 + warning; " + NumberRule),
             new("unit", AttrKind.Text),
             ReadOnly(),
             new("step", AttrKind.Number, "1", Note: "<= 0 = 1; " + NumberRule),
@@ -216,8 +216,8 @@ internal static class TagSchema
         ["DvProgress"] =
         [
             new("value", AttrKind.Number, "0", Note: "one-way; read by the block shared with DvGauge/DvRing"),
-            new("min", AttrKind.Number, "0"),
-            new("max", AttrKind.Number, "100"),
+            new("min", AttrKind.Number, "0", Note: RangeRule),
+            new("max", AttrKind.Number, "100", Note: RangeRule),
             Tone(),
             new("direction", AttrKind.Enum, "right", Values: Directions, Note: EnumRule),
             new("show-value", AttrKind.Bool, "false"),
@@ -362,8 +362,8 @@ internal static class TagSchema
             new("variant", AttrKind.Enum, "primary", Values: ["primary", "secondary", "danger", "ghost"], Note: "button cells; " + EnumRule),
             new("onclick", AttrKind.Expr, Bindable: false, Note: "button cells; M(row) or M()"),
             new("enabled", AttrKind.Path, Bindable: false, Note: "button cells; read raw; an item bool property path (the common disabled is the inverse sense and is not read here)"),
-            new("min", AttrKind.Number, Note: "input cells; " + NumberRule + " (ignored)"),
-            new("max", AttrKind.Number, Note: "input cells; " + NumberRule + " (ignored)"),
+            new("min", AttrKind.Number, Note: "input cells; typed values out of range are rejected; both given and min >= max = 0..100 + warning; " + NumberRule + " (ignored)"),
+            new("max", AttrKind.Number, Note: "input cells; typed values out of range are rejected; both given and min >= max = 0..100 + warning; " + NumberRule + " (ignored)"),
             new("unit", AttrKind.Text, Note: "input cells; inline interpolation only"),
             new("mode", AttrKind.Enum, Values: ["date", "time", "datetime"], Note: "datetime cells; absent = by value type; " + EnumRule + " (by value type); a mismatch = by value type + warning"),
             GridFlag("show-seconds", "datetime cells"),
@@ -482,6 +482,8 @@ internal static class TagSchema
     private const string ColorRule = "#hex or token(name); an unknown token = magenta + warning; unparsable = the default + warning";
     private const string EnumRule = "case and surrounding spaces ignored; an unknown value = the default + warning";
     // 3.4 — tone·DvLamp state: 고정 목록이 아니라 지금 테마의 토큰(Layout.AttrRules.ThemeWord) — 생성기(DVML020)는 값을 보지 않는다
+    // 3단계 R6 — 범위(Layout.AttrRules.Range)
+    private const string RangeRule = "min >= max = 0..100 + warning; " + NumberRule;
     private const string ThemeWordRule = "case and surrounding spaces ignored; a word without that theme token = the default + warning; not checked at build time (the theme is the app's)";
     private const string RawName = "read raw (process names and references are not bindable; a { in it = warning, used as written)";
     private static string[] Directions => ["right", "left", "up", "down"];
@@ -575,8 +577,8 @@ internal static class TagSchema
     private static AttrDef[] KnobRange() =>
     [
         new("value", AttrKind.Number, "0", Note: "{Bind X} = VM; absent + a handle = the handle owns it; one-way/literal = read-only; code writes are not snapped or clamped"),
-        new("min", AttrKind.Number, "0"),
-        new("max", AttrKind.Number, "100"),
+        new("min", AttrKind.Number, "0", Note: RangeRule + "; drag and keypad never write a value outside"),
+        new("max", AttrKind.Number, "100", Note: RangeRule + "; drag and keypad never write a value outside"),
         new("step", AttrKind.Number, "1", Note: "<= 0 = 1"),
         new("unit", AttrKind.Text),
     ];
@@ -592,9 +594,9 @@ internal static class TagSchema
     // 2.4 공용 조각
     private static AttrDef[] DialRange(string? note = null) =>
     [
-        new("value", AttrKind.Number, "0", Note: (note is null ? "" : note + "; ") + "one-way; " + NumberRule),
-        new("min", AttrKind.Number, "0"),
-        new("max", AttrKind.Number, "100"),
+        new("value", AttrKind.Number, "0", Note: (note is null ? "" : note + "; ") + "one-way; " + NumberRule + "; drawn clamped to min..max (the value itself is not changed)"),
+        new("min", AttrKind.Number, "0", Note: RangeRule),
+        new("max", AttrKind.Number, "100", Note: RangeRule),
         AlarmZones(),
     ];
 

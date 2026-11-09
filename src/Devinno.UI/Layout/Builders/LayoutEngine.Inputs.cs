@@ -169,8 +169,7 @@ public sealed partial class LayoutEngine
             ? BindingResolver.Resolve(target ?? vm, $"{{{BindingResolver.ExtractPath(ve)}}}")
             : BindingResolver.ResolveValueOrLiteral(vm, ve);
         box.KnobValue = (float)AttrRules.Number(cur, 0, r.Node.Tag, "value");
-        box.KnobMin = ToFloat(r, "min", 0f);
-        box.KnobMax = ToFloat(r, "max", 100f);
+        (box.KnobMin, box.KnobMax) = FloatRange(r);
         var step = ToFloat(r, "step", 1f);
         box.KnobStep = step > 0 ? step : 1f;
         box.KnobUnit = r.Text("unit");
@@ -215,11 +214,12 @@ public sealed partial class LayoutEngine
         box.InputMultiline = AttrRules.Bool(r, "multiline");
         box.InputPlaceholder = Attr("placeholder");
         box.InputFormat = Attr("format");
-        box.InputMin = Num("min");
-        box.InputMax = Num("max");
+        (box.InputMin, box.InputMax) = (Num("min"), Num("max"));
         box.Unit = Attr("unit");
         box.ReadOnly = InputReadOnly(r, _valueOverride);
         box.InputStep = Num("step") is > 0 and var step ? step : 1d;
+        if (box.InputKind == DvEditKind.Numeric)
+            (box.InputMin, box.InputMax) = AttrRules.Range(box.InputMin, box.InputMax, r.Node.Tag);
         if (box.InputKind == DvEditKind.Numeric && AttrRules.Bool(r, "show-stepper"))
         {
             // −/+ 자리 — 좌우 padding 에 버튼 폭을 더해 글자·커서·네이티브 편집기 위치가 그대로 맞게 한다

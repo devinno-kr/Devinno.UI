@@ -480,7 +480,7 @@ public sealed class DvApp : ISurfaceComposer
     /// <param name="min">The minimum allowed value. <see langword="null"/> means no limit.</param>
     /// <param name="max">The maximum allowed value. <see langword="null"/> means no limit.</param>
     /// <returns>A Task that completes with the entered value on OK, or <see langword="null"/> on cancel or closing from outside.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">When <paramref name="value"/> is NaN or infinite, when <paramref name="min"/> is greater than <paramref name="max"/>,
+    /// <exception cref="ArgumentOutOfRangeException">When <paramref name="value"/> is NaN or infinite, when <paramref name="min"/> is not below <paramref name="max"/> (both given),
     /// or when <paramref name="value"/> is out of range. The box is not registered (pass values that may be out of range through <see cref="Math.Clamp(double, double, double)"/>).</exception>
     /// <example>
     /// <code>
@@ -492,8 +492,8 @@ public sealed class DvApp : ISurfaceComposer
     {
         if (!double.IsFinite(value))
             throw new ArgumentOutOfRangeException(nameof(value), value, "The initial value must be a finite number.");
-        if (min > max)
-            throw new ArgumentOutOfRangeException(nameof(min), min, $"min({min}) is greater than max({max}).");
+        if (min >= max)
+            throw new ArgumentOutOfRangeException(nameof(min), min, $"min({min}) is not below max({max}).");
         if (value < min || value > max)
             throw new ArgumentOutOfRangeException(nameof(value), value, $"The initial value is outside the range ({min} to {max}).");
         return ShowDialog<DvNumberBoxDialog, double?>(caption, value, min, max);

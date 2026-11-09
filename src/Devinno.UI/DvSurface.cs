@@ -1896,7 +1896,8 @@ public sealed partial class DvSurface
             return;
         }
 
-        if (result is not { } value)
+        // 3단계 R6 — 범위 밖은 자르지 않고 거절(키패드 입력창이 이미 거절하므로 보통 오지 않는다)
+        if (result is not { } value || value < lo || value > hi)
             return;
         KnobBinder.Commit(knob, vm, KnobBinder.Snap(knob, value), this);
         Invalidate();

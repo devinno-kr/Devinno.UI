@@ -53,8 +53,7 @@ public sealed partial class LayoutEngine
     private void BuildDial(LayoutBox box, AttrReader r)
     {
         box.GaugeValue = ToFloat(r, "value", 0f);
-        box.GaugeMin = ToFloat(r, "min", 0f);
-        box.GaugeMax = ToFloat(r, "max", 100f);
+        (box.GaugeMin, box.GaugeMax) = FloatRange(r);
         box.GaugeZones = ParseZones(r);
         box.GaugeTicks = ToFloat(r, "ticks", 0f);
         box.GaugeMinorTicks = ToFloat(r, "minor-ticks", 0f);
@@ -76,8 +75,7 @@ public sealed partial class LayoutEngine
     private void BuildTank(LayoutBox box, AttrReader r)
     {
         box.TankValue = ToFloat(r, "value", 0f);
-        box.TankMin = ToFloat(r, "min", 0f);
-        box.TankMax = ToFloat(r, "max", 100f);
+        (box.TankMin, box.TankMax) = FloatRange(r);
         box.TankUnit = r.Text("unit");
         box.ValueFormat = r.Text("format");
         box.TankZones = ParseZones(r);

@@ -722,6 +722,13 @@ public sealed partial class LayoutEngine
     // 숫자 속성 — 공용 규칙(AttrRules, Invariant · 숫자 아님 = 기본값 + 경고)
     private static float ToFloat(AttrReader r, string attr, float dflt) => (float)AttrRules.Number(r, attr, dflt);
 
+    // min(0)·max(100) — 3단계 R6: min ≥ max 면 경고 + 0~100 (Knob·Slider·Gauge·Ring·Progress·Tank)
+    private static (float Min, float Max) FloatRange(AttrReader r)
+    {
+        var (min, max) = AttrRules.Range(ToFloat(r, "min", 0f), ToFloat(r, "max", 100f), r.Node.Tag);
+        return ((float)min, (float)max);
+    }
+
     /// <summary>Only re-arranges an already built tree at a new size (no build, binding or style resolution); for when only the window size changed.</summary>
     /// <summary>Clears all measured size caches; call before <see cref="Rearrange"/> when there are boxes whose size changes over time (expand animation).</summary>
     internal static void ClearMeasure(LayoutBox box)

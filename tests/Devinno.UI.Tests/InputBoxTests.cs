@@ -390,6 +390,7 @@ public class InputBoxTests
     [InlineData(double.PositiveInfinity, null, null)]
     [InlineData(double.NegativeInfinity, null, null)]
     [InlineData(5.0, 10.0, 0.0)]   // min > max
+    [InlineData(5.0, 5.0, 5.0)]    // min = max (3단계 R6 — min ≥ max 는 잘못된 범위; 상자의 DvInput 이 0~100 으로 바꿔 결과 보장이 깨지므로 호출 자리에서 던진다)
     [InlineData(-1.0, 0.0, 100.0)] // < min
     [InlineData(101.0, 0.0, 100.0)] // > max
     [InlineData(-1.0, 0.0, null)]

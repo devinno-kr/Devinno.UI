@@ -120,6 +120,19 @@ internal static class AttrRules
     /// <summary>Attribute <paramref name="attr"/> of the element as a number, or <see langword="null"/> (see <see cref="NumberOrNull(object?, string, string, string)"/>).</summary>
     public static double? NumberOrNull(AttrReader r, string attr, string instead = "ignored") => NumberOrNull(r.Value(attr), r.Node.Tag, attr, instead);
 
+    /// <summary>The range rule: <paramref name="min"/> must be below <paramref name="max"/>; otherwise (<c>min &gt;= max</c>) 0..100 with a warning that names the tag.</summary>
+    public static (double Min, double Max) Range(double min, double max, string tag)
+    {
+        if (min < max)
+            return (min, max);
+        Warnings.Warn($"Devinno.UI: {tag} min='{min.ToString(CultureInfo.InvariantCulture)}' is not below max='{max.ToString(CultureInfo.InvariantCulture)}'; using 0..100");
+        return (0, 100);
+    }
+
+    /// <summary>The range rule for optional bounds: checked only when both are given (see <see cref="Range(double, double, string)"/>); one bound alone is kept.</summary>
+    public static (double? Min, double? Max) Range(double? min, double? max, string tag)
+        => min is { } lo && max is { } hi ? Range(lo, hi, tag) : (min, max);
+
     // ── 3단계 R2 색 ──
 
     // 값 전체가 토큰 하나 — token(이름) 또는 별칭 var(--이름)
