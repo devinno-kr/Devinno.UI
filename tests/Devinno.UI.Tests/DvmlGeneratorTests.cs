@@ -824,6 +824,24 @@ public class DvmlGeneratorTests
             d.Select(x => System.Text.RegularExpressions.Regex.Match(x.GetMessage(Invariant), @"^(\S+) has no attribute '([^']+)'")).Select(m => $"{m.Groups[1]} {m.Groups[2]}"));
     }
 
+    // 3단계 R10 — 상자가 아닌 하위 요소는 공통 속성을 받지 않는다(id 와 자기 정의에 적은 것만)
+    [Fact]
+    public void Attribute_CommonOnChildTags_Warns()
+    {
+        Assert.Equal(Devinno.UI.Markup.TagSchema.ChildTags.OrderBy(n => n, StringComparer.Ordinal), AttributeCheck.ChildTags.OrderBy(n => n, StringComparer.Ordinal));
+        var d = Attrs("""
+            <DvStack>
+              <DvSelect><DvOption id="o1" value="a" style="color:red"/></DvSelect>
+              <DvDataGrid><DvColumn field="A" width="80" onclick="Go" class="x"/><DvSummaryRow fn="sum" visible="false"/></DvDataGrid>
+              <DvTrend><DvTrendChannel name="a" grow="1"/></DvTrend>
+              <DvProcess><DvPump name="P" style="opacity:0.5"><DvMotor visible="false" hold="100"/></DvPump><DvLine from="P.in" to="P.out" visible="false" disabled="true"/></DvProcess>
+              <DvTabs><DvTab value="a" style="padding:8" class="c"/></DvTabs>
+            </DvStack>
+            """);
+        Assert.Equal(["DvOption style", "DvColumn class", "DvSummaryRow visible", "DvTrendChannel grow", "DvMotor hold", "DvLine disabled"],
+            d.Select(x => System.Text.RegularExpressions.Regex.Match(x.GetMessage(Invariant), @"^(\S+) has no attribute '([^']+)'")).Select(m => $"{m.Groups[1]} {m.Groups[2]}"));
+    }
+
     [Fact]
     public void Attribute_RootOnlyNames_WarnElsewhere()
     {

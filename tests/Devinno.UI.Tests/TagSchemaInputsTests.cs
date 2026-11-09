@@ -104,7 +104,7 @@ public class TagSchemaInputsTests
     [MemberData(nameof(Cases))]
     public void Schema_Inputs_ReadsAreDeclared(string tag, string markup)
     {
-        var allowed = Declared(tag).Select(a => a.Name).Concat(TagSchema.Common.Select(a => a.Name)).ToHashSet();
+        var allowed = Declared(tag).Select(a => a.Name).Concat(TagSchema.CommonOf(tag).Select(a => a.Name)).ToHashSet();
         var extra = ReadsOf(tag, markup).Where(n => !allowed.Contains(n)).OrderBy(n => n).ToList();
         Assert.True(extra.Count == 0, $"{tag} reads undeclared attributes: {string.Join(", ", extra)}");
     }
@@ -114,7 +114,7 @@ public class TagSchemaInputsTests
     public void Schema_Inputs_DeclaredAreRead(string tag, string markup)
     {
         var read = ReadsOf(tag, markup);
-        var missing = Declared(tag).Where(a => a.Note?.Contains("unused") != true && !read.Contains(a.Name)).Select(a => a.Name).ToList();
+        var missing = Declared(tag).Where(a => !read.Contains(a.Name)).Select(a => a.Name).ToList();
         Assert.True(missing.Count == 0, $"{tag} declares attributes the build never read: {string.Join(", ", missing)}");
     }
 }

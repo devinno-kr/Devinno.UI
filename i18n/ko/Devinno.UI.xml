@@ -3640,7 +3640,10 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             </summary></member><member name="T:Devinno.UI.Markup.TagSchema" en-hash="280e80dee44e2c63"><summary>
             모든 내장 태그의 속성을 한 곳에 둔다. 빌드 코드는 이 이름만, <see cref="T:Devinno.UI.Layout.AttrReader" /> 를 거쳐서만 읽는다
             (테스트가 읽기를 기록해 이 표와 비교한다).
-            </summary></member><member name="F:Devinno.UI.Markup.TagSchema.Common" en-hash="8126ead0d128febb"><summary>모든 요소가 받는 속성.</summary></member><member name="F:Devinno.UI.Markup.TagSchema.Tags" en-hash="9ad2f4be3566b6e9"><summary>태그별 속성. 2단계에서 그룹마다 채운다.</summary></member><member name="M:Devinno.UI.Markup.TagSchema.Find(System.String,System.String)" en-hash="d066625c279ecc66"><summary><paramref name="tag" /> 의 <paramref name="name" /> 정의(태그 전용 먼저, 그다음 공통). 없으면 <see langword="null" />.</summary></member><member name="T:Devinno.UI.Motion.MotionPhase" en-hash="0e5c4d601803202a">
+            </summary></member><member name="F:Devinno.UI.Markup.TagSchema.Common" en-hash="8126ead0d128febb"><summary>모든 요소가 받는 속성.</summary></member><member name="F:Devinno.UI.Markup.TagSchema.ChildTags" en-hash="c86c330bd14830a9"><summary>
+상자가 아닌 하위 요소(선택지·열·채널·공정 포트·부속·선 …) — 자기 속성과 <c>id</c>(핸들은 어느 요소에나 붙일 수 있다)만 받고, 다른 공통 속성은 받지 않는다.
+그런 태그가 쓰는 것(DvColumn <c>width</c>, DvPort <c>visible</c>)은 그 태그 정의에 있다. 상자인 하위 요소(DvTab 내용, DvAttach)는 보통 상자처럼 공통 속성을 받는다.
+</summary></member><member name="M:Devinno.UI.Markup.TagSchema.CommonOf(System.String)" en-hash="e0cfb2fe11d24fd6"><summary><paramref name="tag" /> 가 받는 공통 속성 — <see cref="F:Devinno.UI.Markup.TagSchema.Common" /> 전부, <see cref="F:Devinno.UI.Markup.TagSchema.ChildTags" /> 면 <c>id</c> 만.</summary></member><member name="F:Devinno.UI.Markup.TagSchema.Tags" en-hash="9ad2f4be3566b6e9"><summary>태그별 속성. 2단계에서 그룹마다 채운다.</summary></member><member name="M:Devinno.UI.Markup.TagSchema.Find(System.String,System.String)" en-hash="55f5fb2c6b15424f"><summary><paramref name="tag" /> 의 <paramref name="name" /> 정의(태그 전용 먼저, 그다음 그 태그가 받는 공통 — <see cref="M:Devinno.UI.Markup.TagSchema.CommonOf(System.String)" />). 없으면 <see langword="null" />.</summary></member><member name="T:Devinno.UI.Motion.MotionPhase" en-hash="0e5c4d601803202a">
             <summary>
             렌더 루프의 타임스탬프(ms)로 애니메이션 위상을 계산하는 도우미입니다.
             </summary>

@@ -382,6 +382,7 @@ The heights of `a`·`b` match `in`·`out` of `DvValve` (in line with ordinary va
 | `medium` | Medium color `water`·`steam`·`air`·`gas`·`oil`·`acid` (12.2). Propagates in the flow direction. If omitted, gray |
 | `via` | Only with `placement="fixed"`: the points the pipe runs through, `"x,y x,y …"`, in the same space as equipment `x`·`y` (chapter 20.6). If omitted, routed automatically |
 | `label` | One line of small text beside the pipe — the line number from the drawing (`01-100-PE-N`). Placed at the middle of the pipe's longest straight segment (below it if horizontal, to the right if vertical), in the theme text color. Does not affect layout, so give the pipe a segment long enough for the text |
+| `visible` | If false (the common true/false rule), the pipe is not created — like hidden equipment: not drawn, no flow passes through it, and automatic placement is computed without it (so equipment may move when it toggles). Bindable |
 
 **Rules**
 
@@ -392,7 +393,7 @@ The heights of `a`·`b` match `in`·`out` of `DvValve` (in line with ordinary va
   - Several lines on a face port (`top`, `side`) → lines in the same direction (incoming with incoming, outgoing with outgoing) merge into one nozzle and gather into a T or cross in front of the tank. Incoming and outgoing lines are not merged (merging would make the inlet and outlet look connected outside the tank). To show separate nozzles, split the connections between `top` and `side`.
 - Pipes of different groups never overlap, and when running in parallel they keep a minimum spacing (plain 12px, rich 16px). Where they must cross, a semicircular jump is drawn on one of them.
 - In automatic placement there are **no** attributes for bend points: change the shape with the hints in chapter 11. Bend points exist only in coordinate placement, as `via` (chapter 20.6), where the equipment does not move on its own.
-- `DvLine` has no `visible`·`class`·`style` (ignored).
+- `DvLine` has no `class`·`style`·`onclick` or other common attributes (build warning DVML019); only `visible` (above).
 
 **Invalid connections**
 
@@ -522,6 +523,7 @@ Connects signals between instruments, or between an instrument and equipment, wi
 | `width` | Thickness in px, greater than 0. If omitted, 1.6. Dashes grow with it. Bindable. Otherwise → default + Trace warning |
 | `arrow` | `end` · `start` · `both` · `none` (default). Small arrowhead at that end |
 | `label` | One line of small text beside the `from` end (`SH`, `SL` …), on the side away from the line's first bend — or the other side if that spot touches a pipe, a signal line or a bubble. Bindable |
+| `visible` | If false (the common true/false rule), the signal line is not created (not drawn). Bindable. No other common attribute (`class`, `style` … = DVML019) |
 
 - By default, signal lines and instrument connection lines (`tap`) take the **theme text color**, not the `look` palette, so they read on a light and on a dark background in both looks. Leave them that way unless a drawing or a site standard says otherwise: `color` is for that, and a fixed `#color` does not follow the theme, so check it on the dark theme too. `tap` connection lines have no `color`·`width`. Pipe color is `medium` only (12.2).
 - It is a different tag from pipes (`DvLine`). Signal lines are drawn **after all pipes are drawn**, and have **no effect** on equipment placement, flow judgment or flow animation. Adding or removing signal lines leaves equipment positions unchanged.

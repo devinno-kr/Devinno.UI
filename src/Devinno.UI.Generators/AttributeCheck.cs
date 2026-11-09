@@ -21,6 +21,15 @@ internal static class AttributeCheck
         "onclick", "hold", "onbeforecommit",
     ];
 
+    /// <summary>
+    /// 상자가 아닌 하위 요소 — 공통 속성은 <c>id</c> 만 받는다(쓰는 것은 그 태그 정의에). 라이브러리 <c>TagSchema.ChildTags</c> 와 같아야 한다(테스트가 비교).
+    /// </summary>
+    internal static readonly string[] ChildTags =
+    [
+        "DvOption", "DvColumn", "DvColumnGroup", "DvSummaryRow", "DvSummary", "DvTrendChannel",
+        "DvPort", "DvAgitator", "DvMotor", "DvLine", "DvSignal", "DvStyle",
+    ];
+
     /// <summary>태그별 속성 이름 — 라이브러리 <c>TagSchema.Tags</c> 의 이름만 복사(테스트가 비교). 정의는 그 태그가 실제로 쓰는 속성만이다(3단계 R9).</summary>
     internal static readonly Dictionary<string, string[]> Tags = new(StringComparer.Ordinal)
     {
@@ -260,6 +269,10 @@ internal static class AttributeCheck
         || name == "rotate" && ProcessCheck.Kinds.ContainsKey(tag);
 
     private static readonly HashSet<string> CommonSet = new(Common, StringComparer.Ordinal);
+    private static readonly HashSet<string> ChildSet = new(ChildTags, StringComparer.Ordinal);
+
+    // 그 태그가 받는 공통 속성인가 — 상자가 아닌 하위 요소는 id 만
+    private static bool TakesCommon(string tag, string name) => CommonSet.Contains(name) && (name == "id" || !ChildSet.Contains(tag));
 
     public static void Check(XElement root, Action<DiagnosticDescriptor, XObject, object[]> report) => Walk(root, true, report);
 
@@ -276,14 +289,14 @@ internal static class AttributeCheck
                 if (a.IsNamespaceDeclaration || a.Name.Namespace != XNamespace.None)
                     continue;
                 var name = a.Name.LocalName;
-                if (CommonSet.Contains(name) || Array.IndexOf(own, name) >= 0)
+                if (Array.IndexOf(own, name) >= 0 || TakesCommon(tag, name))
                 {
                     CheckValue(tag, name, a, report);
                     continue;
                 }
                 if (isRoot && (name == "vm" || name.StartsWith("font-lang-", StringComparison.Ordinal)))
                     continue; // 루트만 받는 이름
-                report(Diagnostics.UnknownAttribute, a, new object[] { tag, name, Suggest(name, own) });
+                report(Diagnostics.UnknownAttribute, a, new object[] { tag, name, Suggest(name, own, tag) });
             }
         }
 
@@ -360,9 +373,9 @@ internal static class AttributeCheck
     }
 
     // 가장 가까운 이름(편집 거리 2 이내) — "txet" → "text"
-    private static object Suggest(string name, string[] own)
+    private static object Suggest(string name, string[] own, string tag)
     {
-        var best = own.Concat(Common).Select(k => (k, d: StyleCheck.Distance(name, k))).OrderBy(x => x.d).FirstOrDefault();
+        var best = own.Concat(Common.Where(c => TakesCommon(tag, c))).Select(k => (k, d: StyleCheck.Distance(name, k))).OrderBy(x => x.d).FirstOrDefault();
         return best.k is not null && best.d <= 2 ? Diagnostics.Text("Style_DidYouMean", best.k) : (object)"";
     }
 }

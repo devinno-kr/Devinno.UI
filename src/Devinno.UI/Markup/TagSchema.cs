@@ -60,6 +60,22 @@ internal static class TagSchema
         new("onbeforecommit", AttrKind.Expr, Bindable: false, Note: "used by value widgets only"),
     ];
 
+    /// <summary>
+    /// Child elements that are not boxes (an option, a column, a channel, a process port, accessory or line …): they take only their own attributes
+    /// and <c>id</c> (a handle can be bound to any element), no other common attribute. What such a tag does use (DvColumn <c>width</c>, DvPort <c>visible</c>)
+    /// is in its own definition. Child elements that are boxes (DvTab content, DvAttach) take the common attributes like any box.
+    /// </summary>
+    public static readonly IReadOnlySet<string> ChildTags = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "DvOption", "DvColumn", "DvColumnGroup", "DvSummaryRow", "DvSummary", "DvTrendChannel",
+        "DvPort", "DvAgitator", "DvMotor", "DvLine", "DvSignal", "DvStyle",
+    };
+
+    private static readonly IReadOnlyList<AttrDef> IdOnly = [Common[0]];
+
+    /// <summary>The common attributes <paramref name="tag"/> takes: all of <see cref="Common"/>, or only <c>id</c> for <see cref="ChildTags"/>.</summary>
+    public static IReadOnlyList<AttrDef> CommonOf(string tag) => ChildTags.Contains(tag) ? IdOnly : Common;
+
     /// <summary>Tag-specific attributes, by tag. Filled group by group in stage 2.</summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<AttrDef>> Tags = new Dictionary<string, IReadOnlyList<AttrDef>>(StringComparer.Ordinal)
     {
@@ -428,7 +444,7 @@ internal static class TagSchema
             new("medium", AttrKind.Enum, Values: Process.ProcessMedium.Names, Note: "absent = default gray; " + EnumRule + " (default gray); a fixed palette (no color attribute)"),
             new("via", AttrKind.Text, Note: "\"x,y x,y\" bend points; fixed placement only, otherwise ignored + warning; a bad format = automatic route + warning"),
             new("label", AttrKind.Text),
-            new("visible", AttrKind.Bool, Note: "unused: lines are always drawn"),
+            LineVisible("the pipe"),
         ],
         ["DvSignal"] =
         [
@@ -439,7 +455,7 @@ internal static class TagSchema
             new("kind", AttrKind.Enum, "electric", Values: ["electric", "pneumatic"], Note: EnumRule),
             new("color", AttrKind.Color, Note: "absent = theme text color; " + ColorRule + " (theme text color); the only process color attribute (the rest use a fixed palette)"),
             new("width", AttrKind.Number, "1.6", Note: "stroke px > 0; not a number or <= 0 = default + warning; name clash: DvVessel width is the body width"),
-            new("visible", AttrKind.Bool, Note: "unused: signal lines are always drawn"),
+            LineVisible("the signal line"),
         ],
         ["DvInstrument"] =
         [
@@ -475,6 +491,10 @@ internal static class TagSchema
 
     private static AttrDef Direction() =>
         new("direction", AttrKind.Enum, "lr", Values: ["lr", "tb"], Note: EnumRule + "; name clash: flex direction is row|column");
+
+    // 3단계 R10 — 선도 공통 visible 규칙: 거짓이면 그 선은 만들지 않는다(숨긴 장비와 같게 — 그리지 않고, 흐름·자동 배치에서도 빠진다)
+    private static AttrDef LineVisible(string what) =>
+        new("visible", AttrKind.Bool, "true", Note: $"the common visible rule ({BoolRule}); false = {what} is not created (not drawn, not part of flow or automatic placement); a handle Visible override wins");
 
     private static AttrDef ProcessVisible() =>
         new("visible", AttrKind.Bool, "true", Note: "the common visible rule (" + BoolRule + "); a handle Visible override wins");
@@ -627,7 +647,7 @@ internal static class TagSchema
         new("justify", AttrKind.Enum, justify, Values: ["start", "center", "end", "between"], Note: (note is null ? "" : note + "; ") + "between = space-between; " + EnumRule),
     ];
 
-    /// <summary>The definition of <paramref name="name"/> on <paramref name="tag"/> (tag-specific first, then common), or <see langword="null"/>.</summary>
+    /// <summary>The definition of <paramref name="name"/> on <paramref name="tag"/> (tag-specific first, then the common ones it takes — <see cref="CommonOf"/>), or <see langword="null"/>.</summary>
     public static AttrDef? Find(string tag, string name) =>
-        (Tags.TryGetValue(tag, out var own) ? own.FirstOrDefault(a => a.Name == name) : null) ?? Common.FirstOrDefault(a => a.Name == name);
+        (Tags.TryGetValue(tag, out var own) ? own.FirstOrDefault(a => a.Name == name) : null) ?? CommonOf(tag).FirstOrDefault(a => a.Name == name);
 }

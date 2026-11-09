@@ -70,7 +70,7 @@ public class TagSchemaTests
     public void Schema_HasNoDeadReads()
     {
         var dead = TagSchema.Tags
-            .SelectMany(t => t.Value.Where(a => a.Note is { } n && n.Contains("dead read")).Select(a => $"{t.Key} {a.Name}"))
+            .SelectMany(t => t.Value.Where(a => a.Note is { } n && (n.Contains("dead read") || n.Contains("unused"))).Select(a => $"{t.Key} {a.Name}"))
             .ToList();
         Assert.True(dead.Count == 0, "dead reads left: " + string.Join(", ", dead));
     }

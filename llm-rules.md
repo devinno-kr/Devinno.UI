@@ -64,6 +64,7 @@ Knowing how mistakes show up helps you find the cause quickly when looking at th
 | Property path not on the VM (`{Temprature}`) | Empty value (null). Text is blank. |
 | Handler method not on the VM (`onclick="Strat"`) | Build error DVML018 in a dvml with `vm`. Where it is not checked (inside a `DvComponent` definition), nothing happens at runtime. (With a code handle's `Click`, a typo is a compile error.) |
 | `hover-style`, `content-align`, etc. on a component instance | Ignored. Only parameters and `style`, `class`, `grow`, `width`, `height`, `visible`, `onclick`, `disabled` are passed through. (See section 4) |
+| `style`, `class`, `onclick`… on a child element that is not a box (`DvOption`, `DvColumn`, `DvTrendChannel`, `DvSummary`, process `DvPort`, `DvMotor`, `DvLine`, `DvSignal` …), or an attribute another tag of the family uses (`sweep` on `DvGauge`, `placeholder` on `DvTabs`) | Ignored; build warning DVML019. A tag has only the attributes it uses (only `id` of the common ones on non-box children). |
 | Unknown icon name | The icon is not drawn (one Trace warning). |
 | `DvImage src` or `background-image: url(…)` file missing | Empty box / no picture. |
 | `DvVideo src` file missing or unreadable, or FFmpeg 8 shared libraries not found | A one-line reason in the box instead of the picture (one Trace warning). FFmpeg is not in the package — see `DvVideo` in dvml-ui-markup.md. |

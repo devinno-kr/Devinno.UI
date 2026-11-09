@@ -81,7 +81,7 @@ public class TagSchemaGridTests
     [MemberData(nameof(Tags))]
     public void Schema_Grid_ReadsAreDeclared(string tag)
     {
-        var allowed = Declared(tag).Select(a => a.Name).Concat(TagSchema.Common.Select(a => a.Name)).ToHashSet();
+        var allowed = Declared(tag).Select(a => a.Name).Concat(TagSchema.CommonOf(tag).Select(a => a.Name)).ToHashSet();
         var extra = ReadsOf(tag).Where(n => !allowed.Contains(n)).OrderBy(n => n).ToList();
         Assert.True(extra.Count == 0, $"{tag} reads undeclared attributes: {string.Join(", ", extra)}");
     }
@@ -91,7 +91,7 @@ public class TagSchemaGridTests
     public void Schema_Grid_DeclaredAreRead(string tag)
     {
         var read = ReadsOf(tag);
-        var missing = Declared(tag).Where(a => a.Note?.Contains("unused") != true && !read.Contains(a.Name)).Select(a => a.Name).ToList();
+        var missing = Declared(tag).Where(a => !read.Contains(a.Name)).Select(a => a.Name).ToList();
         Assert.True(missing.Count == 0, $"{tag} declares attributes the build never read: {string.Join(", ", missing)}");
     }
 }

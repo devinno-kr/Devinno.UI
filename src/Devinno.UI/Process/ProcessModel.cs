@@ -458,6 +458,10 @@ internal static class ProcessBuilder
         foreach (var ch in container.Children)
         {
             var r = b.Reader(ch, vm);
+            // 공통 visible 규칙 — 거짓이면 그 요소(장비·유닛·계기·포트·배관·신호선)를 만들지 않는다(3단계 R10: 선도 같은 뜻)
+            if (ch.Tag == "DvStyle" || !Visible(r))
+                continue;
+
             if (ch.Tag == "DvLine")
             {
                 var (end, start) = Arrow(r);
@@ -492,9 +496,6 @@ internal static class ProcessBuilder
                 });
                 continue;
             }
-
-            if (ch.Tag == "DvStyle" || !Visible(r))
-                continue;
 
             if (ch.Tag == "DvInstrument")
             {
