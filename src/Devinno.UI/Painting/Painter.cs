@@ -305,10 +305,10 @@ public sealed partial class Painter
                 DrawGaugeScale(canvas, box, cx, cy, gm, startAngle, sweep);
             DrawGaugeNeedle(canvas, box, cx, cy, radius * 0.9f, startAngle + t * sweep, needleColor, gm);
 
-            if (box.ShowValue) // show-value(기본 참, D2), 값 + unit(한 칸 띄고)
+            if (box.ShowValue) // show-value(기본 참, D2), 값 + unit(한 칸 띄고) — 호 두 끝 사이에 맞춘 크기
             {
                 var label = FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
-                using var font = TextFont.Create(label, gm.ValueFont, bold: true);
+                using var font = TextFont.Create(label, WidgetMetrics.GaugeValueFont(gm, label), bold: true);
                 var valColor = ZoneColorAt(box) ?? needleColor;
                 using var tp = new SKPaint { IsAntialias = true, Color = valColor };
                 canvas.DrawText(label, cx, cy + gm.ValueBaseline, SKTextAlign.Center, font, tp);

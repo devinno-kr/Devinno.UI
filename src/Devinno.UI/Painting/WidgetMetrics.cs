@@ -71,6 +71,51 @@ internal static class WidgetMetrics
             font, radius * (tickLabels ? 0.82f : 0.55f));
     }
 
+    /// <summary>
+    /// Value text size that fits <paramref name="label"/> between the arc ends (the open bottom of the 270° arc) at <see cref="GaugeMetrics.ValueBaseline"/>:
+    /// <see cref="GaugeMetrics.ValueFont"/> when it fits, otherwise smaller, down to 60% of it (not below <see cref="MinFont"/> unless the normal size already is).
+    /// A text that does not fit at the minimum keeps the minimum.
+    /// </summary>
+    internal static float GaugeValueFont(GaugeMetrics gm, string label)
+    {
+        var normal = gm.ValueFont;
+        var min = MathF.Min(normal, MathF.Max(MinFont, normal * 0.6f));
+        var size = normal;
+        for (var i = 0; i < 4; i++)
+        {
+            using var font = Text.TextFont.Create(label, size, bold: true);
+            var width = font.MeasureText(label, out var bounds);
+            var room = 2f * (GaugeGapHalf(gm, gm.ValueBaseline + bounds.Top, gm.ValueBaseline + bounds.Bottom) - 3f * gm.Scale);
+            if (width <= room || size <= min)
+                break;
+            size = MathF.Max(min, size * room / width * 0.98f);
+        }
+
+        return size;
+    }
+
+    // 중심 아래 dy(위·아래 끝 top..bottom) 띠에서 호 두 끝 사이의 반폭 — 호 띠(안쪽 반지름 ri, 바깥 ro)는 45°·135° 반지름 선에서 끝난다(butt).
+    // 깊이 dy 에서 호 = |dx| >= dy 인 점 중 ri..ro 거리: dy·√2 < ri 면 안쪽 원(√(ri²−dy²)), ri..ro 면 끝 선(dy), ro 밖이면 호 아래(제한 없음 = 반지름)
+    private static float GaugeGapHalf(GaugeMetrics gm, float top, float bottom)
+    {
+        var ri = gm.Radius - gm.Stroke / 2f;
+        var ro = gm.Radius + gm.Stroke / 2f;
+
+        float Half(float dy)
+        {
+            if (dy <= 0)
+                return ri; // 중심 위 — 원 안쪽 전체(글자는 여기까지 오지 않음)
+            if (dy * MathF.Sqrt(2f) > ro)
+                return ro;
+            return dy * MathF.Sqrt(2f) >= ri ? dy : MathF.Sqrt(ri * ri - dy * dy);
+        }
+
+        // Half 는 dy = ri/√2 까지 줄고 그 뒤로 는다 — 구간 최소는 양 끝 또는 그 점
+        var turn = ri / MathF.Sqrt(2f);
+        var m = MathF.Min(Half(top), Half(bottom));
+        return top < turn && bottom > turn ? MathF.Min(m, turn) : m;
+    }
+
     internal readonly record struct KnobMetrics(float Scale, float Radius, float Stroke, float FaceInset,
         float RimWidth, float ShadowBlur, float ShadowDy);
 

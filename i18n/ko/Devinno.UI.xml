@@ -3834,6 +3834,12 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
         </member><member name="M:Devinno.UI.Painting.WidgetMetrics.Gauge(SkiaSharp.SKRect,System.Boolean)" en-hash="aa58e5eb5d1877ac">
             <param name="rect">계기 영역(짧은 변 기준으로 배율 계산)</param>
             <param name="tickLabels">눈금 숫자를 그리면 값 글씨를 호가 열린 아래 틈으로 내리고 조금 줄인다(아래쪽 눈금 숫자와 겹치지 않게)</param>
+        </member><member name="M:Devinno.UI.Painting.WidgetMetrics.GaugeValueFont(Devinno.UI.Painting.WidgetMetrics.GaugeMetrics,System.String)" en-hash="90b1b65fae8e0b69">
+            <summary>
+            <paramref name="label" /> 을 <see cref="P:Devinno.UI.Painting.WidgetMetrics.GaugeMetrics.ValueBaseline" /> 에서 호의 두 끝 사이(270° 호의 열린 아래)에 맞추는 값 글씨 크기:
+            들어가면 <see cref="P:Devinno.UI.Painting.WidgetMetrics.GaugeMetrics.ValueFont" />, 아니면 그 60% 까지 줄인다(<see cref="F:Devinno.UI.Painting.WidgetMetrics.MinFont" /> 아래로는 줄이지 않음 — 보통 크기가 이미 그 크기면 그대로).
+            최소 크기에서도 들어가지 않는 글자는 최소 크기를 유지한다.
+            </summary>
         </member><member name="M:Devinno.UI.Painting.WidgetMetrics.Tank(SkiaSharp.SKRect)" en-hash="92d0d982b284c4a2">
             <summary>탱크는 가늘고 길거나 넓고 낮게 쓰이므로 폭·높이 중 덜 커진 쪽을 배율로 쓴다.</summary>
         </member><member name="T:Devinno.UI.Process.BuiltInSymbols" en-hash="c74804710d4403a3">

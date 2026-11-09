@@ -42,7 +42,7 @@ A 270° needle instrument.
 **Behavior**
 - Default size: 120×120.
 - The value text (+ `unit`) and the needle tip use the current zone color.
-- The value text sits in the open bottom of the arc and scales with the gauge, so a larger gauge gives it no more room. Up to about 7 characters with the unit (`58 %`, `148 rpm`) fit between the arc ends; 8 or more (`1480 rpm`, `12.5 bar`) reach or overlap the arc ends at every size. With `ticks` the text sits lower and smaller. For a longer text, leave `unit` out and put the unit in a `DvLabel` under the gauge, or set `show-value="false"` and show the value in your own label.
+- The value text sits in the open bottom of the arc and scales with the gauge, so a larger gauge gives it no more room. It is fitted between the arc ends: a text that does not fit at the normal size (`1480 rpm`, `10000 kPa`) is drawn smaller, down to 60% of the normal size. Up to about 13 characters with the unit (`10000 m3/hour`) fit; a longer text stays at 60% and reaches the arc ends (no ellipsis). With `ticks` the text sits lower and its normal size is smaller. For a longer text, leave `unit` out and put the unit in a `DvLabel` under the gauge, or set `show-value="false"` and show the value in your own label.
 - The gauge has no `tone`, `direction`, `label`, `sweep` or `thickness` (those belong to the ring and progress bar); written on a gauge they are [DVML019](dvml-diagnostics.md#dvml019).
 
 **Example**

@@ -140,7 +140,7 @@ Knowing how mistakes show up finds the cause quickly when you look at the result
 | Video box empty | `DvVideo source="{X}"` where X is not an `IFrameSource` (a path string, an `SKImage`); Trace warning | — | A file path goes in `src`; frames from code go through a `FrameSource` |
 | Screen is dark though a light one is wanted | No theme given → `DvTheme.Default` (= `DvTheme.Dark`): style tokens and widget-internal colors (toggles, gauge tracks, tanks, grids, virtual keyboard) are all dark | — | Set `DvTheme.Light` (`DvTheme.Graphite` = ISA-101 style gray for bright control rooms, `DvTheme.Carbon` = dim warm dark for night control rooms) — [built-in themes](dvml-style.md#built-in-themes) |
 | Built-in widget text is English on a Korean screen (alarm columns, input errors, dialog and picker buttons) | Built-in text is English by default | — | Korean: `app.Strings = new DvStrings { Language = "ko" }`; other languages: add the `dv.` keys to your table — [localization](dvml-app.md#localization) |
-| Gauge value text runs into the arc ends | Value + unit of 8 characters or more; the text scales with the gauge, so a bigger gauge does not help | — | Unit in a separate label, or `show-value="false"` — [DvGauge](dvml-instruments.md#dvgauge) |
+| Gauge value text runs into the arc ends, or is drawn small | The text is shrunk to fit between the arc ends, down to 60%; value + unit longer than about 13 characters does not fit even then. The text scales with the gauge, so a bigger gauge does not help | — | Unit in a separate label, or `show-value="false"` — [DvGauge](dvml-instruments.md#dvgauge) |
 
 **Layout**
 
