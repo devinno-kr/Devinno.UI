@@ -673,4 +673,33 @@ internal static class TagSchema
     /// <summary>The definition of <paramref name="name"/> on <paramref name="tag"/> (tag-specific first, then the common ones it takes — <see cref="CommonOf"/>), or <see langword="null"/>.</summary>
     public static AttrDef? Find(string tag, string name) =>
         (Tags.TryGetValue(tag, out var own) ? own.FirstOrDefault(a => a.Name == name) : null) ?? CommonOf(tag).FirstOrDefault(a => a.Name == name);
+
+    /// <summary>
+    /// Attributes renamed in stage 4 (0.x: no aliases, the old name is not read). Key = (tag, old name); <c>Reversed</c> = the new attribute means the opposite (true = disabled).
+    /// The generator's <c>AttributeCheck.Renamed</c> is a copy (a test compares them). <c>DvProcess fit="shrink"</c> is a value, not an attribute: the enum warning lists <c>scale-down</c>.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<(string Tag, string Old), (string New, bool Reversed)> Renamed = new Dictionary<(string Tag, string Old), (string New, bool Reversed)>
+    {
+        [("DvExpander", "header")] = ("title", false),
+        [("DvSummaryRow", "title")] = ("label", false),
+        [("DvSignal", "width")] = ("thickness", false),
+        [("DvColumn", "enabled")] = ("cell-disabled", true),
+        [("DvLamp", "blink-when")] = ("blink", false),
+        [("DvDataGrid", "selection")] = ("selected-items", false),
+    };
+
+    /// <summary>
+    /// Warns (<see cref="Interaction.Warnings.Warn"/>, once per surface for each tag and old name) about every element under <paramref name="root"/> that carries a <see cref="Renamed"/> attribute:
+    /// the old name is silently not read, so the screen would otherwise just lose it. Looks only at the node's attribute names — it is not a read of the attribute.
+    /// </summary>
+    public static void WarnRenamed(ElementNode root)
+    {
+        foreach (var name in root.Attributes.Keys)
+            if (Renamed.TryGetValue((root.Tag, name), out var now))
+                Interaction.Warnings.Warn($"Devinno.UI: {root.Tag} '{name}' was renamed to '{now.New}' in 0.x stage 4; the old name is not read" +
+                                          (now.Reversed ? $" — the meaning is reversed: {now.New} names a bool property where true = disabled" : ""),
+                    key: $"renamed {root.Tag} {name}");
+        foreach (var c in root.Children)
+            WarnRenamed(c);
+    }
 }

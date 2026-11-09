@@ -97,6 +97,11 @@ public sealed partial class LayoutEngine
             _widgets = WidgetStore ?? new InstanceStore<Widgets.DvWidget>(); // 서피스가 없으면(직접 호출·DvRenderer) 이번 배치만 쓰는 새 인스턴스
             _videos = VideoStore ?? new InstanceStore<Video.VideoPlayer>(disposeDropped: true); // 서피스가 없으면 첫 프레임만 만든 재생기(바로 닫힘)
             _nth.Clear();
+            // 4단계에서 바뀐 옛 속성 이름 — 실행 때는 읽지 않으므로 화면마다 한 번 알린다(화면 마크업 + 등록 컴포넌트 틀)
+            TagSchema.WarnRenamed(root);
+            if (registry is not null)
+                foreach (var def in registry.Definitions)
+                    TagSchema.WarnRenamed(def.Template);
             _widgets.Begin();
             _videos.Begin();
             var box = Build(root, vm, registry, 0) ?? new LayoutBox { Node = root, Style = new ComputedStyle() };

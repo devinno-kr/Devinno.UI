@@ -413,21 +413,21 @@ internal static class AttributeCheck
 
     /// <summary>
     /// Attributes renamed in stage 4 (0.x: no aliases, the old name is an unknown attribute) — DVML019 names the new one instead of a similar-name guess.
-    /// Key = (tag, old name), value = new name.
+    /// Key = (tag, old name), value = (new name, the meaning is reversed). A copy of the library <c>TagSchema.Renamed</c> (a test compares them).
     /// </summary>
-    internal static readonly Dictionary<(string Tag, string Old), string> Renamed = new()
+    internal static readonly Dictionary<(string Tag, string Old), (string New, bool Reversed)> Renamed = new()
     {
-        [("DvExpander", "header")] = "title",
-        [("DvSummaryRow", "title")] = "label",
-        [("DvSignal", "width")] = "thickness",
-        [("DvColumn", "enabled")] = "cell-disabled",
-        [("DvLamp", "blink-when")] = "blink",
-        [("DvDataGrid", "selection")] = "selected-items",
+        [("DvExpander", "header")] = ("title", false),
+        [("DvSummaryRow", "title")] = ("label", false),
+        [("DvSignal", "width")] = ("thickness", false),
+        [("DvColumn", "enabled")] = ("cell-disabled", true),
+        [("DvLamp", "blink-when")] = ("blink", false),
+        [("DvDataGrid", "selection")] = ("selected-items", false),
     };
 
-    // enabled → cell-disabled 는 뜻도 뒤집혔다 — 그것까지 알린다
-    private static object RenamedText(string old, string now) =>
-        Diagnostics.Text(old == "enabled" ? "Attr_RenamedInverted" : "Attr_Renamed", old, now);
+    // 뜻이 뒤집힌 것(enabled → cell-disabled)은 그것까지 알린다 — (태그, 옛 이름) 으로 정한다
+    private static object RenamedText(string old, (string New, bool Reversed) now) =>
+        Diagnostics.Text(now.Reversed ? "Attr_RenamedInverted" : "Attr_Renamed", old, now.New);
 
     // 가장 가까운 이름(편집 거리 2 이내) — "txet" → "text"
     private static object Suggest(string name, string[] own, string tag)

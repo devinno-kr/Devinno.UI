@@ -138,4 +138,52 @@ public class Stage4NameTests
         Assert.True(Grid("selected-items", vm).IsSelected(vm.Rows[3]));
         Assert.False(Grid("selection", vm).IsSelected(vm.Rows[3]));
     }
+
+    // 4단계 검토 I1 — 옛 속성 이름은 실행 때 조용히 무시되므로(DvColumn enabled 는 모든 버튼이 켜짐 = 열린 쪽 실패) 화면마다 한 번 경고하고 새 이름을 알린다
+    [Theory]
+    [InlineData("<DvExpander header=\"A\"/>", "DvExpander 'header' was renamed to 'title'")]
+    [InlineData("<DvDataGrid><DvColumn field=\"A\"/><DvSummaryRow title=\"T\" fn=\"sum\"/></DvDataGrid>", "DvSummaryRow 'title' was renamed to 'label'")]
+    [InlineData("<DvProcess>" + ProcessInstrumentTests.Loop + "<DvSignal from=\"FT1\" to=\"V1\" width=\"2\"/></DvProcess>", "DvSignal 'width' was renamed to 'thickness'")]
+    [InlineData("<DvDataGrid><DvColumnGroup header=\"G\"><DvColumn field=\"A\" cell-type=\"button\" enabled=\"CanAck\"/></DvColumnGroup></DvDataGrid>", "DvColumn 'enabled' was renamed to 'cell-disabled'")]
+    [InlineData("<DvLamp on=\"true\" blink-when=\"true\"/>", "DvLamp 'blink-when' was renamed to 'blink'")]
+    [InlineData("<DvDataGrid selection-mode=\"multi\" selection=\"{Bind Picked}\"/>", "DvDataGrid 'selection' was renamed to 'selected-items'")]
+    public void OldAttribute_WarnsOncePerSurface_NamingTheNewOne(string body, string expected)
+    {
+        var w = Warnings(() =>
+        {
+            var s = new DvSurface($"<DvScreen>{body}</DvScreen>", new ProcessTests.Vm(), DvTheme.Light);
+            s.Layout(1100, 700);
+            s.Layout(1000, 650);
+        });
+        Assert.Single(w, x => x.Contains(expected));
+    }
+
+    // 뜻이 뒤집힌 것(DvColumn enabled → cell-disabled)은 그것까지 말한다 — 이름만 바꾸면 모든 버튼이 반대로 된다
+    [Fact]
+    public void OldAttribute_ColumnEnabled_SaysTheMeaningIsReversed()
+    {
+        var w = Warnings(() => Surface("<DvDataGrid><DvColumn field=\"A\" cell-type=\"button\" enabled=\"CanAck\"/></DvDataGrid>"));
+        Assert.Contains(w, x => x.Contains("DvColumn 'enabled' was renamed to 'cell-disabled'") && x.Contains("meaning is reversed") && x.Contains("true = disabled"));
+        // 뒤집힘은 (태그, 옛 이름) 으로 — 다른 이름 바꿈 문구에는 없다
+        var other = Warnings(() => Surface("<DvExpander header=\"A\"/>"));
+        Assert.DoesNotContain(other, x => x.Contains("reversed"));
+    }
+
+    // 등록 컴포넌트 틀 안의 옛 이름도 알린다
+    [Fact]
+    public void OldAttribute_InComponentTemplate_Warns()
+    {
+        var reg = new Devinno.UI.Components.ComponentRegistry();
+        reg.Register("<DvComponent name=\"Panel\"><DvExpander header=\"A\"/></DvComponent>");
+        var w = Warnings(() => new DvSurface("<DvScreen><Panel/></DvScreen>", new object(), DvTheme.Light, reg).Layout(600, 600));
+        Assert.Contains(w, x => x.Contains("DvExpander 'header' was renamed to 'title'"));
+    }
+
+    // 새 이름만 쓰면 이름 바꿈 경고가 없다
+    [Fact]
+    public void NewAttributes_NoRenameWarning()
+    {
+        var w = Warnings(() => Surface("<DvExpander title=\"A\"/><DvLamp on=\"true\" blink=\"true\"/><DvDataGrid selection-mode=\"multi\" selected-items=\"{Bind Picked}\"><DvColumn field=\"A\" cell-type=\"button\" cell-disabled=\"X\"/><DvSummaryRow label=\"T\" fn=\"sum\"/></DvDataGrid>"));
+        Assert.DoesNotContain(w, x => x.Contains("was renamed"));
+    }
 }

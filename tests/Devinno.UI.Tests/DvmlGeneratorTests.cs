@@ -852,7 +852,24 @@ public class DvmlGeneratorTests
         var msg = d.GetMessage(Invariant);
         Assert.StartsWith($"{tag} has no attribute '{old}'", msg);
         Assert.Contains($"'{old}' was renamed to '{now}'", msg);
-        Assert.Contains($"'{now}'", d.GetMessage(new System.Globalization.CultureInfo("ko-KR")));
+        Assert.Contains($"'{old}' 는 '{now}' 로 이름이 바뀌", d.GetMessage(new System.Globalization.CultureInfo("ko-KR"))); // Resources.ko.resx 문구 — 한국어 항목이 없으면 실패
+    }
+
+    // 4단계 검토 M4 — 생성기 Renamed 는 라이브러리 TagSchema.Renamed 의 복사본(뜻 뒤집힘 포함). 새 이름은 그 태그의 속성이고 옛 이름은 아니다
+    [Fact]
+    public void Renamed_MatchesLibrary_NewNamesExist_OldNamesDoNot()
+    {
+        static IEnumerable<string> Rows(IEnumerable<KeyValuePair<(string Tag, string Old), (string New, bool Reversed)>> map) =>
+            map.Select(kv => $"{kv.Key.Tag} {kv.Key.Old} -> {kv.Value.New} {kv.Value.Reversed}").OrderBy(x => x, StringComparer.Ordinal);
+
+        Assert.Equal(Rows(Devinno.UI.Markup.TagSchema.Renamed), Rows(AttributeCheck.Renamed));
+        Assert.Equal(6, Devinno.UI.Markup.TagSchema.Renamed.Count);
+        foreach (var ((tag, old), (now, _)) in Devinno.UI.Markup.TagSchema.Renamed)
+        {
+            var own = Devinno.UI.Markup.TagSchema.Tags[tag].Select(a => a.Name).Concat(Devinno.UI.Markup.TagSchema.CommonOf(tag).Select(a => a.Name)).ToList();
+            Assert.True(own.Contains(now), $"{tag} has no '{now}'");
+            Assert.False(own.Contains(old), $"{tag} still has '{old}'");
+        }
     }
 
     // enabled → cell-disabled 는 뜻도 뒤집혔다(true = 버튼 꺼짐) — 메시지가 그것을 말한다
