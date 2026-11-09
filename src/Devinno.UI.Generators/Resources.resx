@@ -121,6 +121,15 @@
   <data name="DVML019_Message" xml:space="preserve">
     <value>{0} has no attribute '{1}' — it is silently ignored at run time{2}</value>
   </data>
+  <data name="DVML020_Title" xml:space="preserve">
+    <value>Attribute value is not valid for its kind</value>
+  </data>
+  <data name="DVML020_Bool" xml:space="preserve">
+    <value>{0} {1}='{2}' is not a true/false value (true, false, or a number: 0 = false) — the default is used at run time</value>
+  </data>
+  <data name="DVML020_Number" xml:space="preserve">
+    <value>{0} {1}='{2}' is not a number (invariant culture, e.g. 1.5) — the default is used at run time</value>
+  </data>
   <data name="DVML018_Title" xml:space="preserve">
     <value>Handler method not found</value>
   </data>

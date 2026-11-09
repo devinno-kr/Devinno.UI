@@ -814,6 +814,82 @@ public class DvmlGeneratorTests
         Assert.Contains("vm", d.GetMessage(Invariant));
     }
 
+    // ── 값 검사(DVML020) — 참/거짓·숫자 속성의 리터럴 값이 그 종류가 아님 ──
+
+    // 생성기의 종류 목록도 라이브러리 정의(TagSchema)의 복사본 — Bool·Number 이름이 태그마다 같아야 한다
+    [Fact]
+    public void AttributeKinds_MatchLibrary()
+    {
+        static string[] Names(IEnumerable<Devinno.UI.Markup.AttrDef> defs, Devinno.UI.Markup.AttrKind kind) =>
+            defs.Where(a => a.Kind == kind).Select(a => a.Name).Distinct().OrderBy(n => n, StringComparer.Ordinal).ToArray();
+        static string[] Sorted(string[] names) => names.OrderBy(n => n, StringComparer.Ordinal).ToArray();
+
+        Assert.Equal(Names(Devinno.UI.Markup.TagSchema.Common, Devinno.UI.Markup.AttrKind.Bool), Sorted(AttributeCheck.CommonBool));
+        Assert.Equal(Names(Devinno.UI.Markup.TagSchema.Common, Devinno.UI.Markup.AttrKind.Number), Sorted(AttributeCheck.CommonNumber));
+        foreach (var (kind, table) in new[] { (Devinno.UI.Markup.AttrKind.Bool, AttributeCheck.Bool), (Devinno.UI.Markup.AttrKind.Number, AttributeCheck.Number) })
+        {
+            foreach (var (tag, defs) in Devinno.UI.Markup.TagSchema.Tags)
+                Assert.True(Names(defs, kind).SequenceEqual(table.TryGetValue(tag, out var n) ? Sorted(n) : []), $"{kind} {tag}");
+            Assert.All(table.Keys, tag => Assert.True(Devinno.UI.Markup.TagSchema.Tags.ContainsKey(tag), tag));
+        }
+    }
+
+    private static Diagnostic[] Values(string dvml) =>
+        Run("public partial class P { }", ("P.dvml", dvml)).Ids("DVML020");
+
+    [Fact]
+    public void Value_NotBool_Warns()
+    {
+        var d = Assert.Single(Values("<DvStack>\n<DvLamp on=\"yes\"/>\n</DvStack>"));
+        Assert.Equal(DiagnosticSeverity.Warning, d.Severity);
+        var msg = d.GetMessage(Invariant);
+        Assert.Contains("DvLamp", msg);
+        Assert.Contains("on='yes'", msg);
+        Assert.Contains("true/false", msg);
+        Assert.Equal(1, d.Location.GetLineSpan().StartLinePosition.Line);
+        Assert.Contains("참/거짓", d.GetMessage(new System.Globalization.CultureInfo("ko-KR")));
+    }
+
+    [Fact]
+    public void Value_NotNumber_Warns()
+    {
+        var d = Assert.Single(Values("<DvStack><DvGauge max=\"abc\"/></DvStack>"));
+        Assert.Contains("DvGauge max='abc'", d.GetMessage(Invariant));
+        Assert.Contains("숫자가 아닙니다", d.GetMessage(new System.Globalization.CultureInfo("ko-KR")));
+        Assert.Single(Values("<DvStack><DvLabel text=\"a\" visible=\"on\"/></DvStack>")); // 공통 속성
+        Assert.Single(Values("<DvStack><DvLamp blink-interval=\"1,5\"/></DvStack>")); // 문화권 소수점 아님
+    }
+
+    [Fact]
+    public void Value_Valid_NoWarnings()
+    {
+        Assert.Empty(Values("""
+            <DvStack vm="MyApp.P" hold="500" grow="1">
+              <DvLamp on="true" blink=" FALSE " blink-interval="1.5e3"/>
+              <DvLamp on="1" blink="-1"/>
+              <DvLamp on="" blink="{Blink}"/>
+              <DvLabel text="a" visible="False" disabled="0"/>
+              <DvGauge value="{V}" max="1.5" min="-10"/>
+              <DvTrend smooth="" window=" 60 "/>
+              <DvProcess><DvVessel name="T1" width="80" level="50"/></DvProcess>
+              <DvLine flow="{F}"/>
+            </DvStack>
+            """));
+    }
+
+    [Fact]
+    public void Value_Skipped_OnUnknownTags()
+    {
+        // 사용자 컴포넌트 인스턴스(파라미터) · 컴포넌트 템플릿의 파라미터 값 · DvSymbol 정의 안
+        Assert.Empty(Values("""
+            <DvStack>
+              <DvComponent name="Tile"><DvParam name="on"/><DvLamp on="{on}"/></DvComponent>
+              <Tile on="yes" visible="maybe"/>
+              <DvSymbol name="S2" width="40" height="60"><DvLamp on="yes"/></DvSymbol>
+            </DvStack>
+            """));
+    }
+
     // ── 진단 문구 언어 — 기본 영어, 한국어 리소스(ko) ──
 
     [Fact]

@@ -45,4 +45,8 @@ internal static class Diagnostics
 
     // DVML019 — 내장 태그에 그 태그·공통 정의(TagSchema)에 없는 속성(실행 때 조용히 무시된다)
     public static readonly DiagnosticDescriptor UnknownAttribute = D("DVML019", DiagnosticSeverity.Warning);
+
+    // DVML020 — 리터럴 값이 속성 종류(참/거짓·숫자, TagSchema)에 맞지 않음(실행 때 기본값 + Trace 경고)
+    public static readonly DiagnosticDescriptor InvalidBool = D("DVML020", DiagnosticSeverity.Warning, "Bool");
+    public static readonly DiagnosticDescriptor InvalidNumber = D("DVML020", DiagnosticSeverity.Warning, "Number");
 }

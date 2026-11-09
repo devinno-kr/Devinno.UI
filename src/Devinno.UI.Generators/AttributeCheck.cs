@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Xml.Linq;
 using Microsoft.CodeAnalysis;
@@ -8,6 +9,7 @@ namespace Devinno.UI.Generators;
 
 /// <summary>
 /// 없는 속성 검사(DVML019) — 내장 태그에 그 태그의 속성도 공통 속성도 아닌 이름(오타 등)이 있으면 경고. 실행 때는 조용히 무시된다.
+/// 값 검사(DVML020) — 참/거짓·숫자 속성에 리터럴로 쓴 값이 그 종류가 아니면 경고(실행 때는 기본값 + Trace). 바인딩(<c>{</c> 포함)은 건너뛴다.
 /// 표에 없는 태그(사용자 컴포넌트 인스턴스·등록 위젯·심볼·DvPageFrame 같은 내장 컴포넌트)와 <c>DvSymbol</c> 정의 안은 건너뛴다.
 /// </summary>
 internal static class AttributeCheck
@@ -104,6 +106,94 @@ internal static class AttributeCheck
         ["DvInstrument"] = ["name", "on", "tap", "tag", "number", "value", "panel", "x", "y", "visible"],
     };
 
+    /// <summary>참/거짓 속성 — 라이브러리 <c>TagSchema</c> 에서 Kind 가 Bool 인 이름(테스트가 비교). 공통은 <see cref="CommonBool"/>.</summary>
+    internal static readonly string[] CommonBool = ["visible", "disabled"];
+
+    /// <summary>태그별 참/거짓 속성(<c>AttrKind.Bool</c>).</summary>
+    internal static readonly Dictionary<string, string[]> Bool = new(StringComparer.Ordinal)
+    {
+        ["DvTabs"] = ["readonly"],
+        ["DvTab"] = ["disabled"],
+        ["DvExpander"] = ["expanded"],
+        ["DvButton"] = ["value"],
+        ["DvVideo"] = ["playing", "loop"],
+        ["DvToggle"] = ["value"],
+        ["DvCheckBox"] = ["value"],
+        ["DvSlider"] = ["show-value"],
+        ["DvInput"] = ["multiline", "readonly", "show-stepper"],
+        ["DvSelect"] = ["readonly"],
+        ["DvSegment"] = ["readonly", "fill"],
+        ["DvListBox"] = ["readonly"],
+        ["DvTreeView"] = ["readonly"],
+        ["DvDateTimeInput"] = ["readonly", "show-seconds"],
+        ["DvColorInput"] = ["readonly"],
+        ["DvProgress"] = ["show-value", "show-tick-labels"],
+        ["DvGauge"] = ["show-tick-labels", "show-value"],
+        ["DvRing"] = ["show-value", "show-tick-labels"],
+        ["DvLamp"] = ["on", "blink", "blink-when"],
+        ["DvTank"] = ["show-zone-marks"],
+        ["DvSparkline"] = ["area", "show-value"],
+        ["DvBarChart"] = ["show-value", "area"],
+        ["DvPieChart"] = ["show-value", "area"],
+        ["DvTrend"] = ["area", "smooth"],
+        ["DvAlarmBanner"] = ["show-ack"],
+        ["DvAlarmList"] = ["show-ack"],
+        ["DvColumn"] = ["frozen", "sortable", "readonly", "blink", "show-seconds"],
+        ["DvProcess"] = ["flow-animation"],
+        ["DvUnit"] = ["visible"],
+        ["DvPort"] = ["visible"],
+        ["DvVessel"] = ["visible"],
+        ["DvPump"] = ["visible", "running"],
+        ["DvValve"] = ["visible", "open"],
+        ["DvValve3"] = ["visible", "open-b", "open-c"],
+        ["DvInline"] = ["visible"],
+        ["DvExchanger"] = ["visible"],
+        ["DvTerminal"] = ["visible"],
+        ["DvAgitator"] = ["running", "visible"],
+        ["DvMotor"] = ["running", "visible"],
+        ["DvAttach"] = ["visible"],
+        ["DvLine"] = ["flow", "visible"],
+        ["DvSignal"] = ["visible"],
+        ["DvInstrument"] = ["panel", "visible"],
+    };
+
+    /// <summary>숫자 속성 — 라이브러리 <c>TagSchema</c> 에서 Kind 가 Number 인 이름(테스트가 비교). 공통은 <see cref="CommonNumber"/>.</summary>
+    internal static readonly string[] CommonNumber = ["grow", "hold"];
+
+    /// <summary>태그별 숫자 속성(<c>AttrKind.Number</c>).</summary>
+    internal static readonly Dictionary<string, string[]> Number = new(StringComparer.Ordinal)
+    {
+        ["DvStepBar"] = ["current"],
+        ["DvVideo"] = ["position", "duration"],
+        ["DvKnob"] = ["value", "min", "max", "step"],
+        ["DvSlider"] = ["value", "min", "max", "step"],
+        ["DvInput"] = ["min", "max", "step"],
+        ["DvProgress"] = ["value", "min", "max", "ticks", "minor-ticks", "sweep", "thickness"],
+        ["DvGauge"] = ["value", "min", "max", "ticks", "minor-ticks", "sweep", "thickness"],
+        ["DvRing"] = ["value", "min", "max", "sweep", "thickness", "ticks", "minor-ticks"],
+        ["DvLamp"] = ["blink-interval"],
+        ["DvTank"] = ["value", "min", "max"],
+        ["DvSparkline"] = ["y-min", "y-max", "inner-radius"],
+        ["DvBarChart"] = ["y-min", "y-max", "inner-radius"],
+        ["DvPieChart"] = ["inner-radius", "y-min", "y-max"],
+        ["DvTrend"] = ["window", "y-min", "y-max"],
+        ["DvAlarmBanner"] = ["row-height"],
+        ["DvAlarmList"] = ["row-height"],
+        ["DvDataGrid"] = ["row-height", "header-height"],
+        ["DvColumn"] = ["min", "max"],
+        ["DvUnit"] = ["row", "rank", "x", "y"],
+        ["DvPort"] = ["at"],
+        ["DvVessel"] = ["row", "rank", "x", "y", "width", "height", "level"],
+        ["DvPump"] = ["row", "rank", "x", "y"],
+        ["DvValve"] = ["row", "rank", "x", "y"],
+        ["DvValve3"] = ["row", "rank", "x", "y"],
+        ["DvInline"] = ["row", "rank", "x", "y"],
+        ["DvExchanger"] = ["row", "rank", "x", "y"],
+        ["DvTerminal"] = ["row", "rank", "x", "y"],
+        ["DvSignal"] = ["width"],
+        ["DvInstrument"] = ["x", "y"],
+    };
+
     private static readonly HashSet<string> CommonSet = new(Common, StringComparer.Ordinal);
 
     public static void Check(XElement root, Action<DiagnosticDescriptor, XObject, object[]> report) => Walk(root, true, report);
@@ -122,7 +212,10 @@ internal static class AttributeCheck
                     continue;
                 var name = a.Name.LocalName;
                 if (CommonSet.Contains(name) || Array.IndexOf(own, name) >= 0)
+                {
+                    CheckValue(tag, name, a, report);
                     continue;
+                }
                 if (isRoot && (name == "vm" || name.StartsWith("font-lang-", StringComparison.Ordinal)))
                     continue; // 루트만 받는 이름
                 report(Diagnostics.UnknownAttribute, a, new object[] { tag, name, Suggest(name, own) });
@@ -131,6 +224,41 @@ internal static class AttributeCheck
 
         foreach (var c in e.Elements())
             Walk(c, false, report);
+    }
+
+    // DVML020 — 리터럴 값이 속성 종류에 맞는지. 규칙은 라이브러리 Layout.AttrRules 와 같다:
+    // 참/거짓 = true·false(대소문자 무시)·숫자·빈 값, 숫자 = Invariant 숫자·빈 값(없음과 같음). 앞뒤 공백 무시.
+    private static void CheckValue(string tag, string name, XAttribute a, Action<DiagnosticDescriptor, XObject, object[]> report)
+    {
+        var value = a.Value;
+        if (value.IndexOf('{') >= 0)
+            return; // 바인딩·보간 — 실행 때 값이 정해진다
+        if (Has(Bool, CommonBool, tag, name) && !IsBool(value))
+            report(Diagnostics.InvalidBool, a, new object[] { tag, name, value });
+        else if (Has(Number, CommonNumber, tag, name) && !IsNumber(value))
+            report(Diagnostics.InvalidNumber, a, new object[] { tag, name, value });
+    }
+
+    // 태그 정의가 같은 이름을 다른 종류로 가지면(DvVessel width = 숫자) 태그 정의가 이긴다 — TagSchema.Find 와 같은 순서
+    private static bool Has(Dictionary<string, string[]> table, string[] common, string tag, string name)
+    {
+        if (Tags.TryGetValue(tag, out var own) && Array.IndexOf(own, name) >= 0)
+            return table.TryGetValue(tag, out var names) && Array.IndexOf(names, name) >= 0;
+        return Array.IndexOf(common, name) >= 0;
+    }
+
+    internal static bool IsBool(string value)
+    {
+        var s = value.Trim();
+        return s.Length == 0 || s.Equals("true", StringComparison.OrdinalIgnoreCase) || s.Equals("false", StringComparison.OrdinalIgnoreCase) ||
+               double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) && !double.IsNaN(d);
+    }
+
+    internal static bool IsNumber(string value)
+    {
+        var s = value.Trim();
+        return s.Length == 0 ||
+               double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) && !double.IsNaN(d) && !double.IsInfinity(d);
     }
 
     // 가장 가까운 이름(편집 거리 2 이내) — "txet" → "text"
