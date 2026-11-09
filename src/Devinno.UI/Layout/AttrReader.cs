@@ -9,6 +9,9 @@ namespace Devinno.UI.Layout;
 /// </summary>
 internal readonly struct AttrReader(ElementNode node, object? ctx, IReadOnlyDictionary<string, object?>? overrides)
 {
+    /// <summary>Test hook: called with the element and the attribute name on every read (this thread only).</summary>
+    [ThreadStatic] internal static Action<ElementNode, string>? Watch;
+
     /// <summary>The element being read.</summary>
     public ElementNode Node => node;
 
@@ -19,16 +22,30 @@ internal readonly struct AttrReader(ElementNode node, object? ctx, IReadOnlyDict
     public bool Overridden(string name) => overrides?.ContainsKey(name) == true;
 
     /// <summary>Whether the attribute is present — in markup or overridden from code.</summary>
-    public bool Has(string name) => Overridden(name) || node.Attributes.ContainsKey(name);
+    public bool Has(string name)
+    {
+        Watch?.Invoke(node, name);
+        return Overridden(name) || node.Attributes.ContainsKey(name);
+    }
 
     /// <summary>The markup text as written (not resolved, not overridden). For expressions and ownership checks.</summary>
-    public string? Raw(string name) => node.Attributes.GetValueOrDefault(name);
+    public string? Raw(string name)
+    {
+        Watch?.Invoke(node, name);
+        return node.Attributes.GetValueOrDefault(name);
+    }
 
     /// <summary>The value: the code override, otherwise the markup value resolved (a single binding keeps its type). <see langword="null"/> if absent.</summary>
     public object? Value(string name) =>
-        overrides is not null && overrides.TryGetValue(name, out var v) ? v : BindingResolver.ResolveValueOrLiteral(ctx, Raw(name));
+        overrides is not null && overrides.TryGetValue(name, out var v) ? Seen(name, v) : BindingResolver.ResolveValueOrLiteral(ctx, Raw(name));
 
     /// <summary>The value as text (see <see cref="Value"/>).</summary>
     public string? Text(string name) =>
-        overrides is not null && overrides.TryGetValue(name, out var v) ? BindingResolver.ToText(v, name) : BindingResolver.ResolveText(ctx, Raw(name));
+        overrides is not null && overrides.TryGetValue(name, out var v) ? BindingResolver.ToText(Seen(name, v), name) : BindingResolver.ResolveText(ctx, Raw(name));
+
+    private object? Seen(string name, object? value)
+    {
+        Watch?.Invoke(node, name);
+        return value;
+    }
 }
