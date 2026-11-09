@@ -1131,14 +1131,14 @@
             <summary>태그 이름이 이 레지스트리에 등록된 컴포넌트인지 확인합니다(대소문자 구분). 내장 컴포넌트는 포함하지 않습니다.</summary>
             <param name="tag">마크업 태그 이름.</param>
             <returns>등록되어 있으면 <see langword="true" />.</returns>
-        </member><member name="M:Devinno.UI.Components.ComponentRegistry.Register(System.String)" en-hash="96c2d34b0dcfea75">
+        </member><member name="M:Devinno.UI.Components.ComponentRegistry.Register(System.String)" en-hash="d26b4623aecf40f9">
             <summary>
             <c>&lt;DvComponent&gt;</c> 마크업을 파싱해 컴포넌트를 등록합니다. 루트가 <c>&lt;DvSymbol&gt;</c> 이면 공정도 장비 심볼로 등록합니다.
             같은 이름이 이미 있으면 새 정의로 바꿉니다.
             </summary>
             <param name="componentMarkup">루트가 <c>&lt;DvComponent name="…"&gt;</c> 또는 <c>&lt;DvSymbol name="…" view-box="…"&gt;</c> 인 마크업 문자열.</param>
             <exception cref="T:System.ArgumentException">
-            루트가 <c>DvComponent</c>·<c>DvSymbol</c> 이 아니거나, <c>name</c> 속성이 없거나, 템플릿 루트(<c>DvParam</c>·<c>DvStyle</c> 이 아닌 자식)가 없는 경우.
+            루트가 <c>DvComponent</c>·<c>DvSymbol</c> 이 아니거나, <c>name</c> 속성이 없거나, 이름이 내장 태그이거나(<c>DvGauge</c>·<c>DvStack</c>·<c>DvScreen</c> … — <c>DvCard</c>·<c>DvPageFrame</c> 같은 내장 컴포넌트 이름은 바꿔 쓰려고 다시 써도 된다), 템플릿 루트(<c>DvParam</c>·<c>DvStyle</c> 이 아닌 자식)가 없는 경우.
             심볼은 정의가 틀린 경우(view-box·포트 면/위치/역할·중복 포트·<c>DvPass</c> 가 없는 포트를 가리킴·모르는 <c>DvShape</c> class·path 문법) — 메시지에 무엇이 틀렸는지 들어 있습니다.
             </exception>
             <remarks>
@@ -3643,7 +3643,10 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             </summary></member><member name="F:Devinno.UI.Markup.TagSchema.Common" en-hash="8126ead0d128febb"><summary>모든 요소가 받는 속성.</summary></member><member name="F:Devinno.UI.Markup.TagSchema.ChildTags" en-hash="c86c330bd14830a9"><summary>
 상자가 아닌 하위 요소(선택지·열·채널·공정 포트·부속·선 …) — 자기 속성과 <c>id</c>(핸들은 어느 요소에나 붙일 수 있다)만 받고, 다른 공통 속성은 받지 않는다.
 그런 태그가 쓰는 것(DvColumn <c>width</c>, DvPort <c>visible</c>)은 그 태그 정의에 있다. 상자인 하위 요소(DvTab 내용, DvAttach)는 보통 상자처럼 공통 속성을 받는다.
-</summary></member><member name="M:Devinno.UI.Markup.TagSchema.CommonOf(System.String)" en-hash="e0cfb2fe11d24fd6"><summary><paramref name="tag" /> 가 받는 공통 속성 — <see cref="F:Devinno.UI.Markup.TagSchema.Common" /> 전부, <see cref="F:Devinno.UI.Markup.TagSchema.ChildTags" /> 면 <c>id</c> 만.</summary></member><member name="F:Devinno.UI.Markup.TagSchema.Tags" en-hash="9ad2f4be3566b6e9"><summary>태그별 속성. 2단계에서 그룹마다 채운다.</summary></member><member name="M:Devinno.UI.Markup.TagSchema.Find(System.String,System.String)" en-hash="55f5fb2c6b15424f"><summary><paramref name="tag" /> 의 <paramref name="name" /> 정의(태그 전용 먼저, 그다음 그 태그가 받는 공통 — <see cref="M:Devinno.UI.Markup.TagSchema.CommonOf(System.String)" />). 없으면 <see langword="null" />.</summary></member><member name="T:Devinno.UI.Motion.MotionPhase" en-hash="0e5c4d601803202a">
+</summary></member><member name="M:Devinno.UI.Markup.TagSchema.CommonOf(System.String)" en-hash="e0cfb2fe11d24fd6"><summary><paramref name="tag" /> 가 받는 공통 속성 — <see cref="F:Devinno.UI.Markup.TagSchema.Common" /> 전부, <see cref="F:Devinno.UI.Markup.TagSchema.ChildTags" /> 면 <c>id</c> 만.</summary></member><member name="F:Devinno.UI.Markup.TagSchema.ComponentTags" en-hash="fd447282df6d1d86"><summary>
+<see cref="F:Devinno.UI.Markup.TagSchema.Tags" /> 중 내장 컴포넌트(<c>BuiltInComponents</c>)인 태그 — 매개변수를 검사하려고 여기 적지만, 앱 레지스트리가 같은 이름의 자기 컴포넌트로 바꿀 수 있다.
+<see cref="F:Devinno.UI.Markup.TagSchema.Tags" /> 의 나머지 태그는 내장 요소라 컴포넌트가 그 이름을 쓸 수 없다(<see cref="M:Devinno.UI.Markup.TagSchema.IsBuiltInElement(System.String)" />).
+</summary></member><member name="M:Devinno.UI.Markup.TagSchema.IsBuiltInElement(System.String)" en-hash="10c3ce6455ba8e3f"><summary><paramref name="tag" /> 가 내장 요소인가(<see cref="F:Devinno.UI.Markup.TagSchema.Tags" /> 에 있고 내장 컴포넌트가 아님) — 그 이름으로는 컴포넌트를 등록할 수 없다.</summary></member><member name="F:Devinno.UI.Markup.TagSchema.Tags" en-hash="9ad2f4be3566b6e9"><summary>태그별 속성. 2단계에서 그룹마다 채운다.</summary></member><member name="M:Devinno.UI.Markup.TagSchema.Find(System.String,System.String)" en-hash="55f5fb2c6b15424f"><summary><paramref name="tag" /> 의 <paramref name="name" /> 정의(태그 전용 먼저, 그다음 그 태그가 받는 공통 — <see cref="M:Devinno.UI.Markup.TagSchema.CommonOf(System.String)" />). 없으면 <see langword="null" />.</summary></member><member name="T:Devinno.UI.Motion.MotionPhase" en-hash="0e5c4d601803202a">
             <summary>
             렌더 루프의 타임스탬프(ms)로 애니메이션 위상을 계산하는 도우미입니다.
             </summary>

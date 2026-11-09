@@ -102,7 +102,8 @@ public sealed class ComponentRegistry
     /// </summary>
     /// <param name="componentMarkup">A markup string whose root is <c>&lt;DvComponent name="…"&gt;</c> or <c>&lt;DvSymbol name="…" view-box="…"&gt;</c>.</param>
     /// <exception cref="ArgumentException">
-    /// The root is not <c>DvComponent</c> or <c>DvSymbol</c>, the <c>name</c> attribute is missing, or there is no template root (a child that is not <c>DvParam</c> or <c>DvStyle</c>).
+    /// The root is not <c>DvComponent</c> or <c>DvSymbol</c>, the <c>name</c> attribute is missing, the name is a built-in tag (<c>DvGauge</c>, <c>DvStack</c>, <c>DvScreen</c> …;
+    /// the names of built-in components such as <c>DvCard</c> or <c>DvPageFrame</c> may be reused to replace them), or there is no template root (a child that is not <c>DvParam</c> or <c>DvStyle</c>).
     /// For a symbol, the definition is invalid (view-box; port side/position/role; duplicate port; a <c>DvPass</c> referring to a missing port; unknown <c>DvShape</c> class; path syntax). The message says what is wrong.
     /// </exception>
     /// <remarks>
@@ -128,6 +129,8 @@ public sealed class ComponentRegistry
 
         if (_widgets.ContainsKey(name))
             throw new ArgumentException($"'{name}' is already a widget name.", nameof(componentMarkup));
+        if (TagSchema.IsBuiltInElement(name))
+            throw new ArgumentException($"'{name}' is a built-in tag; a component cannot use a built-in tag name.", nameof(componentMarkup));
 
         var template = node.Children.FirstOrDefault(c => c.Tag is not ("DvParam" or "DvStyle"))
             ?? throw new ArgumentException($"Component '{name}' requires one template root.", nameof(componentMarkup));

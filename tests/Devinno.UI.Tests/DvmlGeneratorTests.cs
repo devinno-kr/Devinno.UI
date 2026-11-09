@@ -473,18 +473,32 @@ public class DvmlGeneratorTests
     [Fact]
     public void Process_SkipsWhatIsUnknownAtBuildTime()
     {
-        // 바인딩 이름·등록 심볼·컴포넌트 유닛은 실행 때만 안다 — 오류를 내지 않는다
+        // 등록 심볼·컴포넌트 유닛의 포트와 바인딩된 값(kind·rotate)은 실행 때만 안다 — 오류를 내지 않는다
         Assert.Empty(Process("""
-            <DvPump name="{Name}"/>
             <Cyclone name="CY"/>
             <Blender name="BL1" U="{BL1}"/>
             <DvTerminal name="A" text="A"/>
             <DvLine from="A" to="CY.whatever"/>
             <DvLine from="BL1.out" to="A"/>
-            <DvLine from="A" to="SOMEONE.in"/>
-            <DvLine from="A" to="{X}"/>
             <DvPump name="P" kind="{K}" rotate="{R}"/>
             """));
+    }
+
+    // 3단계 D3 — 공정도 이름·참조는 원문(바인딩 아님): { 가 든 이름도 그 글자 그대로 검사하고, 실행 때처럼 경고한다(DVML011)
+    [Fact]
+    public void Process_BraceNames_AreLiteral()
+    {
+        var d = Process("""
+            <DvPump name="{Name}"/>
+            <DvTerminal name="A" text="A"/>
+            <DvLine from="A" to="SOMEONE.in"/>
+            <DvLine from="A" to="{X}"/>
+            <DvLine from="A" to="{Name}.in"/>
+            """);
+        Assert.Equal(["DVML011 <DvPump> name", "DVML008 SOMEONE", "DVML011 <DvLine> to", "DVML008 {X}", "DVML011 <DvLine> to"],
+            d.Select(x => x.Id + " " + (x.Id == "DVML011" ? x.GetMessage(Invariant).Split('=')[0] : System.Text.RegularExpressions.Regex.Match(x.GetMessage(Invariant), "'([^']*)' is not").Groups[1].Value)));
+        Assert.Contains("not bindable", d[0].GetMessage(Invariant));
+        Assert.Contains("바인딩", d[0].GetMessage(new System.Globalization.CultureInfo("ko-KR")));
     }
 
     [Fact]
@@ -840,6 +854,37 @@ public class DvmlGeneratorTests
             """);
         Assert.Equal(["DvOption style", "DvColumn class", "DvSummaryRow visible", "DvTrendChannel grow", "DvMotor hold", "DvLine disabled"],
             d.Select(x => System.Text.RegularExpressions.Regex.Match(x.GetMessage(Invariant), @"^(\S+) has no attribute '([^']+)'")).Select(m => $"{m.Groups[1]} {m.Groups[2]}"));
+    }
+
+    // 남은 2단계 구멍 — DvScreen·DvPageFrame·DvDialogFrame 도 검사한다(틀 = 내장 컴포넌트: 매개변수 title·subtitle)
+    [Fact]
+    public void Attribute_ScreenAndFrames_AreChecked()
+    {
+        var d = Attrs("""<DvScreen vm="MyApp.P" padding="8"><DvPageFrame title="T" subtitle="S" titel="x" class="c"/><DvDialogFrame title="D" gap="md" style="width:300"/></DvScreen>""");
+        Assert.Equal(["DvScreen padding", "DvPageFrame titel", "DvDialogFrame gap"],
+            d.Select(x => System.Text.RegularExpressions.Regex.Match(x.GetMessage(Invariant), @"^(\S+) has no attribute '([^']+)'")).Select(m => $"{m.Groups[1]} {m.Groups[2]}"));
+        // 같은 파일이 틀을 자기 컴포넌트로 바꾸면 그 매개변수를 안다
+        Assert.Empty(Attrs("""<DvScreen><DvComponent name="DvPageFrame"><DvParam name="title"/><DvParam name="icon"/><DvStack><DvSlot/></DvStack></DvComponent><DvPageFrame title="T" icon="fa-x"/></DvScreen>"""));
+    }
+
+    // 3단계 D4 — 내장 태그 이름의 컴포넌트는 빌드 오류(DVML021). 내장 컴포넌트(DvCard·DvPageFrame…)를 바꾸는 것은 된다
+    [Fact]
+    public void Component_BuiltInTagName_IsAnError()
+    {
+        var r = Run("public partial class P { }", ("P.dvml", """
+            <DvScreen>
+              <DvComponent name="DvGauge"><DvParam name="v"/><DvLabel text="{v}"/></DvComponent>
+              <DvComponent name="DvCard"><DvParam name="title"/><DvLabel text="{title}"/></DvComponent>
+              <DvComponent name="DvPageFrame"><DvParam name="title"/><DvLabel text="{title}"/></DvComponent>
+              <DvComponent name="Tile"><DvLabel text="t"/></DvComponent>
+            </DvScreen>
+            """));
+        var d = Assert.Single(r.Ids("DVML021"));
+        Assert.Equal(DiagnosticSeverity.Error, d.Severity);
+        Assert.Contains("DvGauge", d.GetMessage(Invariant));
+        Assert.Contains("built-in", d.GetMessage(Invariant));
+        Assert.Contains("내장", d.GetMessage(new System.Globalization.CultureInfo("ko-KR")));
+        Assert.Equal(Devinno.UI.Markup.TagSchema.ComponentTags.OrderBy(n => n, StringComparer.Ordinal), AttributeCheck.ComponentTags.OrderBy(n => n, StringComparer.Ordinal));
     }
 
     [Fact]

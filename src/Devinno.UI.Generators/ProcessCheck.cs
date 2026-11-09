@@ -9,6 +9,7 @@ namespace Devinno.UI.Generators;
 /// <summary>
 /// 공정도(<c>DvProcess</c>·<c>DvUnit</c>) 빌드 때 검사 — 실행 때 Trace 로 알리는 연결 오류를 dvml 안에서 미리 알린다.
 /// 빌드 때 확실한 것만: 바인딩(<c>{…}</c>)이 든 값, 포트를 모르는 태그(등록 심볼·컴포넌트 유닛)는 건너뛴다.
+/// 이름·참조(name·from·to·on·tap)는 바인딩되지 않는다(3단계 D3) — <c>{</c> 가 있어도 글자 그대로 검사하고 DVML011 로 알린다(실행 때 경고와 같다).
 /// </summary>
 internal static class ProcessCheck
 {
@@ -74,6 +75,13 @@ internal static class ProcessCheck
     }
 
     private static bool Dynamic(string? v) => v is not null && v.IndexOf('{') >= 0;
+
+    // 이름·참조에 { — 바인딩이 아니라 글자 그대로 쓰인다(실행 때 ProcessBuilder.RawName 경고와 같다)
+    private static void Literal(XElement e, XAttribute? a, Action<DiagnosticDescriptor, XObject, object[]> report)
+    {
+        if (a is not null && Dynamic(a.Value))
+            report(Diagnostics.ProcessLiteralName, a, [$"<{e.Name.LocalName}> {a.Name.LocalName}", a.Value]);
+    }
 
     // DvProcess 속성의 값
     private static void Values(XElement process, Action<DiagnosticDescriptor, XObject, object[]> report)
@@ -141,7 +149,6 @@ internal static class ProcessCheck
     private static void Scope(XElement container, Action<DiagnosticDescriptor, XObject, object[]> report)
     {
         var items = new Dictionary<string, Item>(StringComparer.Ordinal);
-        var dynamicNames = false;
         foreach (var ch in container.Elements())
         {
             var tag = ch.Name.LocalName;
@@ -154,11 +161,9 @@ internal static class ProcessCheck
                 Value(ch, "rotate", ["0", "90", "180", "270"], report);
 
             var nameAttr = ch.Attribute("name");
-            if (nameAttr is null || Dynamic(nameAttr.Value))
-            {
-                dynamicNames |= nameAttr is not null;
+            if (nameAttr is null)
                 continue; // 이름 없음은 실행 때 오류로 알린다(선으로 이을 수 없을 뿐)
-            }
+            Literal(ch, nameAttr, report);
 
             var item = new Item
             {
@@ -168,11 +173,9 @@ internal static class ProcessCheck
                 Port = tag == "DvPort",
                 Instrument = tag == "DvInstrument",
                 Ports = tag == "DvUnit"
-                    ? ch.Elements().Where(x => x.Name.LocalName == "DvPort").Select(x => (string?)x.Attribute("name")).Where(n => n is not null && !Dynamic(n)).Select(n => n!).ToArray()
+                    ? ch.Elements().Where(x => x.Name.LocalName == "DvPort").Select(x => (string?)x.Attribute("name")).Where(n => n is not null).Select(n => n!).ToArray()
                     : PortsOf(tag, (string?)ch.Attribute("kind")),
             };
-            if (tag == "DvUnit" && ch.Elements().Any(x => x.Name.LocalName == "DvPort" && Dynamic((string?)x.Attribute("name"))))
-                item.Ports = null;
 
             if (items.ContainsKey(item.Name))
                 report(Diagnostics.ProcessDuplicateName, nameAttr, [item.Name]);
@@ -185,14 +188,14 @@ internal static class ProcessCheck
             switch (ch.Name.LocalName)
             {
                 case "DvLine":
-                    LineEnd(ch, "from", items, dynamicNames, report);
-                    LineEnd(ch, "to", items, dynamicNames, report);
+                    LineEnd(ch, "from", items, report);
+                    LineEnd(ch, "to", items, report);
                     Value(ch, "medium", Media, report);
                     Via(ch, report);
                     break;
                 case "DvSignal":
-                    SignalEnd(ch, "from", items, dynamicNames, report);
-                    SignalEnd(ch, "to", items, dynamicNames, report);
+                    SignalEnd(ch, "from", items, report);
+                    SignalEnd(ch, "to", items, report);
                     Value(ch, "kind", ["electric", "pneumatic"], report);
                     SignalColor(ch, report);
                     SignalWidth(ch, report);
@@ -201,11 +204,15 @@ internal static class ProcessCheck
                 {
                     var on = ch.Attribute("on");
                     if (ch.Attribute("tap") is not null)
-                        LineEnd(ch, "tap", items, dynamicNames, report); // 연결선이 있으면 그 장비에 붙는다(on 은 없어도 된다)
+                        LineEnd(ch, "tap", items, report); // 연결선이 있으면 그 장비에 붙는다(on 은 없어도 된다)
                     else if (on is null)
                         report(Diagnostics.ProcessNameNotFound, (XObject?)ch.Attribute("name") ?? ch, ["<DvInstrument>", "on", Diagnostics.Text("Proc_InstrumentOnRequired")]);
-                    else if (!Dynamic(on.Value) && !dynamicNames && (!items.TryGetValue(on.Value, out var host) || host.Port || host.Instrument))
-                        report(Diagnostics.ProcessNameNotFound, on, ["<DvInstrument on>", on.Value, Diagnostics.Text("Proc_InstrumentOnEquipment")]);
+                    else
+                    {
+                        Literal(ch, on, report);
+                        if (!items.TryGetValue(on.Value, out var host) || host.Port || host.Instrument)
+                            report(Diagnostics.ProcessNameNotFound, on, ["<DvInstrument on>", on.Value, Diagnostics.Text("Proc_InstrumentOnEquipment")]);
+                    }
                     Coordinate(ch, "x", report);
                     Coordinate(ch, "y", report);
                     break;
@@ -214,11 +221,12 @@ internal static class ProcessCheck
         }
     }
 
-    private static void LineEnd(XElement line, string attr, Dictionary<string, Item> items, bool dynamicNames, Action<DiagnosticDescriptor, XObject, object[]> report)
+    private static void LineEnd(XElement line, string attr, Dictionary<string, Item> items, Action<DiagnosticDescriptor, XObject, object[]> report)
     {
         var a = line.Attribute(attr);
-        if (a is null || Dynamic(a.Value))
+        if (a is null)
             return;
+        Literal(line, a, report);
         var raw = a.Value;
         var dot = raw.IndexOf('.');
         var name = dot < 0 ? raw : raw.Substring(0, dot);
@@ -226,8 +234,7 @@ internal static class ProcessCheck
         var where = $"{line.Name.LocalName} {attr}='{raw}'";
         if (!items.TryGetValue(name, out var item) || item.Instrument)
         {
-            if (!dynamicNames)
-                report(Diagnostics.ProcessNameNotFound, a, [where, name, item?.Instrument == true ? Diagnostics.Text("Proc_InstrumentNotPiped") : (object)""]);
+            report(Diagnostics.ProcessNameNotFound, a, [where, name, item?.Instrument == true ? Diagnostics.Text("Proc_InstrumentNotPiped") : (object)""]);
             return;
         }
 
@@ -261,11 +268,12 @@ internal static class ProcessCheck
             report(Diagnostics.ProcessBadPort, a, [where, Diagnostics.Text("Proc_NoSuchPort", name, port, Join(item.Ports))]);
     }
 
-    private static void SignalEnd(XElement signal, string attr, Dictionary<string, Item> items, bool dynamicNames, Action<DiagnosticDescriptor, XObject, object[]> report)
+    private static void SignalEnd(XElement signal, string attr, Dictionary<string, Item> items, Action<DiagnosticDescriptor, XObject, object[]> report)
     {
         var a = signal.Attribute(attr);
-        if (a is null || Dynamic(a.Value))
+        if (a is null)
             return;
+        Literal(signal, a, report);
         var where = $"DvSignal {attr}='{a.Value}'";
         if (a.Value.IndexOf('.') >= 0)
         {
@@ -275,8 +283,7 @@ internal static class ProcessCheck
 
         if (!items.TryGetValue(a.Value, out var item))
         {
-            if (!dynamicNames)
-                report(Diagnostics.ProcessNameNotFound, a, [where, a.Value, ""]);
+            report(Diagnostics.ProcessNameNotFound, a, [where, a.Value, ""]);
             return;
         }
 

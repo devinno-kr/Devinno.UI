@@ -136,6 +136,15 @@
   <data name="DVML020_Color" xml:space="preserve">
     <value>{0} {1}='{2}' is not a color (#RGB, #RRGGBB, #RRGGBBAA, transparent or token(name); color names are not supported) — the default color is used at run time</value>
   </data>
+  <data name="DVML011_Literal" xml:space="preserve">
+    <value>{0}='{1}': process names and references are not bindable — the text is used as written at run time</value>
+  </data>
+  <data name="DVML021_Title" xml:space="preserve">
+    <value>Component name is a built-in tag</value>
+  </data>
+  <data name="DVML021_Message" xml:space="preserve">
+    <value>&lt;DvComponent name='{0}'&gt;: '{0}' is a built-in tag — a component cannot use a built-in tag name (ComponentRegistry.Register throws); choose another name</value>
+  </data>
   <data name="DVML018_Title" xml:space="preserve">
     <value>Handler method not found</value>
   </data>

@@ -136,6 +136,15 @@
   <data name="DVML020_Color" xml:space="preserve">
     <value>{0} {1}='{2}' 은(는) 색이 아닙니다(#RGB, #RRGGBB, #RRGGBBAA, transparent 또는 token(이름) — 색 이름은 지원 안 함) — 실행 때 기본색을 씁니다</value>
   </data>
+  <data name="DVML011_Literal" xml:space="preserve">
+    <value>{0}='{1}': 공정도 이름·참조는 바인딩되지 않습니다 — 실행 때 글자 그대로 씁니다</value>
+  </data>
+  <data name="DVML021_Title" xml:space="preserve">
+    <value>내장 태그 이름의 컴포넌트</value>
+  </data>
+  <data name="DVML021_Message" xml:space="preserve">
+    <value>&lt;DvComponent name='{0}'&gt;: '{0}' 은(는) 내장 태그입니다 — 컴포넌트는 내장 태그 이름을 쓸 수 없습니다(ComponentRegistry.Register 가 예외). 다른 이름을 쓰세요</value>
+  </data>
   <data name="DVML018_Title" xml:space="preserve">
     <value>핸들러 메서드를 찾을 수 없음</value>
   </data>

@@ -76,6 +76,16 @@ internal static class TagSchema
     /// <summary>The common attributes <paramref name="tag"/> takes: all of <see cref="Common"/>, or only <c>id</c> for <see cref="ChildTags"/>.</summary>
     public static IReadOnlyList<AttrDef> CommonOf(string tag) => ChildTags.Contains(tag) ? IdOnly : Common;
 
+    /// <summary>
+    /// Tags in <see cref="Tags"/> that are built-in components (<c>BuiltInComponents</c>): described here so their parameters are checked,
+    /// but an app registry may replace them with its own component of the same name. Every other tag in <see cref="Tags"/> is a built-in element
+    /// whose name a component cannot take (<see cref="IsBuiltInElement"/>).
+    /// </summary>
+    public static readonly IReadOnlySet<string> ComponentTags = new HashSet<string>(StringComparer.Ordinal) { "DvPageFrame", "DvDialogFrame" };
+
+    /// <summary>Whether <paramref name="tag"/> is a built-in element (in <see cref="Tags"/> and not a built-in component) — a component cannot be registered under it.</summary>
+    public static bool IsBuiltInElement(string tag) => Tags.ContainsKey(tag) && !ComponentTags.Contains(tag);
+
     /// <summary>Tag-specific attributes, by tag. Filled group by group in stage 2.</summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<AttrDef>> Tags = new Dictionary<string, IReadOnlyList<AttrDef>>(StringComparer.Ordinal)
     {
@@ -97,6 +107,10 @@ internal static class TagSchema
         ["DvBox"] = [],
         ["DvSlot"] = [],
         ["DvStyle"] = [],
+        ["DvScreen"] = [],
+        // 내장 컴포넌트(ComponentTags) — 인스턴스 속성은 매개변수(title·subtitle)와 공통 속성(class·grow·width·height·style·onclick·disabled 는 틀 루트로, visible 은 인스턴스에)
+        ["DvPageFrame"] = FrameParams(),
+        ["DvDialogFrame"] = FrameParams(),
         ["DvTabs"] =
         [
             new("value", AttrKind.Object, Note: "two-way {Bind X} selects by DvTab value; one-way/literal = read-only; absent = the screen remembers the index (shared by all instances of the node)"),
@@ -639,6 +653,13 @@ internal static class TagSchema
         new("show-ack", AttrKind.Bool, Note: "absent = shown only when onack is set; present = " + BoolRule + " (default shown)"),
     ];
 
+
+    // DvPageFrame·DvDialogFrame — 내장 컴포넌트 매개변수(BuiltInComponents)
+    private static AttrDef[] FrameParams() =>
+    [
+        new("title", AttrKind.Text, Note: "component parameter: the heading; empty = no heading block"),
+        new("subtitle", AttrKind.Text, Note: "component parameter: muted line under the title; shown only with a title"),
+    ];
 
     // DvStack 계열 슈가(gap·padding·align·justify) — 기본값만 태그마다 다르다
     private static AttrDef[] Sugar(string? gap, string? align, string? justify, string? note = null) =>

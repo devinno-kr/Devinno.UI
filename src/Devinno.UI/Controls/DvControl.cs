@@ -141,6 +141,9 @@ public class DvControl
             var o = _ov;
             if (ReferenceEquals(o, Ov.Empty) || o is { Enabled: null, Visible: null, Text: null })
                 return null;
+            // 같은 덮어쓰기 값(같은 Ov 참조)이면 만든 표를 다시 쓴다 — 빌드가 요소마다 읽어도 할당은 값이 바뀔 때 한 번
+            if (_ovMap is { } cached && ReferenceEquals(cached.For, o))
+                return cached.Map;
             var map = new Dictionary<string, object?>(3, StringComparer.Ordinal);
             if (o.Enabled is { } enabled)
                 map["disabled"] = !enabled;
@@ -148,9 +151,14 @@ public class DvControl
                 map["visible"] = visible;
             if (o.Text is not null)
                 map["text"] = o.Text;
+            _ovMap = new OvMap(o, map);
             return map;
         }
     }
+
+    // AttrOverrides 의 표와 그 표를 만든 덮어쓰기 값 — 한 참조로 바꿔 끼운다(찢어지지 않음). 경쟁하면 같은 내용의 표를 한 번 더 만들 뿐
+    private sealed record OvMap(Ov For, IReadOnlyDictionary<string, object?> Map);
+    private volatile OvMap? _ovMap;
 
     /// <summary>Snapshot of override values that layout reads at once (a single reference read, so it is never torn).</summary>
     internal (bool? Enabled, bool? Visible, string? Text, bool HasText, bool HasClick) Overrides

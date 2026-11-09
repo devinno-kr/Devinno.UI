@@ -30,6 +30,8 @@ internal static class Diagnostics
     public static readonly DiagnosticDescriptor ProcessBadPort = D("DVML009", DiagnosticSeverity.Error);
     public static readonly DiagnosticDescriptor ProcessDuplicateName = D("DVML010", DiagnosticSeverity.Error);
     public static readonly DiagnosticDescriptor ProcessUnknownValue = D("DVML011", DiagnosticSeverity.Warning);
+    // DVML011 — 공정도 이름·참조(name·from·to·on·tap)에 { — 바인딩되지 않고 글자 그대로(3단계 D3, 실행 때 경고와 같다)
+    public static readonly DiagnosticDescriptor ProcessLiteralName = D("DVML011", DiagnosticSeverity.Warning, "Literal");
     public static readonly DiagnosticDescriptor StyleUnknownKey = D("DVML012", DiagnosticSeverity.Warning);
     public static readonly DiagnosticDescriptor StyleUnknownToken = D("DVML013", DiagnosticSeverity.Warning);
     public static readonly DiagnosticDescriptor StyleUnknownClass = D("DVML014", DiagnosticSeverity.Warning);
@@ -51,4 +53,7 @@ internal static class Diagnostics
     public static readonly DiagnosticDescriptor InvalidNumber = D("DVML020", DiagnosticSeverity.Warning, "Number");
     public static readonly DiagnosticDescriptor InvalidEnum = D("DVML020", DiagnosticSeverity.Warning, "Enum");
     public static readonly DiagnosticDescriptor InvalidColor = D("DVML020", DiagnosticSeverity.Warning, "Color");
+
+    // DVML021 — <DvComponent name> 이 내장 태그 이름(TagSchema, 내장 컴포넌트 제외) — ComponentRegistry.Register 가 예외를 던진다(3단계 D4)
+    public static readonly DiagnosticDescriptor ComponentBuiltInName = D("DVML021", DiagnosticSeverity.Error);
 }

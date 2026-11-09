@@ -518,11 +518,21 @@ public sealed partial class LayoutEngine
     }
 
     /// <summary>Lookup function for values overridden from code through control handles. If <see langword="null"/>, no lookup is done (a screen without handles).</summary>
-    internal Func<ElementNode, Controls.DvControl?>? ControlOf { get; set; }
+    internal Func<ElementNode, Controls.DvControl?>? ControlOf
+    {
+        get => _controlOf;
+        set
+        {
+            _controlOf = value;
+            _overridesOf = value is { } of ? n => of(n)?.AttrOverrides : null;
+        }
+    }
 
-    // 노드의 코드 덮어쓰기 조회(핸들 없는 화면 = null) — 리더가 자식 노드 리더를 만들 때도 쓴다
-    private Func<ElementNode, IReadOnlyDictionary<string, object?>?>? OverridesOf =>
-        ControlOf is { } of ? n => of(n)?.AttrOverrides : null;
+    private Func<ElementNode, Controls.DvControl?>? _controlOf;
+    private Func<ElementNode, IReadOnlyDictionary<string, object?>?>? _overridesOf;
+
+    // 노드의 코드 덮어쓰기 조회(핸들 없는 화면 = null) — 리더가 자식 노드 리더를 만들 때도 쓴다. ControlOf 를 정할 때 한 번 만든다(읽을 때마다 할당하지 않음)
+    private Func<ElementNode, IReadOnlyDictionary<string, object?>?>? OverridesOf => _overridesOf;
 
     // 핸들의 Visible 덮어쓰기가 마크업 visible 보다 우선
     private bool IsVisibleOf(ElementNode node, object? ctx) => IsVisible(Reader(node, ctx));

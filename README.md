@@ -68,7 +68,7 @@ Devinno.UI assumes that screens will be written with AI (LLM) coding tools. It t
 
 **Mistakes you can see**
 In UI code, the usual failure is a mistake that does nothing: no error, no warning, just a screen that is slightly wrong. Devinno.UI reports these in three places.
-- The build reports diagnostics DVML001 to DVML020 at the line and column in the dvml file. They cover unknown style properties, theme tokens and classes, values that are not allowed or not of the attribute's kind, handler methods the VM does not have, attributes a built-in tag does not have, broken process diagram connections and duplicate `id`s.
+- The build reports diagnostics DVML001 to DVML021 at the line and column in the dvml file. They cover unknown style properties, theme tokens and classes, values that are not allowed or not of the attribute's kind, handler methods the VM does not have, attributes a built-in tag does not have, components named like a built-in tag, broken process diagram connections and duplicate `id`s.
 - The compiler catches misspelled names in code. When an element has an `id`, the source generator adds a typed handle field to the VM.
 - At run time, a bad color token that got past the build is drawn in magenta (`#FF00FF`), so it is hard to miss.
 
