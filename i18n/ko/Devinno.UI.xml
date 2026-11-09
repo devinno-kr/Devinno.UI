@@ -3432,7 +3432,7 @@
             <summary>코드에서 컨트롤 핸들로 덮어쓴 값을 찾는 조회 함수. <see langword="null" /> 이면 조회하지 않습니다(핸들이 없는 화면).</summary>
         </member><member name="M:Devinno.UI.Layout.LayoutEngine.IsVisible(Devinno.UI.Markup.ElementNode,System.Object)" en-hash="1641505a4de177d8">
             <summary><c>visible</c> 속성이 거짓/빈 값이면 해당 요소를 만들지 않는다.</summary>
-        </member><member name="T:Devinno.UI.Layout.LayoutEngine.TwoWayParams" en-hash="66ed67e10b9ee0d8">
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.IsDisabledValue(System.Object,System.String)" en-hash="10fdbadaa87c3cf0"><summary><c>disabled</c>: bool 은 그대로, 숫자는 0 이 아니면, 글자는 <c>true</c>(대소문자 무시) 또는 <c>1</c> 이면 비활성입니다. 그 밖에는 활성입니다.</summary></member><member name="T:Devinno.UI.Layout.LayoutEngine.TwoWayParams" en-hash="66ed67e10b9ee0d8">
             <summary>컴포넌트 양방향 파라미터(이름 → 바깥 식). 인스턴스 핸들이 주인인 파라미터는 <see cref="P:Devinno.UI.Layout.LayoutEngine.TwoWayParams.Targets" /> 에 그 칸.</summary>
         </member><member name="M:Devinno.UI.Layout.LayoutEngine.TwoWayParams.#ctor(Devinno.UI.Markup.ElementNode)" en-hash="66ed67e10b9ee0d8">
             <summary>컴포넌트 양방향 파라미터(이름 → 바깥 식). 인스턴스 핸들이 주인인 파라미터는 <see cref="P:Devinno.UI.Layout.LayoutEngine.TwoWayParams.Targets" /> 에 그 칸.</summary>

@@ -678,7 +678,7 @@ public sealed class LayoutEngine
         if (node.Attributes.TryGetValue("disabled", out var dv))
         {
             var rv = BindingResolver.ResolveValueOrLiteral(vm, dv);
-            box.Disabled = string.Equals(BindingResolver.ToText(rv, dv), "true", StringComparison.OrdinalIgnoreCase);
+            box.Disabled = IsDisabledValue(rv, dv);
         }
 
         var ov = ControlOf?.Invoke(node)?.Overrides;
@@ -1196,9 +1196,20 @@ public sealed class LayoutEngine
         {
             null => false,
             bool b => b,
-            _ => BindingResolver.ToText(v, raw) is { Length: > 0 } s && s != "false" && s != "0"
+            _ => BindingResolver.ToText(v, raw)?.Trim() is { Length: > 0 } s &&
+                 !s.Equals("false", StringComparison.OrdinalIgnoreCase) && s != "0"
         };
     }
+
+    /// <summary><c>disabled</c>: bool as is, a number when not 0, text <c>true</c> (any case) or <c>1</c>. Anything else is enabled.</summary>
+    private static bool IsDisabledValue(object? v, string raw) => v switch
+    {
+        bool b => b,
+        null => false,
+        sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal =>
+            Convert.ToDouble(v, System.Globalization.CultureInfo.InvariantCulture) != 0,
+        _ => (BindingResolver.ToText(v, raw) ?? "").Trim() is var s && (s.Equals("true", StringComparison.OrdinalIgnoreCase) || s == "1"),
+    };
 
     private static bool TryGetComponent(ComponentRegistry? registry, string tag, out ComponentDef def)
     {

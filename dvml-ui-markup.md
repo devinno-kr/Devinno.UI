@@ -120,8 +120,8 @@ Below is `MainPage.dvml`. The root `vm` points to the class above (the file name
 | `grow` | Same as `flex-grow` | Yes |
 | `width` `height` | Same as style `width`/`height` (lower priority, 4.7) | Yes |
 | `content-align` | Text/icon position (4.4) | Yes |
-| `visible` | If false, empty, `0` or `false`, the element is not created at all | Yes |
-| `disabled` | If `true`, blocks clicks and commits (the press does not leak to an outer `onclick` either), no hover/press look, `disabled-style` applied. **Inherited downward** — if an ancestor is disabled, the child is disabled even if its own value is `false` | Yes |
+| `visible` | If false, empty, `0` or `false` (any case, surrounding spaces ignored), the element is not created at all | Yes |
+| `disabled` | If `true` (any case), `1` or a non-zero number, blocks clicks and commits (the press does not leak to an outer `onclick` either), no hover/press look, `disabled-style` applied. **Inherited downward** — if an ancestor is disabled, the child is disabled even if its own value is `false` | Yes |
 | `onclick` | VM method name to call on click (6.4) | No (name as is) |
 | `hold` | Long press (ms) — must be held this long for `onclick` to fire (prevents accidental operation, 6.4) | Yes |
 | `id` | Name of the control to grab from code (chapter 20). Does not affect how the screen looks | No (literal text, C# identifier) |
