@@ -100,7 +100,7 @@ public sealed partial class LayoutEngine
         var raw = r.Raw("expanded");
         var (expr, _, ov) = ValueOf(r, raw);
         box.ValueBindExpr = expr;
-        bool Expanded(object? v) => AttrRules.Bool(v, false, node.Tag, "expanded");
+        bool Expanded(object? v) => AttrRules.Bool(v, false, node.Tag, "expanded", raw);
         box.ToggleOn = ov is not null ? Expanded(ov.CellValue)
             : expr is not null && BindingResolver.IsTwoWay(expr) ? Expanded(BindingResolver.Resolve(vm, $"{{{BindingResolver.ExtractPath(expr)}}}"))
             : raw is not null ? Expanded(BindingResolver.ResolveValueOrLiteral(vm, raw))

@@ -267,8 +267,7 @@ public sealed partial class DvSurface
         CommitPendingEdit(); // 입력 중이던 값은 옛 화면에서 먼저 반영
         CancelPress();
         _root = root;
-        lock (_reads.Warned)
-            _reads.Warned.Clear(); // 고친 마크업 — 남은 경고를 다시 한 번 알린다
+        _reads.ClearWarned(); // 고친 마크업 — 남은 경고를 다시 한 번 알린다
         _controlsByNode.Clear();
         _controlBoxes = null;
         lock (_tabIndex)

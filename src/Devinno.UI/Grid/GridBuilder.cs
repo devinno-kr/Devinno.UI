@@ -82,7 +82,7 @@ internal static class GridBuilder
             // 입력 셀 min ≥ max = 경고 + 0~100 (3단계 R6 — DvInput 과 같은 규칙)
             var (min, max) = (Num("min"), Num("max"));
             if (cellType == GridCellType.Input)
-                (min, max) = AttrRules.Range(min, max, ch.Tag);
+                (min, max) = AttrRules.Range(min, max, ch.Tag, AttrRules.RangeRaw(cr));
             var col = new GridColumn
             {
                 Header = BindingResolver.ResolveInline(vm, CA("header")) ?? "",
@@ -102,7 +102,7 @@ internal static class GridBuilder
                 CellType = cellType,
                 ReadOnly = Flag("readonly"),
                 OnBeforeCommit = CA("onbeforecommit"),
-                OnColor = AttrRules.Color(cr.Value("on-color"), theme, ch.Tag, "on-color", "using the state-run color"),
+                OnColor = AttrRules.Color(cr.Value("on-color"), theme, ch.Tag, "on-color", "using the state-run color", AttrRules.RawOf(cr, "on-color")),
                 Blink = Flag("blink"),
                 ButtonText = (cr.Overridden("text") ? cr.Text("text") : BindingResolver.ResolveInline(vm, CA("text"))) ?? "", // 코드 Text 덮어쓰기는 그대로
                 Icon = cr.Text("icon"),

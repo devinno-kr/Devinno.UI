@@ -17,7 +17,7 @@ internal sealed record GridColors(
         if (!Names.Any(r.Has))
             return None;
 
-        DvColor? C(string name) => AttrRules.Color(r.Value(name), theme, r.Node.Tag, name, "using the theme color");
+        DvColor? C(string name) => AttrRules.Color(r.Value(name), theme, r.Node.Tag, name, "using the theme color", AttrRules.RawOf(r, name));
 
         return new GridColors(C("header-color"), C("header-text-color"), C("text-color"), C("row-color"), C("row-alt-color"),
             C("hover-color"), C("selected-color"), C("line-color"), C("summary-color"), C("summary-text-color"));

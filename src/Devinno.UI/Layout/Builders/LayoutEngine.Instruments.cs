@@ -42,7 +42,7 @@ public sealed partial class LayoutEngine
             box.BlinkIntervalMs = (int)Math.Round(bint);
         if (Color(r, "color", "using the state or text color") is { } lampColor)
             box.LampColor = lampColor;
-        box.LampState = AttrRules.ThemeWord(r.Value("state"), "state", _theme, null, r.Node.Tag, "state", "no state color");
+        box.LampState = AttrRules.ThemeWord(r.Value("state"), "state", _theme, null, r.Node.Tag, "state", "no state color", AttrRules.RawOf(r, "state"));
     }
 
     // tone — 지금 테마에 tone-{값} 토큰이 있으면 그 값(사용자 테마 단어 허용), 없으면 info + 경고
@@ -51,7 +51,7 @@ public sealed partial class LayoutEngine
 
     internal const int ChartColors = 6;
 
-    private string Tone(AttrReader r) => AttrRules.ThemeWord(r.Value("tone"), "tone", _theme, "info", r.Node.Tag, "tone") ?? "info";
+    private string Tone(AttrReader r) => AttrRules.ThemeWord(r.Value("tone"), "tone", _theme, "info", r.Node.Tag, "tone", raw: AttrRules.RawOf(r, "tone")) ?? "info";
 
     // DvGauge·DvRing·DvProgress 가 같은 상자 필드(Gauge*·Tone·Unit…)를 쓴다. 공용 부분(값·범위·구간·show-value·unit·format)만 셋이 읽고,
     // 나머지는 그 속성을 그리는 태그만 읽는다(3단계 R9 — 안 쓰는 속성은 읽지 않는다, 쓰면 DVML019)
@@ -66,7 +66,7 @@ public sealed partial class LayoutEngine
             box.GaugeTicks = ToFloat(r, "ticks", 0f);
             box.GaugeMinorTicks = ToFloat(r, "minor-ticks", 0f);
             if (r.Has("show-tick-labels"))
-                box.GaugeTickLabels = AttrRules.Bool(r.Value("show-tick-labels"), true, tag, "show-tick-labels");
+                box.GaugeTickLabels = AttrRules.Bool(r.Value("show-tick-labels"), true, tag, "show-tick-labels", AttrRules.RawOf(r, "show-tick-labels"));
         }
 
         if (tag != "DvGauge")
@@ -108,7 +108,7 @@ public sealed partial class LayoutEngine
         box.OnAck = r.Raw("onack");
         // show-ack: 지정 시 그 값(바인딩 가능 — 권한별 표시, 공용 참/거짓 규칙 · 그 밖의 글자 = 보임 + 경고), 미지정 시 onack 이 있을 때만 표시
         box.AlarmShowAck = r.Has("show-ack")
-            ? AttrRules.Bool(r.Value("show-ack"), true, r.Node.Tag, "show-ack")
+            ? AttrRules.Bool(r.Value("show-ack"), true, r.Node.Tag, "show-ack", AttrRules.RawOf(r, "show-ack"))
             : !string.IsNullOrEmpty(box.OnAck);
         if (node.Tag != "DvAlarmList")
             return;

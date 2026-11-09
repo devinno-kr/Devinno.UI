@@ -387,7 +387,7 @@ public sealed partial class LayoutEngine
         box.StylePress = State(rule => rule.Press, "press-style");
         box.StyleDisabled = State(rule => rule.Disabled, "disabled-style");
         if (r.Has("disabled"))
-            box.Disabled = AttrRules.Bool(r.Value("disabled"), false, node.Tag, "disabled");
+            box.Disabled = AttrRules.Bool(r.Value("disabled"), false, node.Tag, "disabled", AttrRules.RawOf(r, "disabled"));
         box.HasCodeClick = control?.Overrides.HasClick == true;
 
         box.OnClick = r.Raw("onclick");
@@ -410,7 +410,7 @@ public sealed partial class LayoutEngine
 
     // 색 속성 — 공용 색 규칙(AttrRules.Color, 이 엔진의 테마): 모르는 토큰 = 자홍 + 경고, 해석 못 하면 null(기본색) + 경고(instead)
     private DvColor? Color(AttrReader r, string attr, string instead)
-        => AttrRules.Color(r.Value(attr), _theme, r.Node.Tag, attr, instead);
+        => AttrRules.Color(r.Value(attr), _theme, r.Node.Tag, attr, instead, AttrRules.RawOf(r, attr));
 
     // alarm-zones — 바인딩(문자열 전체)을 풀고 구간마다 해석. 잘못된 구간만 버리고 경고(화면은 뜬다), 구간 색은 공용 색 규칙
     private List<Widgets.GaugeZone> ParseZones(AttrReader r)
@@ -745,7 +745,7 @@ public sealed partial class LayoutEngine
     // min(0)·max(100) — 3단계 R6: min ≥ max 면 경고 + 0~100 (Knob·Slider·Gauge·Ring·Progress·Tank)
     private static (float Min, float Max) FloatRange(AttrReader r)
     {
-        var (min, max) = AttrRules.Range(ToFloat(r, "min", 0f), ToFloat(r, "max", 100f), r.Node.Tag);
+        var (min, max) = AttrRules.Range(ToFloat(r, "min", 0f), ToFloat(r, "max", 100f), r.Node.Tag, AttrRules.RangeRaw(r));
         return ((float)min, (float)max);
     }
 

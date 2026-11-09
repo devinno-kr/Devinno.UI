@@ -90,7 +90,7 @@ public sealed partial class LayoutEngine
             return;
         var (lx, _, lov) = ValueOf(r, latchExpr);
         box.ValueBindExpr = _valueOverride ?? lx;
-        box.ToggleOn = lov is not null ? AttrRules.Bool(lov.CellValue, false, r.Node.Tag, "value") : LatchOn(r);
+        box.ToggleOn = lov is not null ? AttrRules.Bool(lov.CellValue, false, r.Node.Tag, "value", AttrRules.RawOf(r, "value")) : LatchOn(r);
     }
 
     // 래칭 버튼 켜짐 — value 가 참(공용 규칙)
@@ -101,7 +101,7 @@ public sealed partial class LayoutEngine
         var cur = ve is not null && BindingResolver.IsTwoWay(ve)
             ? BindingResolver.Resolve(vm, $"{{{BindingResolver.ExtractPath(ve)}}}")
             : BindingResolver.ResolveValueOrLiteral(vm, ve);
-        return AttrRules.Bool(cur, false, r.Node.Tag, "value");
+        return AttrRules.Bool(cur, false, r.Node.Tag, "value", AttrRules.RawOf(r, "value"));
     }
 
     private void BuildToggle(LayoutBox box, AttrReader r)
@@ -117,7 +117,7 @@ public sealed partial class LayoutEngine
             cur = BindingResolver.Resolve(target ?? vm, $"{{{BindingResolver.ExtractPath(ve)}}}");
         else
             cur = BindingResolver.ResolveValueOrLiteral(vm, ve);
-        box.ToggleOn = AttrRules.Bool(cur, false, r.Node.Tag, "value");
+        box.ToggleOn = AttrRules.Bool(cur, false, r.Node.Tag, "value", AttrRules.RawOf(r, "value"));
         box.ReadOnly = InputReadOnly(r, _valueOverride);
     }
 
@@ -168,7 +168,7 @@ public sealed partial class LayoutEngine
             : ve is not null && BindingResolver.IsTwoWay(ve)
             ? BindingResolver.Resolve(target ?? vm, $"{{{BindingResolver.ExtractPath(ve)}}}")
             : BindingResolver.ResolveValueOrLiteral(vm, ve);
-        box.KnobValue = (float)AttrRules.Number(cur, 0, r.Node.Tag, "value");
+        box.KnobValue = (float)AttrRules.Number(cur, 0, r.Node.Tag, "value", AttrRules.RawOf(r, "value"));
         (box.KnobMin, box.KnobMax) = FloatRange(r);
         var step = ToFloat(r, "step", 1f);
         box.KnobStep = step > 0 ? step : 1f;
@@ -220,7 +220,7 @@ public sealed partial class LayoutEngine
         box.ReadOnly = InputReadOnly(r, _valueOverride);
         box.InputStep = Num("step") is > 0 and var step ? step : 1d;
         if (box.InputKind == DvEditKind.Numeric)
-            (box.InputMin, box.InputMax) = AttrRules.Range(box.InputMin, box.InputMax, r.Node.Tag);
+            (box.InputMin, box.InputMax) = AttrRules.Range(box.InputMin, box.InputMax, r.Node.Tag, AttrRules.RangeRaw(r));
         if (box.InputKind == DvEditKind.Numeric && AttrRules.Bool(r, "show-stepper"))
         {
             // −/+ 자리 — 좌우 padding 에 버튼 폭을 더해 글자·커서·네이티브 편집기 위치가 그대로 맞게 한다
@@ -553,7 +553,7 @@ public sealed partial class LayoutEngine
     {
         if (r.Raw("position") is { } posExpr)
         {
-            var v = AttrRules.Number(BindingResolver.ResolveValueOrLiteral(r.Context, posExpr), 0, r.Node.Tag, "position");
+            var v = AttrRules.Number(BindingResolver.ResolveValueOrLiteral(r.Context, posExpr), 0, r.Node.Tag, "position", posExpr);
             if (double.IsNaN(player.BoundPosition))
                 player.BoundPosition = v;
             else if (Math.Abs(v - player.BoundPosition) > 0.0005)

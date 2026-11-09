@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.Reflection;
 using Devinno.UI;
+using Devinno.UI.Interaction;
 using Devinno.UI.Styling;
 using SkiaSharp;
 using Xunit;
@@ -134,5 +136,78 @@ public class WarningScopeTests
             s.Layout(800, 500);
         });
         Assert.Equal(2, n);
+    }
+
+    public sealed class WordVm
+    {
+        public string Word { get; set; } = "";
+    }
+
+    private static HashSet<string> WarnedOf(DvSurface s) =>
+        ((HandlerErrors.ReadScope)typeof(DvSurface).GetField("_reads", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(s)!).Warned;
+
+    // 리뷰 I2 — 바인딩 값이 바뀔 때마다 새 문구가 되어 집합이 끝없이 커지던 것: 열쇠 = (태그, 속성, 마크업 원문). 값이 100번 바뀌어도 경고 1번·집합 1개
+    [Fact]
+    public void BoundBadValue_Changing_WarnsOnce_AndKeepsOneKey()
+    {
+        var vm = new WordVm { Word = "i2bound-0" };
+        DvSurface? s = null;
+        var n = Count("i2bound-", () =>
+        {
+            s = new DvSurface("<DvScreen><DvLamp on=\"{Word}\"/></DvScreen>", vm, DvTheme.Light);
+            s.Layout(800, 500);
+            for (var i = 1; i < 100; i++)
+            {
+                vm.Word = "i2bound-" + i;
+                Rebuild(s);
+            }
+        });
+        Assert.Equal(1, n);
+        Assert.Single(WarnedOf(s!));
+    }
+
+    // 리터럴은 원문 = 값 — 값마다 한 번(두 리터럴 = 두 번)
+    [Fact]
+    public void LiteralBadValues_WarnOncePerValue()
+    {
+        var n = Count("i2lit-", () => Show("<DvScreen><DvLamp on=\"i2lit-a\"/><DvLamp on=\"i2lit-b\"/><DvLamp on=\"i2lit-a\"/></DvScreen>"));
+        Assert.Equal(2, n);
+    }
+
+    // 상한 — 집합이 MaxWarned 에 닿으면 더 기록·출력하지 않고 "too many" 한 줄만
+    [Fact]
+    public void WarnedSet_IsCapped_WithOneFinalLine()
+    {
+        var scope = new HandlerErrors.ReadScope(null);
+        var prev = HandlerErrors.EnterRead(scope);
+        int n, tooMany;
+        try
+        {
+            var all = new Capture("i2cap-");
+            var cap = new Capture("too many");
+            Trace.Listeners.Add(all);
+            Trace.Listeners.Add(cap);
+            try
+            {
+                for (var i = 0; i < Warnings.MaxWarned + 50; i++)
+                    Warnings.Warn("Devinno.UI: i2cap-" + i);
+            }
+            finally
+            {
+                Trace.Listeners.Remove(all);
+                Trace.Listeners.Remove(cap);
+            }
+
+            n = all.Lines.Count;
+            tooMany = cap.Lines.Count;
+        }
+        finally
+        {
+            HandlerErrors.ExitRead(prev);
+        }
+
+        Assert.Equal(Warnings.MaxWarned, n);
+        Assert.Equal(1, tooMany);
+        Assert.Equal(Warnings.MaxWarned, scope.Warned.Count);
     }
 }

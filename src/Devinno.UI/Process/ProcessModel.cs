@@ -301,7 +301,7 @@ internal static class ProcessBuilder
     private static string? EquipmentEnum(AttrReader r, string attr, string? instead)
     {
         var def = TagSchema.Find(r.Node.Tag, attr) ?? TagSchema.Find("DvPump", attr)!;
-        return AttrRules.Enum(r.Value(attr), def.Default, r.Node.Tag, attr, def.Values, instead);
+        return AttrRules.Enum(r.Value(attr), def.Default, r.Node.Tag, attr, def.Values, instead, raw: AttrRules.RawOf(r, attr));
     }
 
     // 공정도 이름·참조(장비·유닛·포트·계기 name, DvLine·DvSignal from/to, DvInstrument on/tap) — 원문 그대로(3단계 D3: 바인딩 안 됨).
@@ -472,7 +472,7 @@ internal static class ProcessBuilder
                     ArrowEnd = end,
                     ArrowStart = start,
                     // 바인딩이 null 이면 없는 것과 같다(자동 판단 — 문서에 적힌 3상태 동작), 그 밖은 공용 참/거짓 규칙
-                    FlowOverride = r.Has("flow") && r.Value("flow") is { } fv ? AttrRules.Bool(fv, false, ch.Tag, "flow") : null,
+                    FlowOverride = r.Has("flow") && r.Value("flow") is { } fv ? AttrRules.Bool(fv, false, ch.Tag, "flow", AttrRules.RawOf(r, "flow")) : null,
                     MediumSet = AttrRules.Enum(r, "medium", "drawing with the default color"),
                     Label = r.Text("label"),
                     Via = Via(d, r),
@@ -576,8 +576,8 @@ internal static class ProcessBuilder
                 Text = ch.Tag == "DvTerminal" ? r.Text("text") : null,
                 Label = r.Text("label"),
                 Rotate = ch.Tag == "DvTerminal" ? 0 : int.Parse(EquipmentEnum(r, "rotate", null) ?? "0", CultureInfo.InvariantCulture),
-                Row = Int(ch.Tag, "row", r.Text("row")),
-                Rank = Int(ch.Tag, "rank", r.Text("rank")),
+                Row = Int(ch.Tag, "row", r.Text("row"), AttrRules.RawOf(r, "row")),
+                Rank = Int(ch.Tag, "rank", r.Text("rank"), AttrRules.RawOf(r, "rank")),
                 Pos = pos,
             };
             // flip — 공용 목록 규칙, vh 는 hv 의 별칭
@@ -819,8 +819,8 @@ internal static class ProcessBuilder
             Name = UniqueName(d, ri),
             Tag = "DvUnit",
             Label = Attr("label"),
-            Row = Int(instance.Tag, "row", Attr("row")),
-            Rank = Int(instance.Tag, "rank", Attr("rank")),
+            Row = Int(instance.Tag, "row", Attr("row"), ri.Has("row") ? AttrRules.RawOf(ri, "row") : AttrRules.RawOf(ru, "row")),
+            Rank = Int(instance.Tag, "rank", Attr("rank"), ri.Has("rank") ? AttrRules.RawOf(ri, "rank") : AttrRules.RawOf(ru, "rank")),
             Pos = pos,
             Unit = inner,
         };
@@ -866,8 +866,8 @@ internal static class ProcessBuilder
             return p.Default;
         return TagSchema.Find(r.Node.Tag, p.Name)?.Kind switch
         {
-            AttrKind.Bool => AttrRules.Bool(r.Value(p.Name), false, r.Node.Tag, p.Name),
-            AttrKind.Number => AttrRules.NumberOrNull(r.Value(p.Name), r.Node.Tag, p.Name, "using 0") ?? 0d,
+            AttrKind.Bool => AttrRules.Bool(r.Value(p.Name), false, r.Node.Tag, p.Name, AttrRules.RawOf(r, p.Name)),
+            AttrKind.Number => AttrRules.NumberOrNull(r.Value(p.Name), r.Node.Tag, p.Name, "using 0", AttrRules.RawOf(r, p.Name)) ?? 0d,
             _ => r.Value(p.Name),
         };
     }
@@ -918,8 +918,8 @@ internal static class ProcessBuilder
 
 
     // 배치 힌트(row·rank) — 정수. 숫자 아님 = 무시 + 경고(공용 숫자 규칙), 소수는 반올림
-    private static int? Int(string tag, string attr, string? s) =>
-        AttrRules.NumberOrNull(s, tag, attr) is { } v ? (int)Math.Round(v) : null;
+    private static int? Int(string tag, string attr, string? s, string? raw) =>
+        AttrRules.NumberOrNull(s, tag, attr, raw: raw) is { } v ? (int)Math.Round(v) : null;
 
     // from/to 참조 확인 — "장비.포트", 포트가 하나뿐인 장비(끝점)는 "장비" 만
     private static void ResolveLines(ProcessDiagram d)

@@ -33,6 +33,19 @@ internal static class HandlerErrors
         /// <summary>The warnings already written for this surface (<see cref="Warnings.Warn"/>) — kept across rebuilds, cleared when the markup is reloaded.</summary>
         public HashSet<string> Warned { get; } = new(StringComparer.Ordinal);
 
+        /// <summary>Whether <see cref="Warned"/> reached <see cref="Warnings.MaxWarned"/> and the final "too many warnings" line was written (guarded by the <see cref="Warned"/> lock).</summary>
+        public bool WarnedFull { get; set; }
+
+        /// <summary>Forgets the warnings written so far (the markup was reloaded).</summary>
+        public void ClearWarned()
+        {
+            lock (Warned)
+            {
+                Warned.Clear();
+                WarnedFull = false;
+            }
+        }
+
         /// <summary>The tag of the element currently being built (set per element by LayoutEngine) — used when the binding resolver does not know the tag.</summary>
         public string? Tag { get; set; }
     }
