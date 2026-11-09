@@ -231,6 +231,19 @@ public class AttrRulesColorEnumTests
         Assert.Single(w);
     }
 
+    // 모르는 variant = variant 를 안 쓴 것과 같음 — 래칭 버튼은 기본 secondary 모양을 잃지 않는다
+    [Fact]
+    public void LatchingButton_Variant_Unknown_LooksLikeNoVariant()
+    {
+        var plain = Find(Build("<DvButton value=\"false\" text=\"A\"/>"), "DvButton");
+        var (b, w) = Watch("foo-r3l", () => Build("<DvButton value=\"false\" variant=\"foo-r3l\" text=\"A\"/>"));
+        var box = Find(b, "DvButton");
+        Assert.NotNull(plain.Style.Background);
+        Assert.Equal(plain.Style.Background, box.Style.Background);
+        Assert.Equal(plain.Rect, box.Rect);
+        Assert.Single(w);
+    }
+
     [Fact]
     public void Button_Size_Unknown_NoSizeClassWithWarning()
     {

@@ -142,7 +142,7 @@ internal static class TagSchema
             Icon(),
             new("variant", AttrKind.Enum, Values: ["primary", "secondary", "danger", "ghost"], Note: "adds the classes btn btn-{variant}; empty after resolving = unstyled button; " + EnumRule + " (no classes)"),
             new("size", AttrKind.Enum, Values: ["sm", "lg"], Note: "adds btn-{size}; only when variant is set; " + EnumRule + " (no size class)"),
-            new("value", AttrKind.Bool, Note: "present = latching button: on = " + BoolRule + "; {Bind X} flips on press; without variant adds btn btn-secondary, on adds btn-on; a handle cannot own it"),
+            new("value", AttrKind.Bool, Note: "present = latching button: on = " + BoolRule + "; {Bind X} flips on press; without a valid variant (absent, empty or unknown) adds btn btn-secondary, on adds btn-on; a handle cannot own it"),
         ],
         ["DvIcon"] = [Icon()],
         ["DvImage"] =

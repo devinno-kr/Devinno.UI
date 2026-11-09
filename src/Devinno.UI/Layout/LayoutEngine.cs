@@ -449,8 +449,9 @@ public sealed partial class LayoutEngine
         var node = r.Node;
         var vm = r.Context;
         // 의미 속성 → 암묵 클래스 (DvButton variant/size). 바인딩을 풀어 리터럴과 같게 — 값이 없거나 비면 기존 DvButton 그대로,
-        // 정의된 값이 아니면 클래스 없이 + 경고(공용 목록 규칙)
-        if (node.Tag == "DvButton" && AttrRules.Enum(r, "variant", "no variant class") is { } variant)
+        // 정의된 값이 아니면 variant 를 안 쓴 것과 같게 + 경고(공용 목록 규칙)
+        var variant = node.Tag == "DvButton" ? AttrRules.Enum(r, "variant", "no variant class") : null;
+        if (variant is not null)
         {
             yield return "btn";
             yield return "btn-" + variant;
@@ -460,8 +461,8 @@ public sealed partial class LayoutEngine
 
         if (node.Tag == "DvButton" && r.Has("value"))
         {
-            // 래칭 버튼: variant 가 없으면 secondary 모양, 켜지면 .btn-on 을 덧붙인다(뒤에 정의돼 variant 를 덮음)
-            if (!r.Has("variant"))
+            // 래칭 버튼: variant 가 없으면(비었거나 모르는 값 포함) secondary 모양, 켜지면 .btn-on 을 덧붙인다(뒤에 정의돼 variant 를 덮음)
+            if (variant is null)
             {
                 yield return "btn";
                 yield return "btn-secondary";
