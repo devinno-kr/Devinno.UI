@@ -156,6 +156,21 @@ public class CommitGateRuleTests
         Assert.True(vm.Rows[0].On);
     }
 
+    // 리뷰 M4 — 확인할 수 없는 게이트(VM 없음)는 거절: onbeforecommit 이 있는데 VM 이 없으면 체크 셀을 쓰지 않는다(처음부터 Click 이 이렇게 동작 — 고정)
+    [Fact]
+    public void GridCheckCell_GateWithoutVm_NotWritten()
+    {
+        var vm = new GridVm();
+        var s = Grid(vm, "<DvColumn field=\"Id\" width=\"60\"/><DvColumn field=\"On\" width=\"60\" cell-type=\"check\" onbeforecommit=\"CheckObj\"/>");
+        var grid = Flatten(s.Root!).First(b => b.Grid is not null);
+        var local = new SKPoint(90 - grid.Rect.Left, 40 + 24 - grid.Rect.Top);
+        Assert.True(Devinno.UI.Interaction.GridInteraction.Click(grid, local, null, s));
+        Assert.False(vm.Rows[0].On);
+        Assert.Empty(vm.Calls);
+        Assert.True(Devinno.UI.Interaction.GridInteraction.Click(grid, local, vm, s)); // 같은 자리, VM 있음 = 게이트 확인 후 씀
+        Assert.True(vm.Rows[0].On);
+    }
+
     // 그리드 편집 셀 — bool M(object) 도(전에는 정확한 형만)
     [Fact]
     public void GridEditCell_AcceptsObjectForm()
