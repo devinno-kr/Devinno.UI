@@ -277,9 +277,10 @@ internal static class ProcessBuilder
     internal sealed record Builders(
         Func<ElementNode, object?, LayoutBox> Self,
         Func<ElementNode, object?, LayoutBox?> Child,
-        Func<ElementNode, object?, (ElementNode Unit, object? Scope)?> ExpandUnit,
+        Func<ElementNode, object?, (ElementNode Unit, ElementNode BoxNode, object? Scope)?> ExpandUnit,
         Func<string?, SKColor?> Color,
-        Func<ElementNode, bool?> VisibleOverride);
+        Func<ElementNode, bool?> VisibleOverride,
+        Action<LayoutBox, ElementNode> LinkInstance);
 
     /// <summary>
     /// Builds the model from the children of <c>DvProcess</c>. Creates a box for each piece of equipment and adds it as a child of <paramref name="box"/> (so presses and onclick work like a normal control),
@@ -581,7 +582,7 @@ internal static class ProcessBuilder
             }
 
             // 유닛 — DvUnit 그대로, 또는 템플릿 루트가 DvUnit 인 컴포넌트 인스턴스
-            (ElementNode Unit, object? Scope)? unit = ch.Tag == "DvUnit" ? (ch, vm) : b.ExpandUnit(ch, vm);
+            (ElementNode Unit, ElementNode BoxNode, object? Scope)? unit = ch.Tag == "DvUnit" ? (ch, ch, vm) : b.ExpandUnit(ch, vm);
             if (unit is { } u)
             {
                 if (d.IsUnit)
@@ -590,7 +591,7 @@ internal static class ProcessBuilder
                     continue;
                 }
 
-                AddUnit(d, owner, ch, u.Unit, u.Scope, vm, registry, b);
+                AddUnit(d, owner, ch, u.Unit, u.BoxNode, u.Scope, vm, registry, b);
                 continue;
             }
 
@@ -844,7 +845,7 @@ internal static class ProcessBuilder
     }
 
     // 유닛 하나 — 이름·힌트는 인스턴스(바깥 VM 기준), 방향·제목·안쪽은 유닛 노드(유닛 범위 기준)
-    private static void AddUnit(ProcessDiagram d, LayoutBox owner, ElementNode instance, ElementNode unitNode, object? scope,
+    private static void AddUnit(ProcessDiagram d, LayoutBox owner, ElementNode instance, ElementNode unitNode, ElementNode boxNode, object? scope,
         object? outerVm, ComponentRegistry? registry, Builders b)
     {
         string? Attr(string name) =>
@@ -870,7 +871,9 @@ internal static class ProcessBuilder
         };
 
         // 유닛 상자(테두리·배경 style, onclick) — 안쪽 장비 상자는 그 자식
-        pn.Box = b.Self(unitNode, scope);
+        pn.Box = b.Self(boxNode, scope);
+        if (!ReferenceEquals(instance, unitNode))
+            b.LinkInstance(pn.Box, instance); // 유닛 컴포넌트 인스턴스 — id 핸들·Enabled·Click 이 이 상자로(일반 컴포넌트와 같음)
         pn.Box.Equipment = pn;
         owner.Children.Add(pn.Box);
 

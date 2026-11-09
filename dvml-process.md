@@ -694,6 +694,7 @@ Rules:
 - Inside the template **only the parameters** are visible (`{U.Level}`). Pass other screen VM properties as parameters. The simplest approach is one object of the same class per unit, passed as a single parameter (`U`).
 - **How a button inside the template receives its own unit**: if `onclick="Reset"` and the screen VM has `Reset(BlenderVm unit)` with **exactly one parameter**, the instance's parameter value whose type matches (`U`) is passed. If none matches, the parameterless `Reset()` is called. With several parameters, the first type-matching value in declaration order is used. This rule applies equally to regular components outside process diagrams (the same mechanism as `DvRepeat`'s `M(항목)`).
 - When only values change (level, running, temperature), neither the outer nor the inner layout is recomputed.
+- The instance works like any component instance (ui §15): its `style` (merged), `class`, `onclick` and `disabled` pass to the unit's frame, and an `id` on the instance gives a handle whose `Enabled`, `Visible`, `Bounds` and `Click` act on that unit.
 
 
 ---

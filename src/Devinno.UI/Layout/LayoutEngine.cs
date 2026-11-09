@@ -258,17 +258,28 @@ public sealed class LayoutEngine
         (n, ctx) => Build(n, ctx, registry, depth + 1),
         (n, ctx) => ExpandUnit(n, ctx, registry),
         raw => ParseColor(raw)?.ToSK(),
-        n => ControlOf?.Invoke(n)?.Overrides.Visible);
+        n => ControlOf?.Invoke(n)?.Overrides.Visible,
+        LinkInstance);
 
-    // 템플릿 루트가 DvUnit 인 컴포넌트 인스턴스 → (유닛 노드, 파라미터 범위). 아니면 null
-    private static (ElementNode Unit, object? Scope)? ExpandUnit(ElementNode instance, object? outerVm, ComponentRegistry? registry)
+    // 템플릿 루트가 DvUnit 인 컴포넌트 인스턴스 → (유닛 노드, 유닛 상자용 노드(인스턴스 style·onclick 등 전달), 파라미터 범위). 아니면 null.
+    // 유닛 노드는 원본 그대로(공정 배치 캐시가 노드 기준), 상자만 전달된 사본으로 만든다 — 일반 컴포넌트와 같은 전달 규칙.
+    private static (ElementNode Unit, ElementNode BoxNode, object? Scope)? ExpandUnit(ElementNode instance, object? outerVm, ComponentRegistry? registry)
     {
         if (!TryGetComponent(registry, instance.Tag, out var def) || def.Template.Tag != "DvUnit")
             return null;
         var scope = new ComponentScope();
         foreach (var p in def.Params)
             scope[p.Name] = TryGetAttribute(instance, p.Name, out var raw) ? BindingResolver.ResolveValueOrLiteral(outerVm, raw) : p.Default;
-        return (def.Template, scope);
+        return (def.Template, WithPassthrough(def, instance, outerVm), scope);
+    }
+
+    // 컴포넌트 인스턴스의 루트 상자 — 템플릿 노드는 인스턴스끼리 공유되므로 핸들 조회·덮어쓰기는 인스턴스 노드 기준으로 이 상자에만
+    private void LinkInstance(LayoutBox box, ElementNode instance)
+    {
+        box.Origin = instance;
+        if (ControlOf?.Invoke(instance)?.Overrides.Enabled is { } en)
+            box.Disabled = !en;
+        box.HasCodeClick = ControlOf?.Invoke(instance)?.Overrides.HasClick == true;
     }
 
     /// <summary>The selected index of a DvTabs without <c>value</c> (remembered by the screen, so it survives rebuilds). 0 if none.</summary>
@@ -1282,13 +1293,7 @@ public sealed class LayoutEngine
         {
             var box = BuildTemplate(root, scope, registry, depth + 1, instance.Children, slotBuilder, twoWay);
             if (box is not null)
-            {
-                // 템플릿 노드는 인스턴스끼리 공유된다 — 핸들 조회·덮어쓰기는 인스턴스 노드 기준으로 루트 박스에만
-                box.Origin = instance;
-                if (ControlOf?.Invoke(instance)?.Overrides.Enabled is { } en)
-                    box.Disabled = !en;
-                box.HasCodeClick = ControlOf?.Invoke(instance)?.Overrides.HasClick == true;
-            }
+                LinkInstance(box, instance);
             return box;
         }
         finally
