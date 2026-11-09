@@ -17,7 +17,7 @@ internal interface IValueSlot
     /// <summary>The rectangle and visible part in Owner surface coordinates (clip = Empty if fully hidden). False if it has disappeared.</summary>
     bool TryLocate(out SKRect rect, out SKRect clip);
     object? Value { get; }
-    /// <summary>Type of the bound property (formerly SelectValueType/PickerValueType).</summary>
+    /// <summary>Type of the bound property.</summary>
     Type? ValueType { get; }
     /// <summary>Popup font (size and font name).</summary>
     ComputedStyle Style { get; }

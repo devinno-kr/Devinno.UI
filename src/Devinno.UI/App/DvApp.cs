@@ -534,7 +534,7 @@ public sealed class DvApp : ISurfaceComposer
     /// <remarks>
     /// Reports, with the same arguments, each surface's <see cref="DvSurface.HandlerError"/> (handlers, setters, value reads, <c>"attach"</c>), exceptions from page transition notifications (<c>Kind</c> = <c>"hidden"</c>/<c>"shown"</c>,
     /// <c>Member</c> = page type name), exceptions from dialog <see cref="DvDialog.OnClosed"/> (<c>Kind</c> = <c>"closed"</c>, <c>Member</c> = dialog type name),
-    /// exceptions from code continuing after an <c>await</c> in a handler or from <c>async void</c> handlers (<c>Kind</c> = <c>"async"</c>, <c>Member</c> = <see langword="null"/>), and exceptions from <see cref="Idle"/> handlers (<c>Kind</c> = <c>"idle"</c>). Raised on the input thread (<c>"closed"</c> when the window closes is raised on the closing thread). Exceptions thrown by subscribers themselves are swallowed and only written to Trace.
+    /// exceptions from code continuing after an <c>await</c> in a handler or from <c>async void</c> handlers (<c>Kind</c> = <c>"async"</c>, <c>Member</c> = <see langword="null"/>), exceptions from <see cref="Idle"/> handlers (<c>Kind</c> = <c>"idle"</c>), and hot-reload markup errors (<c>Kind</c> = <c>"hotreload"</c>, <c>Member</c> = file path). Raised on the input thread (<c>"closed"</c> when the window closes is raised on the closing thread). Exceptions thrown by subscribers themselves are swallowed and only written to Trace.
     /// </remarks>
     public event EventHandler<DvHandlerErrorEventArgs>? HandlerError;
 

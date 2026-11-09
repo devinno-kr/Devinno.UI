@@ -539,16 +539,14 @@
                 mode = i;
             </code>
             </example>
-        </member><member name="E:Devinno.UI.App.DvApp.HandlerError" en-hash="5a706ac90b6f3950">
-            <summary>
+        </member><member name="E:Devinno.UI.App.DvApp.HandlerError" en-hash="78be36540851f6fa"><summary>
             이 앱의 페이지·영역에서 앱(뷰모델) 코드가 던진 예외가 모두 여기로 모입니다. <c>sender</c> 는 이 <see cref="T:Devinno.UI.App.DvApp" /> 입니다.
             </summary>
             <remarks>
             각 화면의 <see cref="E:Devinno.UI.DvSurface.HandlerError" />(처리기·setter·값 읽기·<c>"attach"</c>)와, 페이지 전환 알림의 예외(<c>Kind</c> = <c>"hidden"</c>·<c>"shown"</c>,
             <c>Member</c> = 페이지 형식 이름), 다이얼로그 <see cref="M:Devinno.UI.App.DvDialog.OnClosed" /> 의 예외(<c>Kind</c> = <c>"closed"</c>, <c>Member</c> = 다이얼로그 형식 이름),
-            처리기에서 <c>await</c> 한 뒤 이어진 코드나 <c>async void</c> 처리기의 예외(<c>Kind</c> = <c>"async"</c>, <c>Member</c> = <see langword="null" />), <see cref="E:Devinno.UI.App.DvApp.Idle" /> 처리기의 예외(<c>Kind</c> = <c>"idle"</c>)를 같은 인자로 알립니다. 입력 스레드에서 발생합니다(창이 닫힐 때의 <c>"closed"</c> 는 닫는 스레드). 구독자 자신이 던진 예외는 삼키고 Trace 로만 남깁니다.
-            </remarks>
-        </member><member name="P:Devinno.UI.App.DvApp.Current" en-hash="e406549a382ff56a">
+            처리기에서 <c>await</c> 한 뒤 이어진 코드나 <c>async void</c> 처리기의 예외(<c>Kind</c> = <c>"async"</c>, <c>Member</c> = <see langword="null" />), <see cref="E:Devinno.UI.App.DvApp.Idle" /> 처리기의 예외(<c>Kind</c> = <c>"idle"</c>), 핫 리로드 마크업 오류(<c>Kind</c> = <c>"hotreload"</c>, <c>Member</c> = 파일 경로)를 같은 인자로 알립니다. 입력 스레드에서 발생합니다(창이 닫힐 때의 <c>"closed"</c> 는 닫는 스레드). 구독자 자신이 던진 예외는 삼키고 Trace 로만 남깁니다.
+            </remarks></member><member name="P:Devinno.UI.App.DvApp.Current" en-hash="e406549a382ff56a">
             <summary>
             마지막으로 창·컨트롤에 붙었던 앱입니다. 지금 붙어 있으면 그 앱이고, 닫힌 뒤에도 마지막 앱이 남습니다(그 앱에 <see cref="M:Devinno.UI.App.DvApp.ShowDialog``2(System.Object[])" /> 를 부르면 즉시 취소 결과).
             </summary>
@@ -1076,8 +1074,7 @@
             <summary><c>type</c> 속성 값입니다. 없으면 <see langword="null" />. 현재 버전은 값을 보관만 하며 형식 검사나 변환에 쓰지 않습니다.</summary>
         </member><member name="P:Devinno.UI.Components.ComponentParam.Default" en-hash="ef4a513436c83938">
             <summary>인스턴스가 이 파라미터 속성을 주지 않았을 때 쓰는 문자열 값입니다. <c>default</c> 속성이 없으면 <see langword="null" />(빈 값)입니다.</summary>
-        </member><member name="T:Devinno.UI.Components.ComponentRegistry" en-hash="7ff34dfd8e83e27c">
-             <summary>
+        </member><member name="T:Devinno.UI.Components.ComponentRegistry" en-hash="f18e2c55a9e2cffe"><summary>
              앱이 정의한 재사용 컴포넌트(<c>&lt;DvComponent&gt;</c> 템플릿)를 이름으로 보관하는 레지스트리입니다.
              <see cref="T:Devinno.UI.DvSurface" />·<see cref="T:Devinno.UI.DvRenderer" />·<see cref="P:Devinno.UI.App.DvApp.Registry" /> 에 넘기면 그 화면의 마크업에서 컴포넌트 이름을 태그로 쓸 수 있습니다.
              </summary>
@@ -1090,7 +1087,7 @@
              <para><b>파라미터</b>: 템플릿 안의 <c>{이름}</c> 은 파라미터 값으로 바뀝니다. 인스턴스 속성 값은 바깥 화면의 뷰모델 기준으로 해석되며
              (<c>{Bind Data.X}</c>·<c>{Data.X}</c> 같은 바인딩 또는 리터럴), 속성을 주지 않으면 <see cref="P:Devinno.UI.Components.ComponentParam.Default" /> 를 씁니다.
              템플릿 안에서는 파라미터만 보이며 바깥 뷰모델의 속성을 직접 읽을 수 없습니다(필요한 값은 파라미터로 넘깁니다).</para>
-             <para><b>양방향 파라미터</b>: 인스턴스에서 파라미터에 <c>{Bind …}</c> 를 주고 템플릿의 <c>DvToggle</c>/<c>DvKnob</c>/<c>DvInput</c>/<c>DvSelect</c>/<c>DvDateTimeInput</c>/<c>DvColorInput</c>
+             <para><b>양방향 파라미터</b>: 인스턴스에서 파라미터에 <c>{Bind …}</c> 를 주고 템플릿의 <c>DvToggle</c>/<c>DvCheckBox</c>/<c>DvKnob</c>/<c>DvSlider</c>/<c>DvInput</c>/<c>DvSelect</c>/<c>DvSegment</c>/<c>DvTabs</c>/<c>DvDateTimeInput</c>/<c>DvColorInput</c>/래칭 <c>DvButton</c> 또는 커스텀 위젯
              이 <c>value="{파라미터}"</c> 로 그 파라미터를 쓰면, 사용자가 값을 바꿀 때 바깥 뷰모델의 해당 경로에 바로 기록됩니다.</para>
              <para><b>슬롯</b>: 템플릿 안의 <c>&lt;DvSlot/&gt;</c> 자리에 인스턴스의 자식 요소들이 들어갑니다(바깥 뷰모델 기준으로 빌드). 중첩된 컴포넌트 안에 둔 <c>DvSlot</c> 도 바깥 인스턴스의 자식을 받습니다.</para>
              <para><b>속성 전달</b>: 인스턴스의 <c>class</c>(템플릿 클래스 뒤에 덧붙임)·<c>grow</c>·<c>width</c>·<c>height</c>·<c>style</c>(템플릿 style 과 병합, 인스턴스 쪽 우선)·
@@ -1126,8 +1123,7 @@
                  &lt;/DvScreen&gt;
                  """, vm, registry);
              </code>
-             </example>
-        </member><member name="M:Devinno.UI.Components.ComponentRegistry.RegisterWidget``1(System.String)" en-hash="7bdb7c4f0d265b24"><summary>커스텀 위젯 클래스(<see cref="T:Devinno.UI.Widgets.DvWidget" />)를 태그로 등록해 마크업에서 <c>&lt;Tag …/&gt;</c> 로 쓰게 한다. 같은 태그를 다시 등록하면 클래스가 바뀐다.</summary><typeparam name="T">위젯 클래스. 화면의 요소마다 새 인스턴스를 만든다.</typeparam><param name="tag">마크업 태그. <c>Dv</c> 로 시작하면 안 되고(내장 이름), 여기 등록된 컴포넌트 이름과 같으면 안 된다.</param><exception cref="T:System.ArgumentException">태그가 비었거나, <c>Dv</c> 로 시작하거나, 이미 컴포넌트 이름이다.</exception><remarks>화면을 만들기 전에 등록한다(스레드 안전하지 않음). 이미 만든 화면은 바뀌지 않는다.</remarks></member><member name="M:Devinno.UI.Components.ComponentRegistry.TryGet(System.String,Devinno.UI.Components.ComponentDef@)" en-hash="9430f654c413afff">
+             </example></member><member name="M:Devinno.UI.Components.ComponentRegistry.RegisterWidget``1(System.String)" en-hash="7bdb7c4f0d265b24"><summary>커스텀 위젯 클래스(<see cref="T:Devinno.UI.Widgets.DvWidget" />)를 태그로 등록해 마크업에서 <c>&lt;Tag …/&gt;</c> 로 쓰게 한다. 같은 태그를 다시 등록하면 클래스가 바뀐다.</summary><typeparam name="T">위젯 클래스. 화면의 요소마다 새 인스턴스를 만든다.</typeparam><param name="tag">마크업 태그. <c>Dv</c> 로 시작하면 안 되고(내장 이름), 여기 등록된 컴포넌트 이름과 같으면 안 된다.</param><exception cref="T:System.ArgumentException">태그가 비었거나, <c>Dv</c> 로 시작하거나, 이미 컴포넌트 이름이다.</exception><remarks>화면을 만들기 전에 등록한다(스레드 안전하지 않음). 이미 만든 화면은 바뀌지 않는다.</remarks></member><member name="M:Devinno.UI.Components.ComponentRegistry.TryGet(System.String,Devinno.UI.Components.ComponentDef@)" en-hash="9430f654c413afff">
             <summary>이름으로 등록된 컴포넌트 정의를 찾습니다(대소문자 구분). 내장 컴포넌트는 찾지 않습니다.</summary>
             <param name="name">컴포넌트 이름.</param>
             <param name="def">찾은 정의. 없으면 <see langword="null" />.</param>
@@ -1523,8 +1519,7 @@
             </example>
         </member><member name="P:Devinno.UI.DvHandlerErrorEventArgs.Exception" en-hash="e4b7b3f2ec351c19">
             <summary>앱 코드가 던진 예외입니다. <see cref="T:System.Reflection.TargetInvocationException" /> 이면 안쪽 예외입니다.</summary>
-        </member><member name="P:Devinno.UI.DvHandlerErrorEventArgs.Kind" en-hash="e883571c1ceedc8d">
-            <summary>
+        </member><member name="P:Devinno.UI.DvHandlerErrorEventArgs.Kind" en-hash="99eb427123e5088e"><summary>
             라이브러리가 무엇을 하다가 예외가 났는지입니다. 다음 값 중 하나입니다.
             <list type="bullet">
             <item><description><c>"onclick"</c> — <c>onclick</c> 처리기(그리드 <c>button</c> 셀의 <c>onclick</c> 포함).</description></item>
@@ -1543,24 +1538,29 @@
             <item><description><c>"format"</c> — 값을 글자로 바꾸다가(<see cref="M:System.Object.ToString" />·<see cref="T:System.IFormattable" />) 던짐. 빈 글자로 그렸습니다.</description></item>
             <item><description><c>"enumerate"</c> — <c>DvRepeat</c>·<c>DvDataGrid</c>·<c>DvSelect</c>·알람·트렌드의 목록을 열거하다가 던짐. 빈 목록으로 보았습니다.</description></item>
             <item><description><c>"compare"</c> — <c>DvDataGrid</c> 정렬에서 항목 값의 <see cref="M:System.IComparable.CompareTo(System.Object)" /> 가 던짐. 같은 값으로 보았습니다(그 열의 순서는 정해지지 않음).</description></item>
+            <item><description><c>"keypad"</c> — <c>DvKnob</c> 키패드로 입력한 값을 쓰다가 던짐. 값은 쓰지 않았습니다.</description></item>
+            <item><description>핸들 변경 이벤트 이름 — 컨트롤 핸들의 변경 이벤트 구독자가 던짐: <c>"CheckedChanged"</c>(<c>DvToggle</c>, <c>DvSwitch</c>, <c>DvCheckBox</c>, <c>DvRadio</c>, 래칭 <c>DvButton</c>),
+            <c>"ValueChanged"</c>(<c>DvKnob</c>, <c>DvSlider</c>, <c>DvDateTimeInput</c>, <c>DvColorInput</c>), <c>"TextChanged"</c>(<c>DvInput</c>), <c>"SelectionChanged"</c>(<c>DvSelect</c>, <c>DvSegment</c>, <c>DvListBox</c>, <c>DvTreeView</c>),
+            <c>"ExpandedChanged"</c>(<c>DvExpander</c>).</description></item>
+            <item><description><c>"Pointer"</c>·<c>"FrameInterval"</c>·<c>"Measure"</c>·<c>"Paint"</c> — 커스텀 위젯(<see cref="T:Devinno.UI.Widgets.DvWidget" />)의 같은 이름 메서드가 던짐. <see cref="P:Devinno.UI.DvHandlerErrorEventArgs.Member" /> = 위젯 형식 이름.</description></item>
+            <item><description><see cref="E:Devinno.UI.App.DvApp.HandlerError" /> 로만 알림: <c>"closed"</c>(<see cref="M:Devinno.UI.App.DvDialog.OnClosed" />), <c>"async"</c>(처리기에서 <c>await</c> 한 뒤 이어진 코드나 <c>async void</c> 처리기),
+            <c>"idle"</c>(<see cref="E:Devinno.UI.App.DvApp.Idle" /> 처리기), <c>"hotreload"</c>(핫 리로드한 마크업을 적용하지 못함, <see cref="P:Devinno.UI.DvHandlerErrorEventArgs.Member" /> = 파일 경로).</description></item>
             </list>
             <para>값 읽기(<c>"getter"</c>·<c>"format"</c>·<c>"enumerate"</c>·<c>"compare"</c>)는 그리드처럼 매 프레임 읽어도 같은 (<see cref="P:Devinno.UI.DvHandlerErrorEventArgs.Kind" />, <see cref="P:Devinno.UI.DvHandlerErrorEventArgs.Member" />, <see cref="P:Devinno.UI.DvHandlerErrorEventArgs.Tag" />) 를
             화면을 다시 만들 때(<see cref="M:Devinno.UI.DvSurface.Invalidate" />)까지 한 번만 알립니다.</para>
-            </summary>
-        </member><member name="P:Devinno.UI.DvHandlerErrorEventArgs.Member" en-hash="eb139861fa1b90cd">
+            </summary></member><member name="P:Devinno.UI.DvHandlerErrorEventArgs.Member" en-hash="eb139861fa1b90cd">
             <summary>
             부른 메서드 이름 또는 쓰려던(읽으려던) 속성 경로입니다. 예: <c>"Start"</c>, <c>"Item.SetPoint"</c>.
             그리드 셀 값 읽기면 열의 <c>field</c> 경로입니다. 경로를 알 수 없는 값 변환(<c>"format"</c>)이면 <see langword="null" /> 일 수 있습니다.
             </summary>
         </member><member name="P:Devinno.UI.DvHandlerErrorEventArgs.Tag" en-hash="1a5fc9970fc79211">
             <summary>예외가 난 요소의 태그 이름입니다. 예: <c>"DvButton"</c>, <c>"DvInput"</c>, <c>"DvDataGrid"</c>. 그리드 셀(편집·체크·버튼 셀)과 행 선택·행 클릭에서 났으면 <c>"DvDataGrid"</c> 입니다.</summary>
-        </member><member name="T:Devinno.UI.DvRenderer" en-hash="75e227e43cd318a9">
-             <summary>
+        </member><member name="T:Devinno.UI.DvRenderer" en-hash="dbe0e5b84491c5d6"><summary>
              창 없이 마크업 화면 한 장을 PNG 이미지로 그립니다. 화면이 의도대로 나오는지 확인하거나 테스트·문서용 스냅숏을 만들 때 씁니다.
              </summary>
              <remarks>
              <para>마크업을 받는 오버로드는 매번 새로 파싱·레이아웃해서 그립니다. 상호작용 상태(hover·press·스크롤·편집)는 없으며,
-             배경은 흰색으로 지운 뒤 그립니다. <see cref="T:Devinno.UI.DvSurface" /> 를 받는 오버로드는 그 화면의 현재 상태를 그대로 그립니다.</para>
+             캔버스는 먼저 테마의 <c>background</c> 토큰 색으로 지웁니다. <see cref="T:Devinno.UI.DvSurface" /> 를 받는 오버로드는 그 화면의 현재 상태를 그대로 그립니다.</para>
              <para>크기는 px 단위이며 1 이상이어야 합니다. 테마를 주지 않으면 <see cref="P:Devinno.UI.Styling.DvTheme.Default" />(어두운 테마)를 씁니다.
              정적 메서드이며 공유 상태가 없으므로 마크업을 받는 오버로드는 어느 스레드에서 불러도 됩니다(넘긴 VM 을 다른 스레드가 동시에 바꾸지 않는다면).</para>
              </remarks>
@@ -1575,8 +1575,7 @@
              // 점멸 위젯의 다른 위상을 보려면 시각을 지정 (DvLamp 기본 점멸 주기 500ms)
              DvRenderer.RenderToFile(markup, vm, 1280, 800, "blink-phase2.png", null, null, timestampMs: 500);
              </code>
-             </example>
-        </member><member name="M:Devinno.UI.DvRenderer.RenderToPng(System.String,System.Object,System.Int32,System.Int32)" en-hash="0377dcd4461d5856">
+             </example></member><member name="M:Devinno.UI.DvRenderer.RenderToPng(System.String,System.Object,System.Int32,System.Int32)" en-hash="0377dcd4461d5856">
             <summary>기본 테마로 마크업 화면을 그려 PNG 바이트를 돌려줍니다.</summary>
             <param name="markup">루트 요소가 하나인 화면 마크업(XML).</param>
             <param name="vm">바인딩할 뷰모델(<see langword="null" /> 가능).</param>
@@ -1888,20 +1887,17 @@
             </summary>
         </member><member name="M:Devinno.UI.DvSurface.CancelPress" en-hash="3b29e0599eddc30f">
             <summary>진행 중인 누름(press·노브·스크롤 드래그)과 hover 를 클릭 없이 버린다 — 위에 다이얼로그가 떠서 이 칸이 입력을 잃었을 때.</summary>
-        </member><member name="M:Devinno.UI.DvSurface.RenderTo(SkiaSharp.SKCanvas,System.Single,System.Single)" en-hash="e93fa19dd4a58176">
-            <summary>
+        </member><member name="M:Devinno.UI.DvSurface.RenderTo(SkiaSharp.SKCanvas,System.Single,System.Single)" en-hash="50496f5c24f7d743"><summary>
             시각 0 기준으로 화면을 그립니다. 점멸 위젯은 항상 같은 위상으로 그려지므로 스냅숏·테스트용이고,
             실제 호스트는 <see cref="M:Devinno.UI.DvSurface.RenderTo(SkiaSharp.SKCanvas,System.Single,System.Single,System.Int64)" /> 를 쓰세요.
             </summary>
-            <param name="canvas">그릴 캔버스. 전체를 흰색으로 지운 뒤 그립니다.</param>
+            <param name="canvas">그릴 캔버스. 전체를 테마의 <c>background</c> 토큰 색으로 지운 뒤 그립니다.</param>
             <param name="w">화면 너비(캔버스 단위).</param>
-            <param name="h">화면 높이(캔버스 단위).</param>
-        </member><member name="M:Devinno.UI.DvSurface.RenderTo(SkiaSharp.SKCanvas,System.Single,System.Single,System.Int64)" en-hash="dc42a397059467c9">
-            <summary>
+            <param name="h">화면 높이(캔버스 단위).</param></member><member name="M:Devinno.UI.DvSurface.RenderTo(SkiaSharp.SKCanvas,System.Single,System.Single,System.Int64)" en-hash="27204af3701bb23d"><summary>
             필요하면 다시 레이아웃한 뒤 화면 전체를 캔버스에 그립니다. 호스트의 페인트 콜백에서 UI 스레드로 부릅니다.
             </summary>
             <remarks>
-            <para>순서: 레이아웃(<see cref="M:Devinno.UI.DvSurface.Layout(System.Single,System.Single)" />) → 관성 스크롤 진행 → 캔버스를 흰색으로 지움 → 화면·칸 화면(DvApp 영역·페이지)·팝업 → 가상 키보드.
+            <para>순서: 레이아웃(<see cref="M:Devinno.UI.DvSurface.Layout(System.Single,System.Single)" />) → 관성 스크롤 진행 → 캔버스를 테마 <c>background</c> 색으로 지움 → 화면·칸 화면(DvApp 영역·페이지)·팝업 → 가상 키보드.
             가상 키보드가 편집 대상을 가리면 화면 전체를 위로 밀어 올려 그립니다.</para>
             <para>그리고 나면 <see cref="P:Devinno.UI.DvSurface.NeedsRender" /> 가 <see langword="false" /> 가 되고, <see cref="P:Devinno.UI.DvSurface.Edit" /> 가 이번 프레임 기준으로 갱신됩니다.
             네이티브 편집기를 쓰는 호스트는 이 호출 직후 <see cref="P:Devinno.UI.DvSurface.Edit" /> 를 읽으세요.</para>
@@ -1911,8 +1907,7 @@
             <param name="canvas">그릴 캔버스.</param>
             <param name="w">화면 너비(캔버스 단위). 포인터 좌표와 같은 단위입니다.</param>
             <param name="h">화면 높이(캔버스 단위).</param>
-            <param name="timestampMs">현재 시각(ms). 점멸 위상 계산에 씁니다. <see cref="M:Devinno.UI.DvSurface.NextAnimationDue(System.Int64)" /> 와 같은 기준(예: <see cref="P:System.Environment.TickCount64" />)을 쓰세요.</param>
-        </member><member name="P:Devinno.UI.DvSurface.PartialRender" en-hash="848054cba2fb1d2d">
+            <param name="timestampMs">현재 시각(ms). 점멸 위상 계산에 씁니다. <see cref="M:Devinno.UI.DvSurface.NextAnimationDue(System.Int64)" /> 와 같은 기준(예: <see cref="P:System.Environment.TickCount64" />)을 쓰세요.</param></member><member name="P:Devinno.UI.DvSurface.PartialRender" en-hash="848054cba2fb1d2d">
             <summary>
             호스트가 이전 프레임 그림을 지우지 않고 유지하는지(부분 다시 그리기 허용). 기본 <see langword="false" /> = 언제나 화면 전체를 그립니다.
             </summary>
@@ -2189,11 +2184,7 @@
             <summary>Tab 키로 확정했습니다. 네이티브 편집기 모드의 그리드 입력 셀이면 같은 행의 다음 입력 열에서 편집을 이어 갑니다.</summary>
         </member><member name="F:Devinno.UI.DvEditExit.ShiftTab" en-hash="e3b75ea1ef5ea31f">
             <summary>Shift+Tab 으로 확정했습니다. 네이티브 편집기 모드의 그리드 입력 셀이면 같은 행의 이전 입력 열에서 편집을 이어 갑니다.</summary>
-        </member><member name="F:Devinno.UI.DvEditExit.Up" en-hash="33fc34b9b4201729">
-            <summary>위 화살표 키로 확정했습니다(한 줄 편집기). 현재는 커밋만 하고 셀을 옮기지 않습니다.</summary>
-        </member><member name="F:Devinno.UI.DvEditExit.Down" en-hash="08be6ab80246e3d8">
-            <summary>아래 화살표 키로 확정했습니다(한 줄 편집기). 현재는 커밋만 하고 셀을 옮기지 않습니다.</summary>
-        </member><member name="F:Devinno.UI.DvEditExit.FocusLost" en-hash="b34cc49bb3167207">
+        </member><member name="F:Devinno.UI.DvEditExit.Up" en-hash="400106090c645e82"><summary>위 화살표 키로 확정했습니다(한 줄 편집기). 커밋만 하고 셀을 옮기지 않습니다.</summary></member><member name="F:Devinno.UI.DvEditExit.Down" en-hash="571351a937895eb2"><summary>아래 화살표 키로 확정했습니다(한 줄 편집기). 커밋만 하고 셀을 옮기지 않습니다.</summary></member><member name="F:Devinno.UI.DvEditExit.FocusLost" en-hash="b34cc49bb3167207">
             <summary>
             편집기가 포커스를 잃었습니다(다른 곳을 누름, 화면 전환, 편집 대상이 스크롤로 완전히 가려짐 등).
             값이 유효하면 쓰고, 거절되면 쓰지 않고 원래 값으로 세션을 닫습니다.
@@ -2444,9 +2435,7 @@
             </summary>
         </member><member name="M:Devinno.UI.IValueSlot.TryLocate(SkiaSharp.SKRect@,SkiaSharp.SKRect@)" en-hash="52a74bba383f877e">
             <summary>Owner 서피스 좌표의 사각형·보이는 부분(완전히 가려지면 clip = Empty). 사라졌으면 false.</summary>
-        </member><member name="P:Devinno.UI.IValueSlot.ValueType" en-hash="98760a016d0c3ecf">
-            <summary>바인딩 속성 타입(기존 SelectValueType·PickerValueType).</summary>
-        </member><member name="P:Devinno.UI.IValueSlot.Style" en-hash="b5b76d782b14204d">
+        </member><member name="P:Devinno.UI.IValueSlot.ValueType" en-hash="e10b6052f80f636b"><summary>바인딩 속성 타입.</summary></member><member name="P:Devinno.UI.IValueSlot.Style" en-hash="b5b76d782b14204d">
             <summary>팝업 글꼴(크기·글꼴 이름).</summary>
         </member><member name="P:Devinno.UI.IValueSlot.Editing" en-hash="e181149cbbb88ce9">
             <summary>열림 표시(포커스 링·강조).</summary>
@@ -2901,10 +2890,9 @@
             <summary><c>step</c> 의 소수 자릿수를 돌려줍니다(0.5→1, 0.25→2, 10→0). 최대 6입니다.</summary>
             <param name="step">노브 <c>step</c> 값.</param>
             <returns>소수 자릿수(0~6).</returns>
-        </member><member name="M:Devinno.UI.Interaction.KnobBinder.Commit(Devinno.UI.Layout.LayoutBox,System.Object,System.Double)" en-hash="23f57eba90dd9e48">
-            <summary>
-            노브 값을 양방향 바인딩 경로에 씁니다. <c>onbeforecommit="M"</c> 이 있으면 먼저 <c>bool M(double proposed)</c> 를 호출해 <see langword="true" /> 를 돌려줄 때만 씁니다
-            (메서드가 없거나 시그니처가 맞지 않으면 쓰지 않고 Trace 경고를 같은 원인에 1회 남기며, 메서드가 예외를 던져도 쓰지 않습니다). 대상 속성 형식으로 변환해 쓰며, <c>DvRepeat</c> 항목 안이면 항목 범위에 씁니다.
+        </member><member name="M:Devinno.UI.Interaction.KnobBinder.Commit(Devinno.UI.Layout.LayoutBox,System.Object,System.Double)" en-hash="cfb8f95fb926487c"><summary>
+            노브 값을 양방향 바인딩 경로에 씁니다. <c>onbeforecommit="M"</c> 이 있으면 먼저 확인 메서드(반복 항목 안이면 <c>bool M(item, double)</c>·<c>bool M(item, object)</c>, 아니면 <c>bool M(double)</c>·<c>bool M(object)</c>)를 호출해 <see langword="true" /> 를 돌려줄 때만 씁니다
+            (그런 메서드가 없으면 쓰지 않고 Trace 경고를 같은 원인에 1회 남기며, 메서드가 예외를 던져도 쓰지 않습니다). 대상 속성 형식으로 변환해 쓰며, <c>DvRepeat</c> 항목 안이면 항목 범위에 씁니다.
             </summary>
             <param name="box">노브 상자. <see cref="M:Devinno.UI.Interaction.KnobBinder.CanDrag(Devinno.UI.Layout.LayoutBox)" /> 가 <see langword="false" /> 면 무시합니다.</param>
             <param name="vm">화면 뷰모델. <see langword="null" /> 이면 무시합니다.</param>
@@ -2912,8 +2900,7 @@
             <remarks>
             확인 메서드가 던진 예외와 쓰기 실패(속성 setter 예외·형식 변환 실패)는 전달하지 않습니다. 쓰지 않은 것으로 처리하고 Trace 오류를 남깁니다.
             (<see cref="T:Devinno.UI.DvSurface" /> 를 거친 노브 조작이면 <see cref="E:Devinno.UI.DvSurface.HandlerError" /> 로도 알립니다.)
-            </remarks>
-        </member><member name="T:Devinno.UI.Interaction.KnobDrag" en-hash="873ddc84afd1f25a">
+            </remarks></member><member name="T:Devinno.UI.Interaction.KnobDrag" en-hash="873ddc84afd1f25a">
             <summary>
             <c>DvKnob</c> 회전 드래그 한 번의 상태입니다. 잡은 지점 기준의 <b>상대 회전</b>(각도 변화량)으로 값을 바꾸므로 누르는 순간 값이 튀지 않습니다.
             </summary>
@@ -2977,13 +2964,10 @@
             <c>DvSlider</c> 끌기 한 번. 누른 자리로 값이 바로 옮겨 가고(막대 아무 데나 눌러도 됨) 끄는 동안 따라간다 — 미리보기는
             <see cref="P:Devinno.UI.Layout.LayoutBox.KnobValue" /> 에만, 뷰모델 기록은 놓을 때(<see cref="T:Devinno.UI.Interaction.KnobBinder" /> 의 커밋 경로). 누르기만 하고 떼도 그 자리 값이 커밋된다.
             </summary>
-        </member><member name="T:Devinno.UI.Interaction.TwoWayBinder" en-hash="dbc1932065f4c73e">
-            <summary><c>DvToggle</c> 을 눌렀을 때 반전된 값을 양방향 바인딩(<c>value="{Bind …}"</c>) 대상에 쓰는 부품입니다.</summary>
-            <remarks>엔진 내부 단계입니다. 보통 앱 코드는 직접 쓰지 않고 마크업 바인딩과 <see cref="T:Devinno.UI.DvSurface" />/<see cref="T:Devinno.UI.DvRenderer" /> 를 씁니다.</remarks>
-        </member><member name="M:Devinno.UI.Interaction.TwoWayBinder.Commit(Devinno.UI.Layout.LayoutBox,System.Object)" en-hash="a1b939318c2058fc">
-            <summary>
-            토글 상자의 현재 상태를 반전한 값을 바인딩 경로에 씁니다. <c>onbeforecommit="M"</c> 이 있으면 먼저 <c>bool M(bool proposed)</c> 를 호출해
-            <see langword="true" /> 를 돌려줄 때만 씁니다. 메서드가 없거나 시그니처가 맞지 않으면(반환 형식이 <see langword="bool" /> 이 아닌 경우 포함) 쓰지 않고 Trace 경고를 남기고(같은 원인에 1회),
+        </member><member name="T:Devinno.UI.Interaction.TwoWayBinder" en-hash="51709810b0a0558d"><summary><c>DvToggle</c>·<c>DvCheckBox</c>·래칭 <c>DvButton</c> 을 눌렀을 때 반전된 값을 양방향 바인딩(<c>value="{Bind …}"</c>) 대상에 쓰는 부품입니다.</summary>
+            <remarks>엔진 내부 단계입니다. 보통 앱 코드는 직접 쓰지 않고 마크업 바인딩과 <see cref="T:Devinno.UI.DvSurface" />/<see cref="T:Devinno.UI.DvRenderer" /> 를 씁니다.</remarks></member><member name="M:Devinno.UI.Interaction.TwoWayBinder.Commit(Devinno.UI.Layout.LayoutBox,System.Object)" en-hash="14aacc272f71904e"><summary>
+            토글 상자의 현재 상태를 반전한 값을 바인딩 경로에 씁니다. <c>onbeforecommit="M"</c> 이 있으면 먼저 확인 메서드(반복 항목 안이면 <c>bool M(item, bool)</c>·<c>bool M(item, object)</c>, 아니면 <c>bool M(bool)</c>·<c>bool M(object)</c>)를 호출해
+            <see langword="true" /> 를 돌려줄 때만 씁니다. 그런 메서드가 없으면(반환 형식이 <see langword="bool" /> 이 아니면 해당하지 않음) 쓰지 않고 Trace 경고를 남기고(같은 원인에 1회),
             메서드가 예외를 던지면 쓰지 않고 Trace 오류를 남깁니다. <c>DvRepeat</c> 항목 안이면 항목 범위에 씁니다.
             </summary>
             <param name="box">눌린 토글 상자. 비활성·읽기 전용(<c>readonly</c>)이거나 값이 양방향 바인딩이 아니면 무시합니다.</param>
@@ -2991,8 +2975,7 @@
             <remarks>
             확인 메서드가 던진 예외와 쓰기 실패(속성 setter 예외·형식 변환 실패)는 전달하지 않습니다. 쓰지 않은 것으로 처리하고 Trace 오류를 남깁니다.
             (<see cref="T:Devinno.UI.DvSurface" /> 를 거친 토글 조작이면 <see cref="E:Devinno.UI.DvSurface.HandlerError" /> 로도 알립니다.)
-            </remarks>
-        </member><member name="F:Devinno.UI.Interaction.Warnings.MaxWarned" en-hash="07e2a5c4a5c2804e"><summary>한 화면이 기록하는 중복 열쇠의 최대 개수 — 넘으면 마지막 한 줄을 쓰고 그 화면의 새 경고는 버린다.</summary></member><member name="M:Devinno.UI.Interaction.Warnings.Warn(System.String,System.Boolean,System.String)" en-hash="d87f10b36d09b46e"><summary>
+            </remarks></member><member name="F:Devinno.UI.Interaction.Warnings.MaxWarned" en-hash="07e2a5c4a5c2804e"><summary>한 화면이 기록하는 중복 열쇠의 최대 개수 — 넘으면 마지막 한 줄을 쓰고 그 화면의 새 경고는 버린다.</summary></member><member name="M:Devinno.UI.Interaction.Warnings.Warn(System.String,System.Boolean,System.String)" en-hash="d87f10b36d09b46e"><summary>
             <paramref name="message" /> 를 <see cref="M:System.Diagnostics.Trace.TraceWarning(System.String)" />(<paramref name="error" /> 면 <see cref="M:System.Diagnostics.Trace.TraceError(System.String)" />)로
             <paramref name="key" /> 마다 화면당 한 번 쓴다. 같은 열쇠는 다른 화면이거나 마크업을 다시 읽은 뒤에만 다시 쓴다.
             한 화면은 열쇠를 <see cref="F:Devinno.UI.Interaction.Warnings.MaxWarned" /> 개까지 기록한다. 넘으면 "too many warnings" 한 줄을 쓰고 그 화면의 새 경고는 쓰지 않는다.
@@ -3137,10 +3120,7 @@
 Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니면 null).
 </summary></member><member name="F:Devinno.UI.Layout.LayoutEngine.IconTextGap" en-hash="9ee8a06c89f73492">
             <summary>버튼 아이콘과 글자 사이 간격.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutEngine.BoundVideos" en-hash="d92ae4e44a6424ce"><summary>이번 빌드의 DvVideo 상자 중 <c>position</c>/<c>duration</c> 을 뷰모델에 써 넣는 것입니다. 서피스가 프레임마다 맞춥니다.</summary></member><member name="M:Devinno.UI.Layout.LayoutEngine.ClearMeasure(Devinno.UI.Layout.LayoutBox)" en-hash="624156b6da05d62c">
-            <summary>이미 만든 트리를 새 크기로 다시 배치만 한다(빌드·바인딩·스타일 해석 없음) — 창 크기만 바뀐 경우.</summary>
-            <summary>잰 크기 캐시를 모두 지운다 — 크기가 시간에 따라 바뀌는 상자(펼침 움직임)가 있을 때 <see cref="M:Devinno.UI.Layout.LayoutEngine.Rearrange(Devinno.UI.Layout.LayoutBox,System.Single,System.Single)" /> 전에.</summary>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.MeasureBox(Devinno.UI.Layout.LayoutBox,System.Nullable{System.Single})" en-hash="72cbc762923766ff">
+        </member><member name="P:Devinno.UI.Layout.LayoutEngine.BoundVideos" en-hash="d92ae4e44a6424ce"><summary>이번 빌드의 DvVideo 상자 중 <c>position</c>/<c>duration</c> 을 뷰모델에 써 넣는 것입니다. 서피스가 프레임마다 맞춥니다.</summary></member><member name="M:Devinno.UI.Layout.LayoutEngine.ClearMeasure(Devinno.UI.Layout.LayoutBox)" en-hash="60be2f386e386cfd"><summary>잰 크기 캐시를 모두 지운다 — 크기가 시간에 따라 바뀌는 상자(펼침 움직임)가 있을 때 <see cref="M:Devinno.UI.Layout.LayoutEngine.Rearrange(Devinno.UI.Layout.LayoutBox,System.Single,System.Single)" /> 전에.</summary></member><member name="M:Devinno.UI.Layout.LayoutEngine.Rearrange(Devinno.UI.Layout.LayoutBox,System.Single,System.Single)" en-hash="496852a9395814b8"><summary>이미 만든 트리를 새 크기로 다시 배치만 한다(빌드·바인딩·스타일 해석 없음) — 창 크기만 바뀐 경우.</summary></member><member name="M:Devinno.UI.Layout.LayoutEngine.MeasureBox(Devinno.UI.Layout.LayoutBox,System.Nullable{System.Single})" en-hash="72cbc762923766ff">
             <summary>
             상자의 자기 크기(스타일 width/height, 없으면 내용 크기). DvApp 영역·다이얼로그 루트 크기 계산용.
             <paramref name="availableWidth" /> 를 주면 그 폭(바깥 폭)에 맞춰 글자를 줄바꿈해 잰다 — 없으면 한 줄(배치 영역과 상관없음).
@@ -3283,20 +3263,16 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <summary>세그먼트 항목의 선택지 번호(<see cref="P:Devinno.UI.Layout.LayoutBox.SelectOptions" /> 인덱스).</summary>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.SegmentFill" en-hash="ddd728e2d24f8e10">
             <summary><c>DvSegment</c> 의 <c>fill</c>: 세그먼트가 항목보다 넓으면 남는 폭을 항목이 나눠 가집니다. 아니면 배경을 항목에 맞춰 그립니다.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.ValueBindExpr" en-hash="5498e0136b7c425e">
-            <summary>
-            값을 쓰는 위젯(<c>DvToggle</c>·<c>DvKnob</c>·<c>DvInput</c>·<c>DvSelect</c>·<c>DvDateTimeInput</c>·<c>DvColorInput</c>)의 <c>value</c> 속성 원문(예: <c>{Bind Speed}</c>).
+        </member><member name="P:Devinno.UI.Layout.LayoutBox.ValueBindExpr" en-hash="b7f7ee9b2358169c"><summary>
+            값 위젯(쓸 수 있는 값을 가진 모든 태그, 예: <c>DvToggle</c>·<c>DvKnob</c>·<c>DvSlider</c>·<c>DvInput</c>·<c>DvSelect</c>·<c>DvSegment</c>·<c>DvListBox</c>·래칭 <c>DvButton</c>·커스텀 위젯)의 <c>value</c> 속성 원문(예: <c>{Bind Speed}</c>).
             컴포넌트 안에서는 바깥 뷰모델 경로로 바뀐 식입니다. 사용자가 값을 바꾸면 이 경로에 써 넣습니다. 다른 태그는 <see langword="null" />.
-            </summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.ValueTarget" en-hash="ee7cecd28770d771">
+            </summary></member><member name="P:Devinno.UI.Layout.LayoutBox.ValueTarget" en-hash="ee7cecd28770d771">
             <summary>값을 읽고 쓰는 대상이 뷰모델이 아니라 코드 핸들의 값 칸일 때 그 칸(<c>value</c> 없음 + <c>id</c> 핸들). 아니면 null.</summary>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.ValueOrigin" en-hash="fa1812d1bd15d6a9">
             <summary>컴포넌트 양방향 파라미터로 값을 받은 템플릿 위젯이면 그 컴포넌트 인스턴스 노드 — 사용자가 바꾼 값을 그 인스턴스의 핸들에 알린다. 아니면 null.</summary>
         </member><member name="M:Devinno.UI.Layout.LayoutBox.ValueContext(System.Object)" en-hash="bc1321478e511bf8">
             <summary><see cref="P:Devinno.UI.Layout.LayoutBox.ValueBindExpr" /> 경로를 읽고 쓸 대상 — 핸들 칸, 반복 항목 범위, 화면 뷰모델 순.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.ToggleOn" en-hash="671fa8de2f84e8a3">
-            <summary><c>DvToggle</c> 의 켜짐 여부. <c>value</c> 가 <see langword="true" /> 또는 문자열 <c>true</c> 일 때 켜짐. 빌드 때 채워집니다.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.ChartValues" en-hash="df5ea3053cfc37b0">
+        </member><member name="P:Devinno.UI.Layout.LayoutBox.ToggleOn" en-hash="7e4cacc0176410e3"><summary><c>DvToggle</c>·<c>DvCheckBox</c>·래칭 <c>DvButton</c> 의 켜짐 여부(참/거짓 규칙: <c>true</c>, 0 이 아닌 숫자, <c>1</c>). <c>DvRadio</c> 의 선택 상태와 <c>DvExpander</c> 의 펼침 상태도 이것입니다. 빌드 때 채워집니다.</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.ChartValues" en-hash="df5ea3053cfc37b0">
             <summary>그래프 값(DvSparkline·DvBarChart·DvPieChart).</summary>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.ChartLabels" en-hash="23f3b900e2e275f0">
             <summary>그래프 항목 이름(막대·원형).</summary>
@@ -3356,15 +3332,11 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <summary><c>DvGauge</c> 큰 눈금 간격(값 단위, <c>ticks</c> 속성). 0 이면 큰 눈금을 그리지 않습니다.</summary>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.GaugeMinorTicks" en-hash="fdd4641611a9f3e5">
             <summary><c>DvGauge</c> 작은 눈금 간격(값 단위, <c>minor-ticks</c> 속성). 0 이면 작은 눈금을 그리지 않습니다.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.GaugeTickLabels" en-hash="095ea8d8ea85d9fd">
-            <summary><c>DvGauge</c> 큰 눈금 숫자 표시 여부(<c>show-tick-labels</c>, 기본값 <see langword="true" />). 값이 <c>false</c> 일 때만 끕니다.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.Tone" en-hash="03b564987460a925">
+        </member><member name="P:Devinno.UI.Layout.LayoutBox.GaugeTickLabels" en-hash="5be5dfce0417684e"><summary><c>DvGauge</c> 큰 눈금 숫자 표시 여부(<c>show-tick-labels</c>, 기본값 <see langword="true" />). 참/거짓 규칙으로 거짓(<c>false</c>, <c>0</c>, 빈 값)이면 끕니다. 그 밖의 글자는 표시 + 경고.</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.Tone" en-hash="03b564987460a925">
             <summary><c>DvRing</c>·<c>DvProgress</c> 의 색 톤(<c>tone</c>, 기본값 <c>info</c>). 테마 토큰 <c>tone-{값}</c> 의 색을 씁니다.</summary>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.Direction" en-hash="3288593683f1c958">
             <summary><c>DvProgress</c> 의 채움 방향(<c>direction</c>: <c>right</c>(기본값)·<c>left</c>·<c>up</c>·<c>down</c>). 알 수 없는 값은 <c>right</c> 처럼 그립니다.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.ShowValue" en-hash="3eeb024778de8d3f">
-            <summary><c>DvRing</c>·<c>DvProgress</c> 에 값 글자를 표시할지(<c>show-value</c>). <c>DvProgress</c> 는 세로 방향이거나 높이가 14px 미만이면 표시하지 않습니다.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.Unit" en-hash="8c6e02b06c03c219">
+        </member><member name="P:Devinno.UI.Layout.LayoutBox.ShowValue" en-hash="0fc77911b69205ed"><summary><c>DvRing</c>·<c>DvProgress</c> 에 값 글자를 표시할지(<c>show-value</c>). <c>DvProgress</c> 는 두께(높이, 세로 방향이면 폭)가 14px 이상일 때 표시하고, 세로 막대는 글자가 폭에 들어갈 때만 표시합니다.</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.Unit" en-hash="8c6e02b06c03c219">
             <summary>값 뒤에 붙일 단위(<c>unit</c> 속성). <c>DvRing</c>·<c>DvProgress</c>·<c>DvInput</c> 이 씁니다.</summary>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.Label" en-hash="f86673fde71d5e77">
             <summary><c>DvRing</c> 안쪽에 표시할 이름(<c>label</c> 속성). 없으면 <see langword="null" />.</summary>
@@ -3380,9 +3352,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <summary><c>DvAlarmBanner</c>·<c>DvAlarmList</c> 의 확인(ACK) 명령(<c>onack</c> 속성 원문). 없으면 <see langword="null" />.</summary>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.AlarmRowHeight" en-hash="f2e8365c12382911">
             <summary><c>DvAlarmList</c> 행 높이(px, <c>row-height</c>, 기본값 36). 0 이하는 기본값으로 바뀝니다.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.AlarmShowAck" en-hash="6c2d1d6b16b41f1d">
-            <summary>확인(ACK) 버튼 표시 여부. <c>show-ack</c> 를 지정하면 그 값(<c>false</c> 가 아니면 표시), 지정하지 않으면 <see cref="P:Devinno.UI.Layout.LayoutBox.OnAck" /> 이 있을 때만 표시합니다.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.Process" en-hash="71490b5703ac18a5">
+        </member><member name="P:Devinno.UI.Layout.LayoutBox.AlarmShowAck" en-hash="c5ead693d54768e8"><summary>확인(ACK) 버튼 표시 여부. <c>show-ack</c> 를 지정하면 그 값(참/거짓 규칙, 그 밖의 글자는 표시 + 경고), 지정하지 않으면 <see cref="P:Devinno.UI.Layout.LayoutBox.OnAck" /> 이 있을 때만 표시합니다.</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.Process" en-hash="71490b5703ac18a5">
             <summary><c>DvProcess</c> 공정도 모델(장비·선·배치 결과). 다른 태그는 <see langword="null" />.</summary>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.Equipment" en-hash="106a96317211e963">
             <summary>공정도 장비 상자의 장비 정보(심볼·상태값·기하). 다른 상자는 <see langword="null" />.</summary>
@@ -3418,12 +3388,10 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <summary><c>DvKnob</c> 의 단위(<c>unit</c> 속성, 바인딩을 푼 값).</summary>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.KnobInput" en-hash="569b6c72f82dea1f">
             <summary><c>DvKnob</c> 의 입력 방식(<c>input-mode</c>) — tap·both 면 끌지 않은 탭이 숫자 키패드를 띄운다.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.OnBeforeCommit" en-hash="3313a4a8f097f927">
-            <summary>
-            값을 쓰기 직전에 부를 뷰모델 메서드 이름(<c>onbeforecommit</c> 속성 원문). 메서드는 새 값을 인수로 받고, <see langword="true" /> 를 돌려줄 때만 씁니다. 메서드가 없거나 시그니처가 맞지 않거나 예외를 던지면 거절합니다(Trace 경고·오류).
+        </member><member name="P:Devinno.UI.Layout.LayoutBox.OnBeforeCommit" en-hash="4c3db23ceeeec8db"><summary>
+            값을 쓰기 직전에 부를 뷰모델 메서드 이름(<c>onbeforecommit</c> 속성 원문). 반복 항목·그리드 행 안이면 <c>bool M(item, T)</c>·<c>bool M(item, object)</c>, 그다음 <c>bool M(T)</c>·<c>bool M(object)</c> 순으로 찾고(T = 값 형식), <see langword="true" /> 를 돌려줄 때만 씁니다. 메서드가 없거나 예외를 던지면 거절합니다(Trace 경고·오류).
             없으면 <see langword="null" />.
-            </summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.Icon" en-hash="cb65eaa1ca994418">
+            </summary></member><member name="P:Devinno.UI.Layout.LayoutBox.Icon" en-hash="cb65eaa1ca994418">
             <summary>아이콘 표기(<c>fa-gear</c>, <c>far fa-star</c> 등). <c>DvIcon</c>·<c>DvButton</c> 의 <c>icon</c> 속성(바인딩 가능)이며, 없으면 <see langword="null" />.</summary>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.InputValue" en-hash="17ab93f1e01c58ac">
             <summary><c>DvInput</c>·<c>DvSelect</c>·<c>DvDateTimeInput</c>·<c>DvColorInput</c> 의 현재 값(빌드 때 읽은 원래 타입의 값). 없으면 <see langword="null" />.</summary>
@@ -3459,14 +3427,13 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <summary><c>DvTreeView</c> 항목 하나 — 항목 객체·값·글자·부모 항목·깊이·자식 있음·펼침.</summary>
         </member><member name="M:Devinno.UI.Layout.TreeRow.#ctor(System.Object,System.Object,System.String,System.Object,System.Int32,System.Boolean,System.Boolean)" en-hash="4d07abe77b6b8950">
             <summary><c>DvTreeView</c> 항목 하나 — 항목 객체·값·글자·부모 항목·깊이·자식 있음·펼침.</summary>
-        </member><member name="T:Devinno.UI.Layout.LayoutQuery" en-hash="8d14f3938ce0c1f5">
-             <summary>
+        </member><member name="T:Devinno.UI.Layout.LayoutQuery" en-hash="50593964331d744b"><summary>
              계산이 끝난 <see cref="T:Devinno.UI.Layout.LayoutBox" /> 트리에서 박스를 찾는 도우미입니다.
              </summary>
              <remarks>
              엔진 내부에서 쓰는 검색 도구입니다(예: 화면에서 특정 태그의 상자 찾기). 보통 앱 코드는 <see cref="T:Devinno.UI.DvSurface" /> 를 쓰므로 필요 없습니다.
              테스트나 도구에서 <see cref="M:Devinno.UI.Layout.LayoutEngine.Layout(Devinno.UI.Markup.ElementNode,System.Object,System.Single,System.Single,Devinno.UI.Components.ComponentRegistry)" /> 결과를 직접 받아 특정 요소의 위치·값을 확인할 때 쓸 수 있습니다.
-             지금은 태그 이름으로만 찾을 수 있고, <c>id</c>·<c>name</c> 같은 속성으로 찾는 메서드는 없습니다(필요하면 <see cref="P:Devinno.UI.Layout.LayoutBox.Node" /> 의 속성을 보며 <see cref="P:Devinno.UI.Layout.LayoutBox.Children" /> 를 직접 순회하세요).
+             태그 이름으로만 찾을 수 있고, <c>id</c>·<c>name</c> 같은 속성으로 찾는 메서드는 없습니다(필요하면 <see cref="P:Devinno.UI.Layout.LayoutBox.Node" /> 의 속성을 보며 <see cref="P:Devinno.UI.Layout.LayoutBox.Children" /> 를 직접 순회하세요).
              </remarks>
              <example>
              <code>
@@ -3479,8 +3446,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
              if (gauge is not null)
                  Console.WriteLine($"{gauge.Rect} 값={gauge.GaugeValue}");
              </code>
-             </example>
-        </member><member name="M:Devinno.UI.Layout.LayoutQuery.FindByTag(Devinno.UI.Layout.LayoutBox,System.String)" en-hash="499120604db5b305">
+             </example></member><member name="M:Devinno.UI.Layout.LayoutQuery.FindByTag(Devinno.UI.Layout.LayoutBox,System.String)" en-hash="499120604db5b305">
             <summary>
             <paramref name="root" /> 부터 깊이 우선(자기 자신 → 자식 순서)으로 내려가며 태그가 <paramref name="tag" /> 인 첫 박스를 찾습니다.
             </summary>
@@ -3634,12 +3600,12 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <exception cref="T:System.Xml.XmlException">XML 문법이 잘못되었을 때(닫히지 않은 태그, 따옴표 없는 속성 값, 이스케이프하지 않은 <c>&lt;</c>·<c>&amp;</c> 등). 줄·열 위치가 들어 있습니다.</exception>
         </member><member name="T:Devinno.UI.Markup.TagCatalog" en-hash="5f82a19860f1c629"><summary>
             라이브러리 여러 곳이 쓰는 태그 목록을 한 곳에 둔다. 소스 생성기는 라이브러리를 참조할 수 없어 <see cref="P:Devinno.UI.Markup.TagCatalog.HandleTags" /> 복사본을 따로 갖고, 테스트가 둘이 같은지 확인한다.
-            </summary></member><member name="F:Devinno.UI.Markup.TagCatalog.HandleKinds" en-hash="8cafcf4bf94cbcf9"><summary>전용 핸들이 있는 태그마다 핸들 형식(형식 이름 = 태그 이름). 그 밖의 태그는 <see cref="T:Devinno.UI.Controls.DvControl" />.</summary></member><member name="P:Devinno.UI.Markup.TagCatalog.HandleTags" en-hash="7c967f0bf2fd3159"><summary>전용 핸들 형식이 있는 태그들.</summary></member><member name="F:Devinno.UI.Markup.TagCatalog.TemplateTwoWayTags" en-hash="5a64f2e49af282c2"><summary>컴포넌트 틀 안에서 <c>value="{p}"</c> 가 양방향 파라미터 <c>p</c> 의 바깥 경로로 쓰는 위젯(커스텀 위젯도).</summary></member><member name="F:Devinno.UI.Markup.TagCatalog.HoldIgnored" en-hash="8f2e4b710b9842c8"><summary>자기 누름 동작이 있어 <c>hold</c> 가 적용되지 않는 태그.</summary></member><member name="T:Devinno.UI.Markup.AttrKind" en-hash="3bdf242d05dcab5f"><summary>속성 값을 읽는 방식.</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Text" en-hash="087552111d184d16"><summary>글자(끼워 넣기 가능).</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Number" en-hash="67095f9c91c77b6c"><summary>숫자.</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Bool" en-hash="79e7325ae158d114"><summary>참 또는 거짓.</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Enum" en-hash="539cced12aab4c06"><summary>정해진 단어 중 하나(<see cref="P:Devinno.UI.Markup.AttrDef.Values" />).</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Color" en-hash="98f1e929fccdc442"><summary>색(<c>#hex</c>, 이름 또는 <c>token(...)</c>).</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Length" en-hash="a9e7c79a41fdcdb4"><summary>크기(px, %, 별, 단계 이름).</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Style" en-hash="0da0e3209043b6ab"><summary>스타일 선언 목록.</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Expr" en-hash="57d64ab0a7dc05d6"><summary>적힌 그대로 읽는 식: 처리기 메서드 이름 또는 양방향 값 경로.</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Path" en-hash="967308be59e2fa99"><summary>항목 기준 속성 경로(<c>item-text</c>, <c>field</c>).</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Items" en-hash="9fc3ea55c51bd4c5"><summary>뷰모델의 목록.</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Object" en-hash="d6ab7f21490f1a1f"><summary>뷰모델의 아무 객체.</summary></member><member name="T:Devinno.UI.Markup.AttrDef" en-hash="13794f0b9087b8c2"><summary>
+            </summary></member><member name="F:Devinno.UI.Markup.TagCatalog.HandleKinds" en-hash="8cafcf4bf94cbcf9"><summary>전용 핸들이 있는 태그마다 핸들 형식(형식 이름 = 태그 이름). 그 밖의 태그는 <see cref="T:Devinno.UI.Controls.DvControl" />.</summary></member><member name="P:Devinno.UI.Markup.TagCatalog.HandleTags" en-hash="7c967f0bf2fd3159"><summary>전용 핸들 형식이 있는 태그들.</summary></member><member name="F:Devinno.UI.Markup.TagCatalog.TemplateTwoWayTags" en-hash="5a64f2e49af282c2"><summary>컴포넌트 틀 안에서 <c>value="{p}"</c> 가 양방향 파라미터 <c>p</c> 의 바깥 경로로 쓰는 위젯(커스텀 위젯도).</summary></member><member name="F:Devinno.UI.Markup.TagCatalog.HoldIgnored" en-hash="8f2e4b710b9842c8"><summary>자기 누름 동작이 있어 <c>hold</c> 가 적용되지 않는 태그.</summary></member><member name="T:Devinno.UI.Markup.AttrKind" en-hash="3bdf242d05dcab5f"><summary>속성 값을 읽는 방식.</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Text" en-hash="087552111d184d16"><summary>글자(끼워 넣기 가능).</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Number" en-hash="67095f9c91c77b6c"><summary>숫자.</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Bool" en-hash="79e7325ae158d114"><summary>참 또는 거짓.</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Enum" en-hash="539cced12aab4c06"><summary>정해진 단어 중 하나(<see cref="P:Devinno.UI.Markup.AttrDef.Values" />).</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Color" en-hash="bdc2049673051d03"><summary>색(<c>#RGB</c>, <c>#RRGGBB</c>, <c>#RRGGBBAA</c>, <c>transparent</c> 또는 <c>token(...)</c>. 색 이름은 받지 않는다).</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Length" en-hash="a9e7c79a41fdcdb4"><summary>크기(px, %, 별, 단계 이름).</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Style" en-hash="0da0e3209043b6ab"><summary>스타일 선언 목록.</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Expr" en-hash="57d64ab0a7dc05d6"><summary>적힌 그대로 읽는 식: 처리기 메서드 이름 또는 양방향 값 경로.</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Path" en-hash="967308be59e2fa99"><summary>항목 기준 속성 경로(<c>item-text</c>, <c>field</c>).</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Items" en-hash="9fc3ea55c51bd4c5"><summary>뷰모델의 목록.</summary></member><member name="F:Devinno.UI.Markup.AttrKind.Object" en-hash="d6ab7f21490f1a1f"><summary>뷰모델의 아무 객체.</summary></member><member name="T:Devinno.UI.Markup.AttrDef" en-hash="87df18a030e5bea3"><summary>
             태그의 속성 하나 — 이름, 읽는 방식, 기본값, 바인딩 가능 여부.
-            <paramref name="Note" /> 는 3단계(규칙 통일)에서 고칠 지금의 특이점을 적는다.
-            </summary></member><member name="M:Devinno.UI.Markup.AttrDef.#ctor(System.String,Devinno.UI.Markup.AttrKind,System.String,System.Boolean,System.String[],System.String)" en-hash="13794f0b9087b8c2"><summary>
+            <paramref name="Note" /> 는 빌드가 그 속성을 읽는 방식(규칙·대체값·경고)을 적는다.
+            </summary></member><member name="M:Devinno.UI.Markup.AttrDef.#ctor(System.String,Devinno.UI.Markup.AttrKind,System.String,System.Boolean,System.String[],System.String)" en-hash="87df18a030e5bea3"><summary>
             태그의 속성 하나 — 이름, 읽는 방식, 기본값, 바인딩 가능 여부.
-            <paramref name="Note" /> 는 3단계(규칙 통일)에서 고칠 지금의 특이점을 적는다.
+            <paramref name="Note" /> 는 빌드가 그 속성을 읽는 방식(규칙·대체값·경고)을 적는다.
             </summary></member><member name="T:Devinno.UI.Markup.TagSchema" en-hash="280e80dee44e2c63"><summary>
             모든 내장 태그의 속성을 한 곳에 둔다. 빌드 코드는 이 이름만, <see cref="T:Devinno.UI.Layout.AttrReader" /> 를 거쳐서만 읽는다
             (테스트가 읽기를 기록해 이 표와 비교한다).
@@ -3649,7 +3615,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
 </summary></member><member name="M:Devinno.UI.Markup.TagSchema.CommonOf(System.String)" en-hash="e0cfb2fe11d24fd6"><summary><paramref name="tag" /> 가 받는 공통 속성 — <see cref="F:Devinno.UI.Markup.TagSchema.Common" /> 전부, <see cref="F:Devinno.UI.Markup.TagSchema.ChildTags" /> 면 <c>id</c> 만.</summary></member><member name="F:Devinno.UI.Markup.TagSchema.ComponentTags" en-hash="7e70531e98cd1555"><summary>
 <see cref="F:Devinno.UI.Markup.TagSchema.Tags" /> 중 내장 컴포넌트(<c>BuiltInComponents</c>)인 태그 — 매개변수와 함께 여기 적지만, 앱 레지스트리가 같은 이름의 자기 컴포넌트로 바꿀 수 있다. 그래서 빌드는 이 태그의 없는 속성(DVML019)은 알리지 않고 공통 속성의 잘못된 값(DVML020)만 알린다.
 <see cref="F:Devinno.UI.Markup.TagSchema.Tags" /> 의 나머지 태그는 내장 요소라 컴포넌트가 그 이름을 쓸 수 없다(<see cref="M:Devinno.UI.Markup.TagSchema.IsBuiltInElement(System.String)" />).
-</summary></member><member name="M:Devinno.UI.Markup.TagSchema.IsBuiltInElement(System.String)" en-hash="10c3ce6455ba8e3f"><summary><paramref name="tag" /> 가 내장 요소인가(<see cref="F:Devinno.UI.Markup.TagSchema.Tags" /> 에 있고 내장 컴포넌트가 아님) — 그 이름으로는 컴포넌트를 등록할 수 없다.</summary></member><member name="F:Devinno.UI.Markup.TagSchema.Tags" en-hash="9ad2f4be3566b6e9"><summary>태그별 속성. 2단계에서 그룹마다 채운다.</summary></member><member name="M:Devinno.UI.Markup.TagSchema.Find(System.String,System.String)" en-hash="55f5fb2c6b15424f"><summary><paramref name="tag" /> 의 <paramref name="name" /> 정의(태그 전용 먼저, 그다음 그 태그가 받는 공통 — <see cref="M:Devinno.UI.Markup.TagSchema.CommonOf(System.String)" />). 없으면 <see langword="null" />.</summary></member><member name="F:Devinno.UI.Markup.TagSchema.Renamed" en-hash="48c8e452160ff955"><summary>4단계에서 이름이 바뀐 속성(0.x: 별칭 없음, 옛 이름은 읽지 않는다). 키 = (태그, 옛 이름); <c>Reversed</c> = 새 속성의 뜻이 반대(true = 비활성). 생성기의 <c>AttributeCheck.Renamed</c> 는 복사본이다(테스트가 비교). <c>DvProcess fit="shrink"</c> 는 속성이 아니라 값이다: 목록 값 경고가 <c>scale-down</c> 을 보여 준다.</summary></member><member name="M:Devinno.UI.Markup.TagSchema.WarnRenamed(Devinno.UI.Markup.ElementNode)" en-hash="5924d4b0441a2c8d"><summary><paramref name="root" /> 아래에서 <see cref="F:Devinno.UI.Markup.TagSchema.Renamed" /> 속성을 가진 요소마다 경고한다(<see cref="M:Devinno.UI.Interaction.Warnings.Warn(System.String,System.Boolean,System.String)" />, 화면마다 태그·옛 이름별 한 번). 옛 이름은 조용히 읽히지 않으므로 경고가 없으면 화면이 그 값을 그냥 잃는다. 노드의 속성 이름만 본다 — 속성 읽기가 아니다.</summary></member><member name="T:Devinno.UI.Motion.MotionPhase" en-hash="0e5c4d601803202a">
+</summary></member><member name="M:Devinno.UI.Markup.TagSchema.IsBuiltInElement(System.String)" en-hash="10c3ce6455ba8e3f"><summary><paramref name="tag" /> 가 내장 요소인가(<see cref="F:Devinno.UI.Markup.TagSchema.Tags" /> 에 있고 내장 컴포넌트가 아님) — 그 이름으로는 컴포넌트를 등록할 수 없다.</summary></member><member name="F:Devinno.UI.Markup.TagSchema.Tags" en-hash="c27a728c9a66306d"><summary>태그별 속성.</summary></member><member name="M:Devinno.UI.Markup.TagSchema.Find(System.String,System.String)" en-hash="55f5fb2c6b15424f"><summary><paramref name="tag" /> 의 <paramref name="name" /> 정의(태그 전용 먼저, 그다음 그 태그가 받는 공통 — <see cref="M:Devinno.UI.Markup.TagSchema.CommonOf(System.String)" />). 없으면 <see langword="null" />.</summary></member><member name="F:Devinno.UI.Markup.TagSchema.Renamed" en-hash="97b6a79fe90325e8"><summary>옛 속성 이름과 그것을 대신하는 속성(별칭 없음: 옛 이름은 읽지 않는다). 키 = (태그, 옛 이름); <c>Reversed</c> = 새 속성의 뜻이 반대(true = 비활성). 생성기의 <c>AttributeCheck.Renamed</c> 는 복사본이다(테스트가 비교). <c>DvProcess fit="shrink"</c> 는 속성이 아니라 값이다: 목록 값 경고가 <c>scale-down</c> 을 보여 준다.</summary></member><member name="M:Devinno.UI.Markup.TagSchema.WarnRenamed(Devinno.UI.Markup.ElementNode)" en-hash="5924d4b0441a2c8d"><summary><paramref name="root" /> 아래에서 <see cref="F:Devinno.UI.Markup.TagSchema.Renamed" /> 속성을 가진 요소마다 경고한다(<see cref="M:Devinno.UI.Interaction.Warnings.Warn(System.String,System.Boolean,System.String)" />, 화면마다 태그·옛 이름별 한 번). 옛 이름은 조용히 읽히지 않으므로 경고가 없으면 화면이 그 값을 그냥 잃는다. 노드의 속성 이름만 본다 — 속성 읽기가 아니다.</summary></member><member name="T:Devinno.UI.Motion.MotionPhase" en-hash="0e5c4d601803202a">
             <summary>
             렌더 루프의 타임스탬프(ms)로 애니메이션 위상을 계산하는 도우미입니다.
             </summary>
@@ -3740,8 +3706,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <summary>전환이 걸린 상자인지(어느 상태 스타일에든 transition 이 있음).</summary>
         </member><member name="M:Devinno.UI.Painting.MotionStore.Apply(System.Int64,Devinno.UI.Layout.LayoutBox,Devinno.UI.Styling.ComputedStyle,System.Int64)" en-hash="3955f924b0294078">
             <summary>고른 스타일 <paramref name="st" /> 를 지금 보일 값으로 — 바뀐 것이 없으면 그대로, 전환 중이면 중간값을 넣은 복사본.</summary>
-        </member><member name="T:Devinno.UI.Painting.Painter" en-hash="550834082b3adc95">
-             <summary>
+        </member><member name="T:Devinno.UI.Painting.Painter" en-hash="287280732f1d3923"><summary>
              배치가 끝난 <see cref="T:Devinno.UI.Layout.LayoutBox" /> 트리를 SkiaSharp 캔버스에 그리는 페인터입니다. 배경·테두리·글자와 각 위젯(게이지·탱크·트렌드·그리드·입력 상자 등)을 그립니다.
              </summary>
              <remarks>
@@ -3752,7 +3717,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
              노브 면의 hover·누름 밝기와 그리드의 hover 행도 비활성이면 그리지 않습니다.
              <c>overflow:hidden</c>·<c>overflow:scroll</c> 상자는 자식을 모서리 안으로 잘라 그리고, 스크롤 상자는 오프셋만큼 옮겨 그린 뒤 스크롤바를 덧그립니다.</para>
              <para>테마는 <see cref="T:Devinno.UI.Layout.LayoutEngine" /> 에 준 것과 같은 것을 넘기세요. 테마가 <see langword="null" /> 이면 <see cref="T:Devinno.UI.Layout.LayoutEngine" /> 과 같이
-             <see cref="P:Devinno.UI.Styling.DvTheme.Default" /> 의 위젯 색 토큰을 씁니다. 테마에 없는 위젯 색 토큰만 코드에 들어 있는 대체 색으로 그립니다. UI 스레드 하나에서만 쓰세요.</para>
+             <see cref="P:Devinno.UI.Styling.DvTheme.Default" /> 의 위젯 색 토큰을 씁니다. 테마에 없는 위젯 색 토큰은 마젠타(<c>ThemeResolver.MissingColor</c>)와 경고로 그립니다. UI 스레드 하나에서만 쓰세요.</para>
              </remarks>
              <example>
              <code>
@@ -3771,8 +3736,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
              surface.Canvas.Clear(SKColors.White);
              new Painter(theme).Paint(surface.Canvas, tree, vm);
              </code>
-             </example>
-        </member><member name="F:Devinno.UI.Painting.Painter.CheckSize" en-hash="f2a5ff1a8d15491b">
+             </example></member><member name="F:Devinno.UI.Painting.Painter.CheckSize" en-hash="f2a5ff1a8d15491b">
             <summary>체크 상자·라디오 원 크기(px). 글자는 그 오른쪽(<c>.checkbox</c>·<c>.radio</c> 의 왼쪽 안쪽 여백 34 = 24 + 간격 10).</summary>
         </member><member name="M:Devinno.UI.Painting.Painter.#ctor" en-hash="10831fe301d67420">
             <summary>테마 없이 페인터를 만듭니다. 위젯 색은 <see cref="P:Devinno.UI.Styling.DvTheme.Default" /> 의 토큰을 씁니다.</summary>
@@ -3785,16 +3749,14 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
         </member><member name="M:Devinno.UI.Painting.Painter.#ctor(Devinno.UI.Styling.DvTheme)" en-hash="357b59c302c4deb6">
             <summary>테마로 페인터를 만듭니다(다국어 테이블 없음).</summary>
             <param name="theme">색 토큰을 읽을 테마. <see langword="null" /> 이면 <see cref="P:Devinno.UI.Styling.DvTheme.Default" /> 를 씁니다.</param>
-        </member><member name="M:Devinno.UI.Painting.Painter.Paint(SkiaSharp.SKCanvas,Devinno.UI.Layout.LayoutBox,System.Object,Devinno.UI.Interaction.InteractionState,System.Int64)" en-hash="bb0f49d43318520b">
-            <summary>
+        </member><member name="M:Devinno.UI.Painting.Painter.Paint(SkiaSharp.SKCanvas,Devinno.UI.Layout.LayoutBox,System.Object,Devinno.UI.Interaction.InteractionState,System.Int64)" en-hash="7b21d13380218dec"><summary>
             <paramref name="box" /> 와 그 자식 전체를 캔버스에 그립니다. 좌표는 각 박스의 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" />(px)를 그대로 씁니다.
             </summary>
             <param name="canvas">그릴 캔버스. 배경을 지우지 않으므로 필요하면 먼저 <see cref="M:SkiaSharp.SKCanvas.Clear(SkiaSharp.SKColor)" /> 하세요.</param>
             <param name="box">그릴 박스(보통 <see cref="M:Devinno.UI.Layout.LayoutEngine.Layout(Devinno.UI.Markup.ElementNode,System.Object,System.Single,System.Single,Devinno.UI.Components.ComponentRegistry)" /> 이 돌려준 루트).</param>
-            <param name="vm">레이아웃에 쓴 뷰모델. 지금은 그리기에 쓰지 않고 자식에게 그대로 넘깁니다(<see langword="null" /> 가능). 값은 레이아웃 때 박스에 이미 채워져 있습니다.</param>
+            <param name="vm">레이아웃에 쓴 뷰모델. 그리기에는 쓰지 않고 자식에게 그대로 넘깁니다(<see langword="null" /> 가능). 값은 레이아웃 때 박스에 이미 채워져 있습니다.</param>
             <param name="state">hover·press 대상 박스. <see langword="null" /> 이면 상태 스타일 없이 그립니다.</param>
-            <param name="timestampMs">그리기 시각(ms). 램프·경보의 점멸 위상을 정하는 데만 씁니다. 같은 시각이면 같은 그림이 나오므로 화면 캡처·테스트에서는 고정값을 주면 됩니다.</param>
-        </member><member name="P:Devinno.UI.Painting.Painter.MotionState" en-hash="0972376f5fdbe965">
+            <param name="timestampMs">그리기 시각(ms). 램프·경보의 점멸 위상을 정하는 데만 씁니다. 같은 시각이면 같은 그림이 나오므로 화면 캡처·테스트에서는 고정값을 주면 됩니다.</param></member><member name="P:Devinno.UI.Painting.Painter.MotionState" en-hash="0972376f5fdbe965">
             <summary>CSS <c>transition</c> 상태(화면이 프레임 사이에 들고 있는 것). null 이면 전환 없이 고른 스타일 그대로.</summary>
         </member><member name="T:Devinno.UI.Painting.Painter.GridFonts" en-hash="b0190364bd3f372a">
             <summary>
@@ -4295,9 +4257,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <summary>
             교차 축 정렬 방식입니다. 컨테이너의 <c>align-items</c> 와 자식 자신의 <c>align-self</c> 에서 함께 씁니다.
             </summary>
-        </member><member name="F:Devinno.UI.Styling.AlignItems.Start" en-hash="484f4434532bea1c">
-            <summary>교차 축의 시작 쪽에 붙입니다(<c>start</c>, <c>flex-start</c>. <c>align-items</c> 의 기본값).</summary>
-        </member><member name="F:Devinno.UI.Styling.AlignItems.Center" en-hash="5067dd2f7e513bcf">
+        </member><member name="F:Devinno.UI.Styling.AlignItems.Start" en-hash="f18e1bd6a5e1a885"><summary>교차 축의 시작 쪽에 붙입니다(<c>start</c>, <c>flex-start</c>, 알 수 없는 <c>align-items</c> 값).</summary></member><member name="F:Devinno.UI.Styling.AlignItems.Center" en-hash="5067dd2f7e513bcf">
             <summary>교차 축 가운데에 둡니다(<c>center</c>).</summary>
         </member><member name="F:Devinno.UI.Styling.AlignItems.End" en-hash="d2a67b7e73cdf4a5">
             <summary>교차 축의 끝 쪽에 붙입니다(<c>end</c>, <c>flex-end</c>).</summary>
@@ -4476,12 +4436,10 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             상자 그림자. 스타일 키 <c>box-shadow</c>(형식은 <see cref="T:Devinno.UI.Styling.BoxShadow" />). 기본값 <see langword="null" /> = 그림자 없음,
             <c>box-shadow: none</c> 으로 지울 수 있습니다.
             </summary>
-        </member><member name="P:Devinno.UI.Styling.ComputedStyle.Padding" en-hash="eff97812277c4a3c">
-            <summary>
+        </member><member name="P:Devinno.UI.Styling.ComputedStyle.Padding" en-hash="e8a320425c1d9e87"><summary>
             안쪽 여백(px). 스타일 키 <c>padding</c>, 값 1~4개(형식은 <see cref="M:Devinno.UI.Styling.Thickness.TryParse(System.String,Devinno.UI.Styling.Thickness@)" />). 기본값 <see cref="F:Devinno.UI.Styling.Thickness.Zero" />.
-            해석에 실패하면(값 3개 포함) 선언이 무시됩니다.
-            </summary>
-        </member><member name="P:Devinno.UI.Styling.ComputedStyle.Margin" en-hash="fb56c527346375b5">
+            해석에 실패하면(값 5개 이상·쉼표·<c>%</c>) 선언이 무시됩니다.
+            </summary></member><member name="P:Devinno.UI.Styling.ComputedStyle.Margin" en-hash="fb56c527346375b5">
             <summary>
             바깥 여백(px). 스타일 키 <c>margin</c>, 형식은 <see cref="P:Devinno.UI.Styling.ComputedStyle.Padding" /> 과 같습니다. 기본값 <see cref="F:Devinno.UI.Styling.Thickness.Zero" />.
             해석만 되고 현재 레이아웃에는 적용되지 않습니다. 간격은 <see cref="P:Devinno.UI.Styling.ComputedStyle.Gap" /> 이나 부모의 <see cref="P:Devinno.UI.Styling.ComputedStyle.Padding" /> 을 쓰세요.

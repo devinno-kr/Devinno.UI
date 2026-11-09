@@ -6,7 +6,7 @@ namespace Devinno.UI.Layout;
 /// <remarks>
 /// A search tool used inside the engine (e.g. finding the box of a specific tag on a screen). App code normally uses <see cref="DvSurface"/>, so it does not need this.
 /// Tests or tools can use it to take the result of <see cref="LayoutEngine.Layout"/> directly and check a specific element's position or value.
-/// Currently it can search only by tag name; there is no method to search by attributes such as <c>id</c> or <c>name</c> (if needed, walk <see cref="LayoutBox.Children"/> yourself, checking the attributes of <see cref="LayoutBox.Node"/>).
+/// It searches by tag name only; there is no method to search by attributes such as <c>id</c> or <c>name</c> (if needed, walk <see cref="LayoutBox.Children"/> yourself, checking the attributes of <see cref="LayoutBox.Node"/>).
 /// </remarks>
 /// <example>
 /// <code>

@@ -17,9 +17,9 @@ public enum DvEditExit
     Tab,
     /// <summary>Confirmed with Shift+Tab. For a grid input cell in native editor mode, editing continues in the previous input column of the same row.</summary>
     ShiftTab,
-    /// <summary>Confirmed with the Up arrow key (single-line editor). Currently it only commits and does not move to another cell.</summary>
+    /// <summary>Confirmed with the Up arrow key (single-line editor). Commits only; does not move to another cell.</summary>
     Up,
-    /// <summary>Confirmed with the Down arrow key (single-line editor). Currently it only commits and does not move to another cell.</summary>
+    /// <summary>Confirmed with the Down arrow key (single-line editor). Commits only; does not move to another cell.</summary>
     Down,
     /// <summary>
     /// The editor lost focus (a press elsewhere, a screen change, the edit target scrolled completely out of view, etc.).

@@ -149,7 +149,7 @@ public sealed class LayoutBox
     /// <summary><c>fill</c> of <c>DvSegment</c>: when the segment is wider than its items, the items share the extra width. Otherwise the background is drawn fitted to the items.</summary>
     internal bool SegmentFill { get; set; }
     /// <summary>
-    /// The raw <c>value</c> attribute of a value-writing widget (<c>DvToggle</c>, <c>DvKnob</c>, <c>DvInput</c>, <c>DvSelect</c>, <c>DvDateTimeInput</c>, <c>DvColorInput</c>), e.g. <c>{Bind Speed}</c>.
+    /// The raw <c>value</c> attribute of a value widget (every tag with a writable value, e.g. <c>DvToggle</c>, <c>DvKnob</c>, <c>DvSlider</c>, <c>DvInput</c>, <c>DvSelect</c>, <c>DvSegment</c>, <c>DvListBox</c>, latching <c>DvButton</c>, custom widgets), e.g. <c>{Bind Speed}</c>.
     /// Inside a component it is the expression rewritten to the outer view model path. When the user changes the value, it is written to this path. <see langword="null"/> for other tags.
     /// </summary>
     public string? ValueBindExpr { get; set; }
@@ -159,7 +159,7 @@ public sealed class LayoutBox
     internal ElementNode? ValueOrigin { get; set; }
     /// <summary>The target for reading and writing the <see cref="ValueBindExpr"/> path: the handle slot, then the repeat item scope, then the screen view model.</summary>
     internal object? ValueContext(object? vm) => ValueTarget ?? (object?)ItemScope ?? vm;
-    /// <summary>Whether a <c>DvToggle</c> is on. On when <c>value</c> is <see langword="true"/> or the string <c>true</c>. Filled at build time.</summary>
+    /// <summary>Whether a <c>DvToggle</c>/<c>DvCheckBox</c>/latching <c>DvButton</c> is on (the true/false rule: <c>true</c>, a non-zero number, <c>1</c>); also the checked state of <c>DvRadio</c> and the expanded state of <c>DvExpander</c>. Filled at build time.</summary>
     public bool ToggleOn { get; set; }
     /// <summary>Chart values (DvSparkline, DvBarChart, DvPieChart).</summary>
     internal double[] ChartValues { get; set; } = Array.Empty<double>();
@@ -224,14 +224,14 @@ public sealed class LayoutBox
     public float GaugeTicks { get; set; }
     /// <summary><c>DvGauge</c> minor tick interval (in value units, <c>minor-ticks</c> attribute). If 0, minor ticks are not painted.</summary>
     public float GaugeMinorTicks { get; set; }
-    /// <summary>Whether <c>DvGauge</c> shows major tick numbers (<c>show-tick-labels</c>, default <see langword="true"/>). Turned off only when the value is <c>false</c>.</summary>
+    /// <summary>Whether <c>DvGauge</c> shows major tick numbers (<c>show-tick-labels</c>, default <see langword="true"/>). Turned off when the value is false by the true/false rule (<c>false</c>, <c>0</c>, empty); other text = on + warning.</summary>
     public bool GaugeTickLabels { get; set; } = true;
     // DvRing / DvProgress (값·범위·zone 은 Gauge* 필드 공용)
     /// <summary>Color tone of <c>DvRing</c>/<c>DvProgress</c> (<c>tone</c>, default <c>info</c>). Uses the color of the theme token <c>tone-{값}</c>.</summary>
     public string Tone { get; set; } = "info";
     /// <summary>Fill direction of <c>DvProgress</c> (<c>direction</c>: <c>right</c> (default), <c>left</c>, <c>up</c>, <c>down</c>). Unknown values are painted like <c>right</c>.</summary>
     public string Direction { get; set; } = "right";
-    /// <summary>Whether to show the value text on <c>DvRing</c>/<c>DvProgress</c> (<c>show-value</c>). <c>DvProgress</c> does not show it when vertical or when its height is under 14px.</summary>
+    /// <summary>Whether to show the value text on <c>DvRing</c>/<c>DvProgress</c> (<c>show-value</c>). <c>DvProgress</c> shows it when its thickness (height, or width when vertical) is 14px or more; a vertical bar only when the text fits its width.</summary>
     public bool ShowValue { get; set; }
     /// <summary>Unit appended after the value (<c>unit</c> attribute). Used by <c>DvRing</c>, <c>DvProgress</c> and <c>DvInput</c>.</summary>
     public string? Unit { get; set; }
@@ -250,7 +250,7 @@ public sealed class LayoutBox
     public string? OnAck { get; set; }
     /// <summary><c>DvAlarmList</c> row height (px, <c>row-height</c>, default 36). Values of 0 or less are replaced with the default.</summary>
     public float AlarmRowHeight { get; set; } = 36f;
-    /// <summary>Whether to show the acknowledge (ACK) button. If <c>show-ack</c> is set, its value is used (shown unless <c>false</c>); otherwise shown only when <see cref="OnAck"/> is present.</summary>
+    /// <summary>Whether to show the acknowledge (ACK) button. If <c>show-ack</c> is set, its value is used (the true/false rule; other text = shown + warning); otherwise shown only when <see cref="OnAck"/> is present.</summary>
     public bool AlarmShowAck { get; set; }
     /// <summary><c>DvProcess</c> process diagram model (equipment, lines, arrange result). <see langword="null"/> for other tags.</summary>
     internal Process.ProcessDiagram? Process { get; set; }
@@ -306,7 +306,7 @@ public sealed class LayoutBox
     /// <summary>Input mode of a <c>DvKnob</c> (<c>input-mode</c>). With tap or both, a tap without dragging opens the numeric keypad.</summary>
     internal KnobInputMode KnobInput { get; set; }
     /// <summary>
-    /// Name of the view model method called just before the value is written (raw <c>onbeforecommit</c> attribute). The method receives the new value as its argument, and the value is written only when it returns <see langword="true"/>. If the method is missing, its signature does not match, or it throws, the value is rejected (Trace warning/error).
+    /// Name of the view model method called just before the value is written (raw <c>onbeforecommit</c> attribute). Looked up as <c>bool M(item, T)</c>/<c>bool M(item, object)</c> inside a repeat item or grid row, then <c>bool M(T)</c>/<c>bool M(object)</c> (T = the value type); the value is written only when it returns <see langword="true"/>. If the method is missing or it throws, the value is rejected (Trace warning/error).
     /// <see langword="null"/> if absent.
     /// </summary>
     public string? OnBeforeCommit { get; set; }

@@ -13,7 +13,7 @@ namespace Devinno.UI;
 /// </summary>
 /// <remarks>
 /// <para>Overloads that take markup parse and lay out from scratch on every call. There is no interaction state (hover, press, scroll, editing),
-/// and the background is cleared to white before drawing. The overload that takes a <see cref="DvSurface"/> draws that screen's current state as is.</para>
+/// and the canvas is first cleared to the theme's <c>background</c> token color. The overload that takes a <see cref="DvSurface"/> draws that screen's current state as is.</para>
 /// <para>Sizes are in px and must be 1 or more. If no theme is given, <see cref="DvTheme.Default"/> (the dark theme) is used.
 /// These are static methods with no shared state, so the markup overloads may be called from any thread (as long as no other thread modifies the passed VM at the same time).</para>
 /// </remarks>

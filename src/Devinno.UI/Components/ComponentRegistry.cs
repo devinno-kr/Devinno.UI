@@ -15,7 +15,7 @@ namespace Devinno.UI.Components;
 /// <para><b>Parameters</b>: <c>{이름}</c> inside the template is replaced with the parameter value. Instance attribute values are resolved against the outer screen's view model
 /// (a binding such as <c>{Bind Data.X}</c> or <c>{Data.X}</c>, or a literal); if the attribute is omitted, <see cref="ComponentParam.Default"/> is used.
 /// Inside the template only parameters are visible; outer view model properties cannot be read directly (pass needed values as parameters).</para>
-/// <para><b>Two-way parameters</b>: if the instance gives a parameter <c>{Bind …}</c> and a template <c>DvToggle</c>/<c>DvKnob</c>/<c>DvInput</c>/<c>DvSelect</c>/<c>DvDateTimeInput</c>/<c>DvColorInput</c>
+/// <para><b>Two-way parameters</b>: if the instance gives a parameter <c>{Bind …}</c> and a template <c>DvToggle</c>/<c>DvCheckBox</c>/<c>DvKnob</c>/<c>DvSlider</c>/<c>DvInput</c>/<c>DvSelect</c>/<c>DvSegment</c>/<c>DvTabs</c>/<c>DvDateTimeInput</c>/<c>DvColorInput</c>/latching <c>DvButton</c> or a custom widget
 /// uses it with <c>value="{파라미터}"</c>, user changes are written directly to that path in the outer view model.</para>
 /// <para><b>Slot</b>: the instance's child elements go in place of <c>&lt;DvSlot/&gt;</c> in the template (built against the outer view model). A <c>DvSlot</c> inside a nested component also receives the outer instance's children.</para>
 /// <para><b>Attribute forwarding</b>: the instance's <c>class</c> (appended after the template classes), <c>grow</c>, <c>width</c>, <c>height</c>, <c>style</c> (merged with the template style, instance wins),

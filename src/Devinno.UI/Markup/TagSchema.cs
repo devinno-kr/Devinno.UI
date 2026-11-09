@@ -11,7 +11,7 @@ internal enum AttrKind
     Bool,
     /// <summary>One of a fixed set of words (<see cref="AttrDef.Values"/>).</summary>
     Enum,
-    /// <summary>A color (<c>#hex</c>, a name or <c>token(...)</c>).</summary>
+    /// <summary>A color (<c>#RGB</c>, <c>#RRGGBB</c>, <c>#RRGGBBAA</c>, <c>transparent</c> or <c>token(...)</c>; color names are not accepted).</summary>
     Color,
     /// <summary>A size (px, %, star, step name).</summary>
     Length,
@@ -29,7 +29,7 @@ internal enum AttrKind
 
 /// <summary>
 /// One attribute of a tag: its name, how it is read, its default, whether it may be a binding.
-/// <paramref name="Note"/> records current quirks that stage 3 (rule unification) will fix.
+/// <paramref name="Note"/> records how the build reads it (rules, fallbacks, warnings).
 /// </summary>
 internal sealed record AttrDef(string Name, AttrKind Kind, string? Default = null, bool Bindable = true, string[]? Values = null, string? Note = null);
 
@@ -87,7 +87,7 @@ internal static class TagSchema
     /// <summary>Whether <paramref name="tag"/> is a built-in element (in <see cref="Tags"/> and not a built-in component) — a component cannot be registered under it.</summary>
     public static bool IsBuiltInElement(string tag) => Tags.ContainsKey(tag) && !ComponentTags.Contains(tag);
 
-    /// <summary>Tag-specific attributes, by tag. Filled group by group in stage 2.</summary>
+    /// <summary>Tag-specific attributes, by tag.</summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<AttrDef>> Tags = new Dictionary<string, IReadOnlyList<AttrDef>>(StringComparer.Ordinal)
     {
         // 공통 + 컨테이너 (2.2)
@@ -114,7 +114,7 @@ internal static class TagSchema
         ["DvDialogFrame"] = FrameParams(),
         ["DvTabs"] =
         [
-            new("value", AttrKind.Object, Note: "two-way {Bind X} selects by DvTab value; one-way/literal = read-only; absent = the screen remembers the index (shared by all instances of the node)"),
+            new("value", AttrKind.Object, Note: "two-way {Bind X} selects by DvTab value; one-way/literal = read-only; absent = the screen remembers the selected index for each DvTabs instance (each repeat item or component instance keeps its own)"),
             new("readonly", AttrKind.Bool, "false", Note: "the common read-only rule (" + ReadOnlyRule + "): header taps do not change the value; no read-only visual on tabs"),
         ],
         ["DvTab"] =
@@ -126,7 +126,7 @@ internal static class TagSchema
         ["DvExpander"] =
         [
             new("expanded", AttrKind.Bool, Note: "two-way {Bind X} follows the VM; one-way/literal locks it (" + BoolRule + "); absent = the screen remembers (collapsed)"),
-            new("title", AttrKind.Text, "", Note: "the heading on the header row (stage 4 N1: was header)"),
+            new("title", AttrKind.Text, "", Note: "the heading on the header row"),
         ],
         ["DvStepBar"] =
         [
@@ -157,7 +157,7 @@ internal static class TagSchema
             Fit(),
             new("playing", AttrKind.Bool, "true", Note: "src only; read only when src resolves to a non-blank path"),
             new("loop", AttrKind.Bool, "false", Note: "src only; read only when src resolves to a non-blank path"),
-            new("position", AttrKind.Number, Note: "seconds; a changed value seeks; {Bind X} is written back every frame; with src or source=VideoPlayer only"),
+            new("position", AttrKind.Number, Note: "seconds; a changed value seeks; {Bind X} is written back about every 250 ms while playing (and once when it stops); with src or source=VideoPlayer only"),
             new("duration", AttrKind.Number, Note: "seconds; only {Bind X} is used (written out); a one-way value or literal is ignored silently"),
         ],
         ["DvToggle"] = [BoolValue(), ReadOnly()],
@@ -207,7 +207,7 @@ internal static class TagSchema
         ],
         ["DvSegment"] =
         [
-            OwnedValue("the option value is written without conversion to the bound type"),
+            OwnedValue("the option value is converted to the bound property type, like DvSelect (not convertible = not written)"),
             ReadOnly(),
             new("fill", AttrKind.Bool, "false"),
             .. Items(),
@@ -276,7 +276,7 @@ internal static class TagSchema
         ["DvLamp"] =
         [
             new("on", AttrKind.Bool, "false", Note: BoolRule),
-            new("blink", AttrKind.Bool, "false", Note: BoolRule + " (stage 4 N11: the alias blink-when was removed)"),
+            new("blink", AttrKind.Bool, "false", Note: BoolRule),
             new("blink-interval", AttrKind.Number, "500", Note: "ms, rounded; <= 0 = 500; " + NumberRule),
             new("color", AttrKind.Color, Note: ColorRule + " (the state or text color); wins over state"),
             new("state", AttrKind.Text, Note: "state-{state} token color; valid when the theme has the token state-{state} (built-in: run stop fault warn manual off); " + ThemeWordRule + " (no state color)"),
@@ -344,7 +344,7 @@ internal static class TagSchema
             new("row-height", AttrKind.Number, "48", Note: "px; <= 0 = 48, silently; " + NumberRule),
             new("header-height", AttrKind.Number, "40", Note: "px; <= 0 = 40, silently; " + NumberRule),
             new("selection-mode", AttrKind.Enum, "none", Values: ["none", "single", "multi"], Note: EnumRule),
-            new("selected-items", AttrKind.Expr, Note: "read as written; {Bind X} = two-way list, otherwise resolved one-way; a single object = one row; applied only when selection-mode is not none (stage 4 N14: was selection; same role as DvListBox selected-items (a bound list of picked items); grid elements are row objects, single mode also takes one T)"),
+            new("selected-items", AttrKind.Expr, Note: "read as written; {Bind X} = two-way list, otherwise resolved one-way; a single object = one row; applied only when selection-mode is not none; same role as DvListBox selected-items (a bound list of picked items); grid elements are row objects, single mode also takes one T"),
             new("row-key", AttrKind.Path, Bindable: false, Note: "read raw; absent = the item reference"),
             new("row-class", AttrKind.Path, Bindable: false, Note: "read raw; the item property value is a class name (background, color, font-weight only)"),
             new("onrowclick", AttrKind.Expr, Bindable: false, Note: "M(row) when the row fits, otherwise M(); a missing method is silent at run time"),
@@ -373,7 +373,7 @@ internal static class TagSchema
             new("icon", AttrKind.Text, Note: "button cells"),
             new("variant", AttrKind.Enum, "primary", Values: ["primary", "secondary", "danger", "ghost"], Note: "button cells; " + EnumRule),
             new("onclick", AttrKind.Expr, Bindable: false, Note: "button cells; M(row) or M()"),
-            new("cell-disabled", AttrKind.Path, Bindable: false, Note: "button cells; read raw; an item bool property path, true = that row's button is disabled (stage 4 N10: was enabled, the opposite sense; named like cell-class)"),
+            new("cell-disabled", AttrKind.Path, Bindable: false, Note: "button cells; read raw; an item bool property path, true = that row's button is disabled; named like cell-class"),
             new("min", AttrKind.Number, Note: "input cells; typed values out of range are rejected; both given and min >= max = 0..100 + warning; " + NumberRule + " (ignored)"),
             new("max", AttrKind.Number, Note: "input cells; typed values out of range are rejected; both given and min >= max = 0..100 + warning; " + NumberRule + " (ignored)"),
             new("unit", AttrKind.Text, Note: "input cells; inline interpolation only"),
@@ -387,7 +387,7 @@ internal static class TagSchema
         ],
         ["DvSummaryRow"] =
         [
-            new("label", AttrKind.Text, "", Note: "the first cell; inline interpolation only (stage 4 N1: was title)"),
+            new("label", AttrKind.Text, "", Note: "the first cell; inline interpolation only"),
             new("fn", AttrKind.Enum, Values: ["sum", "avg", "min", "max", "count"], Note: "numeric columns without a DvSummary; absent = none; " + EnumRule + " (none)"),
         ],
         ["DvSummary"] =
@@ -408,7 +408,7 @@ internal static class TagSchema
             new("base-size", AttrKind.Text, Note: "\"W H\" px (space or comma); fixed placement only, otherwise ignored + warning; a bad value = ignored + warning"),
             new("flow-animation", AttrKind.Bool, "false", Note: BoolRule),
             new("fit", AttrKind.Enum, "none", Values: ["none", "scale-down", "contain"],
-                Note: "scale-down = CSS object-fit word (stage 4 N6: was shrink); contain without placement=fixed = scale-down + warning; " + EnumRule + "; name clash: DvImage/DvVideo fit is contain|cover|fill"),
+                Note: "scale-down = CSS object-fit word; contain without placement=fixed = scale-down + warning; " + EnumRule + "; name clash: DvImage/DvVideo fit is contain|cover|fill"),
         ],
         ["DvUnit"] =
         [
@@ -468,7 +468,7 @@ internal static class TagSchema
             new("label", AttrKind.Text, Note: "small text beside the from end"),
             new("kind", AttrKind.Enum, "electric", Values: ["electric", "pneumatic"], Note: EnumRule),
             new("color", AttrKind.Color, Note: "absent = theme text color; " + ColorRule + " (theme text color); the only process color attribute (the rest use a fixed palette)"),
-            new("thickness", AttrKind.Number, "1.6", Note: "stroke px > 0; not a number or <= 0 = default + warning; named like DvRing thickness (stage 4 N7: was width, which is a box/body width elsewhere)"),
+            new("thickness", AttrKind.Number, "1.6", Note: "stroke px > 0; not a number or <= 0 = default + warning; named like DvRing thickness (width is a box/body width elsewhere)"),
             LineVisible("the signal line"),
         ],
         ["DvInstrument"] =
@@ -676,7 +676,7 @@ internal static class TagSchema
         (Tags.TryGetValue(tag, out var own) ? own.FirstOrDefault(a => a.Name == name) : null) ?? CommonOf(tag).FirstOrDefault(a => a.Name == name);
 
     /// <summary>
-    /// Attributes renamed in stage 4 (0.x: no aliases, the old name is not read). Key = (tag, old name); <c>Reversed</c> = the new attribute means the opposite (true = disabled).
+    /// Old attribute names and the attribute that replaced each (no aliases: the old name is not read). Key = (tag, old name); <c>Reversed</c> = the new attribute means the opposite (true = disabled).
     /// The generator's <c>AttributeCheck.Renamed</c> is a copy (a test compares them). <c>DvProcess fit="shrink"</c> is a value, not an attribute: the enum warning lists <c>scale-down</c>.
     /// </summary>
     public static readonly IReadOnlyDictionary<(string Tag, string Old), (string New, bool Reversed)> Renamed = new Dictionary<(string Tag, string Old), (string New, bool Reversed)>
@@ -697,7 +697,7 @@ internal static class TagSchema
     {
         foreach (var name in root.Attributes.Keys)
             if (Renamed.TryGetValue((root.Tag, name), out var now))
-                Interaction.Warnings.Warn($"Devinno.UI: {root.Tag} '{name}' was renamed to '{now.New}' in 0.x stage 4; the old name is not read" +
+                Interaction.Warnings.Warn($"Devinno.UI: {root.Tag} '{name}' was renamed to '{now.New}'; the old name is not read" +
                                           (now.Reversed ? $" — the meaning is reversed: {now.New} names a bool property where true = disabled" : ""),
                     key: $"renamed {root.Tag} {name}");
         foreach (var c in root.Children)

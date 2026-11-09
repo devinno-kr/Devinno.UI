@@ -31,7 +31,7 @@ public sealed class DvHandlerErrorEventArgs : EventArgs
     public Exception Exception { get; }
 
     /// <summary>
-    /// Gets what the library was doing when the exception occurred. One of the following values.
+    /// Gets what the library was doing when the exception occurred: one of the following values.
     /// <list type="bullet">
     /// <item><description><c>"onclick"</c> — an <c>onclick</c> handler (including <c>onclick</c> of a grid <c>button</c> cell).</description></item>
     /// <item><description><c>"Click"</c> — a subscriber of a control handle (<see cref="Controls.DvControl.Click"/>).</description></item>
@@ -49,6 +49,13 @@ public sealed class DvHandlerErrorEventArgs : EventArgs
     /// <item><description><c>"format"</c> — converting a value to text (<see cref="object.ToString"/>, <see cref="IFormattable"/>) threw. Drawn as empty text.</description></item>
     /// <item><description><c>"enumerate"</c> — enumerating the list of a <c>DvRepeat</c>, <c>DvDataGrid</c>, <c>DvSelect</c>, alarm or trend threw. Treated as an empty list.</description></item>
     /// <item><description><c>"compare"</c> — <see cref="IComparable.CompareTo"/> of an item value threw during <c>DvDataGrid</c> sorting. Treated as equal (the order in that column is undefined).</description></item>
+    /// <item><description><c>"keypad"</c> — writing a value typed on the <c>DvKnob</c> keypad threw. The value was not written.</description></item>
+    /// <item><description>A handle change-event name — a subscriber of a control handle's change event threw: <c>"CheckedChanged"</c> (<c>DvToggle</c>, <c>DvSwitch</c>, <c>DvCheckBox</c>, <c>DvRadio</c>, latching <c>DvButton</c>),
+    /// <c>"ValueChanged"</c> (<c>DvKnob</c>, <c>DvSlider</c>, <c>DvDateTimeInput</c>, <c>DvColorInput</c>), <c>"TextChanged"</c> (<c>DvInput</c>), <c>"SelectionChanged"</c> (<c>DvSelect</c>, <c>DvSegment</c>, <c>DvListBox</c>, <c>DvTreeView</c>),
+    /// <c>"ExpandedChanged"</c> (<c>DvExpander</c>).</description></item>
+    /// <item><description><c>"Pointer"</c>, <c>"FrameInterval"</c>, <c>"Measure"</c>, <c>"Paint"</c> — the method of that name of a custom widget (<see cref="Widgets.DvWidget"/>) threw. <see cref="Member"/> = widget type name.</description></item>
+    /// <item><description>Reported only through <see cref="App.DvApp.HandlerError"/>: <c>"closed"</c> (<see cref="App.DvDialog.OnClosed"/>), <c>"async"</c> (code after an <c>await</c> in a handler, or an <c>async void</c> handler),
+    /// <c>"idle"</c> (an <see cref="App.DvApp.Idle"/> handler), <c>"hotreload"</c> (hot-reloaded markup could not be applied; <see cref="Member"/> = file path).</description></item>
     /// </list>
     /// <para>Value reads (<c>"getter"</c>, <c>"format"</c>, <c>"enumerate"</c>, <c>"compare"</c>) report the same (<see cref="Kind"/>, <see cref="Member"/>, <see cref="Tag"/>) only once,
     /// even when read every frame as in a grid, until the surface is rebuilt (<see cref="DvSurface.Invalidate"/>).</para>

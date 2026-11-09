@@ -6,6 +6,16 @@ using Xunit;
 // 태그 정의 한 벌(TagSchema) — 빌드 코드는 정의된 속성만, 리더를 거쳐 읽는다.
 public class TagSchemaTests
 {
+    // 정의의 Note 는 지금 동작만 적는다 — 개발 단계·옛 이름 이력("stage 4 N1: was header")을 쓰지 않는다
+    [Fact]
+    public void Notes_DescribeCurrentBehaviorOnly()
+    {
+        var defs = TagSchema.Common.Select(a => ("(common)", a)).Concat(TagSchema.Tags.SelectMany(t => t.Value.Select(a => (t.Key, a))));
+        var bad = defs.Where(x => x.a.Note is { } note && Regex.IsMatch(note, @"\bstage \d|\bwas (removed|renamed)|\balias\b|without conversion|every frame|shared by all instances"))
+            .Select(x => $"{x.Item1} {x.a.Name}: {x.a.Note}").ToList();
+        Assert.True(bad.Count == 0, string.Join(Environment.NewLine, bad));
+    }
+
     [Fact]
     public void Common_ContainsCommonAttributes()
     {

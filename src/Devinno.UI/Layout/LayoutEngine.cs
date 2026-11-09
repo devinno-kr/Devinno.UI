@@ -761,7 +761,6 @@ public sealed partial class LayoutEngine
         return ((float)min, (float)max);
     }
 
-    /// <summary>Only re-arranges an already built tree at a new size (no build, binding or style resolution); for when only the window size changed.</summary>
     /// <summary>Clears all measured size caches; call before <see cref="Rearrange"/> when there are boxes whose size changes over time (expand animation).</summary>
     internal static void ClearMeasure(LayoutBox box)
     {
@@ -771,6 +770,7 @@ public sealed partial class LayoutEngine
             ClearMeasure(c);
     }
 
+    /// <summary>Only re-arranges an already built tree at a new size (no build, binding or style resolution); for when only the window size changed.</summary>
     internal static void Rearrange(LayoutBox root, float width, float height)
     {
         root.Rect = SKRect.Create(0, 0, width, height);

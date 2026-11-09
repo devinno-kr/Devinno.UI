@@ -17,7 +17,7 @@ namespace Devinno.UI.Painting;
 /// The hover/press brightness of a knob face and the hover row of a grid are also not painted when disabled.
 /// <c>overflow:hidden</c>/<c>overflow:scroll</c> boxes clip their children to inside their corners, and scroll boxes paint children shifted by the offset and then draw the scrollbars on top.</para>
 /// <para>Pass the same theme that was given to <see cref="LayoutEngine"/>. If the theme is <see langword="null"/>, the widget color tokens of
-/// <see cref="DvTheme.Default"/> are used, as in <see cref="LayoutEngine"/>. Only widget color tokens missing from the theme are painted with fallback colors built into the code. Use on a single UI thread only.</para>
+/// <see cref="DvTheme.Default"/> are used, as in <see cref="LayoutEngine"/>. Widget color tokens missing from the theme are painted magenta (<c>ThemeResolver.MissingColor</c>) with a warning. Use on a single UI thread only.</para>
 /// </remarks>
 /// <example>
 /// <code>
@@ -71,7 +71,7 @@ public sealed partial class Painter
     /// </summary>
     /// <param name="canvas">The canvas to paint on. The background is not cleared, so call <see cref="SKCanvas.Clear(SKColor)"/> first if needed.</param>
     /// <param name="box">The box to paint (usually the root returned by <see cref="LayoutEngine.Layout"/>).</param>
-    /// <param name="vm">The view model used for layout. Currently not used for painting; it is passed down to children as is (may be <see langword="null"/>). Values are already filled into the boxes at layout time.</param>
+    /// <param name="vm">The view model used for layout. Not used for painting; it is passed down to children as is (may be <see langword="null"/>). Values are already filled into the boxes at layout time.</param>
     /// <param name="state">The hover/press target boxes. If <see langword="null"/>, painting uses no state styles.</param>
     /// <param name="timestampMs">Paint time (ms). Used only to set the blink phase of lamps and alarms. The same time produces the same image, so pass a fixed value for screen captures and tests.</param>
     public void Paint(SKCanvas canvas, LayoutBox box, object? vm, InteractionState? state = null, long timestampMs = 0)

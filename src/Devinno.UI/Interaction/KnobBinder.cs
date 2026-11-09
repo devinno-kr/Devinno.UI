@@ -50,8 +50,8 @@ public static class KnobBinder
     }
 
     /// <summary>
-    /// Writes the knob value to the two-way binding path. If <c>onbeforecommit="M"</c> is set, it first calls <c>bool M(double proposed)</c> and writes only when it returns <see langword="true"/>
-    /// (if the method is missing or its signature does not match, nothing is written and a Trace warning is written once per cause; nothing is written if the method throws either). The value is converted to the target property type, and inside a <c>DvRepeat</c> item it is written to the item scope.
+    /// Writes the knob value to the two-way binding path. If <c>onbeforecommit="M"</c> is set, it calls the gate first (<c>bool M(item, double)</c>/<c>bool M(item, object)</c> inside a repeat item, otherwise <c>bool M(double)</c>/<c>bool M(object)</c>) and writes only when it returns <see langword="true"/>
+    /// (if no such method exists, nothing is written and a Trace warning is written once per cause; nothing is written if the method throws either). The value is converted to the target property type, and inside a <c>DvRepeat</c> item it is written to the item scope.
     /// </summary>
     /// <param name="box">The knob box. Ignored if <see cref="CanDrag"/> is <see langword="false"/>.</param>
     /// <param name="vm">The screen view model. Ignored if <see langword="null"/>.</param>

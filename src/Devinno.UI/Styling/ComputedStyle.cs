@@ -31,7 +31,7 @@ public enum JustifyContent
 /// </summary>
 public enum AlignItems
 {
-    /// <summary>Aligns to the start of the cross axis (<c>start</c>, <c>flex-start</c>; the default of <c>align-items</c>).</summary>
+    /// <summary>Aligns to the start of the cross axis (<c>start</c>, <c>flex-start</c>, and unrecognized <c>align-items</c> values).</summary>
     Start,
     /// <summary>Centers on the cross axis (<c>center</c>).</summary>
     Center,
@@ -234,7 +234,7 @@ public sealed class ComputedStyle
 
     /// <summary>
     /// Inner spacing (px). Style key <c>padding</c>, 1 to 4 values (format: see <see cref="Thickness.TryParse"/>). Default <see cref="Thickness.Zero"/>.
-    /// If parsing fails (including 3 values), the declaration is ignored.
+    /// If parsing fails (5 or more values, commas, <c>%</c>), the declaration is ignored.
     /// </summary>
     public Thickness Padding { get; set; } = Thickness.Zero;
 

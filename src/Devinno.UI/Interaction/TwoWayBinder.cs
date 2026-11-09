@@ -3,13 +3,13 @@ using Devinno.UI.Layout;
 
 namespace Devinno.UI.Interaction;
 
-/// <summary>Component that writes the inverted value to the two-way binding (<c>value="{Bind …}"</c>) target when a <c>DvToggle</c> is pressed.</summary>
+/// <summary>Component that writes the inverted value to the two-way binding (<c>value="{Bind …}"</c>) target when a <c>DvToggle</c>, <c>DvCheckBox</c> or latching <c>DvButton</c> is pressed.</summary>
 /// <remarks>An internal engine step. App code normally does not use it directly; it uses markup bindings and <see cref="DvSurface"/>/<see cref="DvRenderer"/>.</remarks>
 public static class TwoWayBinder
 {
     /// <summary>
-    /// Writes the inverse of the toggle box's current state to the binding path. If <c>onbeforecommit="M"</c> is present, <c>bool M(bool proposed)</c> is called first and
-    /// the value is written only when it returns <see langword="true"/>. If the method is missing or its signature does not match (including a return type other than <see langword="bool"/>), nothing is written and a Trace warning is logged (once per cause);
+    /// Writes the inverse of the toggle box's current state to the binding path. If <c>onbeforecommit="M"</c> is present, the gate is called first (<c>bool M(item, bool)</c>/<c>bool M(item, object)</c> inside a repeat item, otherwise <c>bool M(bool)</c>/<c>bool M(object)</c>) and
+    /// the value is written only when it returns <see langword="true"/>. If no such method exists (a return type other than <see langword="bool"/> does not count), nothing is written and a Trace warning is logged (once per cause);
     /// if the method throws, nothing is written and a Trace error is logged. Inside a <c>DvRepeat</c> item, it writes in the item scope.
     /// </summary>
     /// <param name="box">The pressed toggle box. Ignored if it is disabled, read-only (<c>readonly</c>) or its value is not a two-way binding.</param>

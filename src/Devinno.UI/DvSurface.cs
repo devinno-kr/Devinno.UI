@@ -879,7 +879,7 @@ public sealed partial class DvSurface
     /// Paints the screen at time 0. Blinking widgets are always drawn in the same phase, so this is for snapshots and tests;
     /// real hosts should use <see cref="RenderTo(SKCanvas, float, float, long)"/>.
     /// </summary>
-    /// <param name="canvas">The canvas to paint on. It is cleared to white before painting.</param>
+    /// <param name="canvas">The canvas to paint on. It is cleared to the theme's <c>background</c> token color before painting.</param>
     /// <param name="w">Screen width (canvas units).</param>
     /// <param name="h">Screen height (canvas units).</param>
     public void RenderTo(SKCanvas canvas, float w, float h) => RenderTo(canvas, w, h, 0L);
@@ -888,7 +888,7 @@ public sealed partial class DvSurface
     /// Re-lays out if needed, then paints the whole screen to the canvas. Called on the UI thread from the host's paint callback.
     /// </summary>
     /// <remarks>
-    /// <para>Order: layout (<see cref="Layout(float, float)"/>) → advance inertial scrolling → clear the canvas to white → screen, slot screens (DvApp areas/pages), popups → virtual keyboard.
+    /// <para>Order: layout (<see cref="Layout(float, float)"/>) → advance inertial scrolling → clear the canvas to the theme <c>background</c> color → screen, slot screens (DvApp areas/pages), popups → virtual keyboard.
     /// If the virtual keyboard covers the edit target, the whole screen is drawn shifted up.</para>
     /// <para>Afterwards <see cref="NeedsRender"/> becomes <see langword="false"/> and <see cref="Edit"/> is updated for this frame.
     /// Hosts using a native editor should read <see cref="Edit"/> right after this call.</para>

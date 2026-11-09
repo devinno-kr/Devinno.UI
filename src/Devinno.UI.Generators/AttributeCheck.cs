@@ -413,7 +413,7 @@ internal static class AttributeCheck
     }
 
     /// <summary>
-    /// Attributes renamed in stage 4 (0.x: no aliases, the old name is an unknown attribute) — DVML019 names the new one instead of a similar-name guess.
+    /// Old attribute names (no aliases: the old name is an unknown attribute) — DVML019 names the attribute that replaced it instead of a similar-name guess.
     /// Key = (tag, old name), value = (new name, the meaning is reversed). A copy of the library <c>TagSchema.Renamed</c> (a test compares them).
     /// </summary>
     internal static readonly Dictionary<(string Tag, string Old), (string New, bool Reversed)> Renamed = new()
