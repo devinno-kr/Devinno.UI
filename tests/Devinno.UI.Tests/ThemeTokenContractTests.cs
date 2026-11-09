@@ -8,7 +8,7 @@ using Devinno.UI.Trends;
 using SkiaSharp;
 using Xunit;
 
-// 3단계 R11 — 그리는 색은 모두 테마 토큰. 내장 테마(Light·Dark)에 그리기가 쓰는 토큰이 다 있고, 대체 hex 는 없다.
+// 3단계 R11 — 그리는 색은 모두 테마 토큰. 내장 테마(Light·Dark·Graphite·Carbon)에 그리기가 쓰는 토큰이 다 있고, 대체 hex 는 없다.
 // 없는 토큰 = 마젠타(ThemeResolver.MissingColor) + 경고 한 정책. 그리기 파일의 리터럴 색은 아래 허용 목록(D 분류)만.
 // 공정도(Painter.Process.cs) 색은 look 팔레트라 예외(규칙표 R11·D5 승인).
 public class ThemeTokenContractTests
@@ -21,6 +21,10 @@ public class ThemeTokenContractTests
     private static readonly Regex HelperCall = new(
         @"\b(?:ThemeColor|Tok|Token|ThemeResolver\.Color)\(\s*(?:(?:theme|_theme)\s*,\s*)?(?<arg>[^()]*(?:\([^()]*\))?[^()]*)\)",
         RegexOptions.Compiled);
+
+    // 내장 테마 전부 — 새 내장 테마를 만들면 여기 추가(아래 검사가 모두 돈다)
+    internal static readonly (string Name, DvTheme Theme)[] BuiltInThemes =
+        [("Light", DvTheme.Light), ("Dark", DvTheme.Dark), ("Graphite", DvTheme.Graphite), ("Carbon", DvTheme.Carbon)];
 
     // 정적 필드는 적힌 순서로 초기화된다 — DynamicCalls 보다 먼저
     private static readonly string[] Tones = ["tone-neutral", "tone-info", "tone-success", "tone-warning", "tone-danger"];
@@ -82,7 +86,7 @@ public class ThemeTokenContractTests
         RegexOptions.Compiled);
 
     [Fact]
-    public void Every_token_the_drawing_code_asks_for_is_in_both_built_in_themes()
+    public void Every_token_the_drawing_code_asks_for_is_in_every_built_in_theme()
     {
         var src = Path.Combine(RepoRoot(), "src", "Devinno.UI");
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -125,7 +129,7 @@ public class ThemeTokenContractTests
         Assert.Contains("background", names);
         Assert.True(names.Count > 60, $"only {names.Count} token names found — the scan pattern is broken");
 
-        foreach (var (themeName, theme) in new[] { ("Light", DvTheme.Light), ("Dark", DvTheme.Dark) })
+        foreach (var (themeName, theme) in BuiltInThemes)
         {
             var missing = names.Where(n => !theme.TryGet(n, out var v) || !DvColor.TryParse(v, out _)).OrderBy(n => n).ToList();
             Assert.True(missing.Count == 0, $"{themeName} lacks color tokens the drawing code uses: {string.Join(", ", missing)}");
@@ -187,6 +191,18 @@ public class ThemeTokenContractTests
     }
 
     [Fact]
+    public void All_built_in_themes_have_exactly_the_same_token_keys()
+    {
+        var keys = BuiltInThemes[0].Theme.Tokens.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var (name, theme) in BuiltInThemes.Skip(1))
+        {
+            var other = theme.Tokens.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            Assert.True(keys.SetEquals(other),
+                $"{name} vs {BuiltInThemes[0].Name}: missing [{string.Join(", ", keys.Except(other, StringComparer.OrdinalIgnoreCase))}], extra [{string.Join(", ", other.Except(keys, StringComparer.OrdinalIgnoreCase))}]");
+        }
+    }
+
+    [Fact]
     public void A_missing_token_draws_magenta_with_a_warning_instead_of_a_fallback()
     {
         var theme = new DvTheme(DvTheme.Dark.Tokens.Where(t => t.Key != "lamp-off").ToDictionary(t => t.Key, t => t.Value));
@@ -211,7 +227,7 @@ public class ThemeTokenContractTests
     public void Canvas_outside_the_root_is_the_background_token()
     {
         // 루트가 칠하지 않은 곳(투명 루트) — 흰색이 아니라 테마 background
-        foreach (var theme in new[] { DvTheme.Light, DvTheme.Dark })
+        foreach (var (_, theme) in BuiltInThemes)
         {
             var png = DvRenderer.RenderToPng("<DvScreen/>", null, 20, 20, theme);
             Assert.Equal(ThemeResolver.Color(theme, "background"), Pixel(png, 10, 10));
@@ -228,9 +244,9 @@ public class ThemeTokenContractTests
     }
 
     [Fact]
-    public void Sample_screen_draws_no_magenta_in_either_built_in_theme()
+    public void Sample_screen_draws_no_magenta_in_any_built_in_theme()
     {
-        foreach (var theme in new[] { DvTheme.Light, DvTheme.Dark })
+        foreach (var (_, theme) in BuiltInThemes)
             foreach (var lang in new[] { "en", "ko" })
             {
                 var (png, warnings) = Watch("token", () =>

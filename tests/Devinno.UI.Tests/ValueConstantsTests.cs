@@ -48,7 +48,7 @@ public class ValueConstantsTests
     [Fact]
     public void Tones_and_states_are_theme_tokens()
     {
-        foreach (var theme in new[] { DvTheme.Light, DvTheme.Dark })
+        foreach (var (_, theme) in ThemeTokenContractTests.BuiltInThemes)
         {
             Assert.Equal(5, Consts(typeof(Styles.Tone)).Length);
             foreach (var v in Consts(typeof(Styles.Tone)))

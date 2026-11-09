@@ -1,7 +1,7 @@
 namespace Devinno.UI.Styling;
 
 /// <summary>
-/// The class stylesheet that the built-in themes provide by default. All values are theme tokens, so it is shared by <see cref="DvTheme.Light"/>/<see cref="DvTheme.Dark"/>.
+/// The class stylesheet that the built-in themes provide by default. All values are theme tokens, so it is shared by all built-in themes (<see cref="DvTheme.Light"/>, <see cref="DvTheme.Dark"/>, <see cref="DvTheme.Graphite"/>, <see cref="DvTheme.Carbon"/>).
 /// </summary>
 /// <remarks>
 /// The engine applies it automatically through the theme, so app code normally does not use it directly; markup just uses class names such as <c>class="card"</c>.

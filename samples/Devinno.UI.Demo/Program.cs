@@ -6,14 +6,17 @@ using Devinno.UI.Styling;
 // 데모 — DvApp 하나에 페이지를 전부 넣고, 실행 인자로 시작 페이지를 고른다.
 //   인자 없음 = 쇼케이스(영어): 상단 바 + Overview(운영 대시보드)·Process(P&ID)·Widgets(아래 페이지 목록), PlantSim 이 값을 움직인다.
 //   -- shot <폴더> = 쇼케이스 화면을 창 없이 PNG 로(README 이미지), anim 을 더하면 P&ID 흐름 애니메이션 프레임도
-//   dotnet run --project samples/Devinno.UI.Demo [-- gpu] [-- dashboard|lang|control|equipment|grid|trend [fast]|alarm|input|knob|neon|process|basic|v2|custom] [-- light]
+//   dotnet run --project samples/Devinno.UI.Demo [-- gpu] [-- dashboard|lang|control|equipment|grid|trend [fast]|alarm|input|knob|neon|process|basic|v2|custom] [-- light|graphite|carbon]
 //   시나리오: -- top = 상단 바(모니터링·설정·알람) + 홈 + 각 페이지의 "이전",  -- nav = 왼쪽 사이드바,
 //            -- dialog = 레시피 편집 다이얼로그 + 그 위 메시지 박스 + 통신 시뮬레이션 알람(DvApp.Current, 키 중복 방지)
 internal static class Program
 {
     private static void Main(string[] args)
     {
-        var theme = args.Contains("light") ? DvTheme.Light : DvTheme.Dark;
+        var theme = args.Contains("light") ? DvTheme.Light
+            : args.Contains("graphite") ? DvTheme.Graphite // ISA-101 주간 관제실
+            : args.Contains("carbon") ? DvTheme.Carbon // 야간 관제실
+            : DvTheme.Dark;
         string[] scenarios = ["top", "nav", "dialog", "lang", "control", "equipment", "grid", "trend", "alarm", "input", "knob", "basic", "process", "neon", "v2", "dashboard", "custom", "video"];
         var showcase = !args.Any(scenarios.Contains);
         // 데모 화면은 모두 영어 — 언어 전환 페이지(lang)가 ko·en·ja 를 바꿀 수 있게 그 페이지의 표를 앱 전체에 쓰고, 영어로 시작한다

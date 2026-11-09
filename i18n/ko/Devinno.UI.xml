@@ -4254,9 +4254,9 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
         </member><member name="T:Devinno.UI.Styling.BackgroundFit" en-hash="69b6ed0a3b25b169"><summary>배경 그림(<c>background-image</c>)을 상자에 맞추는 방식: 스타일 키 <c>background-size</c>.</summary></member><member name="F:Devinno.UI.Styling.BackgroundFit.Cover" en-hash="2ad7c14c3ed8cb06"><summary><c>cover</c>(기본). 비율 유지로 상자를 채우고 넘치는 부분은 잘라 가운데.</summary></member><member name="F:Devinno.UI.Styling.BackgroundFit.Contain" en-hash="2bdc1c748fdae886"><summary><c>contain</c>. 비율 유지로 그림 전체를 상자 안에, 가운데. 나머지는 빈 채로.</summary></member><member name="F:Devinno.UI.Styling.BackgroundFit.Fill" en-hash="691a3b1ec324bd2f"><summary><c>fill</c>(<c>100% 100%</c> 도 같음). 상자에 맞춰 늘인다.</summary></member><member name="F:Devinno.UI.Styling.BackgroundFit.Natural" en-hash="f738c043c7c7b041"><summary>
             <c>natural</c>. 그림을 원래 픽셀 크기로, 상자 경계(그리고 <c>border-radius</c>)에서 <b>자르지 않고</b> 그린다 — 상자 가운데,
             또는 왼쪽 위 모서리를 <c>background-image-offset</c> 자리에. 상자 크기의 판 둘레에 글로우·그림자 여백이 있는 그림용.
-            </summary></member><member name="T:Devinno.UI.Styling.BuiltInStyles" en-hash="5acc7d6479126bf3">
+            </summary></member><member name="T:Devinno.UI.Styling.BuiltInStyles" en-hash="8c10c80bc3242a5b">
             <summary>
-            내장 테마가 기본으로 제공하는 클래스 스타일시트입니다. 값이 모두 테마 토큰이라 <see cref="F:Devinno.UI.Styling.DvTheme.Light" />/<see cref="F:Devinno.UI.Styling.DvTheme.Dark" /> 에 공통으로 쓰입니다.
+            내장 테마가 기본으로 제공하는 클래스 스타일시트입니다. 값이 모두 테마 토큰이라 모든 내장 테마(<see cref="F:Devinno.UI.Styling.DvTheme.Light" />, <see cref="F:Devinno.UI.Styling.DvTheme.Dark" />, <see cref="F:Devinno.UI.Styling.DvTheme.Graphite" />, <see cref="F:Devinno.UI.Styling.DvTheme.Carbon" />)에 공통으로 쓰입니다.
             </summary>
             <remarks>
             엔진이 테마를 통해 자동으로 적용하므로 앱 코드는 보통 직접 쓰지 않고, 마크업에서 <c>class="card"</c> 처럼 클래스 이름만 씁니다.
@@ -4664,14 +4664,14 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <param name="s">해석할 문자열. <see langword="null" />·빈 문자열이면 실패합니다.</param>
             <param name="color">성공하면 해석한 색, 실패하면 <see cref="F:Devinno.UI.Styling.DvColor.Transparent" />.</param>
             <returns>지원 표기이고 16진수가 올바르면 <see langword="true" />. 예외는 던지지 않습니다.</returns>
-        </member><member name="T:Devinno.UI.Styling.DvTheme" en-hash="2fd52369a54898e8">
+        </member><member name="T:Devinno.UI.Styling.DvTheme" en-hash="7da878393ff8a21d">
             <summary>
             디자인 토큰(이름 → 값 문자열) 묶음과 기본 클래스 스타일시트로 이루어진 테마입니다.
             마크업 스타일의 <c>token(name)</c> 은 렌더링 때 이 테마의 값으로 바뀝니다.
             </summary>
             <remarks>
-            <para><b>내장 테마</b>: <see cref="F:Devinno.UI.Styling.DvTheme.Light" />, <see cref="F:Devinno.UI.Styling.DvTheme.Dark" />. 테마를 넘기지 않으면(<see langword="null" />) 대부분의 경로가 <see cref="P:Devinno.UI.Styling.DvTheme.Default" />(= <see cref="F:Devinno.UI.Styling.DvTheme.Dark" />)를 씁니다.
-            두 테마는 같은 토큰 이름을 가지며 색만 다릅니다. 간격·모서리·글자 크기 스케일(<c>spacing.*</c>, <c>radius.*</c>, <c>font.*</c>)은 공통입니다.</para>
+            <para><b>내장 테마</b>: <see cref="F:Devinno.UI.Styling.DvTheme.Light" />, <see cref="F:Devinno.UI.Styling.DvTheme.Dark" />, <see cref="F:Devinno.UI.Styling.DvTheme.Graphite" />(ISA-101 스타일, 밝은 관제실), <see cref="F:Devinno.UI.Styling.DvTheme.Carbon" />(야간 관제실). 테마를 넘기지 않으면(<see langword="null" />) 대부분의 경로가 <see cref="P:Devinno.UI.Styling.DvTheme.Default" />(= <see cref="F:Devinno.UI.Styling.DvTheme.Dark" />)를 씁니다.
+            내장 테마는 모두 같은 토큰 이름을 가지며 색만 다릅니다. 간격·모서리·글자 크기 스케일(<c>spacing.*</c>, <c>radius.*</c>, <c>font.*</c>)은 공통입니다.</para>
             <para><b>토큰 이름</b>: 정식 표기는 <c>token(spacing.md)</c> 입니다. <c>var(--name)</c> 도 별칭으로 받으며, 이름의 점(<c>.</c>)은 대시(<c>-</c>)로도 찾을 수 있어
             <c>var(--spacing-md)</c> 는 <c>token(spacing.md)</c> 와 같은 값입니다. 이름은 대소문자를 구분하지 않고, 키 앞의 <c>--</c> 는 떼고 저장합니다.
             값은 문자열 그대로 치환되므로 색 토큰은 <see cref="M:Devinno.UI.Styling.DvColor.TryParse(System.String,Devinno.UI.Styling.DvColor@)" /> 형식, 크기 토큰은 숫자, 그림자 토큰은 <c>dx dy blur color</c> 형식입니다.</para>
@@ -4698,6 +4698,26 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <summary>밝은 배경용 내장 테마입니다. 흰색·연회색 표면에 짙은 글자, 파란색(<c>#2563eb</c>) 브랜드 색을 씁니다.</summary>
         </member><member name="F:Devinno.UI.Styling.DvTheme.Dark" en-hash="bffa14a44ce2ec59">
             <summary>어두운 배경용 내장 테마이며 <see cref="P:Devinno.UI.Styling.DvTheme.Default" /> 입니다. 남색 계열 표면에 밝은 글자, 밝은 파란색(<c>#60a5fa</c>) 브랜드 색을 씁니다.</summary>
+        </member><member name="F:Devinno.UI.Styling.DvTheme.Graphite" en-hash="ca801e1232efeb77">
+            <summary>
+            ISA-101 스타일의 고성능 HMI 내장 테마로, 밝은 주간 관제실용입니다.
+            무채색 회색 표면과 진한 글자로 정상 화면을 차분하게 두고, 채도 높은 색은 이상 상태(알람·고장·경고)에만 씁니다.
+            </summary>
+            <remarks>
+            운전 중인 설비는 진한 회색(<c>state-run</c>), 정지한 설비는 밝은 회색(<c>state-stop</c>)으로 칠하며 녹색·빨간색을 쓰지 않습니다.
+            고장·경고는 빨간색·주황색 그대로이고, 알람 등급은 빨간색(critical), 주황색(major), 어두운 노란색(minor)입니다. 알람 목록이 밝은 회색 위에서 이 색을 글자로도 쓸 수 있을 만큼 어둡게 잡았습니다.
+            브랜드 색은 차분한 강철 청색(<c>#4A6278</c>)이고, 차트 색은 채도가 낮은 회색·강철 청색·청록 계열입니다.
+            공정도(<c>DvProcess</c>)는 <c>look</c> 의 색을 그대로 씁니다.
+            </remarks>
+        </member><member name="F:Devinno.UI.Styling.DvTheme.Carbon" en-hash="53bfef98a02b8823">
+            <summary>
+            야간 관제실용 내장 테마입니다. 푸른 기 없는 낮은 밝기의 따뜻한 숯색 표면, 따뜻한 미색 글자, 황동색(<c>#BDA67E</c>) 강조색 하나로 이루어집니다.
+            </summary>
+            <remarks>
+            어두운 방에서 눈부심을 줄이도록 전체 밝기와 대비를 <see cref="F:Devinno.UI.Styling.DvTheme.Dark" /> 보다 낮췄고, 본문 글자는 바탕과 4.5:1 이상의 대비를 유지합니다.
+            빨간색과 호박색은 알람·고장에만 남겨 두어 황동색 강조가 알람으로 보이지 않습니다. 운전 중인 설비는 차분한 녹색이고, 차트 색은 따뜻하고 채도가 낮습니다.
+            공정도(<c>DvProcess</c>)는 <c>look</c> 의 색을 그대로 씁니다.
+            </remarks>
         </member><member name="P:Devinno.UI.Styling.DvTheme.Default" en-hash="33de882fd91a9542">
             <summary>
             테마를 지정하지 않았을 때(<see langword="null" />) 토큰 해석과 내장 스타일시트에 쓰는 테마입니다. 현재 <see cref="F:Devinno.UI.Styling.DvTheme.Dark" /> 를 돌려줍니다.

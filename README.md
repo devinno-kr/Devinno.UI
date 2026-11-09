@@ -82,7 +82,7 @@ In UI code, the usual failure is a mistake that does nothing: no error, no warni
 - The docs ship inside the package. On build they are copied into `.devinno/` in your project, where AI tools can find them. `llms.txt` is the place to start.
 
 **Good-looking screens by default**
-- Semantic components (`DvCard`, `DvStat`, `DvBadge` and others) and theme tokens (`token(surface)` and others) give consistent screens in both the dark and light themes. You do not have to pick colors by hand.
+- Semantic components (`DvCard`, `DvStat`, `DvBadge` and others) and theme tokens (`token(surface)` and others) give consistent screens in every built-in theme: dark, light, Graphite (ISA-101 style gray for bright control rooms) and Carbon (dim, warm dark for night control rooms). You do not have to pick colors by hand.
 - In a process diagram (P&ID) you list the equipment and how it connects. The library places the equipment and routes the pipes at right angles, so the AI never has to work out coordinates.
 - To copy a given drawing, place the equipment at the drawing's coordinates (`placement="fixed"`) and the pipes are still routed for you. With `fit="contain"` the whole drawing scales to any screen, smaller or larger, like an image; one `font-size` keeps its text readable on small panels.
 

@@ -97,7 +97,7 @@ Below is `MainPage.dvml`. The root `vm` points to the class above (the file name
 
 - For multiple pages or a top bar / sidebar, see chapter 16 (16.1 full example); for other hosts (WinForms `ViewControl`, self-drawn `DvSurface`, PNG rendering `DvRenderer`), see chapter 19.
 - Put the dvml above anywhere in the project as a `.dvml` file (`*.dvml` is automatically a generator input, chapter 20).
-- Set the theme with `app.Theme`. If omitted, `DvTheme.Default` (= `DvTheme.Dark`) is used. Style tokens and widget internal colors are all drawn with this theme. For a light screen, specify `DvTheme.Light` explicitly.
+- Set the theme with `app.Theme`. If omitted, `DvTheme.Default` (= `DvTheme.Dark`) is used. Style tokens and widget internal colors are all drawn with this theme. For a light screen, specify `DvTheme.Light` explicitly; for control rooms there are `DvTheme.Graphite` (bright room) and `DvTheme.Carbon` (night room) (chapter 5).
 - The window size is decided by the adapter (window/control). The markup does not decide the window.
 
 ---
@@ -525,7 +525,16 @@ Changes values gradually when the state changes (same as CSS). This works both w
 
 Use `token(이름)` to read a theme value. `var(--이름)` means the same thing, but uses dashes instead of dots (`var(--spacing-md)` = `token(spacing.md)`). Names are case-insensitive. **An unknown token becomes magenta `#FF00FF`**. Built-in widgets draw every part of themselves from these tokens too (no hidden fallback colors), so a theme made from scratch with `new DvTheme(...)` must define all of them — a missing one shows magenta with a Trace warning. Prefer `DvTheme.Dark.With(...)` / `DvTheme.Light.With(...)`. The process diagram (`DvProcess`) is the one exception: its symbol colors follow `look`, not the theme (`dvml-process.md`).
 
-The themes are `DvTheme.Dark` and `DvTheme.Light`. To change only some values: `DvTheme.Dark.With(new Dictionary<string,string>{ ["primary"] = "#0ea5e9" })`.
+The built-in themes all have the same tokens and differ only in colors:
+
+| Theme | For | Look |
+|---|---|---|
+| `DvTheme.Dark` (default) | General dark screens | Navy surfaces, light text, light-blue brand |
+| `DvTheme.Light` | General light screens | White and light-gray surfaces, dark text, blue brand |
+| `DvTheme.Graphite` | Bright, daytime control rooms (ISA-101 high-performance HMI) | Neutral gray, dark text, muted steel-blue brand. Normal states are gray (running = dark gray `state-run`, stopped = light gray `state-stop`); saturated color only for abnormal states and alarms |
+| `DvTheme.Carbon` | Night control rooms | Low-luminance warm charcoal without a blue cast, warm off-white text, one brass accent. Dimmer than `Dark`; red and amber only for alarms and faults |
+
+To change only some values: `DvTheme.Dark.With(new Dictionary<string,string>{ ["primary"] = "#0ea5e9" })`.
 
 | Category | Tokens |
 |---|---|
@@ -760,7 +769,7 @@ A component cannot be registered under the name of a built-in tag (`DvGauge`, `D
 
 **DvLamp**
 - On when `on="{Running}"` is true. With `blink="true"`, it blinks while on (every `blink-interval` ms; all blinking on screen shares the same phase). `blink-when` is another name for `blink`.
-- On-color priority: `color` (`#RRGGBB` or `token(이름)`, bindable) > `state` (`state-{값}` token: `run` `stop` `fault` `warn` `manual` `off` in the built-in themes, or any `state-*` token of your theme) > `color` in `style`. An unreadable `color` or a `state` the theme has no `state-*` token for is ignored with a Trace warning (chapter 2). The off color is the `lamp-off` token (dark gray in both built-in themes). `blink-interval` is also bound.
+- On-color priority: `color` (`#RRGGBB` or `token(이름)`, bindable) > `state` (`state-{값}` token: `run` `stop` `fault` `warn` `manual` `off` in the built-in themes, or any `state-*` token of your theme) > `color` in `style`. An unreadable `color` or a `state` the theme has no `state-*` token for is ignored with a Trace warning (chapter 2). The off color is the `lamp-off` token (dark gray, light gray in `Graphite`). `blink-interval` is also bound.
 - **Multi-state lamp (equipment state number → color / text / blinking):** there is no separate widget; the VM converts the state into a `state` key, text, and blinking and binds them (state rules are app data that differ per equipment). Lamp + name + status chip is drawn by `DvStatusItem`. For a color not in the theme, use `DvLamp color="{PumpColor}"`.
 ```xml
 <DvStatusItem label="2호 펌프" state="{Pump2.StateKey}" status="{Pump2.StateText}" blink="{Pump2.IsFault}"/>
