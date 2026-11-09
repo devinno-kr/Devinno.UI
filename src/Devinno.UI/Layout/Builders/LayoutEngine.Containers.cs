@@ -95,7 +95,7 @@ public sealed partial class LayoutEngine
         var node = box.Node;
         var r = Reader(node, vm);
         var raw = r.Raw("expanded");
-        var (expr, _, ov) = ValueOf(node, raw);
+        var (expr, _, ov) = ValueOf(r, raw);
         box.ValueBindExpr = expr;
         box.ToggleOn = ov is not null ? ToBool(ov.CellValue)
             : expr is not null && BindingResolver.IsTwoWay(expr) ? ToBool(BindingResolver.Resolve(vm, $"{{{BindingResolver.ExtractPath(expr)}}}"))

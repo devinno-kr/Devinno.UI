@@ -384,204 +384,11 @@ public sealed partial class LayoutEngine
     /// </summary>
     internal Func<InstanceKey, bool, float?>? ExpanderRevealOf { get; set; }
 
-    // DvSegment — 선택지(DvOption)마다 항목 상자(DvSegmentItem, .segment-item / 선택된 것 .segment-item-on)를 만들어 한 줄로 붙인다.
-    // 누르면 그 선택지 값을 세그먼트의 value 에 쓴다(DvSurface — DvSelect 와 같은 커밋 경로).
-    private void AddSegmentItems(LayoutBox box, object? vm)
-    {
-        if (box.Node.Tag != "DvSegment")
-            return;
-        for (var i = 0; i < box.SelectOptions.Count; i++)
-        {
-            var item = new ElementNode { Tag = "DvSegmentItem" };
-            item.Attributes["class"] = i == box.SelectedIndex ? "segment-item segment-item-on" : "segment-item";
-            var itemBox = BuildSelf(item, vm);
-            itemBox.ResolvedText = box.SelectOptions[i].Text; // 글자는 그대로(바인딩 해석 없이)
-            itemBox.Icon = box.SelectOptions[i].Icon;
-            itemBox.SegmentOwner = box;
-            itemBox.SegmentIndex = i;
-            box.Children.Add(itemBox);
-        }
-    }
-
-    // DvListBox — 선택지마다 행 상자(DvListItem, .listbox-item / 고른 것 .listbox-item-on)를 세로로 쌓는다. 목록 상자는 스크롤 패널(.listbox).
-    // 누르면 DvSurface 가 고른다(한 개 = value, 여럿 = selected-items 토글).
-    private void AddListItems(LayoutBox box, object? vm)
-    {
-        if (box.Node.Tag != "DvListBox")
-            return;
-        for (var i = 0; i < box.SelectOptions.Count; i++)
-        {
-            var on = box.ListSelected is { } sel && i < sel.Length && sel[i];
-            var item = new ElementNode { Tag = "DvListItem" };
-            item.Attributes["class"] = on ? "listbox-item listbox-item-on" : "listbox-item";
-            var itemBox = BuildSelf(item, vm);
-            itemBox.ResolvedText = box.SelectOptions[i].Text;
-            itemBox.Icon = box.SelectOptions[i].Icon;
-            itemBox.ListOwner = box;
-            itemBox.ListIndex = i;
-            if (box.Disabled)
-                itemBox.Disabled = true;
-            box.Children.Add(itemBox);
-        }
-    }
-
     /// <summary>The expanded items of a <c>DvTreeView</c> (remembered by the screen, keyed by element instance + item object). Collapsed if absent.</summary>
     internal Func<InstanceKey, object, bool>? TreeExpandedOf { get; set; }
 
-    /// <summary>
-    /// <c>DvTreeView</c>: <c>items</c> (root list) + <c>item-children</c> (path to the child list) + <c>item-text</c> + <c>item-value</c> (omitted = the item itself).
-    /// Only expanded branches become rows (row height 40, indented per depth). Single selection: <c>value</c> holds the selected item's value (value ownership rules are the same as other value widgets).
-    /// Expansion is remembered by the screen (per item object). Cyclic references (the same object as an ancestor appearing again) skip that branch, and depth is limited to 64.
-    /// </summary>
-    private void BuildTreeView(LayoutBox box, ElementNode node, object? vm)
-    {
-        var raw = node.Attributes.GetValueOrDefault("value");
-        var (expr, target, ov) = ValueOf(node, raw);
-        box.ValueBindExpr = expr;
-        box.ValueTarget = target;
-        var ctx = target ?? vm;
-        var twoWay = BindingResolver.IsTwoWay(expr);
-        object? current;
-        if (ov is not null)
-            current = ov.CellValue;
-        else if (twoWay)
-        {
-            var path = BindingResolver.ExtractPath(expr!);
-            current = BindingResolver.Resolve(ctx, $"{{{path}}}");
-            box.SelectValueType = BindingResolver.ResolvePropertyType(ctx, path) is { } t && t != typeof(object) ? t : null;
-        }
-        else
-            current = BindingResolver.ResolveValueOrLiteral(vm, raw);
-        box.InputValue = current;
-        box.ReadOnly = !(twoWay || target is not null) ||
-                       ToBool(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("readonly")));
-
-        var itemsRaw = node.Attributes.GetValueOrDefault("items");
-        var textPath = node.Attributes.GetValueOrDefault("item-text");
-        var valuePath = node.Attributes.GetValueOrDefault("item-value");
-        var childPath = node.Attributes.GetValueOrDefault("item-children");
-        var rows = new List<TreeRow>();
-        var all = new List<TreeRow>();
-
-        var ancestors = new HashSet<object>(ReferenceEqualityComparer.Instance); // 지금 가지의 조상들 — 순환 끊기
-        void Walk(System.Collections.IEnumerable items, int depth, object? parent, bool visible)
-        {
-            foreach (var item in HandlerErrors.Snapshot(items.Cast<object?>(), PathOf(itemsRaw), node.Tag))
-            {
-                if (item is null || ancestors.Contains(item))
-                    continue;
-                var kids = childPath is null || depth >= 64
-                    ? null
-                    : BindingResolver.Resolve(item, $"{{{childPath}}}") as System.Collections.IEnumerable;
-                var kidList = kids is null or string ? null : HandlerErrors.Snapshot(kids.Cast<object?>(), childPath, node.Tag);
-                var hasKids = kidList is { Count: > 0 };
-                var open = hasKids && TreeExpandedOf?.Invoke(box.Instance, item) == true;
-                var row = new TreeRow(item,
-                    valuePath is null ? item : BindingResolver.Resolve(item, $"{{{valuePath}}}"),
-                    HandlerErrors.Text(textPath is null ? item : BindingResolver.Resolve(item, $"{{{textPath}}}"), textPath, node.Tag) ?? "",
-                    parent, depth, hasKids, open);
-                all.Add(row);
-                if (visible)
-                    rows.Add(row);
-                if (hasKids)
-                {
-                    ancestors.Add(item);
-                    Walk(kidList!, depth + 1, item, visible && open);
-                    ancestors.Remove(item);
-                }
-            }
-        }
-
-        if (BindingResolver.ResolveValueOrLiteral(vm, itemsRaw) is System.Collections.IEnumerable roots and not string)
-            Walk(roots, 0, null, true);
-        box.TreeRows = rows;
-        box.TreeAll = all;
-        box.SelectedIndex = rows.FindIndex(r => SelectValue.Matches(r.Value, current, box.SelectValueType));
-    }
-
-    // DvTreeView 행(DvTreeItem, .treeview-item / 고른 것 .treeview-item-on) — 깊이만큼 들여쓰고, 가지는 ▶/▼ 아이콘, 잎은 아이콘 자리만큼 비운다.
-    private void AddTreeItems(LayoutBox box, object? vm)
-    {
-        if (box.Node.Tag != "DvTreeView")
-            return;
-        for (var i = 0; i < box.TreeRows.Count; i++)
-        {
-            var row = box.TreeRows[i];
-            var item = new ElementNode { Tag = "DvTreeItem" };
-            item.Attributes["class"] = i == box.SelectedIndex ? "treeview-item treeview-item-on" : "treeview-item";
-            var indent = TreeIndentBase + row.Depth * TreeIndentStep + (row.HasChildren ? 0 : TreeChevron + IconTextGap);
-            item.Attributes["style"] = "padding:0 12 0 " + indent.ToString(CultureInfo.InvariantCulture);
-            var itemBox = BuildSelf(item, vm);
-            itemBox.ResolvedText = row.Text;
-            itemBox.Icon = row.HasChildren ? (row.Open ? "fa-chevron-down" : "fa-chevron-right") : null;
-            itemBox.TreeOwner = box;
-            itemBox.TreeIndex = i;
-            if (box.Disabled)
-                itemBox.Disabled = true;
-            box.Children.Add(itemBox);
-        }
-    }
-
     /// <summary>Tree row left padding, indentation per depth, and expand icon width (px).</summary>
     internal const float TreeIndentBase = 10f, TreeIndentStep = 20f, TreeChevron = 14f;
-
-    /// <summary>
-    /// <c>DvListBox</c> value: single selection uses <c>value</c> (same as DvSelect); with <c>selection-mode="multi"</c>, <c>selected-items</c> (a list of values).
-    /// Value ownership rules are the same as other value widgets (binding = VM, no attribute + handle = handle slot, one-way/literal = read-only).
-    /// </summary>
-    private void BuildListBox(LayoutBox box, ElementNode node, object? vm)
-    {
-        box.ListMulti = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("selection-mode")) == "multi";
-        var attr = box.ListMulti ? "selected-items" : "value";
-        var raw = node.Attributes.GetValueOrDefault(attr);
-        var (expr, target, ov) = ValueOf(node, raw);
-        box.ValueBindExpr = expr;
-        box.ValueTarget = target;
-        var ctx = target ?? vm;
-        var twoWay = BindingResolver.IsTwoWay(expr);
-        object? current;
-        Type? valueType;
-        if (ov is not null)
-        {
-            current = ov.CellValue;
-            valueType = null;
-        }
-        else if (twoWay)
-        {
-            var path = BindingResolver.ExtractPath(expr!);
-            current = BindingResolver.Resolve(ctx, $"{{{path}}}");
-            valueType = BindingResolver.ResolvePropertyType(ctx, path);
-        }
-        else
-        {
-            current = BindingResolver.ResolveValueOrLiteral(vm, raw);
-            valueType = current?.GetType();
-        }
-
-        if (box.ListMulti)
-        {
-            // 목록 속성 — 선택지 값은 요소 형식으로 바꿔 비교
-            var elem = valueType is { } vt && vt != typeof(string) ? Interaction.GridInteraction.ElementType(Nullable.GetUnderlyingType(vt) ?? vt) : null;
-            box.SelectValueType = elem == typeof(object) ? null : elem;
-            var picked = current is System.Collections.IEnumerable e and not string
-                ? HandlerErrors.Snapshot(e.Cast<object?>(), PathOf(raw), node.Tag)
-                : new List<object?>();
-            box.SelectOptions = SelectValue.Options(node, vm, box.SelectValueType);
-            box.ListSelected = box.SelectOptions.Select(o => picked.Any(c => SelectValue.Matches(o.Value, c, box.SelectValueType))).ToArray();
-            box.InputValue = picked;
-        }
-        else
-        {
-            box.SelectValueType = valueType == typeof(object) ? null : valueType;
-            box.SelectOptions = SelectValue.Options(node, vm, box.SelectValueType);
-            box.SelectedIndex = box.SelectOptions.FindIndex(o => SelectValue.Matches(o.Value, current, box.SelectValueType));
-            box.ListSelected = box.SelectOptions.Select((_, i) => i == box.SelectedIndex).ToArray();
-            box.InputValue = current;
-        }
-
-        box.ReadOnly = !(twoWay || target is not null) ||
-                       ToBool(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("readonly")));
-    }
 
     // 이번 빌드에서 요소마다 몇 번째로 만들어지는지 — 인스턴스 키(위젯·비디오·화면 상태가 함께 씀)
     private readonly Dictionary<ElementNode, int> _nth = new();
@@ -639,44 +446,13 @@ public sealed partial class LayoutEngine
             box.HoldMs = holdMs;
         box.OnBeforeCommit = r.Raw("onbeforecommit");
 
-        if (node.Tag == "DvButton" && node.Attributes.TryGetValue("value", out var latchExpr))
-        {
-            // 래칭 버튼 — 켜짐 = value 가 참. 양방향이면 누를 때 뒤집어 쓴다(DvToggle 과 같은 커밋 경로)
-            var (lx, _, lov) = ValueOf(node, latchExpr);
-            box.ValueBindExpr = _valueOverride ?? lx;
-            box.ToggleOn = lov is not null ? ToBool(lov.CellValue) : LatchOn(node, vm);
-        }
-
-        if (node.Tag == "DvRadio")
-            BuildRadio(box, node, vm);
-
-        if (node.Tag == "DvListBox")
-            BuildListBox(box, node, vm);
-
-        if (node.Tag == "DvTreeView")
-            BuildTreeView(box, node, vm);
+        BuildInputTag(box, r);
 
         if (node.Tag is "DvSparkline" or "DvBarChart" or "DvPieChart")
             BuildChart(box, node, vm);
 
         if (node.Tag == "DvStepBar")
             BuildStepBar(box, r);
-
-        if (node.Tag is "DvToggle" or "DvCheckBox")
-        {
-            var (ve, target, vov) = ValueOf(node, node.Attributes.GetValueOrDefault("value"));
-            box.ValueBindExpr = ve;
-            box.ValueTarget = target;
-            object? cur = null;
-            if (vov is not null)
-                cur = vov.CellValue;
-            else if (ve is not null && BindingResolver.IsTwoWay(ve))
-                cur = BindingResolver.Resolve(target ?? vm, $"{{{BindingResolver.ExtractPath(ve)}}}");
-            else
-                cur = BindingResolver.ResolveValueOrLiteral(vm, ve);
-            box.ToggleOn = cur is bool b && b ||
-                           string.Equals(BindingResolver.ToText(cur, ve), "true", StringComparison.OrdinalIgnoreCase);
-        }
 
         if (node.Tag == "DvLamp")
         {
@@ -697,12 +473,12 @@ public sealed partial class LayoutEngine
             box.GaugeValue = ToFloat(r.Value("value"), 0f);
             box.GaugeMin = ToFloat(r.Value("min"), 0f);
             box.GaugeMax = ToFloat(r.Value("max"), 100f);
-            box.GaugeZones = ParseZones(node, vm);
+            box.GaugeZones = ParseZones(r);
             box.GaugeTicks = ToFloat(r.Value("ticks"), 0f);
             box.GaugeMinorTicks = ToFloat(r.Value("minor-ticks"), 0f);
-            if (node.Attributes.TryGetValue("show-tick-labels", out var tl))
+            if (r.Has("show-tick-labels"))
                 box.GaugeTickLabels = !string.Equals(
-                    BindingResolver.ResolveText(vm, tl), "false", StringComparison.OrdinalIgnoreCase);
+                    r.Text("show-tick-labels"), "false", StringComparison.OrdinalIgnoreCase);
 
             string? Attr(string name) => r.Text(name);
             box.Tone = Attr("tone") is { Length: > 0 } tone ? tone : "info";
@@ -740,165 +516,6 @@ public sealed partial class LayoutEngine
             box.AlarmRowHeight = rh > 0 ? rh : 36f;
         }
 
-        if (node.Tag == "DvImage")
-        {
-            box.ImageSrc = r.Text("src");
-            box.ImageFit = Widgets.ImageFitParser.Parse(
-                r.Text("fit"));
-        }
-
-        if (node.Tag == "DvVideo")
-            BuildVideo(node, box, vm);
-
-        if (node.Tag is "DvKnob" or "DvSlider")
-        {
-            var (ve, target, vov) = ValueOf(node, node.Attributes.GetValueOrDefault("value"));
-            box.ValueBindExpr = ve;
-            box.ValueTarget = target;
-            var cur = vov is not null ? vov.CellValue
-                : ve is not null && BindingResolver.IsTwoWay(ve)
-                ? BindingResolver.Resolve(target ?? vm, $"{{{BindingResolver.ExtractPath(ve)}}}")
-                : BindingResolver.ResolveValueOrLiteral(vm, ve);
-            box.KnobValue = ToFloat(cur, 0f);
-            box.KnobMin = ToFloat(r.Value("min"), 0f);
-            box.KnobMax = ToFloat(r.Value("max"), 100f);
-            var step = ToFloat(r.Value("step"), 1f);
-            box.KnobStep = step > 0 ? step : 1f;
-            box.KnobUnit = r.Text("unit");
-            if (node.Tag == "DvKnob")
-            {
-                box.KnobInput = node.Attributes.GetValueOrDefault("input-mode") switch
-                {
-                    null or "drag" => KnobInputMode.Drag,
-                    "tap" => KnobInputMode.Tap,
-                    "both" => KnobInputMode.Both,
-                    var mode => WarnKnobMode(mode),
-                };
-            }
-            else
-            {
-                // 슬라이더 — direction = 값이 커지는 쪽(DvProgress 와 같은 값), show-value = 손잡이 옆 값 글자
-                var dir = r.Text("direction");
-                box.Direction = dir is "right" or "left" or "up" or "down" ? dir : WarnSliderDirection(dir);
-                box.ShowValue = ToBool(r.Text("show-value"));
-            }
-        }
-
-        if (node.Tag == "DvInput")
-        {
-            string? Attr(string name) => r.Text(name);
-            double? Num(string name) => double.TryParse(Attr(name), NumberStyles.Float, CultureInfo.InvariantCulture, out var d)
-                ? d : null;
-
-            var (ve, target, vov) = ValueOf(node, node.Attributes.GetValueOrDefault("value"));
-            box.ValueBindExpr = ve;
-            box.ValueTarget = target;
-            box.InputValue = vov is not null ? vov.CellValue
-                : ve is not null && BindingResolver.IsTwoWay(ve)
-                ? BindingResolver.Resolve(target ?? vm, $"{{{BindingResolver.ExtractPath(ve)}}}")
-                : BindingResolver.ResolveValueOrLiteral(vm, ve);
-            box.InputKind = Attr("keyboard-type") switch
-            {
-                "numeric" => DvEditKind.Numeric,
-                "password" => DvEditKind.Password,
-                _ => DvEditKind.Text // email 등은 text
-            };
-            box.InputMultiline = ToBool(Attr("multiline"));
-            box.InputPlaceholder = Attr("placeholder");
-            box.InputFormat = Attr("format");
-            box.InputMin = Num("min");
-            box.InputMax = Num("max");
-            box.Unit = Attr("unit");
-            box.ReadOnly = InputReadOnly(r, _valueOverride);
-            box.InputStep = Num("step") is > 0 and var step ? step : 1d;
-            if (box.InputKind == DvEditKind.Numeric && ToBool(Attr("show-stepper")))
-            {
-                // −/+ 자리 — 좌우 padding 에 버튼 폭을 더해 글자·커서·네이티브 편집기 위치가 그대로 맞게 한다
-                box.InputStepper = true;
-                foreach (var s in new[] { box.Style, box.StyleHover, box.StylePress, box.StyleDisabled })
-                {
-                    if (s is null)
-                        continue;
-                    var p = s.Padding;
-                    s.Padding = new Thickness(p.Top, p.Right + InputDisplay.StepperWidth, p.Bottom, p.Left + InputDisplay.StepperWidth);
-                }
-            }
-        }
-
-        if (node.Tag is "DvSelect" or "DvSegment" or "DvTabs")
-        {
-            var ve = r.Raw("value");
-            var (sx, target, vov) = ValueOf(node, ve);
-            box.ValueBindExpr = _valueOverride ?? sx;
-            box.ValueTarget = target;
-            var twoWay = BindingResolver.IsTwoWay(box.ValueBindExpr);
-            var ctx = target ?? vm;
-            object? current;
-            if (vov is not null)
-            {
-                current = vov.CellValue;
-                box.SelectValueType = current?.GetType();
-            }
-            else if (twoWay)
-            {
-                var path = BindingResolver.ExtractPath(box.ValueBindExpr!);
-                // 컴포넌트 양방향 파라미터는 바깥 VM 경로 — 값은 템플릿 범위({p})로 읽는다
-                current = _valueOverride is not null ? BindingResolver.ResolveValueOrLiteral(vm, ve) : BindingResolver.Resolve(ctx, $"{{{path}}}");
-                box.SelectValueType = _valueOverride is null ? BindingResolver.ResolvePropertyType(ctx, path) : current?.GetType();
-            }
-            else
-            {
-                current = BindingResolver.ResolveValueOrLiteral(vm, ve);
-                box.SelectValueType = current?.GetType();
-            }
-
-            box.InputValue = current;
-            box.SelectOptions = SelectValue.Options(r, box.SelectValueType);
-            box.SelectedIndex = box.SelectOptions.FindIndex(o => SelectValue.Matches(o.Value, current, box.SelectValueType));
-            box.InputPlaceholder = r.Text("placeholder");
-            box.ReadOnly = InputReadOnly(r, _valueOverride);
-            if (node.Tag == "DvSegment")
-                box.SegmentFill = ToBool(r.Text("fill"));
-        }
-
-        if (node.Tag is "DvDateTimeInput" or "DvColorInput")
-        {
-            var ve = node.Attributes.GetValueOrDefault("value");
-            var (px, target, vov) = ValueOf(node, ve);
-            box.ValueBindExpr = _valueOverride ?? px;
-            box.ValueTarget = target;
-            var ctx = target ?? vm;
-            object? current;
-            if (vov is not null)
-            {
-                current = vov.CellValue;
-                box.PickerValueType = vov.CellType;
-            }
-            else if (BindingResolver.IsTwoWay(box.ValueBindExpr))
-            {
-                var path = BindingResolver.ExtractPath(box.ValueBindExpr!);
-                // 컴포넌트 양방향 파라미터는 바깥 VM 경로 — 값은 템플릿 범위({p})로 읽는다
-                current = _valueOverride is not null ? BindingResolver.ResolveValueOrLiteral(vm, ve) : BindingResolver.Resolve(ctx, $"{{{path}}}");
-                box.PickerValueType = _valueOverride is null ? BindingResolver.ResolvePropertyType(ctx, path) : current?.GetType();
-            }
-            else
-            {
-                current = BindingResolver.ResolveValueOrLiteral(vm, ve);
-                box.PickerValueType = current?.GetType();
-            }
-
-            string? Attr(string name) => r.Text(name);
-            box.InputValue = current;
-            box.InputPlaceholder = Attr("placeholder");
-            box.ReadOnly = InputReadOnly(r, _valueOverride);
-            if (node.Tag == "DvDateTimeInput")
-            {
-                box.PickerMode = PickerValue.ResolveMode(Attr("mode"), box.PickerValueType);
-                box.PickerSeconds = ToBool(Attr("show-seconds"));
-                box.PickerFormat = Attr("format");
-            }
-        }
-
         if (node.Tag == "DvTank")
         {
             box.TankValue = ToFloat(r.Value("value"), 0f);
@@ -906,24 +523,11 @@ public sealed partial class LayoutEngine
             box.TankMax = ToFloat(r.Value("max"), 100f);
             box.TankUnit = r.Text("unit");
             box.ValueFormat = r.Text("format");
-            box.TankZones = ParseZones(node, vm);
+            box.TankZones = ParseZones(r);
             // show-zone-marks="false" → 구간 색은 유지하고 경계 눈금·숫자만 숨김 (기본 true)
             if (node.Attributes.TryGetValue("show-zone-marks", out var zm))
                 box.TankZoneMarks = !string.Equals(
                     BindingResolver.ResolveText(vm, zm), "false", StringComparison.OrdinalIgnoreCase);
-        }
-
-        if (node.Tag is "DvIcon" or "DvButton" && node.Attributes.TryGetValue("icon", out var iconRaw))
-        {
-            box.Icon = BindingResolver.ResolveText(vm, iconRaw);
-            if (!string.IsNullOrWhiteSpace(box.Icon) && !IconFont.TryResolve(box.Icon, out _))
-                WarnIcon(box.Icon);
-        }
-
-        if (node.Tag is "DvLabel" or "DvButton" or "DvCheckBox" or "DvRadio")
-        {
-            box.ResolvedText = r.Overridden("text") ? r.Text("text") ?? ""
-                : BindingResolver.ResolveText(vm, r.Raw("text") ?? node.Text ?? "") ?? "";
         }
 
         return box;
@@ -979,9 +583,9 @@ public sealed partial class LayoutEngine
         => !string.IsNullOrWhiteSpace(raw) && DvColor.TryParse(ThemeResolver.ResolveVars(raw.Trim(), _theme), out var c) ? c : null;
 
     // alarm-zones — 바인딩(문자열 전체)을 풀고 구간 색의 token(이름) 을 테마로 바꾼 뒤 해석. 형식 오류는 GaugeZone.ParseZones 의 예외 그대로.
-    private List<Widgets.GaugeZone> ParseZones(ElementNode node, object? vm)
+    private List<Widgets.GaugeZone> ParseZones(AttrReader r)
         => Widgets.GaugeZone.ParseZones(ThemeResolver.ResolveVars(
-            BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("alarm-zones")), _theme));
+            r.Text("alarm-zones"), _theme));
 
     // row-class·cell-class — 클래스의 기본 규칙에서 background·color·font-weight 만(지정한 것만 값)
     private static readonly System.Text.RegularExpressions.Regex DeclName = new(@"(?:^|[;\s])([a-z-]+)\s*:",
@@ -1000,49 +604,8 @@ public sealed partial class LayoutEngine
             names.Contains("font-weight") ? st.Bold : null);
     }
 
-    /// <summary>
-    /// <c>DvRadio</c>: checked = the group value equals this button's <c>option</c>. The group value is <c>value</c> (the VM property if two-way; for one-way/literal, that value or the value overridden by a handle);
-    /// without <c>value</c>, it is the value of the group remembered by the screen (by <c>group</c> name, or this element alone if there is no name and only a handle).
-    /// </summary>
-    private void BuildRadio(LayoutBox box, ElementNode node, object? vm)
-    {
-        var option = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("option")) ?? "";
-        box.RadioOption = option;
-        var ve = node.Attributes.GetValueOrDefault("value");
-        if (ve is not null && BindingResolver.IsTwoWay(ve))
-        {
-            var path = BindingResolver.ExtractPath(ve);
-            box.ValueBindExpr = ve;
-            box.SelectValueType = BindingResolver.ResolvePropertyType(vm, path);
-            box.ToggleOn = SelectValue.Matches(option, BindingResolver.Resolve(vm, $"{{{path}}}"), box.SelectValueType);
-        }
-        else if (ve is not null)
-        {
-            var cur = BindingResolver.ResolveValueOrLiteral(vm, ve);
-            box.ToggleOn = ControlOf?.Invoke(node)?.Slot is { HasOverride: true } ov
-                ? ToBool(ov.CellValue)
-                : SelectValue.Matches(option, cur, cur?.GetType());
-        }
-        else
-        {
-            var group = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("group"));
-            box.RadioGroup = group is { Length: > 0 } ? group : ControlOf?.Invoke(node) is not null ? node : null;
-            box.ToggleOn = box.RadioGroup is { } key && RadioGroupOf?.Invoke(key) is { } picked && picked == option;
-        }
-    }
-
     /// <summary>The selected <c>option</c> of a <c>DvRadio</c> group without <c>value</c> (by name or element), remembered by the screen (<see cref="DvSurface"/>).</summary>
     internal Func<object, string?>? RadioGroupOf { get; set; }
-
-    // 래칭 버튼 켜짐 — value 가 bool true 또는 "true"
-    private static bool LatchOn(ElementNode node, object? vm)
-    {
-        var ve = node.Attributes.GetValueOrDefault("value");
-        var cur = ve is not null && BindingResolver.IsTwoWay(ve)
-            ? BindingResolver.Resolve(vm, $"{{{BindingResolver.ExtractPath(ve)}}}")
-            : BindingResolver.ResolveValueOrLiteral(vm, ve);
-        return cur is bool b && b || string.Equals(BindingResolver.ToText(cur, ve), "true", StringComparison.OrdinalIgnoreCase);
-    }
 
     private string? ResolveStyle(string? style, object? vm)
         => ThemeResolver.ResolveVars(BindingResolver.ResolveInline(vm, style), _theme);
@@ -1052,25 +615,25 @@ public sealed partial class LayoutEngine
         var node = r.Node;
         var vm = r.Context;
         // 의미 속성 → 암묵 클래스 (DvButton variant/size). 바인딩을 풀어 리터럴과 같게 — 값이 없거나 비면 기존 DvButton 그대로.
-        if (node.Tag == "DvButton" && node.Attributes.TryGetValue("variant", out var variantRaw) &&
+        if (node.Tag == "DvButton" && r.Raw("variant") is { } variantRaw &&
             BindingResolver.ResolveText(vm, variantRaw)?.Trim() is { Length: > 0 } variant)
         {
             yield return "btn";
             yield return "btn-" + variant;
-            if (node.Attributes.TryGetValue("size", out var sizeRaw) &&
+            if (r.Raw("size") is { } sizeRaw &&
                 BindingResolver.ResolveText(vm, sizeRaw)?.Trim() is { Length: > 0 } size)
                 yield return "btn-" + size;
         }
 
-        if (node.Tag == "DvButton" && node.Attributes.ContainsKey("value"))
+        if (node.Tag == "DvButton" && r.Has("value"))
         {
             // 래칭 버튼: variant 가 없으면 secondary 모양, 켜지면 .btn-on 을 덧붙인다(뒤에 정의돼 variant 를 덮음)
-            if (!node.Attributes.ContainsKey("variant"))
+            if (!r.Has("variant"))
             {
                 yield return "btn";
                 yield return "btn-secondary";
             }
-            if (LatchOn(node, vm))
+            if (LatchOn(r))
                 yield return "btn-on";
         }
 
@@ -1294,25 +857,25 @@ public sealed partial class LayoutEngine
     // 쓸 수 있는 값 = 양방향 바인딩이거나 핸들이 주인(value 없음 + 값 핸들)
     private bool InputReadOnly(AttrReader r, string? valueOverride)
         => !(BindingResolver.IsTwoWay(valueOverride ?? r.Raw("value")) ||
-             valueOverride is null && OwnerSlot(r.Node) is not null) ||
+             valueOverride is null && OwnerSlot(r) is not null) ||
            ToBool(BindingResolver.ResolveValueOrLiteral(r.Context, r.Raw("readonly")));
 
     // value 없음 + 값 핸들 = 핸들이 주인인 칸(설계 4.1). 아니면 null.
-    private Controls.ValueSlot? OwnerSlot(ElementNode node)
-        => ControlOf?.Invoke(node)?.Slot is { CanOwn: true } slot && !node.Attributes.ContainsKey(slot.ValueAttr) ? slot : null;
+    private Controls.ValueSlot? OwnerSlot(AttrReader r)
+        => ControlOf?.Invoke(r.Node)?.Slot is { CanOwn: true } slot && !r.Has(slot.ValueAttr) ? slot : null;
 
     /// <summary>
     /// Value ownership (design 4.1): <c>{Bind X}</c> = VM; no <c>value</c> + a value handle = the handle slot (a synthetic <c>{Bind Value}</c> whose write target is the slot);
     /// one-way/literal = markup (or the value a handle overrode it with). Expr = the box's ValueBindExpr; Target = the write/read target (the slot, otherwise null = VM/item scope);
     /// Override = the slot holding a value written over a one-way/literal value, if any (otherwise null).
     /// </summary>
-    private (string? Expr, object? Target, Controls.ValueSlot? Override) ValueOf(ElementNode node, string? ve)
+    private (string? Expr, object? Target, Controls.ValueSlot? Override) ValueOf(AttrReader r, string? ve)
     {
         if (_valueOverride is not null)
             return (ve, null, null); // 컴포넌트 양방향 파라미터 — 호출자가 _valueOverride 를 쓴다(핸들은 컴포넌트 안에 없음)
-        if (OwnerSlot(node) is { } own)
+        if (OwnerSlot(r) is { } own)
             return (Controls.ValueSlot.CellExpr, own.Cell, null);
-        if (ve is not null && !BindingResolver.IsTwoWay(ve) && ControlOf?.Invoke(node)?.Slot is { HasOverride: true } ov)
+        if (ve is not null && !BindingResolver.IsTwoWay(ve) && ControlOf?.Invoke(r.Node)?.Slot is { HasOverride: true } ov)
             return (ve, null, ov);
         return (ve, null, null);
     }
@@ -1341,63 +904,8 @@ public sealed partial class LayoutEngine
     // 알림의 Member — 바인딩이면 경로, 아니면 값 그대로
     private static string? PathOf(string? raw) => raw is not null && BindingResolver.IsBinding(raw) ? BindingResolver.ExtractPath(raw) : raw;
 
-    // DvVideo — source(앱이 만든 IFrameSource) 가 우선, 없으면 src 파일을 요소가 가진 재생기로
-    private void BuildVideo(ElementNode node, LayoutBox box, object? vm)
-    {
-        box.ImageFit = Widgets.ImageFitParser.Parse(BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("fit")));
-        var srcExpr = node.Attributes.GetValueOrDefault("src");
-        if (node.Attributes.TryGetValue("source", out var sourceExpr))
-        {
-            var value = BindingResolver.ResolveValueOrLiteral(vm, sourceExpr);
-            box.VideoSource = value as Video.IFrameSource;
-            if (value is not null && box.VideoSource is null)
-                System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvVideo source='{sourceExpr}' is a {value.GetType().Name}, not an IFrameSource; nothing is shown");
-            if (srcExpr is not null)
-                System.Diagnostics.Trace.TraceWarning("Devinno.UI: DvVideo has both source and src; src is ignored");
-            if (box.VideoSource is Video.VideoPlayer own)
-                BindVideoTime(node, box, vm, own);
-            return;
-        }
-
-        var path = BindingResolver.ResolveText(vm, srcExpr);
-        if (string.IsNullOrWhiteSpace(path))
-            return;
-        var playing = !node.Attributes.TryGetValue("playing", out var p) || ToBool(BindingResolver.ResolveValueOrLiteral(vm, p));
-        var loop = node.Attributes.TryGetValue("loop", out var l) && ToBool(BindingResolver.ResolveValueOrLiteral(vm, l));
-        var live = VideoStore is not null;
-        var player = _videos.Get(box.Instance, () => new Video.VideoPlayer(path, poster: !live), p => p.Path == path);
-        player.Playing = playing;
-        player.Loop = loop;
-        box.VideoSource = player;
-        box.VideoError = player.Error;
-        BindVideoTime(node, box, vm, player);
-    }
-
     /// <summary>The DvVideo boxes of this build that write <c>position</c>/<c>duration</c> to the view model; the surface syncs them every frame.</summary>
     internal List<LayoutBox> BoundVideos { get; } = new();
-
-    // position = 뷰모델 값이 바뀌었으면 그 위치로 이동(처음 본 재생기는 처음부터 — 뷰모델에 0 이 써진다). {Bind} 면 재생 위치를 되써 넣는다.
-    // duration = {Bind} 일 때만 의미(길이를 써 넣음)
-    private void BindVideoTime(ElementNode node, LayoutBox box, object? vm, Video.VideoPlayer player)
-    {
-        if (node.Attributes.TryGetValue("position", out var posExpr))
-        {
-            var v = ToSeconds(BindingResolver.ResolveValueOrLiteral(vm, posExpr));
-            if (double.IsNaN(player.BoundPosition))
-                player.BoundPosition = v;
-            else if (Math.Abs(v - player.BoundPosition) > 0.0005)
-            {
-                player.Seek(TimeSpan.FromSeconds(Math.Max(0, v)));
-                player.BoundPosition = v;
-            }
-            if (BindingResolver.IsTwoWay(posExpr))
-                box.VideoPositionPath = BindingResolver.ExtractPath(posExpr);
-        }
-        if (node.Attributes.TryGetValue("duration", out var durExpr) && BindingResolver.IsTwoWay(durExpr))
-            box.VideoDurationPath = BindingResolver.ExtractPath(durExpr);
-        if (box.VideoPositionPath is not null || box.VideoDurationPath is not null)
-            BoundVideos.Add(box);
-    }
 
     private static double ToSeconds(object? v)
     {

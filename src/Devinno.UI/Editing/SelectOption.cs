@@ -68,8 +68,8 @@ internal static class SelectValue
         var node = r.Node;
         var ctx = r.Context;
         var list = new List<SelectOption>();
-        string? Attr(Markup.ElementNode n, string name)
-            => BindingResolver.ResolveText(ctx, n.Attributes.GetValueOrDefault(name));
+        // DvOption 은 그 노드의 리더로 — 핸들 덮어쓰기는 보지 않는다(지금 동작 그대로: 마크업 값만)
+        string? Attr(Markup.ElementNode n, string name) => new AttrReader(n, ctx, null).Text(name);
 
         if (r.Raw("items") is { } itemsRaw)
         {
