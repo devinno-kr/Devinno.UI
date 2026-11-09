@@ -176,6 +176,9 @@ internal static class GridBuilder
                     continue;
                 }
 
+                if (ci == 0) // 첫 열 칸 = 요약 행 label — GridSummary.Compute 는 둘째 열부터 쓴다
+                    Warnings.Warn($"Devinno.UI: DvSummary field '{field}' is on the first column, whose summary cell holds the DvSummaryRow label; ignored — put it on another column");
+
                 var hasValue = sr.Has("value");
                 cells[ci] = new GridSummaryCell(GridSummary.Parse(AttrRules.Enum(sr, "fn", "no aggregate")),
                     sr.Text("format"), hasValue,

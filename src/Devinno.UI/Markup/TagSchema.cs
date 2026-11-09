@@ -397,7 +397,7 @@ internal static class TagSchema
         ],
         ["DvSummary"] =
         [
-            new("field", AttrKind.Path, "", Bindable: false, Note: "read raw; no matching column = warning, the cell is ignored"),
+            new("field", AttrKind.Path, "", Bindable: false, Note: "read raw; no matching column or the first column (it holds the row label) = warning, the cell is ignored"),
             new("fn", AttrKind.Enum, Values: ["sum", "avg", "min", "max", "count"], Note: "absent = none; " + EnumRule + " (none)"),
             new("format", AttrKind.Text, Note: "absent = the column format; " + FormatRule),
             new("value", AttrKind.Object, Note: "present = shown instead of the computed value (also when it resolves to null)"),

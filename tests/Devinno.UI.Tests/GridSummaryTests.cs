@@ -182,4 +182,55 @@ public class GridSummaryTests
             "<DvDataGrid><DvColumn field=\"A\"/><DvSummaryRow label=\"x\"/></DvDataGrid></DvScreen>"), null, 1000, 1000).Children[0];
         Assert.Equal(40 + 48 * 5 + 48, b.Rect.Height, 3);
     }
+
+    // 첫 열 칸 = 요약 행 label — 거기 둔 DvSummary 는 보이지 않으므로 열·field 를 밝히는 경고(화면마다 한 번)
+    [Fact]
+    public void Summary_on_the_first_column_warns_with_the_field()
+    {
+        var cap = new Capture("DvSummary field 'Name'");
+        System.Diagnostics.Trace.Listeners.Add(cap);
+        DvSurface s;
+        try
+        {
+            s = Surface(new Vm(), "<DvSummaryRow label=\"합\"><DvSummary field=\"Name\" fn=\"count\"/></DvSummaryRow>");
+        }
+        finally
+        {
+            System.Diagnostics.Trace.Listeners.Remove(cap);
+        }
+
+        Assert.Single(cap.Lines);
+        Assert.Contains("first column", cap.Lines[0]);
+        Assert.Equal("합", Texts(s)[0]);
+    }
+
+    [Fact]
+    public void Summary_with_no_matching_column_warns_with_the_field()
+    {
+        var cap = new Capture("DvSummary field 'Nope'");
+        System.Diagnostics.Trace.Listeners.Add(cap);
+        try
+        {
+            Surface(new Vm(), "<DvSummaryRow label=\"합\"><DvSummary field=\"Nope\" fn=\"sum\"/></DvSummaryRow>");
+        }
+        finally
+        {
+            System.Diagnostics.Trace.Listeners.Remove(cap);
+        }
+
+        Assert.Single(cap.Lines);
+    }
+
+    private sealed class Capture(string marker) : System.Diagnostics.TraceListener
+    {
+        public List<string> Lines { get; } = new();
+        public override void Write(string? message) { }
+        public override void WriteLine(string? message)
+        {
+            if (message is not null && message.Contains(marker))
+                lock (Lines) Lines.Add(message);
+        }
+        public override void TraceEvent(System.Diagnostics.TraceEventCache? c, string source, System.Diagnostics.TraceEventType type, int id, string? message)
+            => WriteLine(message);
+    }
 }
