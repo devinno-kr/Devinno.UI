@@ -12,7 +12,8 @@ namespace Devinno.UI.WinForms;
 /// <remarks>
 /// <para><b>Painting</b>: instead of creating a WinForms control per widget, the whole screen is painted with a CPU raster into a single canvas (<see cref="SKControl"/>). Painting, input handling and
 /// VM handler calls (<c>onclick</c>, etc.) all happen on the UI thread. When there is blinking, scroll inertia or a virtual keyboard animation, a WinForms timer repaints only at the times needed.
-/// The image is kept in a buffer owned by the control, so frames that change only with time (flow animation, blinking) repaint and invalidate only the changed area (<see cref="DvSurface.PartialRender"/>).</para>
+/// The image is kept in a buffer owned by the control, so frames that change only with time (flow animation, blinking) repaint and invalidate only the changed area (<see cref="DvSurface.PartialRender"/>).
+/// Set <see cref="Gpu"/> to paint with OpenGL instead.</para>
 /// <para><b>Update requests</b>: if you changed VM values on another thread (a polling timer, etc.), call <see cref="MarkUpdated"/> (= <see cref="DvApp.Invalidate"/>, redo from layout) or <see cref="MarkRepaint"/> (repaint only). Requests made on the app side (<see cref="DvApp.Invalidate"/>, <see cref="DvApp.Show(DvPage)"/>, etc.) also make this control repaint on the UI thread through <see cref="DvApp.RenderRequested"/>.
 /// Both can be called from any thread; when needed they are passed to the UI thread with <c>BeginInvoke</c>. Changes made inside a handler called by a widget click are applied automatically.</para>
 /// <para><b>Text input (default)</b>: when an input box is pressed, a single hidden <see cref="TextBox"/> appears over the box's text area and handles editing. This lets the OS Korean IME, multiline input and
@@ -54,12 +55,16 @@ namespace Devinno.UI.WinForms;
 /// </example>
 public sealed class ViewControl : UserControl
 {
-    private readonly SKControl _canvas;
+    private Control _canvas; // SKControl(CPU) 또는 GpuCanvas(GPU) — Gpu init 이 바꾼다, GPU 실패 시 CPU 로 되돌린다
     private readonly TextBox _editor;
     private readonly System.Windows.Forms.Timer _animTimer = new();
+    private bool _gpu;
 
     // 그림 버퍼 — 프레임 사이에 남겨 두고(DvSurface.PartialRender) 매 그리기에 캔버스로 복사한다(SKControl 의 비트맵 유지 여부에 기대지 않음)
     private SKBitmap? _buffer;
+    // GPU 모드의 그림 버퍼 — GL 프레임버퍼는 버퍼 교체 뒤 내용이 남지 않으므로 화면 밖 GPU 표면에 남겨 두고 매 그리기에 통째 복사한다
+    private SKSurface? _gpuLayer;
+    private SKSizeI _gpuLayerSize;
     private SKRectI? _animArea;   // 마지막 부분 다시 그리기 영역(다음 애니메이션 틱에 그만큼만 무효화)
     private SKRectI? _invalidated; // 이번 그리기를 부른 무효화 영역(null = 전체)
     private DvApp? _app;
@@ -78,23 +83,8 @@ public sealed class ViewControl : UserControl
     /// <summary>Creates an empty control. Until <see cref="App"/> is set, it paints only a white background.</summary>
     public ViewControl()
     {
-        _canvas = new SKControl { Dock = DockStyle.Fill, TabStop = true };
         _editor = new TextBox { BorderStyle = BorderStyle.None, Visible = false, TabStop = false };
-        _canvas.Controls.Add(_editor); // 캔버스 위에 겹침
-        Controls.Add(_canvas);
-
-        _canvas.PaintSurface += OnPaintSurface;
-        _canvas.MouseDown += (_, e) => Pointer(e, s => s.PointerDown(Pt(e)), focus: true);
-        _canvas.MouseMove += (_, e) => Pointer(e, s => s.PointerMove(Pt(e)), any: true);
-        _canvas.MouseUp += (_, e) => Pointer(e, s => s.PointerUp(Pt(e)));
-        _canvas.MouseWheel += (_, e) =>
-        {
-            _surface?.PointerWheel(Pt(e), e.Delta / 120f);
-            RenderIfNeeded();
-        };
-        _canvas.PreviewKeyDown += (_, e) => e.IsInputKey = e.KeyCode is Keys.Tab or Keys.Enter or Keys.Escape;
-        _canvas.KeyDown += OnCanvasKeyDown;
-        _canvas.KeyPress += OnCanvasKeyPress;
+        _canvas = CreateCanvas(gpu: false);
 
         _editor.TextChanged += OnEditorTextChanged;
         _editor.PreviewKeyDown += (_, e) => e.IsInputKey = e.KeyCode is Keys.Tab or Keys.Enter or Keys.Escape or Keys.Up or Keys.Down;
@@ -117,6 +107,169 @@ public sealed class ViewControl : UserControl
                 _canvas.Invalidate();
             }
         };
+    }
+
+    // 캔버스를 만들고 입력·그리기를 연결해 이 컨트롤에 붙인다. 숨긴 TextBox 는 캔버스의 자식으로 옮긴다(캔버스 위에 겹침)
+    private Control CreateCanvas(bool gpu)
+    {
+        Control canvas;
+        if (gpu)
+        {
+            var gl = new GpuCanvas { Dock = DockStyle.Fill, TabStop = true };
+            gl.PaintSurface += OnPaintGl;
+            gl.Failed += OnGpuFailed;
+            canvas = gl;
+        }
+        else
+        {
+            var cpu = new SKControl { Dock = DockStyle.Fill, TabStop = true };
+            cpu.PaintSurface += OnPaintSurface;
+            canvas = cpu;
+        }
+
+        canvas.MouseDown += (_, e) => Pointer(e, s => s.PointerDown(Pt(e)), focus: true);
+        canvas.MouseMove += (_, e) => Pointer(e, s => s.PointerMove(Pt(e)), any: true);
+        canvas.MouseUp += (_, e) => Pointer(e, s => s.PointerUp(Pt(e)));
+        canvas.MouseWheel += (_, e) =>
+        {
+            _surface?.PointerWheel(Pt(e), e.Delta / 120f);
+            RenderIfNeeded();
+        };
+        canvas.PreviewKeyDown += (_, e) => e.IsInputKey = e.KeyCode is Keys.Tab or Keys.Enter or Keys.Escape;
+        canvas.KeyDown += OnCanvasKeyDown;
+        canvas.KeyPress += OnCanvasKeyPress;
+
+        Controls.Add(canvas);
+        if (gpu)
+        {
+            // GL 캔버스는 GL 창(GLFW)을 자식으로 끼워 넣어 그 위를 덮는다 — TextBox 를 캔버스의 형제로 두고 앞에 놓아 GL 창이 그 영역을 비우게 한다.
+            // 캔버스가 이 컨트롤을 꽉 채우므로(0,0) TextBox 좌표는 캔버스 기준과 같다
+            Controls.Add(_editor);
+            _editor.BringToFront();
+        }
+        else
+            canvas.Controls.Add(_editor); // 캔버스 위에 겹침
+        return canvas;
+    }
+
+    // 지금 캔버스를 떼어 버리고 새 캔버스로 바꾼다(그림 버퍼도 새로 — 첫 그리기는 전체)
+    private void ReplaceCanvas(bool gpu)
+    {
+        HideEditor();
+        var old = _canvas;
+        _gpuLayer?.Dispose(); // GRContext(옛 GL 캔버스가 가짐)보다 먼저
+        _gpuLayer = null;
+        _buffer?.Dispose();
+        _buffer = null;
+        _animArea = null;
+        _invalidated = null;
+        _editor.Parent?.Controls.Remove(_editor);
+        Controls.Remove(old);
+        _canvas = CreateCanvas(gpu);
+        old.Dispose();
+        ApplyPendingOutsidePaint();
+        _canvas.Invalidate();
+    }
+
+    /// <summary>
+    /// If <see langword="true"/>, paints with the GPU (OpenGL, Skia <see cref="GRContext"/>) instead of CPU raster. Default <see langword="false"/>.
+    /// </summary>
+    /// <remarks>
+    /// It is <c>init</c>-only, so set it with an object initializer at creation (<c>new ViewControl { Gpu = true }</c>); the canvas must be chosen before its handle is created.
+    /// GPU mode also keeps the image between frames in an offscreen GPU surface and redraws only the changed area for frames that change only with time, then copies the surface whole to the window on each paint.
+    /// If GPU initialization fails (no OpenGL 3.3, some remote desktop sessions, etc.), a <see cref="System.Diagnostics.Trace"/> warning is written and the control switches to CPU raster (no exception); this property stays <see langword="true"/>.
+    /// In the Visual Studio designer the control always paints with the CPU.
+    /// </remarks>
+    [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public bool Gpu
+    {
+        get => _gpu;
+        init
+        {
+            if (value == _gpu)
+                return;
+            _gpu = value;
+            ReplaceCanvas(value);
+        }
+    }
+
+    private void OnGpuFailed(object? sender, Exception ex)
+    {
+        System.Diagnostics.Trace.TraceWarning($"Devinno.UI: GPU render initialization failed; falling back to CPU. {ex.Message}");
+        if (IsDisposed || !ReferenceEquals(sender, _canvas))
+            return;
+        // GL 캔버스의 핸들 생성·그리기 안에서 불린다 — 그 호출이 끝난 뒤 바꾼다
+        if (IsHandleCreated)
+            BeginInvoke(() =>
+            {
+                if (!IsDisposed && ReferenceEquals(sender, _canvas))
+                    ReplaceCanvas(gpu: false);
+            });
+        else
+            ReplaceCanvas(gpu: false);
+    }
+
+    /// <summary>For testing: makes GPU initialization fail as if OpenGL were unavailable.</summary>
+    internal static bool FailGpuForTest { get; set; }
+
+    // SKGLControl + 초기화 실패 감지. GL 창(GLFW)을 못 만들거나(핸들 생성) GRContext 를 못 만들면(첫 그리기) Failed 를 알리고 이후로는 바탕만 칠한다.
+    // 앱 그리기(PaintSurface 처리기) 안에서 난 예외는 GPU 실패가 아니므로 그대로 던진다.
+    private sealed class GpuCanvas : SKGLControl
+    {
+        private bool _failed;
+        private bool _inSurface;
+
+        public event EventHandler<Exception>? Failed;
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            try
+            {
+                if (FailGpuForTest)
+                    throw new InvalidOperationException("GPU failure requested for testing");
+                base.OnHandleCreated(e);
+            }
+            catch (Exception ex) when (!DesignMode)
+            {
+                Fail(ex);
+            }
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            if (_failed)
+            {
+                e.Graphics.Clear(BackColor);
+                return;
+            }
+
+            try
+            {
+                base.OnPaint(e);
+            }
+            catch (Exception ex) when (!_inSurface)
+            {
+                Fail(ex);
+            }
+            finally
+            {
+                _inSurface = false;
+            }
+        }
+
+        protected override void OnPaintSurface(SKPaintGLSurfaceEventArgs e)
+        {
+            _inSurface = true;
+            base.OnPaintSurface(e);
+        }
+
+        private void Fail(Exception ex)
+        {
+            if (_failed)
+                return;
+            _failed = true;
+            Failed?.Invoke(this, ex);
+        }
     }
 
     /// <summary>
@@ -313,6 +466,8 @@ public sealed class ViewControl : UserControl
         base.OnDpiChangedAfterParent(e);
         _buffer?.Dispose();
         _buffer = null; // 새 버퍼 = 전체 그리기
+        _gpuLayer?.Dispose();
+        _gpuLayer = null;
         HideEditor();
         _canvas.Invalidate();
     }
@@ -358,9 +513,54 @@ public sealed class ViewControl : UserControl
             _surface.RenderTo(bufferCanvas, Logical(e.Info.Width), Logical(e.Info.Height), now);
         }
         e.Surface.Canvas.DrawBitmap(_buffer, 0, 0);
+        AfterPaint(now, scale, clipped: true);
+    }
+
+    // GPU 모드 — 화면 밖 GPU 표면에 그려 두고(시간으로만 바뀌는 프레임은 바뀐 영역만) 매 그리기에 GL 프레임버퍼로 통째 복사한다.
+    // 화면 밖 표면을 못 만들면 프레임버퍼에 바로 전체를 그린다
+    private void OnPaintGl(object? sender, SKPaintGLSurfaceEventArgs e)
+    {
+        var target = e.Surface.Canvas;
+        if (_surface is null)
+        {
+            target.Clear(SKColors.White);
+            return;
+        }
+
+        var now = Environment.TickCount64;
+        var w = Math.Max(e.BackendRenderTarget.Width, 1);
+        var h = Math.Max(e.BackendRenderTarget.Height, 1);
+        var fresh = false;
+        if (_gpuLayer is null || _gpuLayerSize.Width != w || _gpuLayerSize.Height != h)
+        {
+            _gpuLayer?.Dispose();
+            _gpuLayerSize = new SKSizeI(w, h);
+            _gpuLayer = ((SKGLControl)_canvas).GRContext is { } gr
+                ? SKSurface.Create(gr, true, new SKImageInfo(w, h, SKColorType.Rgba8888, SKAlphaType.Premul))
+                : null;
+            fresh = true;
+        }
+
+        var layer = _gpuLayer?.Canvas ?? target;
+        _surface.PartialRender = _gpuLayer is not null && !fresh;
+        var scale = UiScale;
+        layer.Save();
+        layer.Scale(scale);
+        _surface.RenderTo(layer, Logical(w), Logical(h), now);
+        layer.Restore();
+        if (_gpuLayer is not null)
+            target.DrawSurface(_gpuLayer, 0, 0);
+        AfterPaint(now, scale, clipped: false);
+    }
+
+    // 그린 뒤 공통 — 애니메이션 영역 기억, (CPU) 무효화보다 넓게 바뀐 부분 다시 요청, TextBox 맞춤, 다음 애니메이션 예약.
+    // clipped: WinForms 가 무효화 영역만 화면에 옮기는 캔버스(SKControl). GL 은 매번 프레임 전체를 교체하므로 false
+    private void AfterPaint(long now, float scale, bool clipped)
+    {
+        var surface = _surface!;
 
         // 다시 그린 영역(논리 px) → 창 무효화용 물리 px
-        var drawn = _surface.LastRenderRect;
+        var drawn = surface.LastRenderRect;
         if (drawn is { IsEmpty: false } lr && scale != 1f)
         {
             var px = ToPixels(lr);
@@ -369,7 +569,7 @@ public sealed class ViewControl : UserControl
         _animArea = drawn is { IsEmpty: false } d ? d : drawn is null ? null : _animArea;
         var asked = _invalidated;
         _invalidated = null;
-        if (asked is { } inv)
+        if (clipped && asked is { } inv)
         {
             // 일부만 무효화했는데 그보다 넓게 바뀌었다(관성 스크롤 등으로 전체를 그린 프레임 포함) — 나머지도 화면에
             if (drawn is null)
@@ -393,7 +593,7 @@ public sealed class ViewControl : UserControl
 
         // 점멸·관성·키보드 슬라이드 — 다음 변화 시각에 다시 그림
         _animTimer.Stop();
-        if (_surface.NextAnimationDue(now) is { } due)
+        if (surface.NextAnimationDue(now) is { } due)
         {
             _animTimer.Interval = (int)Math.Clamp(due - now, 1, int.MaxValue);
             _animTimer.Start();
@@ -604,6 +804,8 @@ public sealed class ViewControl : UserControl
             _animTimer.Dispose();
             _font?.Dispose();
             _buffer?.Dispose();
+            _gpuLayer?.Dispose(); // GL 캔버스(자식)가 GRContext 를 버리기 전에
+            _gpuLayer = null;
         }
 
         base.Dispose(disposing);

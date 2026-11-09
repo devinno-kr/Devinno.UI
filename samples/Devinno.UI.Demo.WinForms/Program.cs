@@ -4,7 +4,7 @@ using Devinno.UI.Styling;
 using Devinno.UI.WinForms;
 
 // WinForms 어댑터 데모 — 같은 InputPage 화면을 숨긴 TextBox(기본) 또는 가상 키보드(touch)로 편집.
-//   dotnet run --project Devinno.UI.Demo.WinForms [-- touch] [-- light]
+//   dotnet run --project Devinno.UI.Demo.WinForms [-- touch] [-- light] [-- gpu]
 internal static class Program
 {
     [STAThread]
@@ -18,6 +18,7 @@ internal static class Program
         var view = new ViewControl
         {
             Dock = DockStyle.Fill,
+            Gpu = args.Contains("gpu"),
             TouchMode = args.Contains("touch"),
             App = app
         };
@@ -29,7 +30,7 @@ internal static class Program
         form.AutoScaleDimensions = new SizeF(96f, 96f);
         form.AutoScaleMode = AutoScaleMode.Dpi;
         form.ClientSize = new Size(InputPage.Width, InputPage.Height);
-        form.Text = "Devinno.UI Demo — WinForms" + (view.TouchMode ? " (touch)" : "");
+        form.Text = "Devinno.UI Demo — WinForms" + (view.TouchMode ? " (touch)" : "") + (view.Gpu ? " (gpu)" : "");
         form.StartPosition = FormStartPosition.CenterScreen;
         form.Controls.Add(view);
         form.ResumeLayout(false);
