@@ -318,7 +318,7 @@ internal static class TagSchema
         [
             .. AlarmCommon(),
             new("row-height", AttrKind.Number, "36", Note: "px; <= 0 or not a number = 36 (the geometry keeps at least 24)"),
-            new("comm-alarm", AttrKind.Text, Note: "dead read: the block shared with DvAlarmBanner reads it; not drawn, but a non-empty value keeps the blink timer running"),
+            new("comm-alarm", AttrKind.Text, Note: "dead read: the block shared with DvAlarmBanner reads it; not drawn (and since f841ebe it no longer keeps the blink timer running)"),
         ],
     };
 
