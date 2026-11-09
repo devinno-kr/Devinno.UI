@@ -256,7 +256,8 @@ public sealed class LayoutEngine
         (n, ctx) => BuildSelf(n, ctx),
         (n, ctx) => Build(n, ctx, registry, depth + 1),
         (n, ctx) => ExpandUnit(n, ctx, registry),
-        raw => ParseColor(raw)?.ToSK());
+        raw => ParseColor(raw)?.ToSK(),
+        n => ControlOf?.Invoke(n)?.Overrides.Visible);
 
     // 템플릿 루트가 DvUnit 인 컴포넌트 인스턴스 → (유닛 노드, 파라미터 범위). 아니면 null
     private static (ElementNode Unit, object? Scope)? ExpandUnit(ElementNode instance, object? outerVm, ComponentRegistry? registry)

@@ -278,7 +278,8 @@ internal static class ProcessBuilder
         Func<ElementNode, object?, LayoutBox> Self,
         Func<ElementNode, object?, LayoutBox?> Child,
         Func<ElementNode, object?, (ElementNode Unit, object? Scope)?> ExpandUnit,
-        Func<string?, SKColor?> Color);
+        Func<string?, SKColor?> Color,
+        Func<ElementNode, bool?> VisibleOverride);
 
     /// <summary>
     /// Builds the model from the children of <c>DvProcess</c>. Creates a box for each piece of equipment and adds it as a child of <paramref name="box"/> (so presses and onclick work like a normal control),
@@ -533,7 +534,7 @@ internal static class ProcessBuilder
                 continue;
             }
 
-            if (ch.Tag == "DvStyle" || !Visible(ch, vm))
+            if (ch.Tag == "DvStyle" || !Visible(ch, vm, b))
                 continue;
 
             if (ch.Tag == "DvInstrument")
@@ -632,7 +633,7 @@ internal static class ProcessBuilder
 
             foreach (var sub in ch.Children)
             {
-                if (!Visible(sub, vm))
+                if (!Visible(sub, vm, b))
                     continue;
                 if (BuiltInSymbols.IsAccessoryTag(sub.Tag))
                 {
@@ -896,8 +897,11 @@ internal static class ProcessBuilder
         return name;
     }
 
-    private static bool Visible(ElementNode n, object? vm)
+    // 핸들의 Visible 덮어쓰기가 마크업 visible 보다 우선(일반 요소와 같음)
+    private static bool Visible(ElementNode n, object? vm, Builders b)
     {
+        if (b.VisibleOverride(n) is { } ov)
+            return ov;
         if (!n.Attributes.TryGetValue("visible", out var raw))
             return true;
         var v = BindingResolver.ResolveValueOrLiteral(vm, raw);

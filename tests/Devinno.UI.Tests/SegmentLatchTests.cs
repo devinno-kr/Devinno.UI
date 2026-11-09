@@ -1,4 +1,4 @@
-﻿using Devinno.UI;
+using Devinno.UI;
 using Devinno.UI.Layout;
 using Devinno.UI.Styling;
 using SkiaSharp;
