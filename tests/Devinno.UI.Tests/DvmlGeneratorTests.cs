@@ -509,6 +509,13 @@ public class DvmlGeneratorTests
         Assert.Equal(Devinno.UI.Process.ProcessMedium.Names, Devinno.UI.Generators.ProcessCheck.Media);
     }
 
+    // 핸들 형식 목록은 라이브러리 한 곳(TagCatalog)에만 — 생성기 복사본이 같은지
+    [Fact]
+    public void HandleTags_MatchLibrary()
+    {
+        Assert.Equal(Devinno.UI.Markup.TagCatalog.HandleTags.OrderBy(t => t), Devinno.UI.Generators.DvmlModel.HandleTags.OrderBy(t => t));
+    }
+
     // ── 기본 컨트롤 검사(DVML015~017) ──
 
     private static Diagnostic[] Widgets(string body)

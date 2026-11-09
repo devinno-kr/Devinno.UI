@@ -63,26 +63,8 @@ public sealed class DvControlLookup
         c.Node = null;
     }
 
-    // 핸들 형식 = 태그 이름(DvControl 은 아무 태그나). 생성기 DvmlModel.HandleType 과 같은 목록.
-    private static readonly Dictionary<Type, (string Tag, Func<string, DvControl> New)> Kinds = new()
-    {
-        [typeof(DvLabel)] = ("DvLabel", id => new DvLabel(id)),
-        [typeof(DvButton)] = ("DvButton", id => new DvButton(id)),
-        [typeof(DvToggle)] = ("DvToggle", id => new DvToggle(id)),
-        [typeof(DvKnob)] = ("DvKnob", id => new DvKnob(id)),
-        [typeof(DvSlider)] = ("DvSlider", id => new DvSlider(id)),
-        [typeof(DvListBox)] = ("DvListBox", id => new DvListBox(id)),
-        [typeof(DvExpander)] = ("DvExpander", id => new DvExpander(id)),
-        [typeof(DvTreeView)] = ("DvTreeView", id => new DvTreeView(id)),
-        [typeof(DvInput)] = ("DvInput", id => new DvInput(id)),
-        [typeof(DvSelect)] = ("DvSelect", id => new DvSelect(id)),
-        [typeof(DvSegment)] = ("DvSegment", id => new DvSegment(id)),
-        [typeof(DvDateTimeInput)] = ("DvDateTimeInput", id => new DvDateTimeInput(id)),
-        [typeof(DvColorInput)] = ("DvColorInput", id => new DvColorInput(id)),
-        [typeof(DvCheckBox)] = ("DvCheckBox", id => new DvCheckBox(id)),
-        [typeof(DvRadio)] = ("DvRadio", id => new DvRadio(id)),
-        [typeof(DvSwitch)] = ("DvSwitch", id => new DvSwitch(id)),
-    };
+    // 핸들 형식 = 태그 이름(DvControl 은 아무 태그나) — 목록은 TagCatalog 한 곳(생성기 DvmlModel.HandleTags 와 테스트로 대조).
+    private static IReadOnlyDictionary<Type, (string Tag, Func<string, DvControl> New)> Kinds => Markup.TagCatalog.HandleKinds;
 
     private static bool TagMatches(Type t, string tag) => !Kinds.TryGetValue(t, out var k) || k.Tag == tag;
 

@@ -1522,7 +1522,7 @@ public sealed partial class DvSurface
 
     // 일반 클릭 상자(토글·입력·선택·피커·그리드·알람·노브가 아닌 것)이고 hold 가 있는지
     private static bool IsHoldTarget(LayoutBox? b) =>
-        b is { HoldMs: > 0 } && b.Node.Tag is not ("DvToggle" or "DvCheckBox" or "DvRadio" or "DvInput" or "DvSelect" or "DvKnob" or "DvSlider") &&
+        b is { HoldMs: > 0 } && !Markup.TagCatalog.HoldIgnored.Contains(b.Node.Tag) &&
         !b.IsPicker && b.Grid is null && !AlarmInteraction.IsAlarmWidget(b);
 
     private void StartHold(LayoutBox? pressed, SKPoint p)

@@ -217,7 +217,7 @@ public sealed class LayoutEngine
         string? outerExpr = null;
         object? outerTarget = null;
         var twoWay = tc?.TwoWay;
-        if ((isWidget || node.Tag is "DvToggle" or "DvCheckBox" or "DvKnob" or "DvSlider" or "DvInput" or "DvSelect" or "DvSegment" or "DvTabs" or "DvDateTimeInput" or "DvColorInput" or "DvButton") && twoWay is not null &&
+        if ((isWidget || TagCatalog.TemplateTwoWayTags.Contains(node.Tag)) && twoWay is not null &&
             node.Attributes.TryGetValue("value", out var ve) && BindingResolver.IsBinding(ve) &&
             twoWay.TryGetValue(ve[1..^1].Trim(), out var oe))
         {

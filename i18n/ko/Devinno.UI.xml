@@ -3639,7 +3639,9 @@
             <returns>루트 요소 노드. 속성·자식 요소·텍스트가 모두 채워진 새 트리입니다.</returns>
             <exception cref="T:System.ArgumentException"><paramref name="markup" /> 이 <see langword="null" />·빈 문자열·공백뿐일 때.</exception>
             <exception cref="T:System.Xml.XmlException">XML 문법이 잘못되었을 때(닫히지 않은 태그, 따옴표 없는 속성 값, 이스케이프하지 않은 <c>&lt;</c>·<c>&amp;</c> 등). 줄·열 위치가 들어 있습니다.</exception>
-        </member><member name="T:Devinno.UI.Motion.MotionPhase" en-hash="0e5c4d601803202a">
+        </member><member name="T:Devinno.UI.Markup.TagCatalog" en-hash="5f82a19860f1c629"><summary>
+            라이브러리 여러 곳이 쓰는 태그 목록을 한 곳에 둔다. 소스 생성기는 라이브러리를 참조할 수 없어 <see cref="P:Devinno.UI.Markup.TagCatalog.HandleTags" /> 복사본을 따로 갖고, 테스트가 둘이 같은지 확인한다.
+            </summary></member><member name="F:Devinno.UI.Markup.TagCatalog.HandleKinds" en-hash="8cafcf4bf94cbcf9"><summary>전용 핸들이 있는 태그마다 핸들 형식(형식 이름 = 태그 이름). 그 밖의 태그는 <see cref="T:Devinno.UI.Controls.DvControl" />.</summary></member><member name="P:Devinno.UI.Markup.TagCatalog.HandleTags" en-hash="7c967f0bf2fd3159"><summary>전용 핸들 형식이 있는 태그들.</summary></member><member name="F:Devinno.UI.Markup.TagCatalog.TemplateTwoWayTags" en-hash="5a64f2e49af282c2"><summary>컴포넌트 틀 안에서 <c>value="{p}"</c> 가 양방향 파라미터 <c>p</c> 의 바깥 경로로 쓰는 위젯(커스텀 위젯도).</summary></member><member name="F:Devinno.UI.Markup.TagCatalog.HoldIgnored" en-hash="8f2e4b710b9842c8"><summary>자기 누름 동작이 있어 <c>hold</c> 가 적용되지 않는 태그.</summary></member><member name="T:Devinno.UI.Motion.MotionPhase" en-hash="0e5c4d601803202a">
             <summary>
             렌더 루프의 타임스탬프(ms)로 애니메이션 위상을 계산하는 도우미입니다.
             </summary>

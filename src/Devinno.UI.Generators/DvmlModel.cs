@@ -32,8 +32,8 @@ internal sealed class DvmlModel
 
     private static readonly string[] HandlerAttrs = { "onclick", "onbeforecommit", "onack", "onrowclick" };
 
-    // 핸들 형식 = 태그 이름(실행 시 DvControlLookup.Kinds 와 같은 목록). 그 밖의 태그는 DvControl.
-    private static readonly HashSet<string> HandleTags = new(System.StringComparer.Ordinal)
+    // 핸들 형식 = 태그 이름(라이브러리 TagCatalog.HandleKinds 와 같은 목록 — 테스트로 대조). 그 밖의 태그는 DvControl.
+    internal static readonly HashSet<string> HandleTags = new(System.StringComparer.Ordinal)
     {
         "DvLabel", "DvButton", "DvToggle", "DvKnob", "DvInput", "DvSelect", "DvSegment", "DvDateTimeInput", "DvColorInput",
         "DvCheckBox", "DvRadio", "DvSlider", "DvListBox", "DvExpander", "DvTreeView", "DvSwitch",
