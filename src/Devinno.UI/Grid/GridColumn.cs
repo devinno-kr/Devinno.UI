@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using Devinno.UI.Layout;
 using Devinno.UI.Styling;
 using SkiaSharp;
 
@@ -141,7 +142,7 @@ internal sealed class GridColumn
 
     private readonly Dictionary<Type, object?[]> _valuesByType = new();
 
-    private bool IsEnumAuto => OptionsNode is { } n && !n.Attributes.ContainsKey("items") && !n.Children.Any(c => c.Tag == "DvOption");
+    private bool IsEnumAuto => OptionsNode is { } n && !new AttrReader(n, OptionsContext, null).Has("items") && !n.Children.Any(c => c.Tag == "DvOption");
 
     /// <summary>Datetime mode — DvDateTimeInput rules (omitted = by type; DateOnly and TimeOnly allow only their own mode).</summary>
     public PickerMode DateTimeMode => PickerValue.ResolveMode(Mode, Reader.ValueType);

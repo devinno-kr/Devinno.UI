@@ -2525,13 +2525,11 @@
             <summary>숫자 열이면 박싱 없이 읽는다 — false = 숫자 열 아님(→ <see cref="M:Devinno.UI.Grid.FieldReader.Get(System.Object)" />). 값이 null(또는 getter 예외)이면 NaN.</summary>
         </member><member name="T:Devinno.UI.Grid.GridBuilder" en-hash="c1ceae18389e12c8">
             <summary><c>&lt;DvDataGrid&gt;</c> + <c>&lt;DvColumn&gt;</c> 자식 → <see cref="T:Devinno.UI.Grid.GridSpec" />. 행 수와 무관한 O(열 + 선택 수).</summary>
-        </member><member name="T:Devinno.UI.Grid.GridColors" en-hash="f7512acc978f497e">
+        </member><member name="M:Devinno.UI.Grid.GridBuilder.Build(Devinno.UI.Layout.AttrReader,Devinno.UI.Styling.DvTheme,System.Func{System.String,Devinno.UI.Grid.GridCellStyle})" en-hash="71171d80f729d218"><summary><c>r.Node</c> 의 그리드를 만든다. 모든 속성(그리드와 각 자식 노드)은 <see cref="T:Devinno.UI.Layout.AttrReader" /> 로 읽는다.</summary></member><member name="T:Devinno.UI.Grid.GridColors" en-hash="f7512acc978f497e">
             <summary>그리드별 색 속성 — 지정한 것만 값이 있고, 없는(null) 칸은 테마 토큰을 쓴다.</summary>
         </member><member name="M:Devinno.UI.Grid.GridColors.#ctor(System.Nullable{Devinno.UI.Styling.DvColor},System.Nullable{Devinno.UI.Styling.DvColor},System.Nullable{Devinno.UI.Styling.DvColor},System.Nullable{Devinno.UI.Styling.DvColor},System.Nullable{Devinno.UI.Styling.DvColor},System.Nullable{Devinno.UI.Styling.DvColor},System.Nullable{Devinno.UI.Styling.DvColor},System.Nullable{Devinno.UI.Styling.DvColor},System.Nullable{Devinno.UI.Styling.DvColor},System.Nullable{Devinno.UI.Styling.DvColor})" en-hash="f7512acc978f497e">
             <summary>그리드별 색 속성 — 지정한 것만 값이 있고, 없는(null) 칸은 테마 토큰을 쓴다.</summary>
-        </member><member name="M:Devinno.UI.Grid.GridColors.Parse(Devinno.UI.Markup.ElementNode,System.Object,Devinno.UI.Styling.DvTheme)" en-hash="a086598f62015354">
-            <summary><c>header-color</c> 등 — 값은 <c>#rrggbb[aa]</c> 또는 <c>token(이름)</c>. 해석 실패 = null(테마) + 경고.</summary>
-        </member><member name="T:Devinno.UI.Grid.GridCellStyle" en-hash="ff2f11ee359c2506">
+        </member><member name="M:Devinno.UI.Grid.GridColors.Parse(Devinno.UI.Layout.AttrReader,Devinno.UI.Styling.DvTheme)" en-hash="a086598f62015354"><summary><c>header-color</c> 등 — 값은 <c>#rrggbb[aa]</c> 또는 <c>token(이름)</c>. 해석 실패 = null(테마) + 경고.</summary></member><member name="T:Devinno.UI.Grid.GridCellStyle" en-hash="ff2f11ee359c2506">
             <summary><c>row-class</c>·<c>cell-class</c> 클래스에서 쓰는 스타일 — 지정한 속성만 값(null = 지정 안 함).</summary>
         </member><member name="M:Devinno.UI.Grid.GridCellStyle.#ctor(System.Nullable{Devinno.UI.Styling.DvColor},System.Nullable{Devinno.UI.Styling.DvColor},System.Nullable{System.Boolean})" en-hash="ff2f11ee359c2506">
             <summary><c>row-class</c>·<c>cell-class</c> 클래스에서 쓰는 스타일 — 지정한 속성만 값(null = 지정 안 함).</summary>

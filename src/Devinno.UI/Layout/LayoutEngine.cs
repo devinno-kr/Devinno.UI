@@ -402,7 +402,7 @@ public sealed partial class LayoutEngine
             BuildStepBar(box, r);
 
         if (node.Tag == "DvDataGrid")
-            box.Grid = Grid.GridBuilder.Build(node, vm, _theme, GridClassStyle);
+            box.Grid = Grid.GridBuilder.Build(r, _theme, GridClassStyle);
 
         return box;
     }

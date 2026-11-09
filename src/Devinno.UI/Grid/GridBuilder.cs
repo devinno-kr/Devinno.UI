@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using Devinno.UI.Binding;
 using Devinno.UI.Interaction;
+using Devinno.UI.Layout;
 using Devinno.UI.Markup;
 using Devinno.UI.Styling;
 
@@ -36,12 +37,13 @@ internal static class GridBuilder
 
     private static readonly HashSet<(string, string)> NumWarned = new(); // 해석 못 한 min·max — (속성, 값)마다 경고 1회
 
-    public static GridSpec Build(ElementNode node, object? vm, DvTheme? theme = null, Func<string, GridCellStyle?>? classStyle = null)
+    /// <summary>Builds the grid of <c>r.Node</c>; every attribute (the grid's and each child's) is read through an <see cref="AttrReader"/>.</summary>
+    public static GridSpec Build(AttrReader r, DvTheme? theme = null, Func<string, GridCellStyle?>? classStyle = null)
     {
-        string? Attr(string name) => node.Attributes.GetValueOrDefault(name);
-        object? Val(string name) => BindingResolver.ResolveValueOrLiteral(vm, Attr(name));
+        var node = r.Node;
+        var vm = r.Context;
 
-        var items = Items(Val("items"), Attr("items"));
+        var items = Items(r.Value("items"), r.Raw("items"));
         var first = FirstNonNull(items);
 
         var cols = new List<GridColumn>();
@@ -65,8 +67,9 @@ internal static class GridBuilder
                 {
                     var start = cols.Count;
                     Collect(ch, depth + 1);
+                    // 자식 노드는 그 노드의 리더로 — 핸들 덮어쓰기는 보지 않는다(지금 동작 그대로: 마크업 값만)
                     if (cols.Count > start)
-                        groups.Add(new GridHeaderGroup(BindingResolver.ResolveInline(vm, ch.Attributes.GetValueOrDefault("header")) ?? "",
+                        groups.Add(new GridHeaderGroup(BindingResolver.ResolveInline(vm, new AttrReader(ch, vm, null).Raw("header")) ?? "",
                             depth, start, cols.Count - 1));
                 }
             }
@@ -74,10 +77,11 @@ internal static class GridBuilder
 
         GridColumn Column(ElementNode ch)
         {
-            string? CA(string name) => ch.Attributes.GetValueOrDefault(name);
+            var cr = new AttrReader(ch, vm, null);
+            string? CA(string name) => cr.Raw(name);
             double? Num(string name)
             {
-                if (BindingResolver.ResolveValueOrLiteral(vm, CA(name)) is not { } v)
+                if (cr.Value(name) is not { } v)
                     return null;
                 var text = Convert.ToString(v, CultureInfo.InvariantCulture) ?? "";
                 if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var d))
@@ -105,7 +109,7 @@ internal static class GridBuilder
             {
                 Header = BindingResolver.ResolveInline(vm, CA("header")) ?? "",
                 Reader = new FieldReader(CA("field") ?? ""),
-                Width = GridWidth.Parse(BindingResolver.ResolveText(vm, CA("width"))),
+                Width = GridWidth.Parse(cr.Text("width")),
                 Align = CA("align")?.Trim().ToLowerInvariant() switch
                 {
                     "left" => TextAlign.Left,
@@ -114,25 +118,25 @@ internal static class GridBuilder
                     _ => null
                 },
                 Format = CA("format"),
-                Frozen = IsTrue(BindingResolver.ResolveValueOrLiteral(vm, CA("frozen"))),
-                Sortable = IsTrue(BindingResolver.ResolveValueOrLiteral(vm, CA("sortable"))),
+                Frozen = IsTrue(cr.Value("frozen")),
+                Sortable = IsTrue(cr.Value("sortable")),
                 CellClass = CA("cell-class") is { Length: > 0 } cc ? new FieldReader(cc) : null,
                 CellType = cellType,
-                ReadOnly = IsTrue(BindingResolver.ResolveValueOrLiteral(vm, CA("readonly"))),
+                ReadOnly = IsTrue(cr.Value("readonly")),
                 OnBeforeCommit = CA("onbeforecommit"),
-                OnColor = Color(CA("on-color")),
-                Blink = IsTrue(BindingResolver.ResolveValueOrLiteral(vm, CA("blink"))),
+                OnColor = Color(cr.Text("on-color")),
+                Blink = IsTrue(cr.Value("blink")),
                 ButtonText = BindingResolver.ResolveInline(vm, CA("text")) ?? "",
                 Icon = CA("icon"),
                 Variant = CA("variant")?.Trim().ToLowerInvariant() is { Length: > 0 } variant ? variant : "primary",
                 OnClick = CA("onclick"),
-                Filter = ParseFilter(BindingResolver.ResolveText(vm, CA("filter")), CA("field")),
+                Filter = ParseFilter(cr.Text("filter"), CA("field")),
                 Enabled = CA("enabled") is { Length: > 0 } en ? new FieldReader(en) : null,
                 Min = Num("min"),
                 Max = Num("max"),
                 Unit = BindingResolver.ResolveInline(vm, CA("unit")),
-                Mode = BindingResolver.ResolveText(vm, CA("mode")),
-                ShowSeconds = IsTrue(BindingResolver.ResolveValueOrLiteral(vm, CA("show-seconds"))),
+                Mode = cr.Text("mode"),
+                ShowSeconds = IsTrue(cr.Value("show-seconds")),
                 OptionsNode = cellType == GridCellType.Select ? ch : null,
                 OptionsContext = cellType == GridCellType.Select ? vm : null,
                 InitialSortDesc = CA("sort")?.Trim().ToLowerInvariant() switch
@@ -149,9 +153,10 @@ internal static class GridBuilder
             return col;
         }
 
-        DvColor? Color(string? raw)
+        // on-color — 바인딩을 푼 글자(리더의 Text)
+        DvColor? Color(string? resolvedText)
         {
-            if (BindingResolver.ResolveText(vm, raw) is not { Length: > 0 } text)
+            if (resolvedText is not { Length: > 0 } text)
                 return null;
             var resolved = ThemeResolver.ResolveVars(text, theme);
             if (resolved is not null && !resolved.Contains(ThemeResolver.MissingColor, StringComparison.OrdinalIgnoreCase) &&
@@ -198,7 +203,8 @@ internal static class GridBuilder
             {
                 if (sc.Tag != "DvSummary")
                     continue;
-                var field = sc.Attributes.GetValueOrDefault("field") ?? "";
+                var sr = new AttrReader(sc, vm, null);
+                var field = sr.Raw("field") ?? "";
                 var ci = cols.FindIndex(c => c.Reader.Path == field);
                 if (ci < 0)
                 {
@@ -206,22 +212,23 @@ internal static class GridBuilder
                     continue;
                 }
 
-                var hasValue = sc.Attributes.TryGetValue("value", out var rawValue);
-                cells[ci] = new GridSummaryCell(GridSummary.Parse(sc.Attributes.GetValueOrDefault("fn")),
-                    sc.Attributes.GetValueOrDefault("format"), hasValue,
-                    hasValue ? BindingResolver.ResolveValueOrLiteral(vm, rawValue) : null);
+                var hasValue = sr.Has("value");
+                cells[ci] = new GridSummaryCell(GridSummary.Parse(sr.Raw("fn")),
+                    sr.Raw("format"), hasValue,
+                    hasValue ? sr.Value("value") : null);
             }
 
+            var rr = new AttrReader(ch, vm, null);
             summaries.Add(new GridSummaryRow
             {
-                Title = BindingResolver.ResolveInline(vm, ch.Attributes.GetValueOrDefault("title")) ?? "",
-                Fn = GridSummary.Parse(ch.Attributes.GetValueOrDefault("fn")),
+                Title = BindingResolver.ResolveInline(vm, rr.Raw("title")) ?? "",
+                Fn = GridSummary.Parse(rr.Raw("fn")),
                 Cells = cells
             });
         }
 
-        var key = Attr("row-key") is { Length: > 0 } k ? new FieldReader(k) : null;
-        var selExpr = Attr("selection");
+        var key = r.Raw("row-key") is { Length: > 0 } k ? new FieldReader(k) : null;
+        var selExpr = r.Raw("selection");
         var selSource = selExpr is null ? null : SelectionValue(vm, selExpr);
         var spec = new GridSpec
         {
@@ -230,9 +237,9 @@ internal static class GridBuilder
             FrozenCount = frozen,
             Header = header,
             Summaries = summaries,
-            RowHeight = Positive(Val("row-height"), 48f),
-            HeaderHeight = Positive(Val("header-height"), 40f),
-            Mode = BindingResolver.ToText(Val("selection-mode"), Attr("selection-mode"))?.Trim().ToLowerInvariant() switch
+            RowHeight = Positive(r.Value("row-height"), 48f),
+            HeaderHeight = Positive(r.Value("header-height"), 40f),
+            Mode = BindingResolver.ToText(r.Value("selection-mode"), r.Raw("selection-mode"))?.Trim().ToLowerInvariant() switch
             {
                 "single" => GridSelectionMode.Single,
                 "multi" => GridSelectionMode.Multi,
@@ -241,10 +248,10 @@ internal static class GridBuilder
             SelectionExpr = selExpr,
             SelectionSource = selSource,
             RowKey = key,
-            RowClass = Attr("row-class") is { Length: > 0 } rc ? new FieldReader(rc) : null,
-            Colors = GridColors.Parse(node, vm, theme),
+            RowClass = r.Raw("row-class") is { Length: > 0 } rc ? new FieldReader(rc) : null,
+            Colors = GridColors.Parse(r, theme),
             ClassStyle = classStyle,
-            OnRowClick = Attr("onrowclick")
+            OnRowClick = r.Raw("onrowclick")
         };
 
         // 초기 정렬 — 열 순서가 우선순위(이후 탭은 화면 상태로 재빌드 때 옮겨진다)

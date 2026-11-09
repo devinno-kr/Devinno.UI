@@ -320,7 +320,77 @@ internal static class TagSchema
             new("row-height", AttrKind.Number, "36", Note: "px; <= 0 or not a number = 36 (the geometry keeps at least 24)"),
             new("comm-alarm", AttrKind.Text, Note: "dead read: the block shared with DvAlarmBanner reads it; not drawn (and since f841ebe it no longer keeps the blink timer running)"),
         ],
+
+        // 그리드 (2.5)
+        ["DvDataGrid"] =
+        [
+            new("items", AttrKind.Items, Note: "an IList; another IEnumerable is copied on every layout (warning); a string or a non-collection = header only"),
+            new("row-height", AttrKind.Number, "48", Note: "px; <= 0 or not a number = 48, silently"),
+            new("header-height", AttrKind.Number, "40", Note: "px; <= 0 or not a number = 40, silently"),
+            new("selection-mode", AttrKind.Enum, "none", Values: ["none", "single", "multi"], Note: "an unknown value = none, silently (DvColumn filter warns)"),
+            new("selection", AttrKind.Expr, Note: "read as written; {Bind X} = two-way list, otherwise resolved one-way; a single object = one row; applied only when selection-mode is not none"),
+            new("row-key", AttrKind.Path, Bindable: false, Note: "read raw; absent = the item reference"),
+            new("row-class", AttrKind.Path, Bindable: false, Note: "read raw; the item property value is a class name (background, color, font-weight only)"),
+            new("onrowclick", AttrKind.Expr, Bindable: false, Note: "M(row) when the row fits, otherwise M(); a missing method is silent at run time"),
+            GridColor("header-color"), GridColor("header-text-color"), GridColor("text-color"), GridColor("row-color"),
+            GridColor("row-alt-color"), GridColor("hover-color"), GridColor("selected-color"), GridColor("line-color"),
+            GridColor("summary-color"), GridColor("summary-text-color"),
+        ],
+        ["DvColumn"] =
+        [
+            new("header", AttrKind.Text, "", Note: "inline interpolation only (a binding is formatted into the text)"),
+            new("field", AttrKind.Path, "", Bindable: false, Note: "read raw; empty = no value (no sort, no edit)"),
+            new("width", AttrKind.Length, "*", Note: "px, %, * or n*; bound (resolved as text)"),
+            new("align", AttrKind.Enum, Bindable: false, Values: ["left", "center", "right"], Note: "read raw; absent or an unknown value = by value type (numbers right), silently"),
+            new("format", AttrKind.Text, Bindable: false, Note: ".NET format; read raw (instrument format is bound)"),
+            GridFlag("frozen", "only a leading run of columns; frozen on a middle column warns and is ignored"),
+            GridFlag("sortable"),
+            new("sort", AttrKind.Enum, Bindable: false, Values: ["asc", "desc"], Note: "read raw; initial sort, column order = priority; an unknown value = none, silently"),
+            new("cell-class", AttrKind.Path, Bindable: false, Note: "read raw; the item property value is a class name"),
+            new("cell-type", AttrKind.Enum, "text", Bindable: false, Values: ["text", "check", "lamp", "button", "input", "select", "datetime", "color"],
+                Note: "read raw; an unknown value = text, silently"),
+            new("filter", AttrKind.Enum, "none", Values: ["none", "auto", "text", "values", "range", "date"], Note: "bound (as text); an unknown value = none + warning once per value"),
+            GridFlag("readonly", "check and edit cells"),
+            new("onbeforecommit", AttrKind.Expr, Bindable: false, Note: "check cells: bool M(item, bool) first, otherwise bool M(bool)"),
+            new("on-color", AttrKind.Color, Note: "lamp cells; #hex or token(name); unparsable or an unknown token = the state-run token + warning; named on-color (DvLamp uses color)"),
+            GridFlag("blink", "lamp cells; fixed 500 ms (no blink-interval)"),
+            new("text", AttrKind.Text, "", Note: "button cells; inline interpolation only; a code Text override is not applied"),
+            new("icon", AttrKind.Text, Bindable: false, Note: "button cells; read raw (DvButton icon is bound)"),
+            new("variant", AttrKind.Enum, "primary", Bindable: false, Values: ["primary", "secondary", "danger", "ghost"],
+                Note: "button cells; read raw and lower-cased; empty = primary; other values passed on unvalidated"),
+            new("onclick", AttrKind.Expr, Bindable: false, Note: "button cells; M(row) or M()"),
+            new("enabled", AttrKind.Path, Bindable: false, Note: "button cells; read raw; an item bool property path (the common disabled is the inverse sense and is not read here)"),
+            new("min", AttrKind.Number, Note: "input cells; not a number = ignored + warning once per (attribute, value)"),
+            new("max", AttrKind.Number, Note: "input cells; not a number = ignored + warning once per (attribute, value)"),
+            new("unit", AttrKind.Text, Note: "input cells; inline interpolation only"),
+            new("mode", AttrKind.Enum, Values: ["date", "time", "datetime"], Note: "datetime cells; bound (as text); absent = by value type; a mismatch = by value type + warning"),
+            GridFlag("show-seconds", "datetime cells"),
+            .. Items("select cells (read only when cell-type is select); wins over DvOption children, which win over the enum of the value type"),
+        ],
+        ["DvColumnGroup"] =
+        [
+            new("header", AttrKind.Text, "", Note: "inline interpolation only; a group with no columns is dropped; split at the frozen boundary (warning)"),
+        ],
+        ["DvSummaryRow"] =
+        [
+            new("title", AttrKind.Text, "", Note: "inline interpolation only"),
+            new("fn", AttrKind.Enum, Bindable: false, Values: ["sum", "avg", "min", "max", "count"], Note: "read raw; numeric columns without a DvSummary; absent or an unknown value = none, silently"),
+        ],
+        ["DvSummary"] =
+        [
+            new("field", AttrKind.Path, "", Bindable: false, Note: "read raw; no matching column = warning, the cell is ignored"),
+            new("fn", AttrKind.Enum, Bindable: false, Values: ["sum", "avg", "min", "max", "count"], Note: "read raw; an unknown value = none, silently"),
+            new("format", AttrKind.Text, Bindable: false, Note: ".NET format; read raw"),
+            new("value", AttrKind.Object, Note: "present = shown instead of the computed value (also when it resolves to null)"),
+        ],
     };
+
+    // 2.5 그리드 공용 조각
+    private static AttrDef GridColor(string name) =>
+        new(name, AttrKind.Color, Note: "#hex or token(name); unparsable or an unknown token = the grid-* theme token + warning (not magenta, unlike other color attributes)");
+
+    private static AttrDef GridFlag(string name, string? note = null) =>
+        new(name, AttrKind.Bool, "false", Note: (note is null ? "" : note + "; ") + "on = bool true or text true (case-insensitive)");
 
     // 2.3 공용 조각 — 같은 해석을 여러 태그가 쓴다
     private static AttrDef Text(string? note = null) =>
