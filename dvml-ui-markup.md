@@ -2478,7 +2478,7 @@ Locks the screen so that no one else can operate it while the operator is away. 
 ```xml
 <DvDialogFrame vm="MyApp.LockDialog" title="잠금 — 로그인 필요" style="width:360">
   <DvInput value="{Bind Password}" keyboard-type="password"/>
-  <DvLabel text="{Error}" visible="{Error}"/>
+  <DvLabel text="{Error}" visible="{HasError}"/>
   <DvRow gap="sm">
     <DvSpacer/>
     <DvButton variant="primary" text="확인" onclick="Login"/>
@@ -2498,6 +2498,7 @@ public sealed partial class LockDialog : DvDialog<bool>
 
     public string Password { get; set; } = "";
     public string Error { get; set; } = "";
+    public bool HasError => !string.IsNullOrEmpty(Error); // visible takes true/false — bind a bool, not the text
 
     public void Login()
     {

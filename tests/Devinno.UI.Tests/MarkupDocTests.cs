@@ -28,6 +28,37 @@ public class MarkupDocTests
         Assert.True(png.Length > 0, $"block #{index}");
     }
 
+    // 리뷰 I1 — visible·disabled 는 참/거짓 규칙(R1): 글자 속성에 묶으면 "0"·"false" 글자가 숨기고 그 밖의 글자는 경고.
+    // 문서(markup·llm-rules)와 데모 dvml 의 visible="{X}"·disabled="{X}" 가 같은 곳(문서 C# 블록·데모 .cs)에서 string 으로 선언된 X 에 묶이지 않는지
+    [Fact]
+    public void Visible_and_disabled_are_not_bound_to_string_properties()
+    {
+        var bound = new Regex(@"\b(visible|disabled)=""\{(\w+)\}""");
+        var problems = new List<string>();
+
+        void Check(string where, string markup, string code)
+        {
+            foreach (Match m in bound.Matches(markup))
+                if (Regex.IsMatch(code, $@"\bstring\??\s+{m.Groups[2].Value}\b"))
+                    problems.Add($"{where}: {m.Value}");
+        }
+
+        foreach (var doc in new[] { "dvml-ui-markup.md", "llm-rules.md" })
+        {
+            var text = File.ReadAllText(DocPath(doc));
+            var code = string.Join("\n", Regex.Matches(text, "```csharp\\r?\\n(.*?)```", RegexOptions.Singleline).Select(m => m.Groups[1].Value));
+            Check(doc, text, code);
+        }
+
+        var samples = Path.Combine(Path.GetDirectoryName(DocPath("dvml-ui-markup.md"))!, "samples");
+        var sampleCode = string.Join("\n", Directory.EnumerateFiles(samples, "*.cs", SearchOption.AllDirectories)
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")).Select(File.ReadAllText));
+        foreach (var f in Directory.EnumerateFiles(samples, "*.dvml", SearchOption.AllDirectories))
+            Check(Path.GetFileName(f), File.ReadAllText(f), sampleCode);
+
+        Assert.Empty(problems);
+    }
+
     // 빌드 출력 위치와 무관하게(--artifacts-path 등) 이 소스 파일 위치에서 위로 찾는다
     private static string DocPath(string name, [CallerFilePath] string source = "")
     {

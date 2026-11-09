@@ -10,6 +10,7 @@ public sealed partial class LockDialog : DvDialog<bool>
 
     public string Password { get; set; } = "";
     public string Error { get; set; } = "";
+    public bool HasError => !string.IsNullOrEmpty(Error); // visible 은 참/거짓 — 글자를 바로 묶지 않는다
 
     public void Login()
     {

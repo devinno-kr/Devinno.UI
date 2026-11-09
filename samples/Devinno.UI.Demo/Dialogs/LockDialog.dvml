@@ -1,6 +1,6 @@
 <DvDialogFrame vm="LockDialog" title="Locked — sign in required" subtitle="Demo password 1234" style="width:360">
   <DvInput value="{Bind Password}" keyboard-type="password"/>
-  <DvLabel class="body" text="{Error}" visible="{Error}" style="color:token(state-fault)"/>
+  <DvLabel class="body" text="{Error}" visible="{HasError}" style="color:token(state-fault)"/>
   <DvRow gap="sm">
     <DvSpacer/>
     <DvButton variant="primary" text="OK" onclick="Login"/>
