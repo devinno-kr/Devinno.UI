@@ -323,58 +323,6 @@ public sealed partial class LayoutEngine
     /// <summary>The selected index of a DvTabs without <c>value</c> (remembered by the screen, so it survives rebuilds). 0 if none.</summary>
     internal Func<InstanceKey, int?>? TabIndexOf { get; set; }
 
-    /// <summary>
-    /// Charts (single series): DvSparkline uses <c>values</c> (a list of numbers or "1,2,3"); DvBarChart and DvPieChart use <c>items</c> + <c>item-value</c> (number) + <c>item-text</c> (name).
-    /// Common: <c>tone</c> (info), <c>show-value</c>; sparkline and bar: <c>y-min</c>/<c>y-max</c> (omitted = automatic); sparkline: <c>area</c>; pie: <c>inner-radius</c> (ratio 0 to 0.9, donut).
-    /// Values that cannot be read as numbers are 0 (pie charts do not draw negative or zero slices).
-    /// </summary>
-    private void BuildChart(LayoutBox box, ElementNode node, object? vm)
-    {
-        string? Attr(string name) => BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault(name));
-        double? Num(string name) => double.TryParse(Attr(name), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : null;
-        static double ToNum(object? v) => v switch
-        {
-            null => 0,
-            IConvertible c when v is not string => SafeDouble(c),
-            _ => double.TryParse(v.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : 0,
-        };
-
-        box.Tone = Attr("tone") is { Length: > 0 } tone ? tone : "info";
-        box.ShowValue = ToBool(Attr("show-value"));
-        box.ChartYMin = Num("y-min");
-        box.ChartYMax = Num("y-max");
-        box.ChartArea = ToBool(Attr("area"));
-        box.ChartInner = Math.Clamp((float)(Num("inner-radius") ?? 0), 0f, 0.9f);
-
-        if (node.Tag == "DvSparkline")
-        {
-            var raw = node.Attributes.GetValueOrDefault("values");
-            box.ChartValues = BindingResolver.ResolveValueOrLiteral(vm, raw) switch
-            {
-                string text => text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(t => ToNum(t)).ToArray(),
-                System.Collections.IEnumerable list => HandlerErrors.Snapshot(list.Cast<object?>(), PathOf(raw), node.Tag).Select(ToNum).ToArray(),
-                _ => Array.Empty<double>(),
-            };
-            box.ChartLabels = Array.Empty<string>();
-            return;
-        }
-
-        var itemsRaw = node.Attributes.GetValueOrDefault("items");
-        var items = BindingResolver.ResolveValueOrLiteral(vm, itemsRaw) is System.Collections.IEnumerable e and not string
-            ? HandlerErrors.Snapshot(e.Cast<object?>(), PathOf(itemsRaw), node.Tag)
-            : new List<object?>();
-        var valuePath = node.Attributes.GetValueOrDefault("item-value");
-        var textPath = node.Attributes.GetValueOrDefault("item-text");
-        box.ChartValues = items.Select(it => ToNum(valuePath is null ? it : BindingResolver.Resolve(it, $"{{{valuePath}}}"))).ToArray();
-        box.ChartLabels = items.Select(it => HandlerErrors.Text(textPath is null ? it : BindingResolver.Resolve(it, $"{{{textPath}}}"), textPath, node.Tag) ?? "").ToArray();
-    }
-
-    private static double SafeDouble(IConvertible c)
-    {
-        try { return c.ToDouble(CultureInfo.InvariantCulture); }
-        catch (Exception e) when (e is FormatException or InvalidCastException or OverflowException) { return 0; }
-    }
-
     /// <summary>The expanded state of a DvExpander without <c>expanded</c> (remembered by the screen, so it survives rebuilds). Collapsed if none.</summary>
     internal Func<InstanceKey, bool?>? ExpanderOf { get; set; }
 
@@ -448,134 +396,15 @@ public sealed partial class LayoutEngine
 
         BuildInputTag(box, r);
 
-        if (node.Tag is "DvSparkline" or "DvBarChart" or "DvPieChart")
-            BuildChart(box, node, vm);
+        BuildInstrumentTag(box, r);
 
         if (node.Tag == "DvStepBar")
             BuildStepBar(box, r);
 
-        if (node.Tag == "DvLamp")
-        {
-            box.LampOn = ToBool(r.Value("on"));
-            var blinkExpr = node.Attributes.GetValueOrDefault("blink-when")
-                            ?? node.Attributes.GetValueOrDefault("blink");
-            box.LampBlink = ToBool(BindingResolver.ResolveValueOrLiteral(vm, blinkExpr));
-            if (r.Text("blink-interval") is { } bi &&
-                int.TryParse(bi, out var bint) && bint > 0)
-                box.BlinkIntervalMs = bint;
-            if (ParseColor(r.Text("color")) is { } lampColor)
-                box.LampColor = lampColor;
-            box.LampState = r.Text("state");
-        }
-
-        if (node.Tag is "DvGauge" or "DvRing" or "DvProgress")
-        {
-            box.GaugeValue = ToFloat(r.Value("value"), 0f);
-            box.GaugeMin = ToFloat(r.Value("min"), 0f);
-            box.GaugeMax = ToFloat(r.Value("max"), 100f);
-            box.GaugeZones = ParseZones(r);
-            box.GaugeTicks = ToFloat(r.Value("ticks"), 0f);
-            box.GaugeMinorTicks = ToFloat(r.Value("minor-ticks"), 0f);
-            if (r.Has("show-tick-labels"))
-                box.GaugeTickLabels = !string.Equals(
-                    r.Text("show-tick-labels"), "false", StringComparison.OrdinalIgnoreCase);
-
-            string? Attr(string name) => r.Text(name);
-            box.Tone = Attr("tone") is { Length: > 0 } tone ? tone : "info";
-            box.Direction = Attr("direction") is { Length: > 0 } dir ? dir : "right";
-            box.ShowValue = ToBool(Attr("show-value"));
-            box.Unit = Attr("unit");
-            box.ValueFormat = Attr("format");
-            box.Label = Attr("label");
-            var sweep = ToFloat(Attr("sweep"), 270f);
-            box.RingSweep = Math.Clamp(sweep, 1f, 360f);
-            if (Attr("thickness") is { Length: > 0 } th)
-                box.RingThickness = ToFloat(th, 0f) is > 0 and var t ? t : null;
-        }
-
-        if (node.Tag == "DvTrend")
-            box.Trend = BuildTrend(node, vm);
-
         if (node.Tag == "DvDataGrid")
             box.Grid = Grid.GridBuilder.Build(node, vm, _theme, GridClassStyle);
 
-        if (node.Tag is "DvAlarmBanner" or "DvAlarmList")
-        {
-            // 레이아웃 시점 스냅샷 — VM 변경은 host 의 Invalidate 후 반영
-            var alarmsRaw = node.Attributes.GetValueOrDefault("items");
-            box.AlarmItems = BindingResolver.ResolveValueOrLiteral(vm, alarmsRaw)
-                is IEnumerable<Alarms.AlarmRow> items ? HandlerErrors.Snapshot(items, PathOf(alarmsRaw), node.Tag) : Array.Empty<Alarms.AlarmRow>();
-            box.CommAlarm = r.Text("comm-alarm");
-            box.OnAck = node.Attributes.GetValueOrDefault("onack");
-            // show-ack: 지정 시 그 값(바인딩 가능 — 권한별 표시), 미지정 시 onack 이 있을 때만 표시
-            box.AlarmShowAck = node.Attributes.TryGetValue("show-ack", out var sa)
-                ? !string.Equals(BindingResolver.ResolveText(vm, sa), "false",
-                    StringComparison.OrdinalIgnoreCase)
-                : !string.IsNullOrEmpty(box.OnAck);
-            var rh = ToFloat(r.Value("row-height"), 36f);
-            box.AlarmRowHeight = rh > 0 ? rh : 36f;
-        }
-
-        if (node.Tag == "DvTank")
-        {
-            box.TankValue = ToFloat(r.Value("value"), 0f);
-            box.TankMin = ToFloat(r.Value("min"), 0f);
-            box.TankMax = ToFloat(r.Value("max"), 100f);
-            box.TankUnit = r.Text("unit");
-            box.ValueFormat = r.Text("format");
-            box.TankZones = ParseZones(r);
-            // show-zone-marks="false" → 구간 색은 유지하고 경계 눈금·숫자만 숨김 (기본 true)
-            if (node.Attributes.TryGetValue("show-zone-marks", out var zm))
-                box.TankZoneMarks = !string.Equals(
-                    BindingResolver.ResolveText(vm, zm), "false", StringComparison.OrdinalIgnoreCase);
-        }
-
         return box;
-    }
-
-    // DvTrend 설정 + 채널 데이터 스냅샷 (points 바인딩 우선, 없으면 source 버퍼에서 채널 이름으로)
-    private Trends.TrendSpec BuildTrend(ElementNode node, object? vm)
-    {
-        object? Attr(ElementNode n, string name) => BindingResolver.ResolveValueOrLiteral(vm, n.Attributes.GetValueOrDefault(name));
-        double? Num(ElementNode n, string name) => Attr(n, name) is { } v &&
-            double.TryParse(BindingResolver.ToText(v, null), System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture, out var d) ? d : null;
-        string? Text(ElementNode n, string name) => BindingResolver.ResolveText(vm, n.Attributes.GetValueOrDefault(name));
-        bool Flag(string name, bool dflt) => Text(node, name) is { Length: > 0 } s
-            ? !string.Equals(s, "false", StringComparison.OrdinalIgnoreCase) : dflt;
-
-        var spec = new Trends.TrendSpec
-        {
-            WindowSeconds = Num(node, "window") is > 0 and var w ? w : 60,
-            End = Attr(node, "end") switch { DateTime dt => dt, _ => null },
-            YMin = Num(node, "y-min"),
-            YMax = Num(node, "y-max"),
-            Area = Flag("area", false),
-            Smooth = Flag("smooth", true)
-        };
-
-        var source = Attr(node, "source") as Trends.TrendBuffer;
-        var index = 0;
-        foreach (var ch in node.Children.Where(c => c.Tag == "DvTrendChannel"))
-        {
-            var name = Text(ch, "name") ?? $"ch{index}";
-            var points = Attr(ch, "points") is IEnumerable<Trends.TrendPoint> bound
-                ? HandlerErrors.Snapshot(bound, PathOf(ch.Attributes.GetValueOrDefault("points")), ch.Tag).ToArray()
-                : source?.Snapshot(name) ?? Array.Empty<Trends.TrendPoint>();
-            var color = ParseColor(Text(ch, "color"))?.ToSK()
-                        ?? Trends.TrendSpec.Palette[index % Trends.TrendSpec.Palette.Length];
-            spec.Channels.Add(new Trends.TrendChannelData
-            {
-                Name = name,
-                Label = Text(ch, "label"),
-                Unit = Text(ch, "unit"),
-                Color = color,
-                Points = points
-            });
-            index++;
-        }
-
-        return spec;
     }
 
     // 색 속성 값(바인딩을 푼 뒤) — #색 또는 token(이름)(이 엔진의 테마로 해석, 모르는 토큰은 자홍). 해석 못 하면 null.

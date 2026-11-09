@@ -223,6 +223,103 @@ internal static class TagSchema
             GaugeDead("ticks", AttrKind.Number), GaugeDead("minor-ticks", AttrKind.Number), GaugeDead("show-tick-labels", AttrKind.Bool),
             GaugeDead("label", AttrKind.Text), GaugeDead("sweep", AttrKind.Number), GaugeDead("thickness", AttrKind.Number),
         ],
+        // 계기·차트·알람 (2.4)
+        ["DvGauge"] =
+        [
+            .. DialRange(),
+            new("ticks", AttrKind.Number, "0", Note: "major tick interval; 0 = no scale"),
+            new("minor-ticks", AttrKind.Number, "0", Note: "minor tick interval; drawn only when ticks is set"),
+            new("show-tick-labels", AttrKind.Bool, "true", Note: "present = anything but false (case-insensitive) shows the labels; absent = shown"),
+            new("format", AttrKind.Text, Note: ".NET number format"),
+            DialDead("unit", AttrKind.Text, "the gauge"), DialDead("tone", AttrKind.Text, "the gauge", "the needle tip uses the zone color or gauge-needle-tip"),
+            DialDead("direction", AttrKind.Text, "the gauge"), DialDead("show-value", AttrKind.Bool, "the gauge", "the value is always drawn"),
+            DialDead("label", AttrKind.Text, "the gauge"), DialDead("sweep", AttrKind.Number, "the gauge", "the gauge sweep is fixed at 270"),
+            DialDead("thickness", AttrKind.Number, "the gauge"),
+        ],
+        ["DvRing"] =
+        [
+            .. DialRange(),
+            new("tone", AttrKind.Text, "info", Note: "empty = info; tone-{tone} token; a zone color wins"),
+            new("unit", AttrKind.Text),
+            new("label", AttrKind.Text, Note: "drawn below the value"),
+            new("sweep", AttrKind.Number, "270", Note: "degrees, clamped to 1..360; not a number = 270"),
+            new("thickness", AttrKind.Number, Note: "px; absent, <= 0 or not a number = 11% of the size"),
+            new("format", AttrKind.Text, Note: ".NET number format"),
+            DialDead("show-value", AttrKind.Bool, "the ring", "the value is always drawn"),
+            DialDead("ticks", AttrKind.Number, "the ring"), DialDead("minor-ticks", AttrKind.Number, "the ring"),
+            DialDead("show-tick-labels", AttrKind.Bool, "the ring"), DialDead("direction", AttrKind.Text, "the ring"),
+        ],
+        ["DvLamp"] =
+        [
+            new("on", AttrKind.Bool, "false", Note: "on = bool true or text true (case-insensitive); anything else is off"),
+            new("blink", AttrKind.Bool, "false", Note: "same rule as on; read only when blink-when is absent"),
+            new("blink-when", AttrKind.Bool, Note: "another name for blink that wins over it; not in the doc table"),
+            new("blink-interval", AttrKind.Number, "500", Note: "ms; an integer > 0, parsed with the current culture (hold uses the invariant culture)"),
+            new("color", AttrKind.Color, Note: "#hex or token(name); an unknown token = magenta; unparsable = ignored silently; wins over state"),
+            new("state", AttrKind.Text, Note: "state-{state} token color"),
+        ],
+        ["DvTank"] =
+        [
+            .. DialRange("separate fields from DvGauge/DvRing/DvProgress (TankValue/TankMin/TankMax)"),
+            new("unit", AttrKind.Text),
+            new("format", AttrKind.Text, Note: ".NET number format"),
+            new("show-zone-marks", AttrKind.Bool, "true", Note: "present = anything but false (case-insensitive) shows the zone boundary marks; absent = shown; the zone colors stay either way"),
+        ],
+        ["DvSparkline"] =
+        [
+            new("values", AttrKind.Items, Note: "a list of numbers or comma-separated text; anything else = no values; an unreadable number = 0"),
+            .. ChartCommon(),
+            new("area", AttrKind.Bool, "false", Note: "on = bool true or text true (case-insensitive) (DvTrend area: anything but false)"),
+            ChartDead("show-value", AttrKind.Bool, "the sparkline"),
+            ChartDead("inner-radius", AttrKind.Number, "the sparkline"),
+        ],
+        ["DvBarChart"] =
+        [
+            .. ChartItems(),
+            .. ChartCommon(),
+            new("show-value", AttrKind.Bool, "false", Note: "on = bool true or text true (case-insensitive)"),
+            ChartDead("area", AttrKind.Bool, "the bar chart"),
+            ChartDead("inner-radius", AttrKind.Number, "the bar chart"),
+        ],
+        ["DvPieChart"] =
+        [
+            .. ChartItems(),
+            new("show-value", AttrKind.Bool, "false", Note: "on = bool true or text true (case-insensitive); shows the numbers (and the donut total) instead of percentages"),
+            new("inner-radius", AttrKind.Number, "0", Note: "ratio, clamped to 0..0.9 (donut); not a number = 0"),
+            ChartDead("tone", AttrKind.Text, "the pie chart", "slices use the fixed palette"),
+            ChartDead("y-min", AttrKind.Number, "the pie chart"), ChartDead("y-max", AttrKind.Number, "the pie chart"),
+            ChartDead("area", AttrKind.Bool, "the pie chart"),
+        ],
+        ["DvTrend"] =
+        [
+            new("source", AttrKind.Object, Note: "a TrendBuffer; any other type = no buffer data, silently"),
+            new("window", AttrKind.Number, "60", Note: "seconds; <= 0 or not a number = 60"),
+            new("end", AttrKind.Object, Note: "a DateTime (absent = the latest sample); any other type (DateTimeOffset, text) is ignored silently"),
+            new("y-min", AttrKind.Number, Note: "absent or not a number = automatic"),
+            new("y-max", AttrKind.Number, Note: "absent or not a number = automatic"),
+            new("area", AttrKind.Bool, "false", Note: "non-empty = anything but false (case-insensitive) is on (DvSparkline area needs true)"),
+            new("smooth", AttrKind.Bool, "true", Note: "non-empty = anything but false (case-insensitive) is on; empty = true"),
+        ],
+        ["DvTrendChannel"] =
+        [
+            new("name", AttrKind.Text, Note: "the source buffer key; absent = ch{index}"),
+            new("label", AttrKind.Text, Note: "legend text; absent = name"),
+            new("unit", AttrKind.Text, Note: "legend only"),
+            new("color", AttrKind.Color, Note: "#hex or token(name); an unknown token = magenta; unparsable or absent = palette[index], silently"),
+            new("points", AttrKind.Items, Note: "an IEnumerable<TrendPoint> that wins over source; any other type = from source by name"),
+        ],
+        ["DvAlarmBanner"] =
+        [
+            .. AlarmCommon(),
+            new("comm-alarm", AttrKind.Text, Note: "non-empty = the communication-loss strip with this text (blinks)"),
+            new("row-height", AttrKind.Number, "36", Note: "dead read: the block shared with DvAlarmList reads it, the banner never uses it"),
+        ],
+        ["DvAlarmList"] =
+        [
+            .. AlarmCommon(),
+            new("row-height", AttrKind.Number, "36", Note: "px; <= 0 or not a number = 36 (the geometry keeps at least 24)"),
+            new("comm-alarm", AttrKind.Text, Note: "dead read: the block shared with DvAlarmBanner reads it; not drawn, but a non-empty value keeps the blink timer running"),
+        ],
     };
 
     // 2.3 공용 조각 — 같은 해석을 여러 태그가 쓴다
@@ -259,6 +356,45 @@ internal static class TagSchema
         new("item-value", AttrKind.Path, Bindable: false, Note: "read raw; absent = the item itself"),
         new("item-text", AttrKind.Path, Bindable: false, Note: "read raw; absent = the value as text"),
         new("item-icon", AttrKind.Path, Bindable: false, Note: "read raw"),
+    ];
+
+    // 2.4 공용 조각
+    private static AttrDef[] DialRange(string? note = null) =>
+    [
+        new("value", AttrKind.Number, "0", Note: (note is null ? "" : note + "; ") + "one-way; not a number = 0"),
+        new("min", AttrKind.Number, "0"),
+        new("max", AttrKind.Number, "100"),
+        new("alarm-zones", AttrKind.Text, Note: "\"from:to:#color ...\"; token(name) colors resolved; a bad format throws"),
+    ];
+
+    // DvGauge/DvRing 가 계기 공용 블록에서 읽기만 하고 그리지 않는 속성
+    private static AttrDef DialDead(string name, AttrKind kind, string who, string? why = null) =>
+        new(name, kind, Note: $"dead read: the block shared by DvGauge/DvRing/DvProgress reads it, {who} never uses it" + (why is null ? "" : "; " + why));
+
+    // DvSparkline·DvBarChart 공용
+    private static AttrDef[] ChartCommon() =>
+    [
+        new("tone", AttrKind.Text, "info", Note: "empty = info; tone-{tone} token"),
+        new("y-min", AttrKind.Number, Note: "absent or not a number = automatic"),
+        new("y-max", AttrKind.Number, Note: "absent or not a number = automatic"),
+    ];
+
+    private static AttrDef[] ChartItems() =>
+    [
+        new("items", AttrKind.Items, Note: "a list (a string or a non-collection = no items)"),
+        new("item-value", AttrKind.Path, Bindable: false, Note: "read raw; absent = the item itself; an unreadable number = 0"),
+        new("item-text", AttrKind.Path, Bindable: false, Note: "read raw; absent = the item itself as text"),
+    ];
+
+    // 차트 공용 블록이 모든 차트 태그에서 읽지만 이 차트는 쓰지 않는 속성
+    private static AttrDef ChartDead(string name, AttrKind kind, string who, string? why = null) =>
+        new(name, kind, Note: $"dead read: the block shared by the charts reads it, {who} never uses it" + (why is null ? "" : "; " + why));
+
+    private static AttrDef[] AlarmCommon() =>
+    [
+        new("items", AttrKind.Items, Note: "an IEnumerable<AlarmRow>; any other type = no rows, silently"),
+        new("onack", AttrKind.Expr, Bindable: false, Note: "method M(AlarmRow) or M(long id); a missing method is silent"),
+        new("show-ack", AttrKind.Bool, Note: "present = anything but false (case-insensitive) shows the ACK button; absent = shown only when onack is set"),
     ];
 
     // DvProgress 가 계기 공용 블록에서 읽기만 하고 그리지 않는 속성

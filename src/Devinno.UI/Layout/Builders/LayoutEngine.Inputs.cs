@@ -9,7 +9,7 @@ namespace Devinno.UI.Layout;
 
 // 기본·입력 태그 빌더 (DvLabel DvButton DvIcon DvImage DvVideo DvToggle DvCheckBox DvRadio DvKnob DvSlider DvInput
 // DvSelect/DvOption DvSegment DvListBox DvTreeView DvDateTimeInput DvColorInput). 속성은 모두 AttrReader 로 읽는다 — 정의는 TagSchema.
-// DvProgress 는 계기 공용 블록(DvGauge/DvRing, 2.4)에 남아 있다.
+// DvProgress 는 계기 공용 블록(BuildDial, LayoutEngine.Instruments.cs)에서 만든다.
 public sealed partial class LayoutEngine
 {
     // BuildSelf 에서 공통 속성 다음에 부른다. 태그마다 읽는 순서는 옮기기 전과 같다(DvButton = 래칭 → 아이콘 → 글자).

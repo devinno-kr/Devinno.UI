@@ -42,10 +42,11 @@ public class TagSchemaTests
     // DvSymbol 정의 파싱(SymbolDef.cs)은 등록 시점 코드라 대상이 아니다.
     private static readonly (string File, int Max)[] DirectReadBudget =
     [
-        ("src/Devinno.UI/Layout/LayoutEngine.cs", 31),
+        ("src/Devinno.UI/Layout/LayoutEngine.cs", 17),
         ("src/Devinno.UI/Layout/LayoutSugar.cs", 0),
         ("src/Devinno.UI/Layout/Builders/LayoutEngine.Containers.cs", 0),
         ("src/Devinno.UI/Layout/Builders/LayoutEngine.Inputs.cs", 0),
+        ("src/Devinno.UI/Layout/Builders/LayoutEngine.Instruments.cs", 0),
         ("src/Devinno.UI/Process/ProcessModel.cs", 65),
         ("src/Devinno.UI/Grid/GridBuilder.cs", 9),
         ("src/Devinno.UI/Grid/GridColors.cs", 2),
