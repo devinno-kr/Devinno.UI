@@ -354,6 +354,17 @@ app.Surface.PointerUp(new SKPoint(r.MidX, r.MidY));
 app.Surface.Layout(1280, 800);                           // a frame applies the result
 ```
 
+Elements of an open dialog, including the buttons of the built-in boxes (`MessageBox`, `InputBox`, `InputNumber`, `SelectBox`): `BoundsOf(id)` on the dialog, in the same window coordinates. The built-in boxes have fixed ids (`yes`/`ok`, `no`, `cancel`, `input`, `list`); see [BoundsOf and the id table](dvml-dialogs.md#dialog-bounds). It returns `null` until a frame has laid the dialog out.
+
+```csharp
+// test code: a page handler awaits App.MessageBox("Delete?", null, DvMessageButtons.YesNo)
+app.Surface.Layout(1280, 800);                           // a frame: the box is built and laid out
+var yes = app.Dialogs.Top!.BoundsOf("yes")!.Value;
+app.Surface.PointerDown(new SKPoint(yes.MidX, yes.MidY));
+app.Surface.PointerUp(new SKPoint(yes.MidX, yes.MidY));
+app.Surface.Layout(1280, 800);                           // a frame delivers the result
+```
+
 Parts drawn inside a built-in widget have no handle of their own. Where they are, measured from the widget's `Bounds`:
 
 | Target | Where to press |
@@ -362,7 +373,6 @@ Parts drawn inside a built-in widget have no handle of their own. Where they are
 | `DvAlarmList` ACK button of a row | `AlarmListLayout.Compute(bounds, rows, rowHeight).Rows[i].AckButton` (`Devinno.UI.Alarms`) — the geometry the list itself uses; rows in display order, `null` for an acknowledged row |
 | `DvInput show-stepper` − / + | The left 40 px of `Bounds` is −, the right 40 px is + |
 | `DvDataGrid` row `i` (0 = first visible row, not scrolled) | Vertical center = `Bounds.Top` + `header-height` × (header tiers, + 1 when a column has a filter row) + `i` × `row-height` + `row-height` / 2. Horizontally, add your column widths (columns with a fixed `width` are the easy case) |
-| Buttons of the built-in dialogs (`MessageBox`, `InputBox`, `InputNumber`, `SelectBox`) | **No supported way.** These dialogs take no `id` and no API reports their button positions. `app.CloseDialogs()` closes them with the cancel result (`DvDialogResult.Cancel`, or `null` for the input boxes), which covers the cancel path. For OK/Yes/No, render a PNG while the box is open and take the position from it: the buttons sit in the bottom row, right-aligned, OK/Yes on the far right and No to its left |
 
 Then **open the real window** (and, with `fit`, resize it and press something). The OpenTK window reads the real cursor position, so posted OS mouse messages are not a reliable test there.
 

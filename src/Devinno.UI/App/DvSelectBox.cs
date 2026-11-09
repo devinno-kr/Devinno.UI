@@ -14,13 +14,13 @@ internal sealed class DvSelectBoxDialog : DvOkCancelDialog<int?>
             .sel-row:hover { background: token(surface-raised) }
             .selected, .selected:hover { background: token(primary); color: token(primary-fg) }
           </DvStyle>
-          <DvRepeat items="{Rows}" gap="none" style="max-height:320; overflow:scroll">
+          <DvRepeat id="list" items="{Rows}" gap="none" style="max-height:320; overflow:scroll">
             <DvLabel class="{Item.Class}" text="{Item.Text}" onclick="Pick"/>
           </DvRepeat>
           <DvRow gap="sm">
             <DvSpacer/>
-            <DvButton text="{CancelText}" variant="secondary" onclick="PressCancel"/>
-            <DvButton text="{OkText}" variant="primary" onclick="PressOk" disabled="{NothingSelected}"/>
+            <DvButton id="cancel" text="{CancelText}" variant="secondary" onclick="PressCancel"/>
+            <DvButton id="ok" text="{OkText}" variant="primary" onclick="PressOk" disabled="{NothingSelected}"/>
           </DvRow>
         </DvDialogFrame>
         """;

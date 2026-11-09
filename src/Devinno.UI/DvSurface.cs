@@ -270,6 +270,7 @@ public sealed partial class DvSurface
         _reads.ClearWarned(); // 고친 마크업 — 남은 경고를 다시 한 번 알린다
         _controlsByNode.Clear();
         _controlBoxes = null;
+        _idBoxes = null;
         lock (_tabIndex)
             _tabIndex.Clear();
         lock (_expanders)
@@ -629,14 +630,18 @@ public sealed partial class DvSurface
 
     private void BuildControlBoxes()
     {
-        if (_controlsByNode.Count == 0 || _box is null)
+        var ids = TracksIds && _box is not null ? IdNodes() : null;
+        if ((_controlsByNode.Count == 0 && ids is null) || _box is null)
             return;
         var table = new Dictionary<Controls.DvControl, (LayoutBox, LayoutBox[])>();
+        var idTable = ids is null ? null : new Dictionary<string, (LayoutBox, LayoutBox[])>(StringComparer.Ordinal);
         var scrollers = new List<LayoutBox>();
         void Walk(LayoutBox b)
         {
             if (_controlsByNode.TryGetValue(b.Origin, out var c))
                 table.TryAdd(c, (b, scrollers.ToArray()));
+            if (ids is not null && ids.TryGetValue(b.Origin, out var id))
+                idTable!.TryAdd(id, (b, scrollers.ToArray()));
             var maps = b.IsScroller || b.HasContentTransform;
             if (maps)
                 scrollers.Add(b);
@@ -646,6 +651,10 @@ public sealed partial class DvSurface
                 scrollers.RemoveAt(scrollers.Count - 1);
         }
         Walk(_box);
+        if (idTable is not null)
+            _idBoxes = idTable;
+        if (_controlsByNode.Count == 0)
+            return;
         _controlBoxes = table;
 
         // 값 핸들 — 다시 만든 화면에서 값이 바뀌었으면(VM 속성을 코드가 직접 바꿈 등) 바뀜 이벤트, 배치 전에 쓴 선택 번호 적용
@@ -676,6 +685,49 @@ public sealed partial class DvSurface
         foreach (var c in _controlsByNode.Values)
             if (c is Controls.DvRadio && !ReferenceEquals(c, except) && ReferenceEquals(c.Surface, this))
                 c.ObserveValue(byUser);
+    }
+
+    /// <summary>Whether layout also records the box of every <c>id</c> element (for <see cref="App.DvDialog.BoundsOf"/>). Set on dialog screens only.</summary>
+    internal bool TracksIds { get; set; }
+
+    // id → (박스, 좌표를 바꾸는 조상) — _controlBoxes 와 같은 규칙(레이아웃 끝에 통째 교체). TracksIds 일 때만.
+    private volatile Dictionary<string, (LayoutBox Box, LayoutBox[] Scrollers)>? _idBoxes;
+    private ElementNode? _idNodesRoot;
+    private Dictionary<ElementNode, string>? _idNodes;
+
+    // 마크업의 id 요소 — DvControlLookup 과 같은 범위(DvRepeat·DvComponent 안은 찾지 않음, 그 요소 자신의 id 는 포함). 같은 id 는 마크업 순서로 처음 것. _root 가 바뀔 때만 다시 센다.
+    private Dictionary<ElementNode, string> IdNodes()
+    {
+        if (_idNodes is not null && ReferenceEquals(_idNodesRoot, _root))
+            return _idNodes;
+        var map = new Dictionary<ElementNode, string>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        void Scan(ElementNode n)
+        {
+            if (n.Attributes.TryGetValue("id", out var id) && id.Length > 0 && seen.Add(id))
+                map[n] = id;
+            if (n.Tag is "DvRepeat" or "DvComponent")
+                return;
+            foreach (var c in n.Children)
+                Scan(c);
+        }
+        Scan(_root);
+        _idNodesRoot = _root;
+        return _idNodes = map;
+    }
+
+    /// <summary>The window-coordinate bounds of the <c>id</c> element in the last completed layout (current scroll), or <see langword="null"/> if none, not laid out or not tracked.</summary>
+    internal SKRect? WindowBoundsOfId(string id)
+    {
+        if (_idBoxes is not { } t || !t.TryGetValue(id, out var e))
+            return null;
+        var map = ScreenMap.Identity;
+        foreach (var s in e.Scrollers)
+            map = map.Into(s);
+        var r = map.Map(e.Box.Rect);
+        var o = WindowOffset;
+        r.Offset(o.X, o.Y);
+        return r;
     }
 
     /// <summary>Top-left position where this screen is drawn, relative to the window (top-level screen). For a slot screen (DvApp area/page), the root sets it to the slot position.</summary>

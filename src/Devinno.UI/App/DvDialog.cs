@@ -1,3 +1,5 @@
+using SkiaSharp;
+
 namespace Devinno.UI.App;
 
 /// <summary>
@@ -59,6 +61,29 @@ public abstract class DvDialog
 
     /// <summary>The screen of this dialog kept by the app (created on the apply frame). Volatile because <see cref="DvApp.Invalidate"/> on other threads reads it.</summary>
     internal DvSurface? Surface { get => _surface; set => _surface = value; }
+
+    /// <summary>
+    /// Gets the bounds of the element with this <c>id</c> in this dialog, relative to the window (top-level screen), in px — the same coordinates as <see cref="Controls.DvControl.Bounds"/> and
+    /// <see cref="DvSurface.PointerDown"/> on <c>App.Surface</c>. Use it to find where to press in a headless test, including the buttons of the built-in boxes
+    /// (<see cref="DvApp.MessageBox"/>, <see cref="DvApp.InputBox"/>, <see cref="DvApp.InputNumber"/>, <see cref="DvApp.SelectBox"/>), which have fixed ids.
+    /// </summary>
+    /// <remarks>
+    /// <para>Based on the last completed layout, like <see cref="Controls.DvControl.Bounds"/>: inside a scroll box it reflects the current scroll position. Read it after a frame, on the thread that runs the frames.</para>
+    /// <para>Returns <see langword="null"/> when the dialog is not open, its screen has not been laid out yet (before the first frame after <c>ShowDialog</c>), no element has this <c>id</c>,
+    /// or the element is not in the layout (<c>visible</c> false, or an ancestor hidden).</para>
+    /// <para>Elements inside a <c>DvRepeat</c> or inside a component's own markup are not searched (the same limit as <c>id</c> handles); the <c>DvRepeat</c> element itself and a component instance's <c>id</c> are found.
+    /// If several elements share an <c>id</c>, the first in markup order is used.</para>
+    /// <para>Built-in box ids: <c>MessageBox</c> — <c>yes</c> (YesNo, YesNoCancel) or <c>ok</c> (Ok, OkCancel), <c>no</c>, <c>cancel</c> (only the buttons shown);
+    /// <c>InputBox</c>/<c>InputNumber</c> — <c>input</c>, <c>ok</c>, <c>cancel</c>; <c>SelectBox</c> — <c>list</c>, <c>ok</c>, <c>cancel</c>.</para>
+    /// </remarks>
+    /// <param name="id">The <c>id</c> in the dialog's markup.</param>
+    /// <returns>The rectangle in window coordinates, or <see langword="null"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="id"/> is <see langword="null"/>.</exception>
+    public SKRect? BoundsOf(string id)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+        return IsOpen && Surface is { } s ? s.WindowBoundsOfId(id) : null;
+    }
 
     internal string GetMarkup() => MarkupSource;
 

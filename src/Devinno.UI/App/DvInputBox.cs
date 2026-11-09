@@ -5,11 +5,11 @@ internal sealed class DvInputBoxDialog : DvOkCancelDialog<string?>
 {
     private const string Markup = """
         <DvDialogFrame title="{Caption}" style="width:360">
-          <DvInput value="{Bind Value}"/>
+          <DvInput id="input" value="{Bind Value}"/>
           <DvRow gap="sm">
             <DvSpacer/>
-            <DvButton text="{CancelText}" variant="secondary" onclick="PressCancel"/>
-            <DvButton text="{OkText}" variant="primary" onclick="PressOk"/>
+            <DvButton id="cancel" text="{CancelText}" variant="secondary" onclick="PressCancel"/>
+            <DvButton id="ok" text="{OkText}" variant="primary" onclick="PressOk"/>
           </DvRow>
         </DvDialogFrame>
         """;
@@ -51,11 +51,11 @@ internal sealed class DvNumberBoxDialog : DvOkCancelDialog<double?>
 {
     private const string Markup = """
         <DvDialogFrame title="{Caption}" style="width:360">
-          <DvInput value="{Bind Value}" keyboard-type="numeric" min="{Min}" max="{Max}" unit="{Unit}"/>
+          <DvInput id="input" value="{Bind Value}" keyboard-type="numeric" min="{Min}" max="{Max}" unit="{Unit}"/>
           <DvRow gap="sm">
             <DvSpacer/>
-            <DvButton text="{CancelText}" variant="secondary" onclick="PressCancel"/>
-            <DvButton text="{OkText}" variant="primary" onclick="PressOk"/>
+            <DvButton id="cancel" text="{CancelText}" variant="secondary" onclick="PressCancel"/>
+            <DvButton id="ok" text="{OkText}" variant="primary" onclick="PressOk"/>
           </DvRow>
         </DvDialogFrame>
         """;

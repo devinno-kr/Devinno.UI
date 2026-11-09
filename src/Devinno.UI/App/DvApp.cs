@@ -912,6 +912,7 @@ public sealed class DvApp : ISurfaceComposer
         if (dialog.Surface is { } s)
             return s;
         s = Create(MarkupOf(dialog.GetMarkup(), dialog.GetMarkupFile()), dialog);
+        s.TracksIds = true; // BoundsOf(id)
         s.AfterFirstSlotLayout = dialog.AfterFirstLayout;
         s.EditCommitted = dialog.AfterEditCommitted;
         dialog.Surface = s;

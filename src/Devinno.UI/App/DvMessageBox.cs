@@ -45,6 +45,7 @@ internal sealed class DvMessageBoxDialog : DvDialog<DvDialogResult?>
 
     // 본문은 라벨 하나 — 엔진이 칸 폭(창 폭 − 32 까지)에 맞춰 줄바꿈한다. 폭 = 글자 한 줄 폭 + 틀 여백, 최소 360(최대는 다이얼로그 칸).
     // 본문은 스크롤 상자 안 — 높이는 내용 높이이고, 창보다 길면 칸 높이에 맞춰 줄어 본문만 스크롤된다(버튼 줄은 칸 안).
+    // 버튼 id(BoundsOf) — 주 버튼은 예/아니요 구성이면 "yes", 아니면 "ok"(PRIMARY_ID 를 인스턴스마다 바꾼다)
     private const string Markup = """
         <DvDialogFrame title="{Caption}" style="min-width:360">
           <DvStack gap="none" style="overflow:scroll">
@@ -52,9 +53,9 @@ internal sealed class DvMessageBoxDialog : DvDialog<DvDialogResult?>
           </DvStack>
           <DvRow gap="sm">
             <DvSpacer/>
-            <DvButton text="{CancelText}" variant="secondary" onclick="PressCancel" visible="{HasCancel}"/>
-            <DvButton text="{NoText}" variant="secondary" onclick="PressNo" visible="{HasNo}"/>
-            <DvButton text="{PrimaryText}" variant="primary" onclick="PressPrimary"/>
+            <DvButton id="cancel" text="{CancelText}" variant="secondary" onclick="PressCancel" visible="{HasCancel}"/>
+            <DvButton id="no" text="{NoText}" variant="secondary" onclick="PressNo" visible="{HasNo}"/>
+            <DvButton id="PRIMARY_ID" text="{PrimaryText}" variant="primary" onclick="PressPrimary"/>
           </DvRow>
         </DvDialogFrame>
         """;
@@ -66,7 +67,7 @@ internal sealed class DvMessageBoxDialog : DvDialog<DvDialogResult?>
         _buttons = buttons;
     }
 
-    protected override string MarkupSource => Markup;
+    protected override string MarkupSource => Markup.Replace("PRIMARY_ID", PrimaryIsYes ? "yes" : "ok");
 
     public string? Caption { get; }
 

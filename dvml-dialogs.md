@@ -1,6 +1,6 @@
 # Dialogs (DvDialog, ShowDialog, MessageBox)
 
-Covers: how dialogs work, defining a dialog, showing it and receiving the result, the message box, the built-in input/number/select boxes, dialog lifecycle and input, patterns (confirm, edit a copy, communication alarms, stacking, closing one dialog), and screen lock and idle detection.
+Covers: how dialogs work, defining a dialog, showing it and receiving the result, the message box, the built-in input/number/select boxes, finding a dialog element's position from code (`BoundsOf` and the built-in box ids), dialog lifecycle and input, patterns (confirm, edit a copy, communication alarms, stacking, closing one dialog), and screen lock and idle detection.
 Read first: [pages and the app](dvml-app.md#dvapp) · [the complete app example with `SetpointDialog`](dvml-app.md#app-example)
 Not here: [`<DvDialogFrame>` attributes and look](dvml-widgets.md#dvdialogframe) · [thread contract](dvml-app.md#threads) · [`HandlerError` kinds](dvml-language.md#handler-error) · [scroll boxes](dvml-layout.md#scroll) · [dialog button texts (localization keys)](dvml-app.md#localization) · [alarm widgets](dvml-instruments.md#dvalarmlist)
 
@@ -147,6 +147,7 @@ Signature: `Task<DvDialogResult> MessageBox(string text, string? caption = null,
 - Width defaults to 360; long text widens it up to window width − 32 and then wraps (font `font.body`; the body is a single label — [text wrapping](dvml-layout.md#text-wrap)). If the window size changes while the box is shown, it re-wraps. Text taller than the window: only the body scrolls and the button row stays in the box (short text has no scrollbar).
 - Button text comes from the [localization](dvml-app.md#localization) keys `dv.dialog.ok` `dv.dialog.cancel` `dv.dialog.yes` `dv.dialog.no`; if absent, the built-in English (or Korean with `Language = "ko"`) OK/Cancel/Yes/No.
 - Each call creates a new stacked box. Several in a row do not overwrite one another; each returns its own result. Callable from any thread.
+- The buttons have fixed ids (`yes`/`ok`, `no`, `cancel`) for [`BoundsOf`](#dialog-bounds).
 
 <a id="builtin-boxes"></a>
 ## Built-in boxes: text input, number input, choosing from a list
@@ -164,6 +165,7 @@ When asking for **just one value** (a name, a setting, a mode), **do not build a
 - **A `null` result means cancel** (the cancel button, or closed from outside: `CloseDialogs()`, the dialog below closes, the window closes). Receive it with `is { } value` as in the example below. Do not erase the null with `?? 0` or `.Value`; cancel would become 0 or an exception.
 - Width is fixed at 360 and the title is `caption`. OK is the rightmost `primary` button; button text uses the same localization keys as the message box, `dv.dialog.ok` and `dv.dialog.cancel` (if absent, OK/Cancel).
 - Callable from any thread; each call stacks a new box that returns its own result. Thread rules after `await` are the same as for `ShowDialog` ([after `await`](#dialog-show)).
+- The input box, the list and the buttons have fixed ids (`input`, `list`, `ok`, `cancel`) for [`BoundsOf`](#dialog-bounds).
 
 **Input boxes (`InputBox`, `InputNumber`)**
 
@@ -217,6 +219,34 @@ public sealed partial class RecipePage
     }
 }
 ```
+
+<a id="dialog-bounds"></a>
+## Finding a dialog element from code (BoundsOf)
+
+`SKRect? BoundsOf(string id)` on any open dialog (`App.Dialogs.Top`, or an element of `App.Dialogs`) returns where the element with that `id` is, in window coordinates: the same coordinates as a handle's `Bounds` and as `App.Surface.PointerDown`. Use it in headless tests to press dialog buttons ([driving the app without a window](llm-rules.md#verify-targets)).
+
+- It works for your own dialogs (any element with an `id`) and for the built-in boxes, whose elements have the fixed ids below.
+- **Read it after a frame, on the thread that runs the frames.** It reflects the last completed layout and the current scroll position, like a handle's `Bounds` ([handles](dvml-code.md#handles)).
+- **`null`** when the dialog is not open (closed, or closing requested), its screen is not laid out yet (`ShowDialog` was called but no frame has run since), no element has that `id`, or the element is not in the layout (`visible` false, or an ancestor hidden).
+- Elements inside a `DvRepeat` and inside a component's own markup are not searched, the same limit as `id` handles. The `DvRepeat` itself and a component instance can be found by their own `id`. With duplicate ids, the first in markup order wins.
+- `id` `null` throws `ArgumentNullException`.
+
+Ids of the built-in boxes:
+
+| Box | Id | Element | Present when |
+|---|---|---|---|
+| `MessageBox` | `yes` | Yes button (rightmost) | `buttons` is `YesNo` or `YesNoCancel` |
+| | `ok` | OK button (rightmost) | `buttons` is `Ok` or `OkCancel` |
+| | `no` | No button | `YesNo`, `YesNoCancel` |
+| | `cancel` | Cancel button | `OkCancel`, `YesNoCancel` |
+| `InputBox`, `InputNumber` | `input` | The input box | Always |
+| | `ok` | OK button | Always |
+| | `cancel` | Cancel button | Always |
+| `SelectBox` | `list` | The item list (scroll box) | Always |
+| | `ok` | OK button (disabled until a row is selected) | Always |
+| | `cancel` | Cancel button | Always |
+
+A button that is not present returns `null`. The rows of the `SelectBox` list have no ids of their own; they lie inside the `list` rectangle, in item order from the top.
 
 <a id="dialog-lifecycle"></a>
 ## Lifecycle and input
