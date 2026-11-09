@@ -68,7 +68,7 @@ public class GridGroupTests
     {
         var vm = new GridLayoutBuildTests.Vm();
         var s = Surface("<DvColumnGroup header=\"G\"><DvColumn field=\"Id\"/><DvColumn field=\"Name\"/></DvColumnGroup>",
-            "items=\"{Rows}\" selection-mode=\"single\" selection=\"{Bind Picked}\"", vm);
+            "items=\"{Rows}\" selection-mode=\"single\" selected-items=\"{Bind Picked}\"", vm);
         var p = new SKPoint(150, 80 + 24);
         s.PointerDown(p);
         s.PointerUp(p);

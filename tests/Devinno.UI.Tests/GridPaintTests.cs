@@ -54,7 +54,7 @@ public class GridPaintTests
         var vm = new Vm();
         vm.Picked.Add(vm.Rows[2]);
         using var bmp = Render(Surface(
-            GridLayoutBuildTests.Screen("items=\"{Rows}\" selection-mode=\"single\" selection=\"{Bind Picked}\""), vm));
+            GridLayoutBuildTests.Screen("items=\"{Rows}\" selection-mode=\"single\" selected-items=\"{Bind Picked}\""), vm));
         Assert.Equal(Token("grid-row-selected"), bmp.GetPixel(3, 40 + 48 * 2 + 20));
         Assert.Equal(Token("grid-row"), bmp.GetPixel(3, 40 + 48 * 0 + 20));
         Assert.Equal(Token("grid-row-alt"), bmp.GetPixel(3, 40 + 48 * 1 + 20));

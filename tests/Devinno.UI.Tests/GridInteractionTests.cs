@@ -66,8 +66,8 @@ public class GridInteractionTests
         s.Layout(300, 300);
     }
 
-    private const string Multi = "items=\"{Rows}\" selection-mode=\"multi\" selection=\"{Bind Picked}\"";
-    private const string Single = "items=\"{Rows}\" selection-mode=\"single\" selection=\"{Bind Picked}\"";
+    private const string Multi = "items=\"{Rows}\" selection-mode=\"multi\" selected-items=\"{Bind Picked}\"";
+    private const string Single = "items=\"{Rows}\" selection-mode=\"single\" selected-items=\"{Bind Picked}\"";
 
     [Fact]
     public void Single_selects_the_tapped_row_only()
@@ -128,7 +128,7 @@ public class GridInteractionTests
     public void One_way_selection_is_kept_on_screen_but_not_written()
     {
         var vm = new Vm();
-        var s = Surface("items=\"{Rows}\" selection-mode=\"multi\" selection=\"{Picked}\"", vm);
+        var s = Surface("items=\"{Rows}\" selection-mode=\"multi\" selected-items=\"{Picked}\"", vm);
         Tap(s, RowPt(2));
         Assert.Empty(vm.Picked);
         Assert.True(Grid(s).Grid!.IsSelected(vm.Rows[2])); // 탭 뒤 재빌드를 거쳐도 화면 선택 유지
@@ -138,7 +138,7 @@ public class GridInteractionTests
     public void One_way_selection_follows_the_vm_when_it_changes()
     {
         var vm = new Vm();
-        var s = Surface("items=\"{Rows}\" selection-mode=\"single\" selection=\"{Picked}\"", vm);
+        var s = Surface("items=\"{Rows}\" selection-mode=\"single\" selected-items=\"{Picked}\"", vm);
         Tap(s, RowPt(1));
         vm.Picked = new List<Row> { vm.Rows[2] }; // VM 이 새 목록으로 선택을 바꿈
         s.Invalidate();

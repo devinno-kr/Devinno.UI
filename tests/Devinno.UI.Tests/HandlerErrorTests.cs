@@ -259,7 +259,7 @@ public class HandlerErrorTests
     public void Grid_selection_setter_exception_keeps_previous_selection()
     {
         var vm = new GridVm();
-        var s = Grid(vm, "items=\"{Rows}\" row-key=\"Id\" selection-mode=\"single\" selection=\"{Bind Picked}\"");
+        var s = Grid(vm, "items=\"{Rows}\" row-key=\"Id\" selection-mode=\"single\" selected-items=\"{Bind Picked}\"");
         var errors = Watch(s);
         Tap(s, GridCell(30, 1), 600, 400);
         Assert.Empty(s.Root!.Children[0].Grid!.SelectedItems);

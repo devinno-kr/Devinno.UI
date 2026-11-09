@@ -87,7 +87,7 @@ internal static class GridEditFixture
         "<DvColumn header=\"예약\" field=\"ReserveAt\" width=\"100\" cell-type=\"datetime\" format=\"MM-dd HH:mm\"/>" +
         "<DvColumn header=\"색\" field=\"Pen\" width=\"100\" cell-type=\"color\"/>";
 
-    public const string Attrs = "items=\"{Rows}\" row-key=\"Id\" selection-mode=\"single\" selection=\"{Bind Picked}\" onrowclick=\"Inspect\"";
+    public const string Attrs = "items=\"{Rows}\" row-key=\"Id\" selection-mode=\"single\" selected-items=\"{Bind Picked}\" onrowclick=\"Inspect\"";
 
     public static string Grid(string cols = Cols, string attrs = Attrs)
         => $"<DvDataGrid {attrs} style=\"height:240\">{cols}</DvDataGrid>";

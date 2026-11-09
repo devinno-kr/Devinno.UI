@@ -588,7 +588,7 @@ Example: `style="background: token(surface); border: 1 token(border); padding: t
 
 ### 6.2 Where two-way binding is accepted
 
-`value="{Bind …}"` is meaningful only on: `DvToggle`, `DvCheckBox`, `DvRadio`, `DvSwitch`, `DvKnob`, `DvSlider`, `DvInput`, `DvSelect`, `DvListBox` (including `selected-items`), `DvExpander` (`expanded`), `DvTreeView`, `DvSegment`, `DvTabs`, `DvButton` (latching), `DvDateTimeInput`, `DvColorInput`, the `selection` of `DvDataGrid`, and `position`/`duration` of `DvVideo`. On any other attribute, `{Bind X}` is read-only, like `{X}`. Giving an input widget a one-way `{X}` or a literal makes it **read-only**.
+`value="{Bind …}"` is meaningful only on: `DvToggle`, `DvCheckBox`, `DvRadio`, `DvSwitch`, `DvKnob`, `DvSlider`, `DvInput`, `DvSelect`, `DvListBox` (including `selected-items`), `DvExpander` (`expanded`), `DvTreeView`, `DvSegment`, `DvTabs`, `DvButton` (latching), `DvDateTimeInput`, `DvColorInput`, the `selected-items` of `DvDataGrid`, and `position`/`duration` of `DvVideo`. On any other attribute, `{Bind X}` is read-only, like `{X}`. Giving an input widget a one-way `{X}` or a literal makes it **read-only**.
 
 ### 6.3 Attributes that are not bound
 
@@ -598,7 +598,7 @@ Most attributes are bound. The following are **not bound and are used literally*
 |---|---|
 | All elements | `onclick` `onbeforecommit` (method names), `id` (control name, chapter 20), `vm` on the root |
 | `DvAlarmBanner` `DvAlarmList` | `onack` |
-| `DvDataGrid` | `row-key` `row-class` `onrowclick` (paths / names), `selection` (the binding expression itself) |
+| `DvDataGrid` | `row-key` `row-class` `onrowclick` (paths / names), `selected-items` (the binding expression itself) |
 | `DvColumn` | `field` `onclick` `onbeforecommit` `cell-disabled` `cell-class` (paths / names) |
 | `DvSelect`, select cell | `item-value` `item-text` `item-icon` (paths inside the item) |
 | `DvSummary` | `field` |
@@ -651,7 +651,7 @@ Every widget and grid cell looks the method up the same way, in this order (the 
 
 - **The rejection text is the same for every rejection** ("This value is not allowed", `dv.input.rejected`; Korean or your own text with `DvStrings`, chapter 17). A confirmation method cannot return its own reason. To show a specific reason, set a VM property inside the method, bind a label to it, and call `App.Invalidate()` in the method — a rejected commit does not rebuild the screen by itself.
 
-When rejected (including the cases above): `DvInput` stays in edit mode and shows the error text, and picker popups stay open. A `DvSelect` dropdown closes and the value is unchanged (a grid `select` cell stays open). Toggles, knobs, and `check` cells keep their value, and grid row selection (`selection="{Bind …}"`) keeps the previous selection.
+When rejected (including the cases above): `DvInput` stays in edit mode and shows the error text, and picker popups stay open. A `DvSelect` dropdown closes and the value is unchanged (a grid `select` cell stays open). Toggles, knobs, and `check` cells keep their value, and grid row selection (`selected-items="{Bind …}"`) keeps the previous selection.
 
 ### 6.6 VM constants (`Styles`, `Values`)
 
@@ -1025,7 +1025,7 @@ An always-open selection list. Choices are built exactly like `DvSelect` (`items
 ```
 
 - **Single selection** (default): `value` is the **value** of the chosen choice (not its index — same conversion and comparison as `DvSelect`). Pressing a row writes that value once. Pressing the chosen row again leaves it unchanged.
-- **Multiple selection**: `selection-mode="multi"` + `selected-items="{Bind X}"`. Each row press adds or removes it, and every change writes a **new list** (same type rules as `DvDataGrid`'s `selection`: `T[]` `List<T>` `IList<T>` `IReadOnlyList<T>` `IEnumerable<T>`, elements are choice values converted to `T`). `onbeforecommit` receives the new list (`bool M(object)` or that list type). The mode name is `selection-mode`, same as `DvDataGrid`.
+- **Multiple selection**: `selection-mode="multi"` + `selected-items="{Bind X}"`. Each row press adds or removes it, and every change writes a **new list** (same type rules as `DvDataGrid`'s `selected-items`: `T[]` `List<T>` `IList<T>` `IReadOnlyList<T>` `IEnumerable<T>`, elements are choice values converted to `T`). `onbeforecommit` receives the new list (`bool M(object)` or that list type). The mode name is `selection-mode`, same as `DvDataGrid`.
 - Row height is 40; without a given height, it is tall enough to show up to 5 rows. More rows scroll inside the list (scroll panel — dragging scrolls and does not select; includes inertia and scrollbar). For hundreds of rows or multiple columns, use `DvDataGrid`.
 - One-way, fixed value, or `readonly` only displays (dashed border, `.input-readonly`); `disabled` dims it. With only `id` and no `value` (`selected-items` for multiple), the handle holds the chosen value (20.9). With neither, it only displays.
 - Appearance: `.listbox` (surface background, border, rounded corners, inner padding 4), rows `.listbox-item`, chosen row `.listbox-item-on` (`primary` background). Row text does not wrap.
@@ -1050,7 +1050,7 @@ Expand and collapse hierarchical data (plant → line → equipment) and pick on
 ## 11. Data grid (DvDataGrid)
 
 ```xml
-<DvDataGrid items="{Rows}" grow="1" selection-mode="multi" selection="{Bind Picked}" row-key="Id"
+<DvDataGrid items="{Rows}" grow="1" selection-mode="multi" selected-items="{Bind Picked}" row-key="Id"
             onrowclick="Inspect" row-class="RowClass"
             style="border-radius:token(radius.md); border:1 solid token(border)">
   <DvColumn header="No"   field="Id"   width="80" frozen="true" sortable="true"/>
@@ -1075,7 +1075,7 @@ Expand and collapse hierarchical data (plant → line → equipment) and pick on
 | `row-height` | Row height (48) — all rows are the same |
 | `header-height` | Height of one header tier (40) |
 | `selection-mode` | `none` (default) `single` `multi` (multi = each tap toggles) |
-| `selection` | Selection binding (11.4) |
+| `selected-items` | Selection binding (11.4) — the same name and meaning as `DvListBox selected-items` (it was `selection` before 0.x stage 4) |
 | `row-key` | Property path that identifies a row. Keeps selection and editing even when row objects are replaced |
 | `onrowclick` | Row click method — `M(Row row)` if it exists, otherwise `M()` (called after the selection is updated) |
 | `row-class` | Property path on the row item. Its value = class name applied to the row (11.6) |
@@ -1107,7 +1107,7 @@ Default size 480 × (header + 5 rows + summary rows). Rounded corners and border
 
 ### 11.4 Selection
 
-- `selection="{Bind X}"` writes a **new list** every time the selection changes. The type of `X` can be `T[]`, `List<T>`, `IList<T>`, `IReadOnlyList<T>`, `IEnumerable<T>`; in single mode, `T` is also allowed.
+- `selected-items="{Bind X}"` writes a **new list** every time the selection changes. The type of `X` can be `T[]`, `List<T>`, `IList<T>`, `IReadOnlyList<T>`, `IEnumerable<T>`; in single mode, `T` is also allowed.
 - Without `{Bind}`, the selection lives only on screen. One-way `{X}` is re-applied when the VM assigns a new value (do not modify the list; assign a new list).
 - With `row-key`, selection is kept even when row objects are replaced.
 
@@ -1202,7 +1202,7 @@ Bindable, interpreted the same as literals. Any other value = warning, then `non
 
 **Interaction with other features**
 - Sorting is applied to the filtered rows, and summary rows compute **visible rows only**.
-- Rows removed by a filter are dropped from the selection (the `selection` binding is updated too).
+- Rows removed by a filter are dropped from the selection (the `selected-items` binding is updated too).
 - A row being edited stays until editing ends, then is immediately re-filtered.
 - Even when values change, filtering is re-run on `Repaint()`, rebuild and `items` replacement. While a condition is set, `Repaint()`, `Invalidate()` and edit end re-filter and also re-sort, so rows whose values changed may move. Filter state survives rebuilds but **cannot be read or set from app code**.
 - Theme tokens: `grid-filter` (filter row background), `grid-filter-fg` (funnel without condition), `grid-filter-active` (funnel with condition, summary).

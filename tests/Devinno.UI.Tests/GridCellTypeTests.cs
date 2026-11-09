@@ -51,7 +51,7 @@ public class GridCellTypeTests
         "<DvColumn header=\"확인\" width=\"60\" cell-type=\"button\" text=\"ACK\" onclick=\"Ack\" cell-disabled=\"AckDisabled\"/>" +
         "<DvColumn header=\"이름\" field=\"Name\"/>";
 
-    private const string Selectable = "items=\"{Rows}\" selection-mode=\"single\" selection=\"{Bind Picked}\" onrowclick=\"Inspect\"";
+    private const string Selectable = "items=\"{Rows}\" selection-mode=\"single\" selected-items=\"{Bind Picked}\" onrowclick=\"Inspect\"";
 
     private static DvSurface Surface(Vm vm, string cols = Cols, string attrs = Selectable)
     {

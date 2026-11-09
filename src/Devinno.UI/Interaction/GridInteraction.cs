@@ -163,7 +163,7 @@ internal static class GridInteraction
         var (ok, value) = Snapshot(BindingResolver.ResolvePropertyType(ctx, path), g.SelectedItems);
         if (ok)
             return HandlerErrors.TrySet(owner, box.Node.Tag, ctx, path, value);
-        Trace.TraceWarning($"Devinno.UI: DvDataGrid selection '{path}': unsupported property type (T[], List<T>, IList<T>, IReadOnlyList<T>, IEnumerable<T>; T for single)");
+        Trace.TraceWarning($"Devinno.UI: DvDataGrid selected-items '{path}': unsupported property type (T[], List<T>, IList<T>, IReadOnlyList<T>, IEnumerable<T>; T for single)");
         return true;
     }
 

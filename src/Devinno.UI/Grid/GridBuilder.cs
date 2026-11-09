@@ -192,7 +192,7 @@ internal static class GridBuilder
         }
 
         var key = r.Raw("row-key") is { Length: > 0 } k ? new FieldReader(k) : null;
-        var selExpr = r.Raw("selection");
+        var selExpr = r.Raw("selected-items");
         var selSource = selExpr is null ? null : SelectionValue(vm, selExpr);
         var spec = new GridSpec
         {

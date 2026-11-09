@@ -106,7 +106,7 @@ public class GridColorTests
         vm.Rows[1].RowClass = "hot";
         vm.Rows[2].RowClass = "hot";
         vm.Picked.Add(vm.Rows[1]);
-        var s = Surface(vm, "row-class=\"RowClass\" selection-mode=\"single\" selection=\"{Bind Picked}\"");
+        var s = Surface(vm, "row-class=\"RowClass\" selection-mode=\"single\" selected-items=\"{Bind Picked}\"");
         s.PointerMove(new SKPoint(150, 40 + 48 * 2 + 24)); // hover = 행 2
         using var bmp = Render(s);
         Assert.Equal(Token("grid-row-selected"), Px(bmp, NameAt(1)));
@@ -143,7 +143,7 @@ public class GridColorTests
         var vm = new Vm();
         vm.Rows[0].ValueClass = "over";
         vm.Picked.Add(vm.Rows[0]);
-        using var bmp = Render(Surface(vm, "selection-mode=\"single\" selection=\"{Bind Picked}\""));
+        using var bmp = Render(Surface(vm, "selection-mode=\"single\" selected-items=\"{Bind Picked}\""));
         Assert.Equal(Red, Px(bmp, NameAt(0)));                       // 셀 클래스 > 선택
         Assert.Equal(Token("grid-row-selected"), Px(bmp, IdAt(0)));  // 같은 행 다른 셀 = 선택색
     }

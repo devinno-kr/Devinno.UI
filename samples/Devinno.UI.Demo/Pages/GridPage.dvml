@@ -17,7 +17,7 @@
       .over      { background: token(tone-danger); color: #ffffff; font-weight: bold }
       .under     { color: token(tone-info-fg); font-weight: bold }
     </DvStyle>
-    <DvDataGrid items="{Rows}" grow="1" selection-mode="multi" selection="{Bind Picked}" row-key="Id"
+    <DvDataGrid items="{Rows}" grow="1" selection-mode="multi" selected-items="{Bind Picked}" row-key="Id"
                 onrowclick="Inspect" row-class="RowClass"
                 style="border-radius:token(radius.md); border:1 solid token(border)">
       <DvColumn header="No" field="Id" width="90" frozen="true" sortable="true"/>

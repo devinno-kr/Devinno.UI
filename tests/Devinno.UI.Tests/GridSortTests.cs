@@ -166,7 +166,7 @@ public class GridSortTests
     public void Rebuild_and_row_taps_reuse_the_sorted_order()
     {
         var vm = new Vm();
-        var s = Surface(vm, attrs: "items=\"{Rows}\" selection-mode=\"single\" selection=\"{Bind Picked}\"");
+        var s = Surface(vm, attrs: "items=\"{Rows}\" selection-mode=\"single\" selected-items=\"{Bind Picked}\"");
         Tap(s, HV);
         Render(s); // 정렬은 처음 그리거나 읽을 때 계산된다
         var order = G(s).Order;
@@ -201,7 +201,7 @@ public class GridSortTests
     public void Selection_and_rowclick_use_the_sorted_row()
     {
         var vm = new Vm();
-        var s = Surface(vm, attrs: "items=\"{Rows}\" selection-mode=\"single\" selection=\"{Bind Picked}\" onrowclick=\"Inspect\"");
+        var s = Surface(vm, attrs: "items=\"{Rows}\" selection-mode=\"single\" selected-items=\"{Bind Picked}\" onrowclick=\"Inspect\"");
         Tap(s, HV);
         Tap(s, HV); // 내림 — 첫 행 = Value 9 = Id 7
         Tap(s, new SKPoint(150, 40 + 24));
@@ -213,7 +213,7 @@ public class GridSortTests
     public void Header_tap_does_not_change_selection()
     {
         var vm = new Vm();
-        var s = Surface(vm, attrs: "items=\"{Rows}\" selection-mode=\"single\" selection=\"{Bind Picked}\"");
+        var s = Surface(vm, attrs: "items=\"{Rows}\" selection-mode=\"single\" selected-items=\"{Bind Picked}\"");
         Tap(s, HV);
         Assert.Empty(vm.Picked);
     }

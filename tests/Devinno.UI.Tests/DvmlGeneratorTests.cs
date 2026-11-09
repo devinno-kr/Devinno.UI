@@ -845,6 +845,7 @@ public class DvmlGeneratorTests
     [InlineData("<DvProcess><DvInstrument name=\"FIC\" tag=\"FIC\" on=\"P\"/><DvPump name=\"P\"/><DvSignal from=\"FIC\" to=\"P\" width=\"2\"/></DvProcess>", "DvSignal", "width", "thickness")]
     [InlineData("<DvDataGrid><DvColumn field=\"A\" cell-type=\"button\" enabled=\"CanAck\"/></DvDataGrid>", "DvColumn", "enabled", "cell-disabled")]
     [InlineData("<DvLamp on=\"true\" blink-when=\"true\"/>", "DvLamp", "blink-when", "blink")]
+    [InlineData("<DvDataGrid selection-mode=\"multi\" selection=\"{Bind Picked}\"/>", "DvDataGrid", "selection", "selected-items")]
     public void Attribute_Renamed_SaysTheNewName(string body, string tag, string old, string now)
     {
         var d = Assert.Single(Attrs($"<DvStack>{body}</DvStack>"));
@@ -869,7 +870,7 @@ public class DvmlGeneratorTests
             <DvStack>
               <DvExpander title="A"/>
               <DvLamp on="true" blink="true"/>
-              <DvDataGrid>
+              <DvDataGrid selection-mode="multi" selected-items="{Bind Picked}">
                 <DvColumn field="A" cell-type="button" cell-disabled="AckDisabled"/>
                 <DvSummaryRow label="T" fn="sum"/>
               </DvDataGrid>

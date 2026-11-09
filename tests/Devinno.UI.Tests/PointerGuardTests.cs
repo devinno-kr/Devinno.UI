@@ -139,7 +139,7 @@ public class PointerGuardTests
         "<DvColumn header=\"실행\" width=\"60\" cell-type=\"button\" text=\"GO\" onclick=\"Go\"/>";
 
     private static string GridMarkup(string extra = "") =>
-        $"<DvDataGrid items=\"{{Rows}}\" row-key=\"Id\" selection-mode=\"single\" selection=\"{{Bind Picked}}\" onrowclick=\"Inspect\" {extra} style=\"height:240\">{GridCols}</DvDataGrid>";
+        $"<DvDataGrid items=\"{{Rows}}\" row-key=\"Id\" selection-mode=\"single\" selected-items=\"{{Bind Picked}}\" onrowclick=\"Inspect\" {extra} style=\"height:240\">{GridCols}</DvDataGrid>";
 
     [Fact]
     public void A4_grid_in_disabled_container_ignores_row_cell_and_header_taps()

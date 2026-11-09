@@ -2685,10 +2685,10 @@
             <summary>몸통 위 전체(헤더 단 + 필터 행).</summary>
         </member><member name="P:Devinno.UI.Grid.GridSpec.SummaryDirty" en-hash="a3ff8e73e587cbe4">
             <summary>다음 그리기에서 요약을 다시 계산(빌드 직후·Repaint 후).</summary>
-        </member><member name="P:Devinno.UI.Grid.GridSpec.SelectionExpr" en-hash="01264a4377060581">
-            <summary><c>selection</c> 속성 원문(양방향이면 <c>{Bind …}</c>).</summary>
-        </member><member name="P:Devinno.UI.Grid.GridSpec.SelectionSource" en-hash="50bbf41c41035e3f">
-            <summary>빌드 때 <c>selection</c> 에서 읽은 원본 값(단방향 바인딩이 바뀌었는지 판단 — 같은 참조면 화면 선택 유지).</summary>
+        </member><member name="P:Devinno.UI.Grid.GridSpec.SelectionExpr" en-hash="e2ce0242816fdecf">
+            <summary><c>selected-items</c> 속성 원문(양방향이면 <c>{Bind …}</c>).</summary>
+        </member><member name="P:Devinno.UI.Grid.GridSpec.SelectionSource" en-hash="eea252b32081c84c">
+            <summary>빌드 때 <c>selected-items</c> 에서 읽은 원본 값(단방향 바인딩이 바뀌었는지 판단 — 같은 참조면 화면 선택 유지).</summary>
         </member><member name="P:Devinno.UI.Grid.GridSpec.RowClass" en-hash="944c1175e4b0dff5">
             <summary><c>row-class</c> — 항목 속성 값 = 행 클래스 이름.</summary>
         </member><member name="P:Devinno.UI.Grid.GridSpec.HasBlink" en-hash="f2aa94d1cb6014b6">

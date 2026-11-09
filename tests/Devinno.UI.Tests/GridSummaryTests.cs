@@ -138,7 +138,7 @@ public class GridSummaryTests
     {
         var vm = new Vm();
         var s = Surface(vm, "<DvSummaryRow label=\"합계\" fn=\"sum\"/>",
-            "items=\"{Rows}\" selection-mode=\"single\" selection=\"{Bind Picked}\"");
+            "items=\"{Rows}\" selection-mode=\"single\" selected-items=\"{Bind Picked}\"");
         var p = new SKPoint(150, 240 - 24);
         s.PointerDown(p);
         s.PointerUp(p);

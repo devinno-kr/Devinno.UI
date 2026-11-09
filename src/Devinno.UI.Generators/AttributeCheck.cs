@@ -93,7 +93,7 @@ internal static class AttributeCheck
         // 그리드
         ["DvDataGrid"] =
         [
-            "items", "row-height", "header-height", "selection-mode", "selection", "row-key", "row-class", "onrowclick",
+            "items", "row-height", "header-height", "selection-mode", "selected-items", "row-key", "row-class", "onrowclick",
             "header-color", "header-text-color", "text-color", "row-color", "row-alt-color", "hover-color", "selected-color", "line-color", "summary-color", "summary-text-color",
         ],
         ["DvColumn"] =
@@ -422,6 +422,7 @@ internal static class AttributeCheck
         [("DvSignal", "width")] = "thickness",
         [("DvColumn", "enabled")] = "cell-disabled",
         [("DvLamp", "blink-when")] = "blink",
+        [("DvDataGrid", "selection")] = "selected-items",
     };
 
     // enabled → cell-disabled 는 뜻도 뒤집혔다 — 그것까지 알린다

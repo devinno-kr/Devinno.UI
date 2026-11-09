@@ -27,7 +27,7 @@ public class GridFilterSelectionTests
 
     private static DvSurface Make(Vm vm, string cols = Cols)
     {
-        var s = new DvSurface(GridLayoutBuildTests.Screen("items=\"{Rows}\" selection-mode=\"multi\" selection=\"{Bind Picked}\"", cols), vm)
+        var s = new DvSurface(GridLayoutBuildTests.Screen("items=\"{Rows}\" selection-mode=\"multi\" selected-items=\"{Bind Picked}\"", cols), vm)
             { UseNativeEditor = true };
         s.Layout(400, 400);
         return s;

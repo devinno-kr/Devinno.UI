@@ -153,7 +153,7 @@ public class GridLayoutBuildTests
     {
         var vm = new Vm();
         vm.Picked.Add(vm.Rows[3]);
-        var (s, _) = Surface(Screen("items=\"{Rows}\" selection-mode=\"multi\" selection=\"{Bind Picked}\""), vm);
+        var (s, _) = Surface(Screen("items=\"{Rows}\" selection-mode=\"multi\" selected-items=\"{Bind Picked}\""), vm);
         var g = GridBox(s).Grid!;
         Assert.Equal(GridSelectionMode.Multi, g.Mode);
         Assert.True(g.IsSelected(vm.Rows[3]));

@@ -1628,7 +1628,7 @@ public sealed partial class DvSurface
     }
 
     // 목록 행 누름 — 한 개 고르기는 그 선택지 값을 value 에(DvSelect 와 같은 게이트·쓰기, 고른 것을 다시 누르면 그대로),
-    // 여럿 고르기는 그 값을 넣거나 빼서 selected-items 에 새 목록으로(그리드 selection 과 같은 형식 규칙). 읽기 전용·비활성은 무시.
+    // 여럿 고르기는 그 값을 넣거나 빼서 selected-items 에 새 목록으로(그리드 selected-items 와 같은 형식 규칙). 읽기 전용·비활성은 무시.
     private void CommitListItem(LayoutBox list, int index)
     {
         if (list.Disabled || list.ReadOnly || list.ValueBindExpr is not { } ve || !Binding.BindingResolver.IsTwoWay(ve) ||

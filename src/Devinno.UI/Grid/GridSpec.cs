@@ -37,9 +37,9 @@ internal sealed class GridSpec
     /// <summary>Recompute the summaries on the next draw (right after build, after Repaint).</summary>
     public bool SummaryDirty { get; set; } = true;
     public GridSelectionMode Mode { get; init; }
-    /// <summary>Raw <c>selection</c> attribute text (<c>{Bind …}</c> if two-way).</summary>
+    /// <summary>Raw <c>selected-items</c> attribute text (<c>{Bind …}</c> if two-way).</summary>
     public string? SelectionExpr { get; init; }
-    /// <summary>Source value read from <c>selection</c> at build (used to tell whether a one-way binding changed — the same reference keeps the on-screen selection).</summary>
+    /// <summary>Source value read from <c>selected-items</c> at build (used to tell whether a one-way binding changed — the same reference keeps the on-screen selection).</summary>
     public object? SelectionSource { get; init; }
     public FieldReader? RowKey { get; init; }
     /// <summary><c>row-class</c> — item property value = row class name.</summary>

@@ -34,7 +34,7 @@ public class TagSchemaGridTests
 
     private const string Markup =
         """
-        <DvDataGrid items="{Rows}" row-height="40" header-height="36" selection-mode="multi" selection="{Bind Selected}" row-key="Kind" row-class="Cls" onrowclick="RowClick"
+        <DvDataGrid items="{Rows}" row-height="40" header-height="36" selection-mode="multi" selected-items="{Bind Selected}" row-key="Kind" row-class="Cls" onrowclick="RowClick"
                     header-color="#111111" header-text-color="#eeeeee" text-color="#222222" row-color="#ffffff" row-alt-color="#f0f0f0"
                     hover-color="#dddddd" selected-color="#ccccee" line-color="#999999" summary-color="#eeeeee" summary-text-color="#000000">
           <DvColumnGroup header="G">

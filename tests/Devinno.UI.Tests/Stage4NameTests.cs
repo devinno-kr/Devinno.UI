@@ -121,4 +121,21 @@ public class Stage4NameTests
         Assert.False(Blink("blink-when=\"true\""));
         Assert.True(Blink("blink=\"true\" blink-when=\"false\"")); // 옛: blink-when 이 이겼다
     }
+
+    // N14 — DvDataGrid selection → selected-items (DvListBox 와 같은 이름·뜻). 옛 이름은 읽지 않는다
+    [Fact]
+    public void Grid_SelectedItems_IsTheSelection_SelectionIsNotRead()
+    {
+        static GridSpec Grid(string attr, GridLayoutBuildTests.Vm vm)
+        {
+            var s = new DvSurface(GridLayoutBuildTests.Screen($"items=\"{{Rows}}\" selection-mode=\"multi\" {attr}=\"{{Bind Picked}}\""), vm, DvTheme.Light);
+            s.Layout(400, 300);
+            return s.Root!.Children[0].Grid!;
+        }
+
+        var vm = new GridLayoutBuildTests.Vm();
+        vm.Picked.Add(vm.Rows[3]);
+        Assert.True(Grid("selected-items", vm).IsSelected(vm.Rows[3]));
+        Assert.False(Grid("selection", vm).IsSelected(vm.Rows[3]));
+    }
 }
