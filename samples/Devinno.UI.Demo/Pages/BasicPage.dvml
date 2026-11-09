@@ -137,18 +137,18 @@
         <DvGrid columns="2">
           <DvStack gap="sm">
             <DvLabel class="label" text="Independent (binding · handle · screen remembers)"/>
-            <DvExpander header="Run conditions (expanded binding)" expanded="{Bind ShowRun}">
+            <DvExpander title="Run conditions (expanded binding)" expanded="{Bind ShowRun}">
               <DvRow><DvLabel class="body" text="Target temp"/><DvSpacer/><DvLabel class="body" text="65 ℃"/></DvRow>
               <DvRow><DvLabel class="body" text="Wash time"/><DvSpacer/><DvLabel class="body" text="12 min"/></DvRow>
             </DvExpander>
-            <DvExpander id="expMore" header="Advanced settings (handle)">
+            <DvExpander id="expMore" title="Advanced settings (handle)">
               <DvCheckBox text="Auto restart" value="{Bind AlarmSound}"/>
               <DvSlider value="{Bind Valve}" step="5" unit="%" show-value="true"/>
             </DvExpander>
-            <DvExpander header="Notes (no binding — the screen remembers)">
+            <DvExpander title="Notes (no binding — the screen remembers)">
               <DvLabel class="body" text="With no binding and no id, the screen remembers whether it is open."/>
             </DvExpander>
-            <DvExpander header="Locked item (disabled)" disabled="true">
+            <DvExpander title="Locked item (disabled)" disabled="true">
               <DvLabel class="body" text="Not shown"/>
             </DvExpander>
             <DvLabel class="caption muted" text="VM run conditions open = {ShowRun}"/>
@@ -156,7 +156,7 @@
           <DvStack gap="sm">
             <DvLabel class="label" text="Accordion (DvRepeat + item setter closes the others)"/>
             <DvRepeat items="{Sections}" gap="sm">
-              <DvExpander header="{Item.Title}" expanded="{Bind Item.Open}">
+              <DvExpander title="{Item.Title}" expanded="{Bind Item.Open}">
                 <DvLabel class="body" text="{Item.Body}"/>
               </DvExpander>
             </DvRepeat>

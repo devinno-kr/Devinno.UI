@@ -190,6 +190,9 @@
   <data name="Proc_SignalNoTerminal" xml:space="preserve">
     <value>terminals (DvTerminal) and unit ports (DvPort) are not connected with signal lines</value>
   </data>
+  <data name="Attr_Renamed" xml:space="preserve">
+    <value> — '{0}' was renamed to '{1}'</value>
+  </data>
   <data name="Style_DidYouMean" xml:space="preserve">
     <value> — did you mean '{0}'?</value>
   </data>

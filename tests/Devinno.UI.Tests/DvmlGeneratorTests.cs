@@ -838,6 +838,32 @@ public class DvmlGeneratorTests
             d.Select(x => System.Text.RegularExpressions.Regex.Match(x.GetMessage(Invariant), @"^(\S+) has no attribute '([^']+)'")).Select(m => $"{m.Groups[1]} {m.Groups[2]}"));
     }
 
+    // 4단계 이름 통일 — 옛 속성 이름은 DVML019 이고, 메시지가 새 이름을 알린다(비슷한 이름 제안으로는 못 찾는 것들)
+    [Theory]
+    [InlineData("<DvExpander header=\"A\"/>", "DvExpander", "header", "title")]
+    [InlineData("<DvDataGrid><DvColumn field=\"A\"/><DvSummaryRow title=\"T\" fn=\"sum\"/></DvDataGrid>", "DvSummaryRow", "title", "label")]
+    public void Attribute_Renamed_SaysTheNewName(string body, string tag, string old, string now)
+    {
+        var d = Assert.Single(Attrs($"<DvStack>{body}</DvStack>"));
+        var msg = d.GetMessage(Invariant);
+        Assert.StartsWith($"{tag} has no attribute '{old}'", msg);
+        Assert.Contains($"'{old}' was renamed to '{now}'", msg);
+        Assert.Contains($"'{now}'", d.GetMessage(new System.Globalization.CultureInfo("ko-KR")));
+    }
+
+    [Fact]
+    public void Attribute_NewNames_NoWarnings()
+    {
+        Assert.Empty(Attrs("""
+            <DvStack>
+              <DvExpander title="A"/>
+              <DvDataGrid>
+                <DvSummaryRow label="T" fn="sum"/>
+              </DvDataGrid>
+            </DvStack>
+            """));
+    }
+
     // 3단계 R10 — 상자가 아닌 하위 요소는 공통 속성을 받지 않는다(id 와 자기 정의에 적은 것만)
     [Fact]
     public void Attribute_CommonOnChildTags_Warns()

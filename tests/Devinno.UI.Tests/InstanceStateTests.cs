@@ -103,7 +103,7 @@ public class InstanceStateTests
     [Fact]
     public void Expander_InRepeat_EachItemOpensAlone()
     {
-        var s = Start("<DvRepeat items=\"{Items}\"><DvExpander header=\"h\"><DvLabel text=\"one\"/></DvExpander></DvRepeat>");
+        var s = Start("<DvRepeat items=\"{Items}\"><DvExpander title=\"h\"><DvLabel text=\"one\"/></DvExpander></DvRepeat>");
         Assert.Empty(Bodies(s));
 
         Tap(s, Flatten(s.Root!).First(b => b.Node.Tag == "DvExpanderHeader"));

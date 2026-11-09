@@ -605,7 +605,7 @@ Most attributes are bound. The following are **not bound and are used literally*
 | Process diagram (`dvml-process.md`) | equipment, unit, `DvPort` and `DvInstrument` `name`, `DvLine`/`DvSignal` `from` `to`, `DvInstrument` `on` `tap` (names and references; a `{` in them writes a Trace warning and is used as written) |
 | `DvComponent`/`DvParam` | `name` `default` |
 
-`header`·`text`·`unit` of `DvColumn`, `DvColumnGroup header`, and `DvSummaryRow title` support only text interpolation (`"{X}개"`).
+`header`·`text`·`unit` of `DvColumn`, `DvColumnGroup header`, and `DvSummaryRow label` support only text interpolation (`"{X}개"`).
 
 ### 6.4 Click (`onclick`)
 
@@ -750,7 +750,7 @@ A component cannot be registered under the name of a built-in tag (`DvGauge`, `D
 | `DvRadio` | `text` `value` (two-way, group value) `option` `group` `readonly`(false) `onbeforecommit` `disabled` | Circle 24 + gap 10 + text, height 40 or more |
 | `DvSegment` | `value` (two-way) `readonly` `disabled` `onbeforecommit` + `DvOption` children | Sum of item text sizes + padding |
 | `DvTabs` | `value` (two-way, optional) `readonly`(false) `onbeforecommit` + `DvTab` children (`value` `text` `disabled`) | Header + content of the selected tab |
-| `DvExpander` | `header` `expanded` (two-way, optional) `disabled` + content children | Header row 44 (+ content when expanded) |
+| `DvExpander` | `title` `expanded` (two-way, optional) `disabled` + content children | Header row 44 (+ content when expanded) |
 | `DvImage` | `src` `fit`(contain) | 100×100 |
 | `DvVideo` | `src` or `source`, `fit`(contain) `playing`(true) `loop`(false) `position`(two-way, s) `duration`(written, s) | 320×180 |
 | `DvStepBar` | `steps` `current`(0) | 96 width per step (min 200)×64 |
@@ -823,18 +823,18 @@ public bool IsFault => State == 2;
 
 **DvExpander** — a panel whose content expands and collapses when the header row is pressed (the Expander of WPF / WinUI). Used to split a settings screen into sections by stacking several vertically.
 ```xml
-<DvExpander header="고급 설정" expanded="{Bind ShowAdvanced}">
+<DvExpander title="고급 설정" expanded="{Bind ShowAdvanced}">
   <DvCheckBox text="자동 재시작" value="{Bind AutoRestart}"/>
   <DvSlider value="{Bind Valve}" unit="%" show-value="true"/>
 </DvExpander>
 ```
-- Header row = ▶ (collapsed) / ▼ (expanded) icon + `header` text (bindable), height 44. The whole row is the press target. When collapsed it takes **only the header row height** and the content is not built (same as tabs — `id` handles in collapsed content have empty `Bounds`). Content stacks vertically (`.expander-body`).
+- Header row = ▶ (collapsed) / ▼ (expanded) icon + `title` text (bindable), height 44. `title` is the heading of the group (like `DvCard`/`DvPageFrame` `title`) — it is not an HTML tooltip; a future hover hint would be named `tooltip`. The whole row is the press target. When collapsed it takes **only the header row height** and the content is not built (same as tabs — `id` handles in collapsed content have empty `Bounds`). Content stacks vertically (`.expander-body`).
 - Expanded state: with `expanded="{Bind X}"` (bool), the VM owns it — pressing flips and writes it. **If omitted, the screen remembers it** (each `DvRepeat` item and each component instance separately) (initially collapsed, kept across redraws). A one-way or fixed value (`expanded="true"`) locks it in that state and pressing does not change it. To control it from code, use the `id` handle's `IsExpanded`·`ExpandedChanged` (20.9).
 - When expanding and collapsing, the height changes gradually over 0.2 seconds (ease-out) and the content below is pushed along (same when changed via VM or handle; the first screen does not animate). While collapsing, the content remains until the end and is then removed. Appearance: `.expander` (surface, border, rounded corners), `.expander-header`, `.expander-body`.
 - **A group where only one is open (accordion)** has no dedicated widget — put `DvExpander` inside `DvRepeat`, and have the item's `Open` setter close the rest of the same list.
 ```xml
 <DvRepeat items="{Sections}" gap="sm">
-  <DvExpander header="{Item.Title}" expanded="{Bind Item.Open}"><DvLabel class="body" text="{Item.Body}"/></DvExpander>
+  <DvExpander title="{Item.Title}" expanded="{Bind Item.Open}"><DvLabel class="body" text="{Item.Body}"/></DvExpander>
 </DvRepeat>
 ```
 ```csharp
@@ -1059,8 +1059,8 @@ Expand and collapse hierarchical data (plant → line → equipment) and pick on
     <DvColumn header="값" field="Value" width="120" format="0.00" sortable="true" sort="desc" cell-class="ValueClass"/>
     <DvColumn header="설비" field="Equip.Name" width="20%" align="center"/>
   </DvColumnGroup>
-  <DvSummaryRow title="합계" fn="sum"/>
-  <DvSummaryRow title="평균">
+  <DvSummaryRow label="합계" fn="sum"/>
+  <DvSummaryRow label="평균">
     <DvSummary field="Value" fn="avg" format="0.00"/>
     <DvSummary field="Name" fn="count"/>
   </DvSummaryRow>
@@ -1121,7 +1121,7 @@ Default size 480 × (header + 5 rows + summary rows). Rounded corners and border
 ### 11.6 Header groups, summary rows, conditional colors
 
 - **`DvColumnGroup header`** creates a header tier grouping columns. Nesting adds tiers, and each tier's height is `header-height`. A group spanning the frozen-column boundary is drawn split in two (warning).
-- **`DvSummaryRow title fn`** = summary band at the bottom. `fn` = `sum` `avg` `min` `max` `count`. The row's `fn` applies to all numeric columns, and `title` is shown in the first column. Place `DvSummaryRow` directly under `DvDataGrid`.
+- **`DvSummaryRow label fn`** = summary band at the bottom. `fn` = `sum` `avg` `min` `max` `count`. The row's `fn` applies to all numeric columns, and `label` is shown in the first column. Place `DvSummaryRow` directly under `DvDataGrid`.
 - **`DvSummary field fn format`** sets one column's cell individually (`field` is exactly the same path as `DvColumn field`). With `value="{X}"`, that value is shown instead of a computed one (server totals, etc.). Non-numeric values and nulls are excluded from computation, and `count` is the number of non-null values. Summaries are recomputed after `Invalidate()`/`Repaint()`.
 - **Conditional colors:** `row-class="RowClass"` (grid) and `cell-class="ValueClass"` (column) are property names on the row item. That property's value is a class name (space-separated, later wins, null = none). The condition is app code.
 

@@ -59,7 +59,7 @@ public class GridSummaryTests
     [Fact]
     public void Row_fn_sums_every_numeric_column_and_title_takes_the_first()
     {
-        var t = Texts(Surface(new Vm(), "<DvSummaryRow title=\"합계\" fn=\"sum\"/>"));
+        var t = Texts(Surface(new Vm(), "<DvSummaryRow label=\"합계\" fn=\"sum\"/>"));
         Assert.Equal(new[] { "합계", "27.5", "55", "30" }, t);
     }
 
@@ -70,7 +70,7 @@ public class GridSummaryTests
     [InlineData("count", "10", "10", "5")]
     public void Aggregates(string fn, string value, string qty, string opt)
     {
-        var t = Texts(Surface(new Vm(), $"<DvSummaryRow title=\"T\" fn=\"{fn}\"/>"));
+        var t = Texts(Surface(new Vm(), $"<DvSummaryRow label=\"T\" fn=\"{fn}\"/>"));
         Assert.Equal(new[] { "T", value, qty, opt }, t);
     }
 
@@ -78,7 +78,7 @@ public class GridSummaryTests
     public void Summary_cells_override_the_row_fn_and_take_app_values()
     {
         var t = Texts(Surface(new Vm(),
-            "<DvSummaryRow title=\"평균\" fn=\"sum\">" +
+            "<DvSummaryRow label=\"평균\" fn=\"sum\">" +
             "<DvSummary field=\"Value\" fn=\"avg\" format=\"0.000\"/>" +
             "<DvSummary field=\"Opt\" value=\"{ServerTotal}\" format=\"#,0.0\"/>" +
             "</DvSummaryRow>"));
@@ -91,7 +91,7 @@ public class GridSummaryTests
         var t = Texts(Surface(new Vm(), "<DvSummaryRow fn=\"sum\"><DvSummary field=\"Name\" fn=\"count\"/></DvSummaryRow>"));
         Assert.Equal("", t[0]); // 첫 열은 제목 자리(제목 없음)
         var t2 = Texts(Surface(new Vm(),
-            "<DvSummaryRow title=\"건수\"/><DvSummaryRow title=\"x\"><DvSummary field=\"Qty\" fn=\"count\"/></DvSummaryRow>"), 1);
+            "<DvSummaryRow label=\"건수\"/><DvSummaryRow label=\"x\"><DvSummary field=\"Qty\" fn=\"count\"/></DvSummaryRow>"), 1);
         Assert.Equal("10", t2[2]);
     }
 
@@ -99,7 +99,7 @@ public class GridSummaryTests
     public void Empty_list_leaves_cells_blank_and_count_zero()
     {
         var vm = new Vm { Rows = new List<Row>() };
-        var t = Texts(Surface(vm, "<DvSummaryRow title=\"합계\" fn=\"sum\"><DvSummary field=\"Qty\" fn=\"count\"/></DvSummaryRow>"));
+        var t = Texts(Surface(vm, "<DvSummaryRow label=\"합계\" fn=\"sum\"><DvSummary field=\"Qty\" fn=\"count\"/></DvSummaryRow>"));
         Assert.Equal("합계", t[0]);
         Assert.True(string.IsNullOrEmpty(t[1]));
         Assert.Equal("0", t[2]);
@@ -109,7 +109,7 @@ public class GridSummaryTests
     public void Repaint_recomputes_but_hover_renders_use_the_cache()
     {
         var vm = new Vm();
-        var s = Surface(vm, "<DvSummaryRow title=\"합계\" fn=\"sum\"/>", "items=\"{Rows}\" selection-mode=\"single\"");
+        var s = Surface(vm, "<DvSummaryRow label=\"합계\" fn=\"sum\"/>", "items=\"{Rows}\" selection-mode=\"single\"");
         Assert.Equal("55", Texts(s)[2]);
 
         vm.Rows[0].Qty = 101; // +100
@@ -125,7 +125,7 @@ public class GridSummaryTests
     public void Summary_band_shortens_the_body_so_the_last_row_is_reachable()
     {
         var vm = new Vm { Rows = Enumerable.Range(0, 100).Select(i => new Row { Qty = i }).ToList() };
-        var s = Surface(vm, "<DvSummaryRow title=\"합계\" fn=\"sum\"/>");
+        var s = Surface(vm, "<DvSummaryRow label=\"합계\" fn=\"sum\"/>");
         var b = Box(s);
         Assert.Equal(240 - 40 - 48, G(s).BodyHeight, 3);
         Assert.Equal(40 + 100 * 48 + 48, b.ContentHeight, 3);
@@ -137,7 +137,7 @@ public class GridSummaryTests
     public void Tapping_the_summary_band_selects_nothing()
     {
         var vm = new Vm();
-        var s = Surface(vm, "<DvSummaryRow title=\"합계\" fn=\"sum\"/>",
+        var s = Surface(vm, "<DvSummaryRow label=\"합계\" fn=\"sum\"/>",
             "items=\"{Rows}\" selection-mode=\"single\" selection=\"{Bind Picked}\"");
         var p = new SKPoint(150, 240 - 24);
         s.PointerDown(p);
@@ -148,7 +148,7 @@ public class GridSummaryTests
     [Fact]
     public void Summary_band_uses_its_token()
     {
-        var s = Surface(new Vm(), "<DvSummaryRow title=\"합계\" fn=\"sum\"/>");
+        var s = Surface(new Vm(), "<DvSummaryRow label=\"합계\" fn=\"sum\"/>");
         using var bmp = new SKBitmap(300, 300);
         using (var c = new SKCanvas(bmp))
             s.RenderTo(c, 300, 300);
@@ -162,7 +162,7 @@ public class GridSummaryTests
     {
         // 열 합이 넓어 가로 스크롤 → 아래 12px 스크롤바 자리. 요약 행과 스크롤바 사이(6px)가 비지 않아야 한다
         var s = new DvSurface(GridLayoutBuildTests.Screen("items=\"{Rows}\"",
-            "<DvColumn field=\"Name\" width=\"200\"/><DvColumn field=\"Value\" width=\"200\"/><DvSummaryRow title=\"합계\" fn=\"sum\"/>"),
+            "<DvColumn field=\"Name\" width=\"200\"/><DvColumn field=\"Value\" width=\"200\"/><DvSummaryRow label=\"합계\" fn=\"sum\"/>"),
             new Vm(), DvTheme.Light);
         s.Layout(300, 300);
         Assert.True(G(s).OverflowX);
@@ -179,7 +179,7 @@ public class GridSummaryTests
     {
         var b = new LayoutEngine().Layout(Devinno.UI.Markup.MarkupParser.Parse(
             "<DvScreen style=\"padding:0; display:flex; flex-direction:column; align-items:flex-start\">" +
-            "<DvDataGrid><DvColumn field=\"A\"/><DvSummaryRow title=\"x\"/></DvDataGrid></DvScreen>"), null, 1000, 1000).Children[0];
+            "<DvDataGrid><DvColumn field=\"A\"/><DvSummaryRow label=\"x\"/></DvDataGrid></DvScreen>"), null, 1000, 1000).Children[0];
         Assert.Equal(40 + 48 * 5 + 48, b.Rect.Height, 3);
     }
 }

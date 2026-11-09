@@ -65,7 +65,7 @@ public class GridReviewFixTests
     {
         var vm = new Vm { Rows = Enumerable.Range(0, 3).Select(_ => new Row { Dec = 0.1m, Flt = 0.1f }).ToList() };
         var s = Surface(vm, "<DvColumn field=\"Name\" width=\"60\"/><DvColumn field=\"Dec\" width=\"80\"/><DvColumn field=\"Flt\"/>" +
-                            "<DvSummaryRow title=\"합\" fn=\"sum\"/><DvSummaryRow title=\"최대\" fn=\"max\"/>");
+                            "<DvSummaryRow label=\"합\" fn=\"sum\"/><DvSummaryRow label=\"최대\" fn=\"max\"/>");
         Render(s);
         Assert.Equal("0.3", G(s).Summaries[0].Texts[1]);
         Assert.Equal("0.1", G(s).Summaries[1].Texts[1]);
@@ -81,7 +81,7 @@ public class GridReviewFixTests
             r.Owner = vm.Rows;
         vm.Rows[3].ShrinkOnRead = 20;
         var s = Surface(vm, "<DvColumn field=\"Name\" width=\"60\"/><DvColumn field=\"Shrinking\" sortable=\"true\" sort=\"asc\"/>" +
-                            "<DvSummaryRow title=\"합\" fn=\"sum\"/>");
+                            "<DvSummaryRow label=\"합\" fn=\"sum\"/>");
         Render(s); // 정렬 키를 읽는 중에 목록이 줄어든다
         vm.Rows[1].ShrinkOnRead = 10;
         s.Repaint();

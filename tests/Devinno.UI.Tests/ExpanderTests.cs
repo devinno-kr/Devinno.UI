@@ -5,7 +5,7 @@ using Devinno.UI.Styling;
 using SkiaSharp;
 using Xunit;
 
-// DvExpander — 제목 줄(▶/▼ + header)을 누르면 내용이 펼쳐지고 접힌다. 접으면 제목 줄 높이만, 내용은 만들지 않는다.
+// DvExpander — 제목 줄(▶/▼ + title)을 누르면 내용이 펼쳐지고 접힌다. 접으면 제목 줄 높이만, 내용은 만들지 않는다.
 public class ExpanderTests
 {
     private const float W = 600, H = 800;
@@ -78,7 +78,7 @@ public class ExpanderTests
     [Fact]
     public void Collapsed_ByDefault_HeaderOnly_TapExpands_ScreenRemembers()
     {
-        var (s, _) = Start($"<DvExpander header=\"펌프 설정\">{Body}</DvExpander>");
+        var (s, _) = Start($"<DvExpander title=\"펌프 설정\">{Body}</DvExpander>");
         var e = All(s, "DvExpander")[0];
         Assert.Equal("펌프 설정", Header(s).ResolvedText);
         Assert.Equal("fa-chevron-right", Header(s).Icon);
@@ -100,7 +100,7 @@ public class ExpanderTests
     [Fact]
     public void Bound_WritesVm()
     {
-        var (s, vm) = Start($"<DvExpander header=\"A\" expanded=\"{{Bind Open}}\">{Body}</DvExpander>");
+        var (s, vm) = Start($"<DvExpander title=\"A\" expanded=\"{{Bind Open}}\">{Body}</DvExpander>");
         Tap(s, Header(s));
         Assert.True(vm.Open);
         vm.Open = false;
@@ -113,7 +113,7 @@ public class ExpanderTests
     [Fact]
     public void Literal_Expanded_IsFixed_AndDisabled_DoesNotToggle()
     {
-        var (s, _) = Start($"<DvExpander header=\"A\" expanded=\"true\">{Body}</DvExpander><DvExpander header=\"B\" disabled=\"true\">{Body}</DvExpander>");
+        var (s, _) = Start($"<DvExpander title=\"A\" expanded=\"true\">{Body}</DvExpander><DvExpander title=\"B\" disabled=\"true\">{Body}</DvExpander>");
         Tap(s, Header(s, 0));
         Tap(s, Header(s, 1));
         Assert.Single(All(s, "DvLabel")); // A 는 펼친 채 고정, B 는 비활성이라 접힌 채
@@ -122,7 +122,7 @@ public class ExpanderTests
     [Fact]
     public void Handle_IsExpanded_ScreenState_And_Event()
     {
-        var (s, vm) = Start($"<DvExpander id=\"exp\" header=\"A\">{Body}</DvExpander>");
+        var (s, vm) = Start($"<DvExpander id=\"exp\" title=\"A\">{Body}</DvExpander>");
         var ev = new List<bool>();
         vm.exp!.ExpandedChanged += (_, e) => ev.Add(e.ByUser);
         Assert.False(vm.exp.IsExpanded);
@@ -139,7 +139,7 @@ public class ExpanderTests
     {
         var (s, vm) = Start(
             "<DvRepeat items=\"{Sections}\" gap=\"sm\">" +
-            "  <DvExpander header=\"{Item.Title}\" expanded=\"{Bind Item.Open}\"><DvLabel text=\"{Item.Title} 내용\"/></DvExpander>" +
+            "  <DvExpander title=\"{Item.Title}\" expanded=\"{Bind Item.Open}\"><DvLabel text=\"{Item.Title} 내용\"/></DvExpander>" +
             "</DvRepeat>");
         Tap(s, Header(s, 0));
         Assert.Equal(new[] { true, false, false }, vm.Sections.Select(x => x.Open));
@@ -151,7 +151,7 @@ public class ExpanderTests
     [Fact]
     public void Paints_Without_Throwing()
     {
-        var (s, _) = Start($"<DvExpander header=\"A\" expanded=\"true\">{Body}</DvExpander>");
+        var (s, _) = Start($"<DvExpander title=\"A\" expanded=\"true\">{Body}</DvExpander>");
         using var bmp = new SKBitmap((int)W, (int)H);
         using var c = new SKCanvas(bmp);
         s.RenderTo(c, W, H);
@@ -160,7 +160,7 @@ public class ExpanderTests
     [Fact]
     public void Opening_and_closing_move_the_height_over_200ms_and_push_what_is_below()
     {
-        var (s, _) = Start($"<DvExpander header=\"펌프\">{Body}</DvExpander><DvLabel id=\"below\" text=\"아래\"/>");
+        var (s, _) = Start($"<DvExpander title=\"펌프\">{Body}</DvExpander><DvLabel id=\"below\" text=\"아래\"/>");
         LayoutBox Below() => All(s, "DvLabel").Last();
         var closedTop = Below().Rect.Top;
         using var bmp = new SKBitmap((int)W, (int)H);

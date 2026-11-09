@@ -209,7 +209,7 @@ public class VmReadErrorTests
     {
         var vm = new GridVm();
         var s = Grid(vm, "<DvColumn header=\"Id\" field=\"Id\" width=\"60\"/><DvColumn header=\"V\" field=\"V\" width=\"60\"/>",
-            summary: "<DvSummaryRow title=\"합\" fn=\"sum\"/>");
+            summary: "<DvSummaryRow label=\"합\" fn=\"sum\"/>");
         var errors = Watch(s);
         Render(s, 3);
         Assert.Equal("32", G(s).Summaries[0].Texts[1]); // 10+9+7+6 (예외 난 행 제외)

@@ -185,7 +185,7 @@ internal static class GridBuilder
             var rr = r.Child(ch);
             summaries.Add(new GridSummaryRow
             {
-                Title = BindingResolver.ResolveInline(vm, rr.Raw("title")) ?? "",
+                Title = BindingResolver.ResolveInline(vm, rr.Raw("label")) ?? "",
                 Fn = GridSummary.Parse(AttrRules.Enum(rr, "fn", "no aggregate")),
                 Cells = cells
             });

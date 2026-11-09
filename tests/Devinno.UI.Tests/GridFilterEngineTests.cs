@@ -161,7 +161,7 @@ public class GridFilterEngineTests
     [Fact]
     public void Summary_counts_visible_rows_only()
     {
-        var (s, g, _) = Make("<DvSummaryRow title=\"합\"><DvSummary field=\"Level\" fn=\"sum\"/></DvSummaryRow>");
+        var (s, g, _) = Make("<DvSummaryRow label=\"합\"><DvSummary field=\"Level\" fn=\"sum\"/></DvSummaryRow>");
         g.SetFilter(4, Set(true));
         GridSorter.Ensure(g);
         GridSummary.Compute(g);
@@ -205,7 +205,7 @@ public class GridFilterEngineTests
     [Fact]
     public void Sort_tap_refilters_current_values_and_prunes_selection_and_summary()
     {
-        var (_, g, vm) = Make("<DvSummaryRow title=\"합\"><DvSummary field=\"Level\" fn=\"sum\"/></DvSummaryRow>");
+        var (_, g, vm) = Make("<DvSummaryRow label=\"합\"><DvSummary field=\"Level\" fn=\"sum\"/></DvSummaryRow>");
         g.SetFilter(4, Set(true)); // 0,2,4,6,8
         Assert.Equal(5, Ids(g).Length);
         g.SetSelection(new object[] { vm.Rows[0] });

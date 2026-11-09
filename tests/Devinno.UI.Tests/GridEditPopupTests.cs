@@ -335,7 +335,7 @@ public class GridEditPopupTests
     {
         var cols = IdCol +
                    "<DvColumn header=\"설정값\" field=\"SetPoint\" width=\"100\" cell-type=\"input\"/>" +
-                   "<DvSummaryRow title=\"합계\" fn=\"sum\"/>";
+                   "<DvSummaryRow label=\"합계\" fn=\"sum\"/>";
         var vm = new EditVm();
         var s = Surface(vm, cols);
         Render(s).Dispose();

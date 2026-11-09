@@ -53,7 +53,7 @@ internal static class AttributeCheck
         ["DvDialogFrame"] = ["title", "subtitle"],
         ["DvTabs"] = ["value", "readonly"],
         ["DvTab"] = ["value", "text", "disabled"],
-        ["DvExpander"] = ["expanded", "header"],
+        ["DvExpander"] = ["expanded", "title"],
         ["DvStepBar"] = ["steps", "current"],
 
         // 기본·입력
@@ -102,7 +102,7 @@ internal static class AttributeCheck
             "on-color", "blink", "text", "icon", "variant", "onclick", "enabled", "min", "max", "unit", "mode", "show-seconds", "items", "item-value", "item-text", "item-icon",
         ],
         ["DvColumnGroup"] = ["header"],
-        ["DvSummaryRow"] = ["title", "fn"],
+        ["DvSummaryRow"] = ["label", "fn"],
         ["DvSummary"] = ["field", "fn", "format", "value"],
 
         // 공정도
@@ -335,7 +335,7 @@ internal static class AttributeCheck
                 }
                 if (isRoot && (name == "vm" || name.StartsWith("font-lang-", StringComparison.Ordinal)))
                     continue; // 루트만 받는 이름
-                report(Diagnostics.UnknownAttribute, a, new object[] { tag, name, Suggest(name, own, tag) });
+                report(Diagnostics.UnknownAttribute, a, new object[] { tag, name, Renamed.TryGetValue((tag, name), out var now) ? RenamedText(name, now) : Suggest(name, own, tag) });
             }
         }
 
@@ -410,6 +410,18 @@ internal static class AttributeCheck
         return s.Length == 0 ||
                double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) && !double.IsNaN(d) && !double.IsInfinity(d);
     }
+
+    /// <summary>
+    /// Attributes renamed in stage 4 (0.x: no aliases, the old name is an unknown attribute) — DVML019 names the new one instead of a similar-name guess.
+    /// Key = (tag, old name), value = new name.
+    /// </summary>
+    internal static readonly Dictionary<(string Tag, string Old), string> Renamed = new()
+    {
+        [("DvExpander", "header")] = "title",
+        [("DvSummaryRow", "title")] = "label",
+    };
+
+    private static object RenamedText(string old, string now) => Diagnostics.Text("Attr_Renamed", old, now);
 
     // 가장 가까운 이름(편집 거리 2 이내) — "txet" → "text"
     private static object Suggest(string name, string[] own, string tag)

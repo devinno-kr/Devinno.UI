@@ -27,7 +27,7 @@ public class TagSchemaContainersTests
             """<DvTabs value="{Bind Sel}" readonly="false" placeholder="p" items="{Items}" item-value="Length" item-text="Length" item-icon="Length"><DvTab value="a" text="A" disabled="false"><DvLabel text="x"/></DvTab><DvTab value="b" text="B"/></DvTabs>"""
         },
         { "DvTab", """<DvTabs value="{Bind Sel}"><DvTab value="a" text="A" disabled="false"><DvLabel text="x"/></DvTab><DvTab value="b" text="B" disabled="true"/></DvTabs>""" },
-        { "DvExpander", """<DvExpander expanded="true" header="H"><DvLabel text="x"/></DvExpander>""" },
+        { "DvExpander", """<DvExpander expanded="true" title="H"><DvLabel text="x"/></DvExpander>""" },
         { "DvStepBar", """<DvStepBar steps="a,b,c" current="2"/>""" },
     };
 

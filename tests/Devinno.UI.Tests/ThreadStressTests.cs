@@ -32,7 +32,7 @@ public class ThreadStressTests(ITestOutputHelper output)
               <DvSlider id="sl" style="width:300"/>
               <DvButton text="눌러" variant="primary" onclick="Bump" style="transition: background-color 120ms" press-style="transform: scale(0.95)"/>
               <DvListBox id="lst"><DvOption value="a"/><DvOption value="b"/><DvOption value="c"/></DvListBox>
-              <DvExpander id="exp" header="더보기"><DvLabel text="안"/></DvExpander>
+              <DvExpander id="exp" title="더보기"><DvLabel text="안"/></DvExpander>
               <DvTrend source="{Buffer}" window="5" style="height:120"><DvTrendChannel name="v"/></DvTrend>
             </DvScreen>
             """;

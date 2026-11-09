@@ -126,7 +126,7 @@ internal static class TagSchema
         ["DvExpander"] =
         [
             new("expanded", AttrKind.Bool, Note: "two-way {Bind X} follows the VM; one-way/literal locks it (" + BoolRule + "); absent = the screen remembers (collapsed)"),
-            new("header", AttrKind.Text, ""),
+            new("title", AttrKind.Text, "", Note: "the heading on the header row (stage 4 N1: was header)"),
         ],
         ["DvStepBar"] =
         [
@@ -388,7 +388,7 @@ internal static class TagSchema
         ],
         ["DvSummaryRow"] =
         [
-            new("title", AttrKind.Text, "", Note: "inline interpolation only"),
+            new("label", AttrKind.Text, "", Note: "the first cell; inline interpolation only (stage 4 N1: was title)"),
             new("fn", AttrKind.Enum, Values: ["sum", "avg", "min", "max", "count"], Note: "numeric columns without a DvSummary; absent = none; " + EnumRule + " (none)"),
         ],
         ["DvSummary"] =

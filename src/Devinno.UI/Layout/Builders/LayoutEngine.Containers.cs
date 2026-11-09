@@ -90,7 +90,7 @@ public sealed partial class LayoutEngine
         return box;
     }
 
-    // DvExpander — [제목 줄(.expander-header: ▶/▼ 아이콘 + header 글자) · 펼쳤으면 내용(.expander-body)]. 접으면 내용은 만들지 않는다(탭과 같음).
+    // DvExpander — [제목 줄(.expander-header: ▶/▼ 아이콘 + title 글자) · 펼쳤으면 내용(.expander-body)]. 접으면 내용은 만들지 않는다(탭과 같음).
     // 펼침: expanded 가 양방향이면 VM 값, 단방향·고정이면 그 값(핸들이 덮어쓰면 그 값 — 제목을 눌러도 안 바뀜), 없으면 화면이 기억.
     // 제목을 누르면 DvSurface 가 뒤집어 쓴다.
     private LayoutBox BuildExpander(LayoutBox box, object? vm, Func<ElementNode, IEnumerable<LayoutBox>> buildChild)
@@ -107,7 +107,7 @@ public sealed partial class LayoutEngine
             : ExpanderOf?.Invoke(box.Instance) ?? false;
 
         var header = BuildSelf(Synthetic("DvExpanderHeader", "expander-header"), vm);
-        header.ResolvedText = r.Text("header") ?? "";
+        header.ResolvedText = r.Text("title") ?? "";
         header.Icon = box.ToggleOn ? "fa-chevron-down" : "fa-chevron-right";
         header.ExpanderOwner = box;
         if (box.Disabled)

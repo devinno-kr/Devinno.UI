@@ -44,7 +44,7 @@ public class TagSchemaGridTests
                       items="{Opts}" item-value="V" item-text="T" item-icon="I"/>
           </DvColumnGroup>
           <DvColumn field="Qty"/>
-          <DvSummaryRow title="Total" fn="sum"><DvSummary field="Qty" fn="avg" format="0.0" value="{Total}"/></DvSummaryRow>
+          <DvSummaryRow label="Total" fn="sum"><DvSummary field="Qty" fn="avg" format="0.0" value="{Total}"/></DvSummaryRow>
         </DvDataGrid>
         """;
 

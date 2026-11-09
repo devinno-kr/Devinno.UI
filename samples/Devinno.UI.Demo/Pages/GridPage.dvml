@@ -41,8 +41,8 @@
       </DvColumnGroup>
       <DvColumn header="Updated" field="Time" width="140" format="HH:mm:ss.fff" sortable="true"/>
       <DvColumn header="Equipment" field="Equip.Name" width="160" sortable="true"/>
-      <DvSummaryRow title="Avg" fn="avg"/>
-      <DvSummaryRow title="Max">
+      <DvSummaryRow label="Avg" fn="avg"/>
+      <DvSummaryRow label="Max">
         <DvSummary field="Tag" fn="count" format="#,0"/>
         <DvSummary field="Value" fn="max" format="0.00"/>
       </DvSummaryRow>

@@ -93,7 +93,7 @@ public class RendererSettleTests
         var vm = new ExpVm();
         var s = new DvSurface("""
             <DvScreen style="padding:20; gap:8">
-              <DvExpander header="More" expanded="{Bind Open}">
+              <DvExpander title="More" expanded="{Bind Open}">
                 <DvBox style="height:200; background:#ff0000"/>
               </DvExpander>
             </DvScreen>

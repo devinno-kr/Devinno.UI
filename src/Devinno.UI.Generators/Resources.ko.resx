@@ -190,6 +190,9 @@
   <data name="Proc_SignalNoTerminal" xml:space="preserve">
     <value>끝점(DvTerminal)·유닛 포트(DvPort)는 신호선으로 잇지 않습니다</value>
   </data>
+  <data name="Attr_Renamed" xml:space="preserve">
+    <value> — '{0}' 는 '{1}' 로 이름이 바뀌었습니다</value>
+  </data>
   <data name="Style_DidYouMean" xml:space="preserve">
     <value> — '{0}' 를 쓰려던 것인가요?</value>
   </data>
