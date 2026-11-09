@@ -265,4 +265,17 @@ public class AlarmAckVisibilityTests
         s.PointerUp(new SKPoint(300, 20));
         Assert.Equal(new long[] { 1 }, vm.Acked);
     }
+    // comm-alarm 띠는 배너만 그린다 — 목록은 그 때문에 깜빡임 주기를 돌리지 않는다(확인 안 된 알람이 없으면 정지).
+    [Theory]
+    [InlineData("DvAlarmBanner", true)]
+    [InlineData("DvAlarmList", false)]
+    public void Comm_alarm_keeps_polling_only_on_the_banner(string tag, bool polls)
+    {
+        var vm = new AlarmWidgetTests.Vm { Comm = "PLC 통신 끊김" };
+        var s = new DvSurface($"<DvScreen><{tag} items=\"{{Alarms}}\" comm-alarm=\"{{Comm}}\"/></DvScreen>", vm, DvTheme.Light);
+        using var bmp = new SKBitmap(600, 400);
+        using var c = new SKCanvas(bmp);
+        s.RenderTo(c, 600, 400, 0);
+        Assert.Equal(polls, s.NextAnimationDue(0) is not null);
+    }
 }

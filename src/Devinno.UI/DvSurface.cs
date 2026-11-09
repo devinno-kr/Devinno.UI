@@ -446,8 +446,8 @@ public sealed partial class DvSurface
     {
         "DvLamp" when box.LampOn && box.LampBlink => box.BlinkIntervalMs,
         "DvDataGrid" when box.Grid is { HasBlink: true } => Painter.AlarmBlinkMs, // 점멸 램프 셀(공통 위상)
-        "DvAlarmBanner" or "DvAlarmList"
-            when !string.IsNullOrEmpty(box.CommAlarm) || box.AlarmItems.Any(a => !a.Acked) => Painter.AlarmBlinkMs,
+        "DvAlarmBanner" or "DvAlarmList" // comm-alarm 띠는 배너만 그린다
+            when box.Node.Tag == "DvAlarmBanner" && !string.IsNullOrEmpty(box.CommAlarm) || box.AlarmItems.Any(a => !a.Acked) => Painter.AlarmBlinkMs,
         "DvProcess" when box.Process is { FlowAnimation: true } p && p.AnyFlowing => Painter.FlowFrameMs, // 흐름 애니메이션(초당 20프레임 상한)
         "DvVideo" when box.VideoSource is { } v && (v.IsLive || v.FrameVersion != box.VideoPainted) || VideoTimePending(box) => VideoPollMs, // 멈춘 뒤 마지막 그림(이동 결과 등)도 그릴 때까지 // 새 프레임이 왔는지 이 주기로 본다 — 그릴 것이 없으면 부분 영역이 비어 아무것도 안 그린다
         _ when box.Widget is { } w => WidgetFrameMs(box, w),
