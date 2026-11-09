@@ -20,6 +20,11 @@ public class AttrRulesTests
         public int Minus { get; set; } = -1;
         public double Interval { get; set; } = 250;
         public bool Yes { get; set; } = true;
+        public string? Nothing { get; set; }
+        public string Name { get; set; } = "abc";
+        public bool Off { get; set; }
+        public int Zero { get; set; }
+        public int One { get; set; } = 1;
         public Devinno.UI.Trends.TrendBuffer Buf { get; } = new(10);
         public List<Devinno.UI.Alarms.AlarmRow> Alarms { get; } = new();
         public List<Row> Rows { get; } = [new()];
@@ -132,7 +137,34 @@ public class AttrRulesTests
         }
     }
 
-    // ── 공통 속성 ──
+    // ── 공통 속성 ── (대소문자·앞뒤 공백 무시)
+
+    [Theory]
+    [InlineData("False")]
+    [InlineData("FALSE")]
+    [InlineData(" false ")]
+    [InlineData(" 0 ")]
+    [InlineData("{Nothing}")]   // null → 숨김
+    [InlineData("")]            // 빈 값 → 숨김
+    [InlineData("{Off}")]       // bool false
+    public void Visible_FalsyValues_Hide(string raw) =>
+        Assert.Null(Find(Build($"<DvLabel text=\"x\" visible=\"{raw}\"/>"), "DvLabel"));
+
+    [Theory]
+    [InlineData("{Name}")]      // 다른 글자 → 보임
+    [InlineData("true")]
+    [InlineData("{One}")]
+    public void Visible_TruthyValues_Show(string raw) =>
+        Assert.NotNull(Find(Build($"<DvLabel text=\"x\" visible=\"{raw}\"/>"), "DvLabel"));
+
+    [Theory]
+    [InlineData("false")]
+    [InlineData("0")]
+    [InlineData("{Off}")]
+    [InlineData("{Zero}")]
+    [InlineData("{Nothing}")]
+    public void Disabled_FalsyValues_Enabled(string raw) =>
+        Assert.False(Find(Build($"<DvButton text=\"x\" disabled=\"{raw}\"/>"), "DvButton")!.Disabled);
 
     [Fact]
     public void Visible_OtherText_ShowsWithWarning()
@@ -143,10 +175,14 @@ public class AttrRulesTests
     }
 
     [Theory]
+    [InlineData("1")]
+    [InlineData("TRUE")]
+    [InlineData(" true ")]
+    [InlineData("{One}")]
     [InlineData("2")]
     [InlineData("-1")]
     [InlineData("{Two}")]
-    public void Disabled_NonZeroNumber_Disables(string raw) =>
+    public void Disabled_TrueOrNonZero_Disables(string raw) =>
         Assert.True(Find(Build($"<DvButton text=\"x\" disabled=\"{raw}\"/>"), "DvButton")!.Disabled);
 
     [Fact]
