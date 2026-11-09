@@ -259,6 +259,28 @@ public class AttrRulesColorEnumTests
         Assert.Equal("run", Find(Build("<DvLamp state=\"Run\"/>"), "DvLamp").LampState);
     }
 
+    // 리뷰 M1 — 파생 토큰(tone-info-fg·state-run-soft)의 이름은 단어가 아니다: -fg·-soft 로 끝나는 단어는 토큰이 있어도 기본값 + 경고
+    [Theory]
+    [InlineData("tone", "info-fg", "info")]
+    [InlineData("tone", "danger-soft", "info")]
+    [InlineData("state", "run-soft", null)]
+    [InlineData("state", "fault-FG", null)]
+    public void ThemeWord_DerivedToken_Rejected(string prefix, string word, string? fallback)
+    {
+        Assert.True(DvTheme.Light.TryGet(prefix + "-" + word.ToLowerInvariant(), out _)); // 토큰은 있다
+        var (v, w) = Watch("m1-derived", () => AttrRules.ThemeWord(word, prefix, DvTheme.Light, fallback, "DvX", "m1-derived"));
+        Assert.Equal(fallback, v);
+        Assert.Single(w);
+    }
+
+    [Fact]
+    public void ThemeWord_DerivedToken_InMarkup_Rejected()
+    {
+        var b = Build("<DvRing tone=\"info-fg\"/><DvLamp state=\"run-soft\"/>");
+        Assert.Equal("info", Find(b, "DvRing").Tone);
+        Assert.Null(Find(b, "DvLamp").LampState);
+    }
+
     // 3.4 — tone·DvLamp state 는 고정 목록이 아니라 지금 테마의 토큰(tone-{v}·state-{v}) 기준(3.3 결정 뒤집음): 사용자 테마의 state-idle 도 쓸 수 있다
     [Fact]
     public void Tone_State_CustomThemeToken_Accepted()
