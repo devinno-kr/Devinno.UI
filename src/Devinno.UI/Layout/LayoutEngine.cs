@@ -743,7 +743,7 @@ public sealed class LayoutEngine
         box.HasCodeClick = control?.Overrides.HasClick == true;
 
         box.OnClick = node.Attributes.GetValueOrDefault("onclick");
-        if (BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("hold")) is { } holdText &&
+        if (r.Text("hold") is { } holdText &&
             int.TryParse(holdText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var holdMs) && holdMs > 0)
             box.HoldMs = holdMs;
         box.OnBeforeCommit = node.Attributes.GetValueOrDefault("onbeforecommit");
@@ -779,7 +779,7 @@ public sealed class LayoutEngine
                     .Select(o => HandlerErrors.Text(o, PathOf(stepsRaw), node.Tag) ?? "").ToArray(),
                 _ => Array.Empty<string>(),
             };
-            box.StepCurrent = (int)MathF.Round(ToFloat(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("current")), 0f));
+            box.StepCurrent = (int)MathF.Round(ToFloat(r.Value("current"), 0f));
         }
 
         if (node.Tag is "DvToggle" or "DvCheckBox")
@@ -800,31 +800,31 @@ public sealed class LayoutEngine
 
         if (node.Tag == "DvLamp")
         {
-            box.LampOn = ToBool(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("on")));
+            box.LampOn = ToBool(r.Value("on"));
             var blinkExpr = node.Attributes.GetValueOrDefault("blink-when")
                             ?? node.Attributes.GetValueOrDefault("blink");
             box.LampBlink = ToBool(BindingResolver.ResolveValueOrLiteral(vm, blinkExpr));
-            if (BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("blink-interval")) is { } bi &&
+            if (r.Text("blink-interval") is { } bi &&
                 int.TryParse(bi, out var bint) && bint > 0)
                 box.BlinkIntervalMs = bint;
-            if (ParseColor(BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("color"))) is { } lampColor)
+            if (ParseColor(r.Text("color")) is { } lampColor)
                 box.LampColor = lampColor;
-            box.LampState = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("state"));
+            box.LampState = r.Text("state");
         }
 
         if (node.Tag is "DvGauge" or "DvRing" or "DvProgress")
         {
-            box.GaugeValue = ToFloat(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("value")), 0f);
-            box.GaugeMin = ToFloat(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("min")), 0f);
-            box.GaugeMax = ToFloat(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("max")), 100f);
+            box.GaugeValue = ToFloat(r.Value("value"), 0f);
+            box.GaugeMin = ToFloat(r.Value("min"), 0f);
+            box.GaugeMax = ToFloat(r.Value("max"), 100f);
             box.GaugeZones = ParseZones(node, vm);
-            box.GaugeTicks = ToFloat(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("ticks")), 0f);
-            box.GaugeMinorTicks = ToFloat(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("minor-ticks")), 0f);
+            box.GaugeTicks = ToFloat(r.Value("ticks"), 0f);
+            box.GaugeMinorTicks = ToFloat(r.Value("minor-ticks"), 0f);
             if (node.Attributes.TryGetValue("show-tick-labels", out var tl))
                 box.GaugeTickLabels = !string.Equals(
                     BindingResolver.ResolveText(vm, tl), "false", StringComparison.OrdinalIgnoreCase);
 
-            string? Attr(string name) => BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault(name));
+            string? Attr(string name) => r.Text(name);
             box.Tone = Attr("tone") is { Length: > 0 } tone ? tone : "info";
             box.Direction = Attr("direction") is { Length: > 0 } dir ? dir : "right";
             box.ShowValue = ToBool(Attr("show-value"));
@@ -849,22 +849,22 @@ public sealed class LayoutEngine
             var alarmsRaw = node.Attributes.GetValueOrDefault("items");
             box.AlarmItems = BindingResolver.ResolveValueOrLiteral(vm, alarmsRaw)
                 is IEnumerable<Alarms.AlarmRow> items ? HandlerErrors.Snapshot(items, PathOf(alarmsRaw), node.Tag) : Array.Empty<Alarms.AlarmRow>();
-            box.CommAlarm = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("comm-alarm"));
+            box.CommAlarm = r.Text("comm-alarm");
             box.OnAck = node.Attributes.GetValueOrDefault("onack");
             // show-ack: 지정 시 그 값(바인딩 가능 — 권한별 표시), 미지정 시 onack 이 있을 때만 표시
             box.AlarmShowAck = node.Attributes.TryGetValue("show-ack", out var sa)
                 ? !string.Equals(BindingResolver.ResolveText(vm, sa), "false",
                     StringComparison.OrdinalIgnoreCase)
                 : !string.IsNullOrEmpty(box.OnAck);
-            var rh = ToFloat(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("row-height")), 36f);
+            var rh = ToFloat(r.Value("row-height"), 36f);
             box.AlarmRowHeight = rh > 0 ? rh : 36f;
         }
 
         if (node.Tag == "DvImage")
         {
-            box.ImageSrc = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("src"));
+            box.ImageSrc = r.Text("src");
             box.ImageFit = Widgets.ImageFitParser.Parse(
-                BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("fit")));
+                r.Text("fit"));
         }
 
         if (node.Tag == "DvVideo")
@@ -880,11 +880,11 @@ public sealed class LayoutEngine
                 ? BindingResolver.Resolve(target ?? vm, $"{{{BindingResolver.ExtractPath(ve)}}}")
                 : BindingResolver.ResolveValueOrLiteral(vm, ve);
             box.KnobValue = ToFloat(cur, 0f);
-            box.KnobMin = ToFloat(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("min")), 0f);
-            box.KnobMax = ToFloat(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("max")), 100f);
-            var step = ToFloat(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("step")), 1f);
+            box.KnobMin = ToFloat(r.Value("min"), 0f);
+            box.KnobMax = ToFloat(r.Value("max"), 100f);
+            var step = ToFloat(r.Value("step"), 1f);
             box.KnobStep = step > 0 ? step : 1f;
-            box.KnobUnit = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("unit"));
+            box.KnobUnit = r.Text("unit");
             if (node.Tag == "DvKnob")
             {
                 box.KnobInput = node.Attributes.GetValueOrDefault("input-mode") switch
@@ -898,15 +898,15 @@ public sealed class LayoutEngine
             else
             {
                 // 슬라이더 — direction = 값이 커지는 쪽(DvProgress 와 같은 값), show-value = 손잡이 옆 값 글자
-                var dir = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("direction"));
+                var dir = r.Text("direction");
                 box.Direction = dir is "right" or "left" or "up" or "down" ? dir : WarnSliderDirection(dir);
-                box.ShowValue = ToBool(BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("show-value")));
+                box.ShowValue = ToBool(r.Text("show-value"));
             }
         }
 
         if (node.Tag == "DvInput")
         {
-            string? Attr(string name) => BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault(name));
+            string? Attr(string name) => r.Text(name);
             double? Num(string name) => double.TryParse(Attr(name), NumberStyles.Float, CultureInfo.InvariantCulture, out var d)
                 ? d : null;
 
@@ -975,10 +975,10 @@ public sealed class LayoutEngine
             box.InputValue = current;
             box.SelectOptions = SelectValue.Options(node, vm, box.SelectValueType);
             box.SelectedIndex = box.SelectOptions.FindIndex(o => SelectValue.Matches(o.Value, current, box.SelectValueType));
-            box.InputPlaceholder = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("placeholder"));
+            box.InputPlaceholder = r.Text("placeholder");
             box.ReadOnly = InputReadOnly(node, vm, _valueOverride);
             if (node.Tag == "DvSegment")
-                box.SegmentFill = ToBool(BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("fill")));
+                box.SegmentFill = ToBool(r.Text("fill"));
         }
 
         if (node.Tag is "DvDateTimeInput" or "DvColorInput")
@@ -1007,7 +1007,7 @@ public sealed class LayoutEngine
                 box.PickerValueType = current?.GetType();
             }
 
-            string? Attr(string name) => BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault(name));
+            string? Attr(string name) => r.Text(name);
             box.InputValue = current;
             box.InputPlaceholder = Attr("placeholder");
             box.ReadOnly = InputReadOnly(node, vm, _valueOverride);
@@ -1021,11 +1021,11 @@ public sealed class LayoutEngine
 
         if (node.Tag == "DvTank")
         {
-            box.TankValue = ToFloat(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("value")), 0f);
-            box.TankMin = ToFloat(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("min")), 0f);
-            box.TankMax = ToFloat(BindingResolver.ResolveValueOrLiteral(vm, node.Attributes.GetValueOrDefault("max")), 100f);
-            box.TankUnit = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("unit"));
-            box.ValueFormat = BindingResolver.ResolveText(vm, node.Attributes.GetValueOrDefault("format"));
+            box.TankValue = ToFloat(r.Value("value"), 0f);
+            box.TankMin = ToFloat(r.Value("min"), 0f);
+            box.TankMax = ToFloat(r.Value("max"), 100f);
+            box.TankUnit = r.Text("unit");
+            box.ValueFormat = r.Text("format");
             box.TankZones = ParseZones(node, vm);
             // show-zone-marks="false" → 구간 색은 유지하고 경계 눈금·숫자만 숨김 (기본 true)
             if (node.Attributes.TryGetValue("show-zone-marks", out var zm))
