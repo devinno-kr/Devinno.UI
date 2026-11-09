@@ -193,6 +193,22 @@ internal static class AttrRules
         return fallback;
     }
 
+    /// <summary>
+    /// The theme word rule (<c>tone</c>, <c>DvLamp state</c>): a word is valid when the theme (<see cref="DvTheme.Default"/> if <see langword="null"/>) has the token <c>{prefix}-{word}</c>,
+    /// so a custom theme can add its own words (<c>state-idle</c>). Surrounding spaces and case are ignored; the word is returned in lower case.
+    /// Absent, <see langword="null"/> or empty text = <paramref name="fallback"/>, silently; a word without a token = <paramref name="fallback"/> with a warning that says <paramref name="instead"/>.
+    /// </summary>
+    public static string? ThemeWord(object? value, string prefix, DvTheme? theme, string? fallback, string tag, string attr, string? instead = null)
+    {
+        var text = BindingResolver.ToText(value, attr)?.Trim();
+        if (string.IsNullOrEmpty(text))
+            return fallback;
+        if ((theme ?? DvTheme.Default).TryGet(prefix + "-" + text, out _))
+            return text.ToLowerInvariant();
+        Warnings.Warn($"Devinno.UI: {tag} {attr}='{text}' has no theme token {prefix}-{text}; {instead ?? (fallback is null ? "ignored" : "using " + fallback)}");
+        return fallback;
+    }
+
     /// <summary>Attribute <paramref name="attr"/> of the element with the enum rule, its values and default from <see cref="TagSchema"/>.</summary>
     public static string? Enum(AttrReader r, string attr, string? instead = null, bool error = false)
     {

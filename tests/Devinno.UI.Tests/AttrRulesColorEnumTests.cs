@@ -259,6 +259,24 @@ public class AttrRulesColorEnumTests
         Assert.Equal("run", Find(Build("<DvLamp state=\"Run\"/>"), "DvLamp").LampState);
     }
 
+    // 3.4 — tone·DvLamp state 는 고정 목록이 아니라 지금 테마의 토큰(tone-{v}·state-{v}) 기준(3.3 결정 뒤집음): 사용자 테마의 state-idle 도 쓸 수 있다
+    [Fact]
+    public void Tone_State_CustomThemeToken_Accepted()
+    {
+        var theme = DvTheme.Light.With(new Dictionary<string, string> { ["tone-brand-r34"] = "#123456", ["state-idle-r34"] = "#654321" });
+        LayoutBox B(string body) => new LayoutEngine(theme).Layout(MarkupParser.Parse($"<DvScreen>{body}</DvScreen>"), new Vm(), 800, 600);
+        var (b, w) = Watch("-r34", () => B("<DvRing tone=\"brand-r34\"/><DvBarChart tone=\" Brand-R34 \"/><DvLamp state=\"idle-r34\"/>"));
+        Assert.Equal("brand-r34", Find(b, "DvRing").Tone);
+        Assert.Equal("brand-r34", Find(b, "DvBarChart").Tone); // 앞뒤 공백·대소문자 무시(소문자로)
+        Assert.Equal("idle-r34", Find(b, "DvLamp").LampState);
+        Assert.Empty(w);
+        // 기본 테마에는 그 토큰이 없다 = 기본값 + 경고
+        var (d, w2) = Watch("-r34", () => Build("<DvRing tone=\"brand-r34\"/><DvLamp state=\"idle-r34\"/>"));
+        Assert.Equal("info", Find(d, "DvRing").Tone);
+        Assert.Null(Find(d, "DvLamp").LampState);
+        Assert.Equal(2, w2.Count);
+    }
+
     [Fact]
     public void SelectionMode_Unknown_DefaultWithWarning()
     {

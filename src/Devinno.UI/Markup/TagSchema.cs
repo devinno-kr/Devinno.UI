@@ -232,7 +232,7 @@ internal static class TagSchema
             new("minor-ticks", AttrKind.Number, "0", Note: "minor tick interval; drawn only when ticks is set"),
             new("show-tick-labels", AttrKind.Bool, "true", Note: BoolRule),
             new("format", AttrKind.Text, Note: ".NET number format"),
-            DialDead("unit", AttrKind.Text, "the gauge"), DialDead("tone", AttrKind.Enum, "the gauge", "the needle tip uses the zone color or gauge-needle-tip; " + EnumRule, Tones, "info"),
+            DialDead("unit", AttrKind.Text, "the gauge"), DialDead("tone", AttrKind.Text, "the gauge", "the needle tip uses the zone color or gauge-needle-tip; " + ThemeWordRule, def: "info"),
             DialDead("direction", AttrKind.Enum, "the gauge", EnumRule, Directions, "right"), DialDead("show-value", AttrKind.Bool, "the gauge", "the value is always drawn"),
             DialDead("label", AttrKind.Text, "the gauge"), DialDead("sweep", AttrKind.Number, "the gauge", "the gauge sweep is fixed at 270"),
             DialDead("thickness", AttrKind.Number, "the gauge"),
@@ -257,7 +257,7 @@ internal static class TagSchema
             new("blink-when", AttrKind.Bool, Note: "another name for blink that wins over it; not in the doc table"),
             new("blink-interval", AttrKind.Number, "500", Note: "ms, rounded; <= 0 = 500; " + NumberRule),
             new("color", AttrKind.Color, Note: ColorRule + " (the state or text color); wins over state"),
-            new("state", AttrKind.Enum, Values: ["run", "stop", "fault", "warn", "manual", "off"], Note: "state-{state} token color; " + EnumRule + " (no state color)"),
+            new("state", AttrKind.Text, Note: "state-{state} token color; valid when the theme has the token state-{state} (built-in: run stop fault warn manual off); " + ThemeWordRule + " (no state color)"),
         ],
         ["DvTank"] =
         [
@@ -287,7 +287,7 @@ internal static class TagSchema
             .. ChartItems(),
             new("show-value", AttrKind.Bool, "false", Note: BoolRule + "; shows the numbers (and the donut total) instead of percentages"),
             new("inner-radius", AttrKind.Number, "0", Note: "ratio, clamped to 0..0.9 (donut); " + NumberRule),
-            ChartDead("tone", AttrKind.Enum, "the pie chart", "slices use the fixed palette; " + EnumRule, Tones, "info"),
+            ChartDead("tone", AttrKind.Text, "the pie chart", "slices use the fixed palette; " + ThemeWordRule, def: "info"),
             ChartDead("y-min", AttrKind.Number, "the pie chart"), ChartDead("y-max", AttrKind.Number, "the pie chart"),
             ChartDead("area", AttrKind.Bool, "the pie chart"),
         ],
@@ -478,8 +478,9 @@ internal static class TagSchema
     // 3단계 R2·R3·R4(D3) — 색·목록 값(Layout.AttrRules.Color·Enum), 공정도 이름·참조는 원문
     private const string ColorRule = "#hex or token(name); an unknown token = magenta + warning; unparsable = the default + warning";
     private const string EnumRule = "case and surrounding spaces ignored; an unknown value = the default + warning";
+    // 3.4 — tone·DvLamp state: 고정 목록이 아니라 지금 테마의 토큰(Layout.AttrRules.ThemeWord) — 생성기(DVML020)는 값을 보지 않는다
+    private const string ThemeWordRule = "case and surrounding spaces ignored; a word without that theme token = the default + warning; not checked at build time (the theme is the app's)";
     private const string RawName = "read raw (process names and references are not bindable; a { in it = warning, used as written)";
-    private static string[] Tones => ["neutral", "info", "success", "warning", "danger"]; // 속성(필드 아님) — Tags 초기화가 먼저 돈다
     private static string[] Directions => ["right", "left", "up", "down"];
 
     private static AttrDef Direction() =>
@@ -596,7 +597,7 @@ internal static class TagSchema
             + "a bad zone (format, number, from >= to, color, from below the previous zone) is dropped + warning, the others stay");
 
     private static AttrDef Tone(string? note = null) =>
-        new("tone", AttrKind.Enum, "info", Values: Tones, Note: "tone-{tone} token; empty = info; " + EnumRule + (note is null ? "" : "; " + note));
+        new("tone", AttrKind.Text, "info", Note: "tone-{tone} token; valid when the theme has the token tone-{tone} (built-in: neutral info success warning danger); empty = info; " + ThemeWordRule + (note is null ? "" : "; " + note));
 
     // DvGauge/DvRing 가 계기 공용 블록에서 읽기만 하고 그리지 않는 속성
     private static AttrDef DialDead(string name, AttrKind kind, string who, string? why = null, string[]? values = null, string? def = null) =>

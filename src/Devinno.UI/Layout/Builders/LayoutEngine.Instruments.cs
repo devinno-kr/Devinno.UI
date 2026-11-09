@@ -42,8 +42,11 @@ public sealed partial class LayoutEngine
             box.BlinkIntervalMs = (int)Math.Round(bint);
         if (Color(r, "color", "using the state or text color") is { } lampColor)
             box.LampColor = lampColor;
-        box.LampState = AttrRules.Enum(r, "state", "no state color");
+        box.LampState = AttrRules.ThemeWord(r.Value("state"), "state", _theme, null, r.Node.Tag, "state", "no state color");
     }
+
+    // tone — 지금 테마에 tone-{값} 토큰이 있으면 그 값(사용자 테마 단어 허용), 없으면 info + 경고
+    private string Tone(AttrReader r) => AttrRules.ThemeWord(r.Value("tone"), "tone", _theme, "info", r.Node.Tag, "tone") ?? "info";
 
     // DvGauge·DvRing·DvProgress 가 같은 상자 필드(Gauge*·Tone·Unit…)를 쓴다. 셋 다 모든 속성을 읽는다 —
     // 태그가 그리지 않는 속성도(TagSchema Note "dead read"; 읽기를 빼는 건 3단계).
@@ -58,7 +61,7 @@ public sealed partial class LayoutEngine
         if (r.Has("show-tick-labels"))
             box.GaugeTickLabels = AttrRules.Bool(r.Value("show-tick-labels"), true, r.Node.Tag, "show-tick-labels");
 
-        box.Tone = AttrRules.Enum(r, "tone") ?? "info";
+        box.Tone = Tone(r);
         box.Direction = AttrRules.Enum(r, "direction") ?? "right";
         box.ShowValue = AttrRules.Bool(r, "show-value");
         box.Unit = r.Text("unit");
@@ -104,7 +107,7 @@ public sealed partial class LayoutEngine
     /// Common: <c>tone</c> (info), <c>show-value</c>; sparkline and bar: <c>y-min</c>/<c>y-max</c> (omitted = automatic); sparkline: <c>area</c>; pie: <c>inner-radius</c> (ratio 0 to 0.9, donut).
     /// Values that cannot be read as numbers are 0 (pie charts do not draw negative or zero slices).
     /// </summary>
-    private static void BuildChart(LayoutBox box, AttrReader r)
+    private void BuildChart(LayoutBox box, AttrReader r)
     {
         var node = r.Node;
         double? Num(string name) => AttrRules.NumberOrNull(r, name);
@@ -116,7 +119,7 @@ public sealed partial class LayoutEngine
         };
 
         // 모든 차트 태그가 공용 속성을 다 읽는다(차트가 쓰지 않는 것도 — TagSchema Note "dead read")
-        box.Tone = AttrRules.Enum(r, "tone") ?? "info";
+        box.Tone = Tone(r);
         box.ShowValue = AttrRules.Bool(r, "show-value");
         box.ChartYMin = Num("y-min");
         box.ChartYMax = Num("y-max");

@@ -903,8 +903,14 @@ public class DvmlGeneratorTests
         Assert.Contains("중 하나가 아닙니다", d.GetMessage(new System.Globalization.CultureInfo("ko-KR")));
         Assert.Single(Values("<DvStack><DvButton variant=\"foo\" text=\"a\"/></DvStack>"));
         Assert.Single(Values("<DvStack><DvLabel text=\"a\" content-align=\"center\"/></DvStack>")); // 공통 속성
-        Assert.Single(Values("<DvStack><DvRing tone=\"ok\"/></DvStack>"));
         Assert.Single(Values("<DvStack><DvProcess><DvPump name=\"P\" flip=\"x\"/></DvProcess></DvStack>"));
+    }
+
+    // 3.4 — tone·DvLamp state 값은 앱 테마 토큰(tone-{v}·state-{v})에 달려 생성기가 알 수 없다 → DVML020 이 보지 않는다
+    [Fact]
+    public void Value_ToneAndState_NotChecked()
+    {
+        Assert.Empty(Values("<DvStack><DvRing tone=\"ok\"/><DvBarChart tone=\"brand\"/><DvLamp state=\"idle\"/></DvStack>"));
     }
 
     [Fact]

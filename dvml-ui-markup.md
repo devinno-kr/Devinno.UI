@@ -132,7 +132,7 @@ Below is `MainPage.dvml`. The root `vm` points to the class above (the file name
 
 **Color values** — color attributes (`DvLamp color`, `DvTrendChannel color`, `DvSignal color`, `DvColumn on-color`, the `DvDataGrid` `*-color` attributes, zone colors in `alarm-zones`) take `#RGB`, `#RRGGBB`, `#RRGGBBAA`, `transparent` or a theme token `token(이름)`. A token the theme does not have draws magenta `#FF00FF` and writes a Trace warning, so a misspelled name stands out. Any other value (`red`, `nope` — color names are not supported) is treated as not given (the attribute's default color) and writes a Trace warning; a literal one is also DVML020. Empty text is the same as leaving it out.
 
-**Word values** — attributes that take one word from a fixed list (`direction`, `fit`, `variant`, `size`, `tone`, `state`, `selection-mode`, `cell-type`, `sort`, `fn`, `input-mode`, `keyboard-type`, `content-align`, the `align`/`justify` of layout tags, process `kind`, `flip`, `arrow`, `side`, …) compare the value ignoring case and surrounding spaces (`" Up "` = `up`). Any other word uses the attribute's default and writes a Trace warning (a literal one is also DVML020); empty text is the same as leaving it out. The lists are in each tag's section.
+**Word values** — attributes that take one word from a fixed list (`direction`, `fit`, `variant`, `size`, `selection-mode`, `cell-type`, `sort`, `fn`, `input-mode`, `keyboard-type`, `content-align`, the `align`/`justify` of layout tags, process `kind`, `flip`, `arrow`, `side`, …) compare the value ignoring case and surrounding spaces (`" Up "` = `up`). Any other word uses the attribute's default and writes a Trace warning (a literal one is also DVML020); empty text is the same as leaving it out. The lists are in each tag's section. `tone` and `DvLamp state` are theme words: a value is valid when the current theme has the token `tone-{값}` / `state-{값}` (built-in themes: `neutral` `info` `success` `warning` `danger` / `run` `stop` `fault` `warn` `manual` `off`; a custom theme can add its own, e.g. `state-idle`). Same case/space rule; a word without a token uses the default with a Trace warning. They are not checked at build time (the theme belongs to the app).
 
 ---
 
@@ -746,7 +746,7 @@ Built-in components whose appearance is defined by the theme. You rarely need `s
 
 **DvLamp**
 - On when `on="{Running}"` is true. With `blink="true"`, it blinks while on (every `blink-interval` ms; all blinking on screen shares the same phase). `blink-when` is another name for `blink`.
-- On-color priority: `color` (`#RRGGBB` or `token(이름)`, bindable) > `state` (`state-{값}` token: `run` `stop` `fault` `warn` `manual` `off`) > `color` in `style`. An unreadable `color` or an unknown `state` is ignored with a Trace warning (chapter 2). The off color is a fixed dark gray. `blink-interval` is also bound.
+- On-color priority: `color` (`#RRGGBB` or `token(이름)`, bindable) > `state` (`state-{값}` token: `run` `stop` `fault` `warn` `manual` `off` in the built-in themes, or any `state-*` token of your theme) > `color` in `style`. An unreadable `color` or a `state` the theme has no `state-*` token for is ignored with a Trace warning (chapter 2). The off color is a fixed dark gray. `blink-interval` is also bound.
 - **Multi-state lamp (equipment state number → color / text / blinking):** there is no separate widget; the VM converts the state into a `state` key, text, and blinking and binds them (state rules are app data that differ per equipment). Lamp + name + status chip is drawn by `DvStatusItem`. For a color not in the theme, use `DvLamp color="{PumpColor}"`.
 ```xml
 <DvStatusItem label="2호 펌프" state="{Pump2.StateKey}" status="{Pump2.StateText}" blink="{Pump2.IsFault}"/>
@@ -2572,7 +2572,7 @@ Attributes available on all equipment:
 | `row` · `rank` | Layout hints (22.5) |
 | `onclick` `hold` `disabled` `visible` `class` `style` | Same as ordinary controls. Pressing the equipment triggers `onclick` |
 
-- State attributes are bound: `running="{P1Run}"`, `open="{V1Open}"` (true/false, or a number greater than 0 = open), `level="{T1Level}"`.
+- State attributes are bound: `running="{P1Run}"`, `open="{V1Open}"` (true/false; a non-zero number = open), `level="{T1Level}"`.
 - Names and references are literal, never bound: equipment/unit/port/instrument `name`, `DvLine`/`DvSignal` `from`·`to`, `DvInstrument` `on`·`tap` (a `{` in them writes a Trace warning and is used as written).
 - Three-way valves serve both diverting and mixing (paths are bidirectional). When used for mixing in a left→right process, put the common `a` on the right with `flip="h"`. Details in `dvml-process.md` 5.7·5.8.
 - Layout is not recomputed when values change (if the structure is the same, the previous layout is reused). So updating several times per second is cheap.

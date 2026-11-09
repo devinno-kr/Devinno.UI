@@ -194,7 +194,10 @@ internal static class AttributeCheck
         ["DvInstrument"] = ["x", "y"],
     };
 
-    /// <summary>목록 값 속성 — 라이브러리 <c>TagSchema</c> 에서 Kind 가 Enum 인 이름과 그 Values(테스트가 비교). 공통은 <see cref="CommonEnum"/>.</summary>
+    /// <summary>
+    /// 목록 값 속성 — 라이브러리 <c>TagSchema</c> 에서 Kind 가 Enum 인 이름과 그 Values(테스트가 비교). 공통은 <see cref="CommonEnum"/>.
+    /// <c>tone</c>·<c>DvLamp state</c> 는 없다 — 값이 앱 테마의 토큰(tone-값·state-값)에 달려 있어 빌드 때 알 수 없다(실행 때 검사).
+    /// </summary>
     internal static readonly Dictionary<string, string[]> CommonEnum = new(StringComparer.Ordinal)
     {
         ["content-align"] = ["top-left", "top-center", "top-right", "middle-left", "middle-center", "middle-right", "bottom-left", "bottom-center", "bottom-right"],
@@ -216,13 +219,9 @@ internal static class AttributeCheck
         ["DvInput"] = new(StringComparer.Ordinal) { ["keyboard-type"] = ["text", "numeric", "password"] },
         ["DvListBox"] = new(StringComparer.Ordinal) { ["selection-mode"] = ["single", "multi"] },
         ["DvDateTimeInput"] = new(StringComparer.Ordinal) { ["mode"] = ["date", "time", "datetime"] },
-        ["DvProgress"] = new(StringComparer.Ordinal) { ["tone"] = ["neutral", "info", "success", "warning", "danger"], ["direction"] = ["right", "left", "up", "down"] },
-        ["DvGauge"] = new(StringComparer.Ordinal) { ["tone"] = ["neutral", "info", "success", "warning", "danger"], ["direction"] = ["right", "left", "up", "down"] },
-        ["DvRing"] = new(StringComparer.Ordinal) { ["tone"] = ["neutral", "info", "success", "warning", "danger"], ["direction"] = ["right", "left", "up", "down"] },
-        ["DvLamp"] = new(StringComparer.Ordinal) { ["state"] = ["run", "stop", "fault", "warn", "manual", "off"] },
-        ["DvSparkline"] = new(StringComparer.Ordinal) { ["tone"] = ["neutral", "info", "success", "warning", "danger"] },
-        ["DvBarChart"] = new(StringComparer.Ordinal) { ["tone"] = ["neutral", "info", "success", "warning", "danger"] },
-        ["DvPieChart"] = new(StringComparer.Ordinal) { ["tone"] = ["neutral", "info", "success", "warning", "danger"] },
+        ["DvProgress"] = new(StringComparer.Ordinal) { ["direction"] = ["right", "left", "up", "down"] },
+        ["DvGauge"] = new(StringComparer.Ordinal) { ["direction"] = ["right", "left", "up", "down"] },
+        ["DvRing"] = new(StringComparer.Ordinal) { ["direction"] = ["right", "left", "up", "down"] },
         ["DvDataGrid"] = new(StringComparer.Ordinal) { ["selection-mode"] = ["none", "single", "multi"] },
         ["DvColumn"] = new(StringComparer.Ordinal) { ["align"] = ["left", "center", "right"], ["sort"] = ["asc", "desc"], ["cell-type"] = ["text", "check", "lamp", "button", "input", "select", "datetime", "color"], ["filter"] = ["none", "auto", "text", "values", "range", "date"], ["variant"] = ["primary", "secondary", "danger", "ghost"], ["mode"] = ["date", "time", "datetime"] },
         ["DvSummaryRow"] = new(StringComparer.Ordinal) { ["fn"] = ["sum", "avg", "min", "max", "count"] },
