@@ -238,16 +238,9 @@ internal sealed class GridColumn
 
     private string FormatValue(object v)
     {
-        if (Format is { Length: > 0 } f && v is IFormattable fm)
-        {
-            try
-            {
-                return fm.ToString(f, CultureInfo.InvariantCulture);
-            }
-            catch (FormatException)
-            {
-            }
-        }
+        // format — 공용 규칙(쓸 수 없는 형식 = 기본 표시 + 경고)
+        if (v is IFormattable fm && Layout.AttrRules.FormatOrNull(fm, Format, "DvColumn") is { } formatted)
+            return formatted;
 
         return v is IFormattable plain ? plain.ToString(null, CultureInfo.InvariantCulture) : v.ToString() ?? "";
     }

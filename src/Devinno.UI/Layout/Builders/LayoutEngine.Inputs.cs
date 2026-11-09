@@ -189,6 +189,7 @@ public sealed partial class LayoutEngine
             // 슬라이더 — direction = 값이 커지는 쪽(DvProgress 와 같은 값), show-value = 손잡이 옆 값 글자
             box.Direction = AttrRules.Enum(r, "direction") ?? "right";
             box.ShowValue = AttrRules.Bool(r, "show-value");
+            box.ValueFormat = r.Text("format"); // 값 글자 형식(계기와 같은 규칙)
         }
     }
 

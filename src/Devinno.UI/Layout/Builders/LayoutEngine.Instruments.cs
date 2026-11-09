@@ -137,6 +137,7 @@ public sealed partial class LayoutEngine
             return;
         }
 
+        box.ValueFormat = r.Text("format"); // 막대·파이 값 글자(show-value) 형식 — 계기와 같은 규칙
         var itemsRaw = r.Raw("items");
         var items = BindingResolver.ResolveValueOrLiteral(r.Context, itemsRaw) is System.Collections.IEnumerable e and not string
             ? HandlerErrors.Snapshot(e.Cast<object?>(), PathOf(itemsRaw), node.Tag)

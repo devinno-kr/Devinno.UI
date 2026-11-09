@@ -39,7 +39,9 @@ public sealed partial class Painter
         if (!box.ShowValue)
             return;
 
-        var label = box.KnobValue.ToString("F" + KnobBinder.Decimals(box.KnobStep), System.Globalization.CultureInfo.InvariantCulture);
+        // format(공용 규칙) 이 있으면 그것, 없거나 쓸 수 없으면 step 의 소수 자릿수
+        var label = AttrRules.FormatOrNull(box.KnobValue, box.ValueFormat, box.Node.Tag)
+                    ?? box.KnobValue.ToString("F" + KnobBinder.Decimals(box.KnobStep), System.Globalization.CultureInfo.InvariantCulture);
         if (!string.IsNullOrEmpty(box.KnobUnit))
             label += " " + box.KnobUnit;
         using var font = TextFont.Create(label, 13f, bold: true);

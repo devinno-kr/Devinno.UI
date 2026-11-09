@@ -120,6 +120,26 @@ internal static class AttrRules
     /// <summary>Attribute <paramref name="attr"/> of the element as a number, or <see langword="null"/> (see <see cref="NumberOrNull(object?, string, string, string)"/>).</summary>
     public static double? NumberOrNull(AttrReader r, string attr, string instead = "ignored") => NumberOrNull(r.Value(attr), r.Node.Tag, attr, instead);
 
+    /// <summary>
+    /// The value format rule (<c>format</c>): <paramref name="value"/> formatted with the .NET format string <paramref name="format"/> and the invariant culture.
+    /// <see langword="null"/> when <paramref name="format"/> is absent or empty, silently, or when it is not a valid format for the value's type, with a warning that names the tag
+    /// (the caller then shows its default text).
+    /// </summary>
+    public static string? FormatOrNull(IFormattable value, string? format, string tag)
+    {
+        if (string.IsNullOrEmpty(format))
+            return null;
+        try
+        {
+            return value.ToString(format, CultureInfo.InvariantCulture);
+        }
+        catch (FormatException)
+        {
+            Warnings.Warn($"Devinno.UI: {tag} format='{format}' is not a .NET format for {value.GetType().Name}; using the default display");
+            return null;
+        }
+    }
+
     /// <summary>The range rule: <paramref name="min"/> must be below <paramref name="max"/>; otherwise (<c>min &gt;= max</c>) 0..100 with a warning that names the tag.</summary>
     public static (double Min, double Max) Range(double min, double max, string tag)
     {

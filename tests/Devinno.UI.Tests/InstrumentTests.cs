@@ -171,7 +171,7 @@ public class InstrumentTests
     [InlineData(6.2f, "", "6.2")]
     [InlineData(6.2f, "X", "6.2")]      // 실수에 쓸 수 없는 형식 = 기본 규칙
     public void Value_text_uses_format_when_given(float v, string? format, string expected)
-        => Assert.Equal(expected, Painter.FormatValue(v, format));
+        => Assert.Equal(expected, Painter.FormatValue(v, format, "DvGauge"));
 
     [Theory]
     [InlineData("DvGauge")]

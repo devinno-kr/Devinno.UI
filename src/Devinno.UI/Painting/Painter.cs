@@ -305,11 +305,14 @@ public sealed partial class Painter
                 DrawGaugeScale(canvas, box, cx, cy, gm, startAngle, sweep);
             DrawGaugeNeedle(canvas, box, cx, cy, radius * 0.9f, startAngle + t * sweep, needleColor, gm);
 
-            var label = FormatValue(box.GaugeValue, box.ValueFormat);
-            using var font = TextFont.Create(label, gm.ValueFont, bold: true);
-            var valColor = ZoneColorAt(box) ?? needleColor;
-            using var tp = new SKPaint { IsAntialias = true, Color = valColor };
-            canvas.DrawText(label, cx, cy + gm.ValueBaseline, SKTextAlign.Center, font, tp);
+            if (box.ShowValue) // show-value(기본 참, D2), 값 + unit(한 칸 띄고)
+            {
+                var label = FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
+                using var font = TextFont.Create(label, gm.ValueFont, bold: true);
+                var valColor = ZoneColorAt(box) ?? needleColor;
+                using var tp = new SKPaint { IsAntialias = true, Color = valColor };
+                canvas.DrawText(label, cx, cy + gm.ValueBaseline, SKTextAlign.Center, font, tp);
+            }
         }
 
         if (box.Node.Tag == "DvImage")
@@ -506,7 +509,7 @@ public sealed partial class Painter
             }
 
             // 값 칩 — 반투명 배경 + 대비 텍스트(채움색과 무관하게 항상 가독, 색은 테마 토큰)
-            var label = FormatValue(box.TankValue, box.ValueFormat);
+            var label = FormatValue(box.TankValue, box.ValueFormat, box.Node.Tag);
             if (!string.IsNullOrEmpty(box.TankUnit))
                 label += " " + box.TankUnit;
 

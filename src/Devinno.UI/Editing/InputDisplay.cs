@@ -64,13 +64,13 @@ internal static class InputDisplay
             {
                 null => "",
                 string s => s,
-                IFormattable f => f.ToString(string.IsNullOrEmpty(format) ? null : format, CultureInfo.InvariantCulture),
+                IFormattable f => Layout.AttrRules.FormatOrNull(f, format, tag) ?? f.ToString(null, CultureInfo.InvariantCulture), // 쓸 수 없는 format = 기본 표시 + 경고
                 _ => value.ToString() ?? ""
             };
         }
         catch (Exception ex)
         {
-            // VM 값 형식의 ToString 예외 = 빈 값(형식 문자열 오류 FormatException 도 같음)
+            // VM 값 형식의 ToString 예외 = 빈 값(형식 문자열 오류는 위에서 기본 표시 + 경고)
             Interaction.HandlerErrors.ReportRead(ex, "format", null, tag);
             return "";
         }

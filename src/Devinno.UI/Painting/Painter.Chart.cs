@@ -7,9 +7,10 @@ namespace Devinno.UI.Painting;
 
 public sealed partial class Painter
 {
-    // 값 글자 — 정수면 정수, 아니면 소수 한 자리(계기 위젯과 같은 규칙)
-    private static string ChartNumber(double v)
-        => Math.Abs(v - Math.Round(v)) < 1e-9 ? Math.Round(v).ToString(CultureInfo.InvariantCulture) : v.ToString("0.0", CultureInfo.InvariantCulture);
+    // 값 글자 — format(공용 규칙)이 있으면 그것, 없거나 쓸 수 없으면 정수면 정수·아니면 소수 한 자리(계기 위젯과 같은 규칙)
+    private static string ChartNumber(double v, LayoutBox box)
+        => AttrRules.FormatOrNull(v, box.ValueFormat, box.Node.Tag)
+           ?? (Math.Abs(v - Math.Round(v)) < 1e-9 ? Math.Round(v).ToString(CultureInfo.InvariantCulture) : v.ToString("0.0", CultureInfo.InvariantCulture));
 
     // 값 축 범위 — y-min·y-max, 없으면 데이터로(막대는 0 을 포함). 폭이 0 이면 1 로 벌린다
     private static (double Lo, double Hi) ChartRange(LayoutBox box, bool includeZero)
@@ -99,7 +100,7 @@ public sealed partial class Painter
                 canvas.DrawText(shown, cx, r.Bottom - 4f - font.Metrics.Descent, SKTextAlign.Center, font, tp);
             }
             if (box.ShowValue)
-                canvas.DrawText(ChartNumber(v[i]), cx, bar.Top - 4f - font.Metrics.Descent, SKTextAlign.Center, font, vp);
+                canvas.DrawText(ChartNumber(v[i], box), cx, bar.Top - 4f - font.Metrics.Descent, SKTextAlign.Center, font, vp);
         }
     }
 
@@ -167,7 +168,7 @@ public sealed partial class Painter
             {
                 using var big = TextFont.Create("0123456789", MathF.Max(12f, radius * box.ChartInner * 0.5f), bold: true);
                 using var bp = new SKPaint { IsAntialias = true, Color = ThemeColor("text", new SKColor(0x22, 0x22, 0x22)) };
-                canvas.DrawText(ChartNumber(total), c.X, c.Y - (big.Metrics.Ascent + big.Metrics.Descent) / 2f, SKTextAlign.Center, big, bp);
+                canvas.DrawText(ChartNumber(total, box), c.X, c.Y - (big.Metrics.Ascent + big.Metrics.Descent) / 2f, SKTextAlign.Center, big, bp);
             }
         }
 
@@ -186,7 +187,7 @@ public sealed partial class Painter
                 continue; // 칸을 넘는 범례 줄은 그리지 않는다
             p.Color = palette[i % palette.Length];
             canvas.DrawCircle(lx + 5f, ly, 5f, p);
-            var amount = box.ShowValue ? ChartNumber(v[i]) : total > 0 && v[i] > 0 ? $"{v[i] / total * 100:0}%" : "0%";
+            var amount = box.ShowValue ? ChartNumber(v[i], box) : total > 0 && v[i] > 0 ? $"{v[i] / total * 100:0}%" : "0%";
             var aw = font.MeasureText(amount);
             var name = i < box.ChartLabels.Length ? box.ChartLabels[i] : "";
             var room = r.Right - (lx + 16f) - aw - 8f;

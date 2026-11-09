@@ -49,12 +49,15 @@ public sealed partial class Painter
             canvas.Restore();
         }
 
-        if (!box.ShowValue || box.Direction is "up" or "down" || rect.Height < 14f)
+        var vertical = box.Direction is "up" or "down";
+        if (!box.ShowValue || (vertical ? rect.Width : rect.Height) < 14f)
             return;
 
-        // 값 텍스트: 채움 위는 흰색, 빈 트랙 위는 본문색 — 경계를 넘어가도 항상 읽힘
-        var text = FormatValue(box.GaugeValue, box.ValueFormat) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
-        using var font = TextFont.Create(text, MathF.Min(14f, rect.Height * 0.62f), bold: true);
+        // 값 텍스트: 채움 위는 흰색, 빈 트랙 위는 본문색 — 경계를 넘어가도 항상 읽힘. 세로 막대는 폭에 들어갈 때만(가로 글자 그대로)
+        var text = FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
+        using var font = TextFont.Create(text, MathF.Min(14f, (vertical ? rect.Width : rect.Height) * 0.62f), bold: true);
+        if (vertical && font.MeasureText(text) > rect.Width - 4f)
+            return;
         var baseline = rect.MidY - (font.Metrics.Ascent + font.Metrics.Descent) / 2f;
 
         canvas.Save();
@@ -127,12 +130,15 @@ public sealed partial class Painter
             canvas.DrawArc(oval, start, valueSweep, false, p);
         }
 
-        var text = FormatValue(box.GaugeValue, box.ValueFormat) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
         var hasLabel = !string.IsNullOrEmpty(box.Label);
-        using var font = TextFont.Create(text, MathF.Max(10f, r * 0.42f), bold: true);
-        using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text", new SKColor(0x0f, 0x17, 0x2a)) };
-        var valueY = cy - (hasLabel ? r * 0.10f : 0f);
-        canvas.DrawText(text, cx, valueY - (font.Metrics.Ascent + font.Metrics.Descent) / 2f, SKTextAlign.Center, font, tp);
+        if (box.ShowValue) // show-value(기본 참, D2) — 거짓이면 값 글자만 숨기고 label 자리는 그대로
+        {
+            var text = FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
+            using var font = TextFont.Create(text, MathF.Max(10f, r * 0.42f), bold: true);
+            using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text", new SKColor(0x0f, 0x17, 0x2a)) };
+            var valueY = cy - (hasLabel ? r * 0.10f : 0f);
+            canvas.DrawText(text, cx, valueY - (font.Metrics.Ascent + font.Metrics.Descent) / 2f, SKTextAlign.Center, font, tp);
+        }
 
         if (hasLabel)
         {
@@ -159,19 +165,11 @@ public sealed partial class Painter
             : new SKColor(0x25, 0x63, 0xeb);
     }
 
-    // format(.NET 형식, InvariantCulture)이 있으면 그대로, 없거나 쓸 수 없으면 정수는 정수·아니면 소수 한 자리
-    internal static string FormatValue(float v, string? format = null)
+    // format(.NET 형식, InvariantCulture — 3단계 R8 공용 규칙 AttrRules.FormatOrNull)이 있으면 그대로, 없거나 쓸 수 없으면(경고) 정수는 정수·아니면 소수 한 자리
+    internal static string FormatValue(float v, string? format, string tag)
     {
-        if (!string.IsNullOrEmpty(format))
-        {
-            try
-            {
-                return v.ToString(format, CultureInfo.InvariantCulture);
-            }
-            catch (FormatException)
-            {
-            }
-        }
+        if (AttrRules.FormatOrNull(v, format, tag) is { } formatted)
+            return formatted;
 
         return MathF.Abs(v - MathF.Round(v)) < 0.005f
             ? MathF.Round(v).ToString(CultureInfo.InvariantCulture)

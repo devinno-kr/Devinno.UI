@@ -209,14 +209,8 @@ internal static class GridSummary
         {
             if (v is IFormattable f)
             {
-                try
-                {
-                    return f.ToString(string.IsNullOrEmpty(format) ? null : format, CultureInfo.InvariantCulture);
-                }
-                catch (FormatException)
-                {
-                    return f.ToString(null, CultureInfo.InvariantCulture);
-                }
+                // format — 공용 규칙(쓸 수 없는 형식 = 기본 표시 + 경고)
+                return Layout.AttrRules.FormatOrNull(f, format, "DvSummary") ?? f.ToString(null, CultureInfo.InvariantCulture);
             }
 
             return v.ToString() ?? "";

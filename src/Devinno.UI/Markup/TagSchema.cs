@@ -155,7 +155,8 @@ internal static class TagSchema
             .. KnobRange(),
             ReadOnly(),
             new("direction", AttrKind.Enum, "right", Values: Directions, Note: EnumRule),
-            new("show-value", AttrKind.Bool, "false", Note: "decimals come from step"),
+            new("show-value", AttrKind.Bool, "false", Note: "value text (+ unit) beside the thumb; decimals come from step unless format is given; " + BoolRule),
+            new("format", AttrKind.Text, Note: FormatRule),
         ],
         ["DvInput"] =
         [
@@ -163,10 +164,10 @@ internal static class TagSchema
             new("keyboard-type", AttrKind.Enum, "text", Values: ["text", "numeric", "password"], Note: EnumRule + "; the handle resolves it against the screen VM"),
             new("multiline", AttrKind.Bool, "false"),
             Placeholder(),
-            new("format", AttrKind.Text, Note: ".NET number format"),
+            new("format", AttrKind.Text, Note: "numeric display; " + FormatRule),
             new("min", AttrKind.Number, Note: "typed values out of range are rejected (not clamped), the stepper stops at the bound; numeric only: both given and min >= max = 0..100 + warning; " + NumberRule),
             new("max", AttrKind.Number, Note: "typed values out of range are rejected (not clamped), the stepper stops at the bound; numeric only: both given and min >= max = 0..100 + warning; " + NumberRule),
-            new("unit", AttrKind.Text),
+            new("unit", AttrKind.Text, Note: "drawn at the right edge inside the box (input layout), not after the value"),
             ReadOnly(),
             new("step", AttrKind.Number, "1", Note: "<= 0 = 1; " + NumberRule),
             new("show-stepper", AttrKind.Bool, "false", Note: "read only when keyboard-type is numeric"),
@@ -220,9 +221,9 @@ internal static class TagSchema
             new("max", AttrKind.Number, "100", Note: RangeRule),
             Tone(),
             new("direction", AttrKind.Enum, "right", Values: Directions, Note: EnumRule),
-            new("show-value", AttrKind.Bool, "false"),
-            new("unit", AttrKind.Text),
-            new("format", AttrKind.Text, Note: ".NET number format"),
+            new("show-value", AttrKind.Bool, "false", Note: "value text (+ unit) in the center; horizontal: height 14 or more; vertical: only when the text fits in the width; " + BoolRule),
+            new("unit", AttrKind.Text, Note: UnitRule),
+            new("format", AttrKind.Text, Note: FormatRule),
             AlarmZones(),
             GaugeDead("ticks", AttrKind.Number), GaugeDead("minor-ticks", AttrKind.Number), GaugeDead("show-tick-labels", AttrKind.Bool),
             GaugeDead("label", AttrKind.Text), GaugeDead("sweep", AttrKind.Number), GaugeDead("thickness", AttrKind.Number),
@@ -234,9 +235,11 @@ internal static class TagSchema
             new("ticks", AttrKind.Number, "0", Note: "major tick interval; 0 = no scale"),
             new("minor-ticks", AttrKind.Number, "0", Note: "minor tick interval; drawn only when ticks is set"),
             new("show-tick-labels", AttrKind.Bool, "true", Note: BoolRule),
-            new("format", AttrKind.Text, Note: ".NET number format"),
-            DialDead("unit", AttrKind.Text, "the gauge"), DialDead("tone", AttrKind.Text, "the gauge", "the needle tip uses the zone color or gauge-needle-tip; " + ThemeWordRule, def: "info"),
-            DialDead("direction", AttrKind.Enum, "the gauge", EnumRule, Directions, "right"), DialDead("show-value", AttrKind.Bool, "the gauge", "the value is always drawn"),
+            new("format", AttrKind.Text, Note: FormatRule),
+            new("unit", AttrKind.Text, Note: UnitRule),
+            new("show-value", AttrKind.Bool, "true", Note: "the value text (+ unit) below the needle; " + BoolRule),
+            DialDead("tone", AttrKind.Text, "the gauge", "the needle tip uses the zone color or gauge-needle-tip; " + ThemeWordRule, def: "info"),
+            DialDead("direction", AttrKind.Enum, "the gauge", EnumRule, Directions, "right"),
             DialDead("label", AttrKind.Text, "the gauge"), DialDead("sweep", AttrKind.Number, "the gauge", "the gauge sweep is fixed at 270"),
             DialDead("thickness", AttrKind.Number, "the gauge"),
         ],
@@ -244,12 +247,12 @@ internal static class TagSchema
         [
             .. DialRange(),
             Tone("a zone color wins"),
-            new("unit", AttrKind.Text),
+            new("unit", AttrKind.Text, Note: UnitRule),
             new("label", AttrKind.Text, Note: "drawn below the value"),
             new("sweep", AttrKind.Number, "270", Note: "degrees, clamped to 1..360; " + NumberRule),
             new("thickness", AttrKind.Number, Note: "px; absent or <= 0 = 11% of the size; " + NumberRule),
-            new("format", AttrKind.Text, Note: ".NET number format"),
-            DialDead("show-value", AttrKind.Bool, "the ring", "the value is always drawn"),
+            new("format", AttrKind.Text, Note: FormatRule),
+            new("show-value", AttrKind.Bool, "true", Note: "the value text (+ unit) in the center; false hides it, label stays; " + BoolRule),
             DialDead("ticks", AttrKind.Number, "the ring"), DialDead("minor-ticks", AttrKind.Number, "the ring"),
             DialDead("show-tick-labels", AttrKind.Bool, "the ring"), DialDead("direction", AttrKind.Enum, "the ring", EnumRule, Directions, "right"),
         ],
@@ -265,8 +268,8 @@ internal static class TagSchema
         ["DvTank"] =
         [
             .. DialRange("separate fields from DvGauge/DvRing/DvProgress (TankValue/TankMin/TankMax)"),
-            new("unit", AttrKind.Text),
-            new("format", AttrKind.Text, Note: ".NET number format"),
+            new("unit", AttrKind.Text, Note: UnitRule),
+            new("format", AttrKind.Text, Note: FormatRule + "; the value chip is always drawn (no show-value)"),
             new("show-zone-marks", AttrKind.Bool, "true", Note: BoolRule + "; off hides the zone boundary marks; the zone colors stay either way"),
         ],
         ["DvSparkline"] =
@@ -282,6 +285,7 @@ internal static class TagSchema
             .. ChartItems(),
             .. ChartCommon(),
             new("show-value", AttrKind.Bool, "false", Note: BoolRule),
+            new("format", AttrKind.Text, Note: "the show-value numbers; " + FormatRule),
             ChartDead("area", AttrKind.Bool, "the bar chart"),
             ChartDead("inner-radius", AttrKind.Number, "the bar chart"),
         ],
@@ -289,6 +293,7 @@ internal static class TagSchema
         [
             .. ChartItems(),
             new("show-value", AttrKind.Bool, "false", Note: BoolRule + "; shows the numbers (and the donut total) instead of percentages"),
+            new("format", AttrKind.Text, Note: "the show-value numbers and the donut total (not the percentages); " + FormatRule),
             new("inner-radius", AttrKind.Number, "0", Note: "ratio, clamped to 0..0.9 (donut); " + NumberRule),
             ChartDead("tone", AttrKind.Text, "the pie chart", "slices use the fixed palette; " + ThemeWordRule, def: "info"),
             ChartDead("y-min", AttrKind.Number, "the pie chart"), ChartDead("y-max", AttrKind.Number, "the pie chart"),
@@ -346,7 +351,7 @@ internal static class TagSchema
             new("field", AttrKind.Path, "", Bindable: false, Note: "read raw; empty = no value (no sort, no edit)"),
             new("width", AttrKind.Length, "*", Note: "px, %, * or n*; bound (resolved as text)"),
             new("align", AttrKind.Enum, Values: ["left", "center", "right"], Note: "absent = by value type (numbers right); " + EnumRule + " (by value type)"),
-            new("format", AttrKind.Text, Note: ".NET format"),
+            new("format", AttrKind.Text, Note: FormatRule),
             GridFlag("frozen", "only a leading run of columns; frozen on a middle column warns and is ignored"),
             GridFlag("sortable"),
             new("sort", AttrKind.Enum, Values: ["asc", "desc"], Note: "initial sort, column order = priority; " + EnumRule + " (no sort)"),
@@ -382,7 +387,7 @@ internal static class TagSchema
         [
             new("field", AttrKind.Path, "", Bindable: false, Note: "read raw; no matching column = warning, the cell is ignored"),
             new("fn", AttrKind.Enum, Values: ["sum", "avg", "min", "max", "count"], Note: "absent = none; " + EnumRule + " (none)"),
-            new("format", AttrKind.Text, Note: ".NET format"),
+            new("format", AttrKind.Text, Note: "absent = the column format; " + FormatRule),
             new("value", AttrKind.Object, Note: "present = shown instead of the computed value (also when it resolves to null)"),
         ],
 
@@ -482,6 +487,9 @@ internal static class TagSchema
     private const string ColorRule = "#hex or token(name); an unknown token = magenta + warning; unparsable = the default + warning";
     private const string EnumRule = "case and surrounding spaces ignored; an unknown value = the default + warning";
     // 3.4 — tone·DvLamp state: 고정 목록이 아니라 지금 테마의 토큰(Layout.AttrRules.ThemeWord) — 생성기(DVML020)는 값을 보지 않는다
+    // 3단계 R8 — 값 글자(Layout.AttrRules.FormatOrNull)
+    private const string FormatRule = ".NET format string, invariant culture, bindable; a format not valid for the value type = the default text + warning";
+    private const string UnitRule = "drawn after the value text with one space";
     // 3단계 R6 — 범위(Layout.AttrRules.Range)
     private const string RangeRule = "min >= max = 0..100 + warning; " + NumberRule;
     private const string ThemeWordRule = "case and surrounding spaces ignored; a word without that theme token = the default + warning; not checked at build time (the theme is the app's)";
