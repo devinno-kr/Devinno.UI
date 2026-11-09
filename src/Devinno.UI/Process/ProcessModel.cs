@@ -572,9 +572,9 @@ internal static class ProcessBuilder
                 Tag = ch.Tag,
                 Def = def,
                 Terminal = ch.Tag == "DvTerminal",
-                // 끝점(DvTerminal)만 글자(text)를 그리고 돌지 않는다 — 다른 장비는 text 를, 끝점은 rotate 를 읽지 않는다(3단계 R9)
+                // 끝점(DvTerminal)만 글자(text)를 그리고 돌지 않는다 — 다른 장비는 text 를, 끝점은 label·rotate 를 읽지 않는다(이름표가 없다)
                 Text = ch.Tag == "DvTerminal" ? r.Text("text") : null,
-                Label = r.Text("label"),
+                Label = ch.Tag == "DvTerminal" ? null : r.Text("label"),
                 Rotate = ch.Tag == "DvTerminal" ? 0 : int.Parse(EquipmentEnum(r, "rotate", null) ?? "0", CultureInfo.InvariantCulture),
                 Row = Int(ch.Tag, "row", r.Text("row"), AttrRules.RawOf(r, "row")),
                 Rank = Int(ch.Tag, "rank", r.Text("rank"), AttrRules.RawOf(r, "rank")),

@@ -534,14 +534,15 @@ internal static class TagSchema
         new(name, AttrKind.Number, Note: $"body {name} px, 0.6-4x the kind's natural size (outside = clamped + warning; not a number = natural + warning); "
             + $"the common layout also applies it as the box CSS {name}; name clash: DvSignal width is the stroke");
 
-    // 장비 공통 — name·label·kind·rotate·flip·row·rank·x·y·visible (상태 속성은 태그마다). DvTerminal 은 rotate 대신 text(돌지 않는 끝점 글자)
+    // 장비 공통 — name·label·kind·rotate·flip·row·rank·x·y·visible (상태 속성은 태그마다). DvTerminal 은 label·rotate 대신 text(돌지 않는 끝점 글자)
     private static AttrDef[] Equipment(string tag)
     {
         List<AttrDef> list =
         [
             new("name", AttrKind.Text, Bindable: false, Note: "required, unique within the diagram or unit (missing = placeholder + error, duplicate = error); " + RawName),
-            new("label", AttrKind.Text, Note: "one-line name chip"),
         ];
+        if (tag != "DvTerminal")
+            list.Add(new("label", AttrKind.Text, Note: "one-line name chip"));
         if (Process.BuiltInSymbols.Kinds.TryGetValue(tag, out var kinds))
             list.Add(new("kind", AttrKind.Enum, kinds[0], Values: kinds, Note: EnumRule + "; elsewhere the look selector is variant"));
         list.AddRange(

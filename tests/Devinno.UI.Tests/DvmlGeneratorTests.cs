@@ -831,10 +831,10 @@ public class DvmlGeneratorTests
               <DvGauge value="1" sweep="180"/>
               <DvTabs placeholder="p"><DvTab value="a"/></DvTabs>
               <DvAlarmBanner row-height="40"/>
-              <DvProcess><DvPump name="P" text="x"/><DvTerminal name="T" rotate="90" text="IN"/></DvProcess>
+              <DvProcess><DvPump name="P" text="x"/><DvTerminal name="T" rotate="90" label="L" text="IN"/></DvProcess>
             </DvStack>
             """);
-        Assert.Equal(["DvSparkline show-value", "DvGauge sweep", "DvTabs placeholder", "DvAlarmBanner row-height", "DvPump text", "DvTerminal rotate"],
+        Assert.Equal(["DvSparkline show-value", "DvGauge sweep", "DvTabs placeholder", "DvAlarmBanner row-height", "DvPump text", "DvTerminal rotate", "DvTerminal label"],
             d.Select(x => System.Text.RegularExpressions.Regex.Match(x.GetMessage(Invariant), @"^(\S+) has no attribute '([^']+)'")).Select(m => $"{m.Groups[1]} {m.Groups[2]}"));
     }
 

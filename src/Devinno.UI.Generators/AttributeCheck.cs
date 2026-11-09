@@ -115,7 +115,7 @@ internal static class AttributeCheck
         ["DvValve3"] = ["name", "label", "kind", "rotate", "flip", "row", "rank", "x", "y", "visible", "open-b", "open-c"],
         ["DvInline"] = ["name", "label", "kind", "rotate", "flip", "row", "rank", "x", "y", "visible"],
         ["DvExchanger"] = ["name", "label", "kind", "rotate", "flip", "row", "rank", "x", "y", "visible"],
-        ["DvTerminal"] = ["name", "label", "text", "flip", "row", "rank", "x", "y", "visible"],
+        ["DvTerminal"] = ["name", "text", "flip", "row", "rank", "x", "y", "visible"],
         ["DvAgitator"] = ["running", "kind", "visible"],
         ["DvMotor"] = ["running", "kind", "visible"],
         ["DvAttach"] = ["side", "visible"],
