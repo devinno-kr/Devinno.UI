@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Diagnostics;
 using System.Globalization;
 using Devinno.UI.Binding;
 using Devinno.UI.Interaction;
@@ -12,7 +11,6 @@ namespace Devinno.UI.Grid;
 /// <summary><c>&lt;DvDataGrid&gt;</c> + <c>&lt;DvColumn&gt;</c> children → <see cref="GridSpec"/>. O(columns + selection count), independent of the row count.</summary>
 internal static class GridBuilder
 {
-    private static readonly HashSet<string> FilterWarned = new(); // 알 수 없는 filter 값 — 값마다 경고 1회
 
     private static GridFilterSetting ParseFilter(string? raw, string? field)
     {
@@ -26,16 +24,10 @@ internal static class GridBuilder
             case "date": return GridFilterSetting.Date;
         }
 
-        lock (FilterWarned)
-        {
-            if (FilterWarned.Add(raw!))
-                Trace.TraceWarning($"Devinno.UI: DvColumn field '{field}' filter=\"{raw}\": not one of none, auto, text, values, range, date; no filter");
-        }
+        Warnings.Warn($"Devinno.UI: DvColumn field '{field}' filter=\"{raw}\": not one of none, auto, text, values, range, date; no filter");
 
         return GridFilterSetting.None;
     }
-
-    private static readonly HashSet<(string, string)> NumWarned = new(); // 해석 못 한 min·max — (속성, 값)마다 경고 1회
 
     /// <summary>Builds the grid of <c>r.Node</c>; every attribute (the grid's and each child's) is read through an <see cref="AttrReader"/>.</summary>
     public static GridSpec Build(AttrReader r, DvTheme? theme = null, Func<string, GridCellStyle?>? classStyle = null)
@@ -67,9 +59,9 @@ internal static class GridBuilder
                 {
                     var start = cols.Count;
                     Collect(ch, depth + 1);
-                    // 자식 노드는 그 노드의 리더로 — 핸들 덮어쓰기는 보지 않는다(지금 동작 그대로: 마크업 값만)
+                    // 자식 노드는 그 노드의 리더로(그 노드 핸들의 덮어쓰기를 함께 본다)
                     if (cols.Count > start)
-                        groups.Add(new GridHeaderGroup(BindingResolver.ResolveInline(vm, new AttrReader(ch, vm, null).Raw("header")) ?? "",
+                        groups.Add(new GridHeaderGroup(BindingResolver.ResolveInline(vm, r.Child(ch).Raw("header")) ?? "",
                             depth, start, cols.Count - 1));
                 }
             }
@@ -77,7 +69,7 @@ internal static class GridBuilder
 
         GridColumn Column(ElementNode ch)
         {
-            var cr = new AttrReader(ch, vm, null);
+            var cr = r.Child(ch);
             string? CA(string name) => cr.Raw(name);
             double? Num(string name)
             {
@@ -86,11 +78,7 @@ internal static class GridBuilder
                 var text = Convert.ToString(v, CultureInfo.InvariantCulture) ?? "";
                 if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var d))
                     return d;
-                lock (NumWarned)
-                {
-                    if (NumWarned.Add((name, text)))
-                        Trace.TraceWarning($"Devinno.UI: DvColumn field '{CA("field")}' {name}=\"{text}\": not a number; ignored");
-                }
+                Warnings.Warn($"Devinno.UI: DvColumn field '{CA("field")}' {name}=\"{text}\": not a number; ignored");
 
                 return null;
             }
@@ -126,7 +114,7 @@ internal static class GridBuilder
                 OnBeforeCommit = CA("onbeforecommit"),
                 OnColor = Color(cr.Text("on-color")),
                 Blink = IsTrue(cr.Value("blink")),
-                ButtonText = BindingResolver.ResolveInline(vm, CA("text")) ?? "",
+                ButtonText = (cr.Overridden("text") ? cr.Text("text") : BindingResolver.ResolveInline(vm, CA("text"))) ?? "", // 코드 Text 덮어쓰기는 그대로
                 Icon = CA("icon"),
                 Variant = CA("variant")?.Trim().ToLowerInvariant() is { Length: > 0 } variant ? variant : "primary",
                 OnClick = CA("onclick"),
@@ -137,8 +125,7 @@ internal static class GridBuilder
                 Unit = BindingResolver.ResolveInline(vm, CA("unit")),
                 Mode = cr.Text("mode"),
                 ShowSeconds = IsTrue(cr.Value("show-seconds")),
-                OptionsNode = cellType == GridCellType.Select ? ch : null,
-                OptionsContext = cellType == GridCellType.Select ? vm : null,
+                OptionsReader = cellType == GridCellType.Select ? cr : null,
                 InitialSortDesc = CA("sort")?.Trim().ToLowerInvariant() switch
                 {
                     "asc" => false,
@@ -162,7 +149,7 @@ internal static class GridBuilder
             if (resolved is not null && !resolved.Contains(ThemeResolver.MissingColor, StringComparison.OrdinalIgnoreCase) &&
                 DvColor.TryParse(resolved, out var c))
                 return c;
-            Trace.TraceWarning($"Devinno.UI: DvColumn on-color=\"{text}\": not a valid color; using the default color");
+            Warnings.Warn($"Devinno.UI: DvColumn on-color=\"{text}\": not a valid color; using the default color");
             return null;
         }
 
@@ -170,7 +157,7 @@ internal static class GridBuilder
         while (frozen < cols.Count && cols[frozen].Frozen)
             frozen++;
         if (cols.Skip(frozen).Any(c => c.Frozen))
-            Trace.TraceWarning("Devinno.UI: DvDataGrid frozen applies only to a contiguous run of columns from the start; frozen on a middle column is ignored");
+            Warnings.Warn("Devinno.UI: DvDataGrid frozen applies only to a contiguous run of columns from the start; frozen on a middle column is ignored");
 
         // 고정 열과 스크롤 열에 걸친 그룹은 경계에서 둘로(각 영역에서 따로 그려진다)
         var header = GridHeader.Single;
@@ -181,7 +168,7 @@ internal static class GridBuilder
             {
                 if (gr.First < frozen && gr.Last >= frozen)
                 {
-                    Trace.TraceWarning($"Devinno.UI: DvColumnGroup '{gr.Header}' spans the frozen column boundary; it is drawn split in two");
+                    Warnings.Warn($"Devinno.UI: DvColumnGroup '{gr.Header}' spans the frozen column boundary; it is drawn split in two");
                     split.Add(gr with { Last = frozen - 1 });
                     split.Add(gr with { First = frozen });
                 }
@@ -203,12 +190,12 @@ internal static class GridBuilder
             {
                 if (sc.Tag != "DvSummary")
                     continue;
-                var sr = new AttrReader(sc, vm, null);
+                var sr = r.Child(sc);
                 var field = sr.Raw("field") ?? "";
                 var ci = cols.FindIndex(c => c.Reader.Path == field);
                 if (ci < 0)
                 {
-                    Trace.TraceWarning($"Devinno.UI: DvSummary field '{field}': no matching column; ignored");
+                    Warnings.Warn($"Devinno.UI: DvSummary field '{field}': no matching column; ignored");
                     continue;
                 }
 
@@ -218,7 +205,7 @@ internal static class GridBuilder
                     hasValue ? sr.Value("value") : null);
             }
 
-            var rr = new AttrReader(ch, vm, null);
+            var rr = r.Child(ch);
             summaries.Add(new GridSummaryRow
             {
                 Title = BindingResolver.ResolveInline(vm, rr.Raw("title")) ?? "",
@@ -275,7 +262,7 @@ internal static class GridBuilder
             case IList list:
                 return list;
             case IEnumerable seq:
-                Trace.TraceWarning("Devinno.UI: DvDataGrid items is not an IList; it is copied to a list on every layout (IList recommended)");
+                Warnings.Warn("Devinno.UI: DvDataGrid items is not an IList; it is copied to a list on every layout (IList recommended)");
                 return HandlerErrors.Snapshot(seq.Cast<object?>(), Member(raw), "DvDataGrid"); // 열거 중 VM 예외 = 빈 목록
             default:
                 return null;

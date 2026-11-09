@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -17,19 +16,9 @@ internal static class FieldAccessor
     internal sealed record Entry(Func<object, object?> Get, Type? ValueType, Func<object, double>? GetDouble = null, bool Writable = false);
 
     private static readonly Dictionary<(Type, string), Entry> Cache = new();
-    private static readonly HashSet<(Type, string)> Warned = new();
-
-    /// <summary>Missing-property warning — once per (type, path) per process (so it does not repeat on every rebuild).</summary>
+    /// <summary>Missing-property warning — once per surface for each (type, path) (so it does not repeat on every rebuild).</summary>
     public static void WarnMissing(Type type, string path)
-    {
-        lock (Warned)
-        {
-            if (!Warned.Add((type, path)))
-                return;
-        }
-
-        Trace.TraceWarning($"Devinno.UI: DvDataGrid field '{path}': {type.Name} has no such property; shown as an empty cell");
-    }
+        => Interaction.Warnings.Warn($"Devinno.UI: DvDataGrid field '{path}': {type.Name} has no such property; shown as an empty cell");
 
     private static readonly Entry Missing = new(_ => null, null);
 

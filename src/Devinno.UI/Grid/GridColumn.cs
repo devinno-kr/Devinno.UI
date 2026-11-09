@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using System.Globalization;
+using Devinno.UI.Interaction;
 using Devinno.UI.Layout;
 using Devinno.UI.Styling;
 using SkiaSharp;
@@ -79,12 +79,10 @@ internal sealed class GridColumn
     /// <summary>Raw datetime <c>mode</c> text (omitted = by value type).</summary>
     public string? Mode { get; init; }
     public bool ShowSeconds { get; init; }
-    /// <summary>Source of select options — the DvColumn node (DvOption children, items, item-*) and the grid VM context.</summary>
-    internal Markup.ElementNode? OptionsNode { get; init; }
-    internal object? OptionsContext { get; init; }
+    /// <summary>Source of select options — the reader of the DvColumn node (DvOption children, items, item-*) in the grid VM context.</summary>
+    internal AttrReader? OptionsReader { get; init; }
 
     private static readonly object NoMatch = new(); // 변환 못 한 항목 값 — 어떤 값과도 같지 않음
-    private static readonly HashSet<(Type, string, GridCellType)> MismatchWarned = new();
     private List<SelectOption>? _options;
     private object?[] _optionValues = Array.Empty<object?>();
     private Type? _optionsType;
@@ -125,7 +123,7 @@ internal sealed class GridColumn
             return;
         if (_options is null || IsEnumAuto)
         {
-            _options = OptionsNode is null ? new List<SelectOption>() : SelectValue.Options(OptionsNode, OptionsContext, t);
+            _options = OptionsReader is { } or ? SelectValue.Options(or, t) : new List<SelectOption>();
             _valuesByType.Clear();
         }
 
@@ -142,7 +140,7 @@ internal sealed class GridColumn
 
     private readonly Dictionary<Type, object?[]> _valuesByType = new();
 
-    private bool IsEnumAuto => OptionsNode is { } n && !new AttrReader(n, OptionsContext, null).Has("items") && !n.Children.Any(c => c.Tag == "DvOption");
+    private bool IsEnumAuto => OptionsReader is { } or && !or.Has("items") && !or.Node.Children.Any(c => c.Tag == "DvOption");
 
     /// <summary>Datetime mode — DvDateTimeInput rules (omitted = by type; DateOnly and TimeOnly allow only their own mode).</summary>
     public PickerMode DateTimeMode => PickerValue.ResolveMode(Mode, Reader.ValueType);
@@ -161,11 +159,7 @@ internal sealed class GridColumn
         if (TypeFits(CellType, t))
             return true;
 
-        lock (MismatchWarned)
-        {
-            if (MismatchWarned.Add((item.GetType(), Reader.Path, CellType)))
-                Trace.TraceWarning($"Devinno.UI: DvColumn cell-type=\"{CellType.ToString().ToLowerInvariant()}\" field '{Reader.Path}': type {t.Name} does not match; display only");
-        }
+        Warnings.Warn($"Devinno.UI: DvColumn cell-type=\"{CellType.ToString().ToLowerInvariant()}\" field '{Reader.Path}': type {t.Name} does not match; display only");
 
         return false;
     }

@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using Devinno.UI.Interaction;
 using Devinno.UI.Layout;
 using Devinno.UI.Styling;
 
@@ -28,7 +28,7 @@ internal sealed record GridColors(
                                !raw.Contains(ThemeResolver.MissingColor, StringComparison.OrdinalIgnoreCase);
             if (!missingToken && DvColor.TryParse(resolved, out var c))
                 return c;
-            Trace.TraceWarning($"Devinno.UI: DvDataGrid {name}=\"{raw}\": not a valid color; using the theme color");
+            Warnings.Warn($"Devinno.UI: DvDataGrid {name}=\"{raw}\": not a valid color; using the theme color");
             return null;
         }
 

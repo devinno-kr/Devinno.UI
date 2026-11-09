@@ -8,8 +8,8 @@ namespace Devinno.UI.Layout;
 // 공통 + 컨테이너 태그 빌더 (DvRepeat DvTabs/DvTab DvExpander DvStepBar). 속성은 모두 AttrReader 로 읽는다 — 정의는 TagSchema.
 public sealed partial class LayoutEngine
 {
-    // 다른 노드(자식 DvTab 등)의 리더 — 그 노드 핸들의 덮어쓰기를 함께 본다
-    private AttrReader Reader(ElementNode node, object? ctx) => new(node, ctx, ControlOf?.Invoke(node)?.AttrOverrides);
+    // 다른 노드(자식 DvTab 등)의 리더 — 그 노드 핸들의 덮어쓰기를 함께 본다(그 리더의 Child 도 같은 조회)
+    private AttrReader Reader(ElementNode node, object? ctx) => new(node, ctx, OverridesOf?.Invoke(node), OverridesOf);
 
     // 합성 노드(머리글 줄·탭 항목 등) — 클래스(와 탭 disabled 원문)만 가진다
     private static ElementNode Synthetic(string tag, string cls, string? disabled = null) => disabled is null
@@ -46,14 +46,15 @@ public sealed partial class LayoutEngine
     private LayoutBox BuildTabs(LayoutBox box, object? vm, Func<ElementNode, IEnumerable<LayoutBox>> buildChild)
     {
         var tabs = box.Node.Children.Where(c => c.Tag == "DvTab" && IsVisibleOf(c, vm)).ToList();
-        var bound = Reader(box.Node, vm).Has("value");
+        var r = Reader(box.Node, vm);
+        var bound = r.Has("value");
         box.SelectOptions = tabs.Select(t =>
         {
-            var tr = Reader(t, vm);
+            var tr = r.Child(t);
             var raw = tr.Text("value");
             var value = SelectValue.TryConvert(raw, box.SelectValueType, out var converted) ? converted : raw;
-            // text 는 마크업 값만(핸들 Text 덮어쓰기는 탭 머리글에 쓰지 않음 — 지금 동작 그대로)
-            return new SelectOption(value, BindingResolver.ResolveText(vm, tr.Raw("text")) ?? raw ?? "", null);
+            // text — 탭 핸들의 Text 덮어쓰기가 이긴다(자식 노드도 자기 덮어쓰기로 읽는다)
+            return new SelectOption(value, tr.Text("text") ?? raw ?? "", null);
         }).ToList();
         var selected = bound
             ? box.SelectOptions.FindIndex(o => SelectValue.Matches(o.Value, box.InputValue, box.SelectValueType))
@@ -65,8 +66,10 @@ public sealed partial class LayoutEngine
         var header = BuildSelf(Synthetic("DvTabHeader", "tab-header"), vm);
         for (var i = 0; i < tabs.Count; i++)
         {
-            // disabled 는 마크업 원문을 머리글 항목에 복사(핸들 Enabled 덮어쓰기는 내용 상자에만 — 지금 동작 그대로)
-            var item = Synthetic("DvTabItem", i == box.SelectedIndex ? "tab tab-on" : "tab", Reader(tabs[i], vm).Raw("disabled"));
+            // disabled 는 머리글 항목에 복사 — 탭 핸들의 Enabled 덮어쓰기가 있으면 그 값, 없으면 마크업 원문
+            var tr = r.Child(tabs[i]);
+            var disabled = tr.Overridden("disabled") ? (tr.Value("disabled") is true ? "true" : "false") : tr.Raw("disabled");
+            var item = Synthetic("DvTabItem", i == box.SelectedIndex ? "tab tab-on" : "tab", disabled);
             var itemBox = BuildSelf(item, vm);
             itemBox.ResolvedText = box.SelectOptions[i].Text;
             itemBox.SegmentOwner = box;

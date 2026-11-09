@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using Devinno.UI.Binding;
 using Devinno.UI.Components;
+using Devinno.UI.Interaction;
 using Devinno.UI.Layout;
 using Devinno.UI.Markup;
 using Devinno.UI.Text;
@@ -252,26 +253,8 @@ internal static class ProcessBuilder
     public const float LabelSize = 13f;
     private const float AttachGap = 8f;
 
-    private static readonly HashSet<string> Warned = new();
-
-    // 배치 품질 경고(Report) — 공정도 요소(파싱한 마크업)마다 같은 문구 한 번. 프로세스 전체로 한 번이면
-    // 같은 프로세스에서 마크업을 고쳐 다시 렌더할 때 남은 문제가 보이지 않는다
-    private static readonly ConditionalWeakTable<object, HashSet<string>> WarnedFor = new();
-
-    internal static void Warn(string message, bool error = false, object? scope = null)
-    {
-        var seen = scope is null ? Warned : WarnedFor.GetValue(scope, _ => new HashSet<string>());
-        lock (seen)
-        {
-            if (!seen.Add(message))
-                return;
-        }
-
-        if (error)
-            System.Diagnostics.Trace.TraceError("Devinno.UI process: " + message);
-        else
-            System.Diagnostics.Trace.TraceWarning("Devinno.UI process: " + message);
-    }
+    // 공정도 경고 — 공용 경고(화면마다 같은 문구 한 번)에 공정도 머리말만 붙인다
+    internal static void Warn(string message, bool error = false) => Warnings.Warn("Devinno.UI process: " + message, error);
 
     /// <summary>Box factory passed in by the engine; builds a box from a context (the screen VM or a component parameter scope).</summary>
     internal sealed record Builders(
@@ -279,7 +262,7 @@ internal static class ProcessBuilder
         Func<ElementNode, object?, LayoutBox?> Child,
         Func<ElementNode, object?, (ElementNode Unit, ElementNode BoxNode, object? Scope)?> ExpandUnit,
         Func<string?, SKColor?> Color,
-        Func<ElementNode, bool?> VisibleOverride,
+        Func<ElementNode, object?, AttrReader> Reader,
         Action<LayoutBox, ElementNode> LinkInstance);
 
     /// <summary>
@@ -290,7 +273,7 @@ internal static class ProcessBuilder
     public static void Build(LayoutBox box, object? vm, ComponentRegistry? registry, Builders b)
     {
         var node = box.Node;
-        var r = new AttrReader(node, vm, null);
+        var r = b.Reader(node, vm);
         var d = new ProcessDiagram
         {
             Source = node,
@@ -502,7 +485,7 @@ internal static class ProcessBuilder
         var instruments = new List<(ProcessInstrument I, ElementNode Node)>();
         foreach (var ch in container.Children)
         {
-            var r = new AttrReader(ch, vm, null);
+            var r = b.Reader(ch, vm);
             if (ch.Tag == "DvLine")
             {
                 d.Lines.Add(new ProcessLine
@@ -537,7 +520,7 @@ internal static class ProcessBuilder
                 continue;
             }
 
-            if (ch.Tag == "DvStyle" || !Visible(r, b))
+            if (ch.Tag == "DvStyle" || !Visible(r))
                 continue;
 
             if (ch.Tag == "DvInstrument")
@@ -636,8 +619,8 @@ internal static class ProcessBuilder
 
             foreach (var sub in ch.Children)
             {
-                var sr = new AttrReader(sub, vm, null);
-                if (!Visible(sr, b))
+                var sr = r.Child(sub);
+                if (!Visible(sr))
                     continue;
                 if (BuiltInSymbols.IsAccessoryTag(sub.Tag))
                 {
@@ -850,8 +833,8 @@ internal static class ProcessBuilder
     private static void AddUnit(ProcessDiagram d, LayoutBox owner, ElementNode instance, ElementNode unitNode, ElementNode boxNode, object? scope,
         object? outerVm, ComponentRegistry? registry, Builders b)
     {
-        var ri = new AttrReader(instance, outerVm, null);
-        var ru = new AttrReader(unitNode, scope, null);
+        var ri = b.Reader(instance, outerVm);
+        var ru = b.Reader(unitNode, scope);
         string? Attr(string name) => ri.Has(name) ? ri.Text(name) : ru.Text(name);
 
         if (!Coordinates(d, instance.Tag, Attr, out var pos))
@@ -902,11 +885,9 @@ internal static class ProcessBuilder
         return name;
     }
 
-    // 핸들의 Visible 덮어쓰기가 마크업 visible 보다 우선(일반 요소와 같음)
-    private static bool Visible(AttrReader r, Builders b)
+    // 핸들의 Visible 덮어쓰기가 마크업 visible 보다 우선(일반 요소와 같음) — 리더가 덮어쓴 값을 bool 로 돌려준다
+    private static bool Visible(AttrReader r)
     {
-        if (b.VisibleOverride(r.Node) is { } ov)
-            return ov;
         if (!r.Has("visible"))
             return true;
         var v = r.Value("visible");
@@ -1920,7 +1901,7 @@ internal static class ProcessBuilder
     internal static void Report(ProcessDiagram d)
     {
         if (d.Shortage is { } msg)
-            Warn(msg, scope: d.Source);
+            Warn(msg);
         foreach (var n in d.Nodes)
         {
             if (n.Unit is { } u)
@@ -1929,7 +1910,7 @@ internal static class ProcessBuilder
 
         if (d.Graph is { } g)
             foreach (var w in g.Warnings)
-                Warn(w, scope: d.Source);
+                Warn(w);
 
         ReportValueOverlap(d);
 
@@ -1940,11 +1921,11 @@ internal static class ProcessBuilder
             if (gl.Forced)
                 Warn(d.Fixed
                     ? $"'{l.FromRef}'→'{l.ToRef}': no free path, so it overlaps other piping; move equipment (x/y) to open a gap, or move an attached box (DvAttach) standing in front of a port to another face"
-                    : $"'{l.FromRef}'→'{l.ToRef}': no free path, so it overlaps other piping; move equipment with row/rank hints, move an attached box (DvAttach) standing in front of a port to another face, or enlarge the area", scope: d.Source);
+                    : $"'{l.FromRef}'→'{l.ToRef}': no free path, so it overlaps other piping; move equipment with row/rank hints, move an attached box (DvAttach) standing in front of a port to another face, or enlarge the area");
             else if (gl.Crossings > 0)
                 Warn(d.Fixed
                     ? $"'{l.FromRef}'→'{l.ToRef}': crosses other piping {gl.Crossings} time(s); moving equipment (x/y) can reduce this"
-                    : $"'{l.FromRef}'→'{l.ToRef}': crosses other piping {gl.Crossings} time(s); a row hint can reduce this", scope: d.Source);
+                    : $"'{l.FromRef}'→'{l.ToRef}': crosses other piping {gl.Crossings} time(s); a row hint can reduce this");
         }
     }
 
@@ -1971,7 +1952,7 @@ internal static class ProcessBuilder
                 .Select(l => $"{l.FromRef}'→'{l.ToRef}")
                 .FirstOrDefault();
             if (hit is not null)
-                Warn($"'{inst.Name}' value text overlaps '{hit}'; value text is not part of the layout, so keep it short or move the equipment apart", scope: d.Source);
+                Warn($"'{inst.Name}' value text overlaps '{hit}'; value text is not part of the layout, so keep it short or move the equipment apart");
         }
     }
 

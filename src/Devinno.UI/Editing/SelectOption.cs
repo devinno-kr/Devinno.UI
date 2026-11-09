@@ -58,18 +58,12 @@ internal static class SelectValue
         }
     }
 
-    /// <summary>Option list: items (path) &gt; DvOption children &gt; automatic enum.</summary>
-    public static List<SelectOption> Options(Markup.ElementNode node, object? ctx, Type? valueType)
-        => Options(new AttrReader(node, ctx, null), valueType);
-
     /// <summary>Option list read through <paramref name="r"/> (the element's own attributes): items (path) &gt; DvOption children &gt; automatic enum.</summary>
     public static List<SelectOption> Options(AttrReader r, Type? valueType)
     {
         var node = r.Node;
         var ctx = r.Context;
         var list = new List<SelectOption>();
-        // DvOption 은 그 노드의 리더로 — 핸들 덮어쓰기는 보지 않는다(지금 동작 그대로: 마크업 값만)
-        string? Attr(Markup.ElementNode n, string name) => new AttrReader(n, ctx, null).Text(name);
 
         if (r.Raw("items") is { } itemsRaw)
         {
@@ -98,8 +92,10 @@ internal static class SelectValue
         {
             foreach (var o in options)
             {
-                var value = Attr(o, "value");
-                list.Add(new SelectOption(value, Attr(o, "text") ?? value ?? "", Attr(o, "icon")));
+                // DvOption 은 그 노드의 리더로 — 그 노드 핸들의 덮어쓰기(Text)를 함께 본다
+                var or = r.Child(o);
+                var value = or.Text("value");
+                list.Add(new SelectOption(value, or.Text("text") ?? value ?? "", or.Text("icon")));
             }
 
             return list;

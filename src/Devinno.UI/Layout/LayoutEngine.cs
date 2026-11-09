@@ -286,7 +286,7 @@ public sealed partial class LayoutEngine
         box.ValueBindExpr = _valueOverride ?? node.Attributes.GetValueOrDefault("value"); // ctx.Commit 이 쓰는 경로(컴포넌트 양방향 파라미터면 바깥 경로)
         box.WidgetValues = node.Attributes.ToDictionary(a => a.Key, a => (BindingResolver.ResolveValueOrLiteral(vm, a.Value), (string?)a.Value), StringComparer.Ordinal);
         if (node.Children.Count > 0)
-            System.Diagnostics.Trace.TraceWarning($"Devinno.UI: <{node.Tag}> is a custom widget; its child elements are not used ({string.Join(", ", node.Children.Select(c => c.Tag).Distinct())})");
+            Warnings.Warn($"Devinno.UI: <{node.Tag}> is a custom widget; its child elements are not used ({string.Join(", ", node.Children.Select(c => c.Tag).Distinct())})");
         return box;
     }
 
@@ -296,7 +296,7 @@ public sealed partial class LayoutEngine
         (n, ctx) => Build(n, ctx, registry, depth + 1),
         (n, ctx) => ExpandUnit(n, ctx, registry),
         raw => ParseColor(raw)?.ToSK(),
-        n => ControlOf?.Invoke(n)?.Overrides.Visible,
+        Reader,
         LinkInstance);
 
     // 템플릿 루트가 DvUnit 인 컴포넌트 인스턴스 → (유닛 노드, 유닛 상자용 노드(인스턴스 style·onclick 등 전달), 파라미터 범위). 아니면 null.
@@ -354,7 +354,7 @@ public sealed partial class LayoutEngine
         // (content-align 속성은 슈가와 달리 클래스를 이긴다 — 테마 .btn 기본값을 요소에서 바꿀 수 있게)
         // 속성 읽기 한 통로 — 핸들이 코드로 쓴 값(Enabled·Visible·Text)이 마크업 값을 이긴다
         var control = ControlOf?.Invoke(node);
-        var r = new AttrReader(node, vm, control?.AttrOverrides);
+        var r = new AttrReader(node, vm, control?.AttrOverrides, OverridesOf);
         var sugar = ResolveStyle(LayoutSugar.Decls(r), vm);
         var rules = Classes(r, _valueOverride).Select(c => _sheet.TryGet(c, out var rule) ? rule : null).OfType<ClassRule>().ToList();
         var classBase = ResolveStyle(StyleSheet.Join(rules.Select(rule => rule.Base).ToArray()), vm);
@@ -510,8 +510,12 @@ public sealed partial class LayoutEngine
     /// <summary>Lookup function for values overridden from code through control handles. If <see langword="null"/>, no lookup is done (a screen without handles).</summary>
     internal Func<ElementNode, Controls.DvControl?>? ControlOf { get; set; }
 
+    // 노드의 코드 덮어쓰기 조회(핸들 없는 화면 = null) — 리더가 자식 노드 리더를 만들 때도 쓴다
+    private Func<ElementNode, IReadOnlyDictionary<string, object?>?>? OverridesOf =>
+        ControlOf is { } of ? n => of(n)?.AttrOverrides : null;
+
     // 핸들의 Visible 덮어쓰기가 마크업 visible 보다 우선
-    private bool IsVisibleOf(ElementNode node, object? ctx) => IsVisible(new AttrReader(node, ctx, ControlOf?.Invoke(node)?.AttrOverrides));
+    private bool IsVisibleOf(ElementNode node, object? ctx) => IsVisible(Reader(node, ctx));
 
     /// <summary>If the <c>visible</c> attribute is false or empty, the element is not created.</summary>
     private static bool IsVisible(AttrReader r)
@@ -712,16 +716,8 @@ public sealed partial class LayoutEngine
     /// <summary>Gap between a button's icon and its text.</summary>
     internal const float IconTextGap = 8f;
 
-    private static readonly HashSet<string> WarnedIcons = new();
-
     private static void WarnIcon(string spec)
-    {
-        lock (WarnedIcons)
-        {
-            if (WarnedIcons.Add(spec))
-                System.Diagnostics.Trace.TraceWarning($"Devinno.UI: unknown icon '{spec}'; not drawn (fa-name / far fa-name / fab fa-name)");
-        }
-    }
+        => Warnings.Warn($"Devinno.UI: unknown icon '{spec}'; not drawn (fa-name / far fa-name / fab fa-name)");
 
     // VM 읽기 예외 알림의 요소 태그 — 이 요소의 바인딩을 푸는 동안
     private static void SetReadTag(ElementNode node)
@@ -759,14 +755,14 @@ public sealed partial class LayoutEngine
     // 모르는 input-mode = 경고 후 drag
     private static KnobInputMode WarnKnobMode(string mode)
     {
-        System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvKnob input-mode='{mode}' is not a valid value (drag, tap, both); using drag");
+        Warnings.Warn($"Devinno.UI: DvKnob input-mode='{mode}' is not a valid value (drag, tap, both); using drag");
         return KnobInputMode.Drag;
     }
 
     private static string WarnSliderDirection(string? dir)
     {
         if (!string.IsNullOrEmpty(dir))
-            System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvSlider direction='{dir}' is not a valid value (right, left, up, down); using right");
+            Warnings.Warn($"Devinno.UI: DvSlider direction='{dir}' is not a valid value (right, left, up, down); using right");
         return "right";
     }
 

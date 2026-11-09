@@ -93,8 +93,8 @@ internal static class TagSchema
         ["DvTab"] =
         [
             new("value", AttrKind.Text, Note: "resolved as text, then converted to the type of the DvTabs value"),
-            new("text", AttrKind.Text, Note: "header text; falls back to value; a code Text override is not applied"),
-            new("disabled", AttrKind.Bool, "false", Note: "the markup text is copied to the header item; also disables the body when that tab is selected"),
+            new("text", AttrKind.Text, Note: "header text; falls back to value; a code Text override on the DvTab wins"),
+            new("disabled", AttrKind.Bool, "false", Note: "copied to the header item (a code Enabled override on the DvTab wins over the markup text); also disables the body when that tab is selected"),
         ],
         ["DvExpander"] =
         [
@@ -171,7 +171,7 @@ internal static class TagSchema
         ["DvOption"] =
         [
             new("value", AttrKind.Text, Note: "resolved as text"),
-            new("text", AttrKind.Text, Note: "falls back to value; inner text is not used; a code Text override is not applied"),
+            new("text", AttrKind.Text, Note: "falls back to value; inner text is not used; a code Text override on the DvOption wins"),
             new("icon", AttrKind.Text, Note: "fa-name; shown by DvSegment and DvListBox"),
         ],
         ["DvSegment"] =
@@ -349,19 +349,19 @@ internal static class TagSchema
             new("cell-class", AttrKind.Path, Bindable: false, Note: "read raw; the item property value is a class name"),
             new("cell-type", AttrKind.Enum, "text", Bindable: false, Values: ["text", "check", "lamp", "button", "input", "select", "datetime", "color"],
                 Note: "read raw; an unknown value = text, silently"),
-            new("filter", AttrKind.Enum, "none", Values: ["none", "auto", "text", "values", "range", "date"], Note: "bound (as text); an unknown value = none + warning once per value"),
+            new("filter", AttrKind.Enum, "none", Values: ["none", "auto", "text", "values", "range", "date"], Note: "bound (as text); an unknown value = none + warning (once per screen)"),
             GridFlag("readonly", "check and edit cells"),
             new("onbeforecommit", AttrKind.Expr, Bindable: false, Note: "check cells: bool M(item, bool) first, otherwise bool M(bool)"),
             new("on-color", AttrKind.Color, Note: "lamp cells; #hex or token(name); unparsable or an unknown token = the state-run token + warning; named on-color (DvLamp uses color)"),
             GridFlag("blink", "lamp cells; fixed 500 ms (no blink-interval)"),
-            new("text", AttrKind.Text, "", Note: "button cells; inline interpolation only; a code Text override is not applied"),
+            new("text", AttrKind.Text, "", Note: "button cells; inline interpolation only; a code Text override on the DvColumn wins and is used as is"),
             new("icon", AttrKind.Text, Bindable: false, Note: "button cells; read raw (DvButton icon is bound)"),
             new("variant", AttrKind.Enum, "primary", Bindable: false, Values: ["primary", "secondary", "danger", "ghost"],
                 Note: "button cells; read raw and lower-cased; empty = primary; other values passed on unvalidated"),
             new("onclick", AttrKind.Expr, Bindable: false, Note: "button cells; M(row) or M()"),
             new("enabled", AttrKind.Path, Bindable: false, Note: "button cells; read raw; an item bool property path (the common disabled is the inverse sense and is not read here)"),
-            new("min", AttrKind.Number, Note: "input cells; not a number = ignored + warning once per (attribute, value)"),
-            new("max", AttrKind.Number, Note: "input cells; not a number = ignored + warning once per (attribute, value)"),
+            new("min", AttrKind.Number, Note: "input cells; not a number = ignored + warning (once per screen)"),
+            new("max", AttrKind.Number, Note: "input cells; not a number = ignored + warning (once per screen)"),
             new("unit", AttrKind.Text, Note: "input cells; inline interpolation only"),
             new("mode", AttrKind.Enum, Values: ["date", "time", "datetime"], Note: "datetime cells; bound (as text); absent = by value type; a mismatch = by value type + warning"),
             GridFlag("show-seconds", "datetime cells"),

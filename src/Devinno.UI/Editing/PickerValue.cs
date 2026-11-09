@@ -7,8 +7,6 @@ namespace Devinno.UI;
 /// <summary>Picker value ↔ binding type (DateTime/DateOnly/TimeOnly, string/SKColor) and display text.</summary>
 internal static class PickerValue
 {
-    private static readonly HashSet<string> Warned = new();
-
     private static Type? Base(Type? t) => t is null ? null : Nullable.GetUnderlyingType(t) ?? t;
 
     public static PickerMode DefaultMode(Type? valueType)
@@ -29,14 +27,7 @@ internal static class PickerValue
         return def;
     }
 
-    private static void Warn(string msg)
-    {
-        lock (Warned)
-        {
-            if (Warned.Add(msg))
-                System.Diagnostics.Trace.TraceWarning(msg);
-        }
-    }
+    private static void Warn(string msg) => Interaction.Warnings.Warn(msg);
 
     public static bool TryToDateTime(object? value, out DateTime dt)
     {

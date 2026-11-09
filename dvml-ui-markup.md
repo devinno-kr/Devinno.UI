@@ -616,7 +616,7 @@ Right before writing a value to the VM, a VM method confirms it. The value is wr
 | `DvColumn cell-type="check"` | `bool M(Row row, bool value)` or `bool M(bool value)` |
 | `DvColumn` edit cell (`input` `select` `datetime` `color`) | `bool M(Row row, T value)` or `bool M(T value)` (T = the property's underlying type; `int` for `int?`) |
 
-- If the method is not on the VM (a misspelled name is build error DVML018 in a dvml with `vm`) or the signature differs (including a non-`bool` return such as `void M(bool)`), **no widget or cell writes** (rejected). A Trace warning is logged once per VM type and method name.
+- If the method is not on the VM (a misspelled name is build error DVML018 in a dvml with `vm`) or the signature differs (including a non-`bool` return such as `void M(bool)`), **no widget or cell writes** (rejected). A Trace warning is logged once per screen for each method name and signature.
 - If the method throws, the write is also rejected, a Trace error is logged, and it is reported via `HandlerError` (6.7; the exception is not propagated to the app).
 - Without `onbeforecommit`, the value is written without confirmation.
 - Even after passing confirmation, **if the VM property's setter throws** (including type conversion failure), it is treated as a write failure and handled exactly like a rejection. The error text for `DvInput` (including grid input cells) is "Could not save the value" (`dv.input.write-failed`, chapter 17); the exception message is not shown on screen.
@@ -784,6 +784,7 @@ public bool IsFault => State == 2;
 - Builds a tab header row and divider on top, and below it **only the selected tab's content** (other tabs are not built). Tab content stacks vertically and fills the remaining height (`.tab-body`).
 - Pressing a header writes that tab's `value` to the VM (value type conversion and `onbeforecommit` are the same as `DvSelect`). If no tab matches the VM value, the first tab is shown.
 - If `value` is **omitted**, the screen remembers the selection (starting at the first tab, kept across redraws; each `DvRepeat` item and each component instance remembers its own). Bind `value` if code needs to change tabs or read the selection.
+- A `DvTab` with an `id` can take a handle (`DvControl`): `Enabled = false` disables both its header and its content, `Visible = false` removes the tab.
 - When switching tabs, the scroll position of the tab being left is not kept. A value being edited is committed first when a header is pressed.
 - **Showing only one without headers (switching panel)** has no dedicated widget — do it with a bool computed property on the VM and `visible`: `<DvBox visible="{IsTrend}">…</DvBox><DvBox visible="{IsAlarm}">…</DvBox>` (`public bool IsTrend => Mode == "trend";`).
 

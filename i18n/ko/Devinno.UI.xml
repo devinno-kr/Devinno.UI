@@ -2482,8 +2482,6 @@
             <summary>DvSelect 항목 — 값·표시 텍스트·아이콘(<c>fa-…</c>).</summary>
         </member><member name="T:Devinno.UI.SelectValue" en-hash="ab4ba86a56801979">
             <summary>DvSelect 값 ↔ 항목 — 바인딩 속성 타입으로 변환해 비교·쓰기(문자열 "1" → int, "Left" → enum, Nullable).</summary>
-        </member><member name="M:Devinno.UI.SelectValue.Options(Devinno.UI.Markup.ElementNode,System.Object,System.Type)" en-hash="175b10ef30a21e7b">
-            <summary>항목 목록: items(경로) &gt; DvOption 자식 &gt; enum 자동.</summary>
         </member><member name="M:Devinno.UI.SelectValue.Options(Devinno.UI.Layout.AttrReader,System.Type)" en-hash="d485666cdbbf198d"><summary><paramref name="r" />(요소 자신의 속성)로 읽는 항목 목록: items(경로) &gt; DvOption 자식 &gt; enum 자동.</summary></member><member name="M:Devinno.UI.SelectDisplay.IsOpenable(Devinno.UI.Layout.LayoutBox)" en-hash="421d29af928017d9">
             <summary>양방향 바인딩이고 비활성·읽기 전용이 아니면 열 수 있다.</summary>
         </member><member name="T:Devinno.UI.Grid.FieldAccessor" en-hash="ab7de6f28dd59580">
@@ -2509,9 +2507,7 @@
             <summary>숫자 속성이면 박싱 없이 double 로 읽기(null·경로 중간 null = NaN) — 요약 집계용. 숫자가 아니면 null.</summary>
         </member><member name="P:Devinno.UI.Grid.FieldAccessor.Entry.Writable" en-hash="0e55388ecf136069">
             <summary>경로 끝 속성에 쓸 수 있음(public setter, 중간 경로에 구조체 없음 — 구조체면 복사본에 써져 무효).</summary>
-        </member><member name="M:Devinno.UI.Grid.FieldAccessor.WarnMissing(System.Type,System.String)" en-hash="e1b4a97fd56aa98b">
-            <summary>없는 속성 경고 — (타입, 경로)마다 프로세스에서 한 번(재빌드마다 반복하지 않게).</summary>
-        </member><member name="T:Devinno.UI.Grid.FieldReader" en-hash="b460c34e43afbba7">
+        </member><member name="M:Devinno.UI.Grid.FieldAccessor.WarnMissing(System.Type,System.String)" en-hash="ae0ac1fc0c6fc582"><summary>없는 속성 경고 — (타입, 경로)마다 화면에서 한 번(재빌드마다 반복하지 않게).</summary></member><member name="T:Devinno.UI.Grid.FieldReader" en-hash="b460c34e43afbba7">
             <summary>
             한 열의 값 읽기 — 마지막으로 본 항목 타입의 접근자를 기억해 같은 타입이면 사전 조회도 없다(항목 타입이 섞여도 동작).
             </summary>
@@ -2559,9 +2555,7 @@
             <summary>버튼 <c>enabled</c> — 항목 bool 속성, false 면 흐린 버튼·무동작.</summary>
         </member><member name="P:Devinno.UI.Grid.GridColumn.Mode" en-hash="7ef570edff299b79">
             <summary>datetime <c>mode</c> 원문(생략 = 값 타입으로).</summary>
-        </member><member name="P:Devinno.UI.Grid.GridColumn.OptionsNode" en-hash="963406a3cfe09aed">
-            <summary>select 항목 원천 — DvColumn 노드(DvOption 자식·items·item-*)와 그리드 VM 문맥.</summary>
-        </member><member name="P:Devinno.UI.Grid.GridColumn.Options" en-hash="aa00c7f63aaf8d04">
+        </member><member name="P:Devinno.UI.Grid.GridColumn.OptionsReader" en-hash="8192e4c2c08ee0e4"><summary>select 항목 원천 — 그리드 VM 문맥에서 DvColumn 노드(DvOption 자식·items·item-*)를 읽는 리더.</summary></member><member name="P:Devinno.UI.Grid.GridColumn.Options" en-hash="aa00c7f63aaf8d04">
             <summary>select 항목 — 값 타입이 정해지면 그 타입 기준으로 한 번 만든다(enum 자동 포함).</summary>
         </member><member name="M:Devinno.UI.Grid.GridColumn.OptionIndex(System.Object)" en-hash="3ebaf3a4af20d702">
             <summary>값과 같은 항목 번호(없으면 -1). 항목 값은 속성 타입으로 한 번만 변환해 둔다(그리기마다 변환·할당 없음).</summary>
@@ -2819,7 +2813,7 @@
             <summary>VM 읽기 예외를 알릴 대상과, 이미 알린 (Kind, Member, Tag) — 서피스는 재빌드마다 비운다.</summary>
         </member><member name="M:Devinno.UI.Interaction.HandlerErrors.ReadScope.#ctor(Devinno.UI.DvSurface)" en-hash="65806708a875789e">
             <summary>VM 읽기 예외를 알릴 대상과, 이미 알린 (Kind, Member, Tag) — 서피스는 재빌드마다 비운다.</summary>
-        </member><member name="P:Devinno.UI.Interaction.HandlerErrors.ReadScope.Tag" en-hash="d3279d16a0c6fe10">
+        </member><member name="P:Devinno.UI.Interaction.HandlerErrors.ReadScope.Warned" en-hash="1f822e6acad124d1"><summary>이 화면에서 이미 쓴 경고(<see cref="M:Devinno.UI.Interaction.Warnings.Warn(System.String,System.Boolean)" />) — 재빌드해도 유지하고, 마크업을 다시 읽으면 비운다.</summary></member><member name="P:Devinno.UI.Interaction.HandlerErrors.ReadScope.Tag" en-hash="d3279d16a0c6fe10">
             <summary>지금 만드는 요소 태그(LayoutEngine 이 요소마다 설정) — 바인딩 해석기가 태그를 모를 때 쓴다.</summary>
         </member><member name="M:Devinno.UI.Interaction.HandlerErrors.EnterRead(Devinno.UI.Interaction.HandlerErrors.ReadScope)" en-hash="181b8fe375e502d1">
             <summary>앰비언트 읽기 범위를 바꾸고 이전 값을 돌려준다(<see cref="M:Devinno.UI.Interaction.HandlerErrors.ExitRead(Devinno.UI.Interaction.HandlerErrors.ReadScope)" /> 로 되돌림 — 중첩된 칸 서피스용).</summary>
@@ -2995,7 +2989,12 @@
             확인 메서드가 던진 예외와 쓰기 실패(속성 setter 예외·형식 변환 실패)는 전달하지 않습니다. 쓰지 않은 것으로 처리하고 Trace 오류를 남깁니다.
             (<see cref="T:Devinno.UI.DvSurface" /> 를 거친 토글 조작이면 <see cref="E:Devinno.UI.DvSurface.HandlerError" /> 로도 알립니다.)
             </remarks>
-        </member><member name="T:Devinno.UI.ISurfaceComposer" en-hash="b1e4f486549fb338">
+        </member><member name="M:Devinno.UI.Interaction.Warnings.Warn(System.String,System.Boolean)" en-hash="e85864ac81f55104"><summary>
+            <paramref name="message" /> 를 <see cref="M:System.Diagnostics.Trace.TraceWarning(System.String)" />(<paramref name="error" /> 면 <see cref="M:System.Diagnostics.Trace.TraceError(System.String)" />)로 화면마다 한 번 쓴다.
+            같은 문구는 다른 화면이거나 마크업을 다시 읽은 뒤에만 다시 쓴다.
+            </summary>
+            <param name="message">머리말(<c>Devinno.UI…:</c>)까지 포함한 전체 문구. 태그·속성·값이 들어 있으므로 이것이 중복 판단 열쇠다.</param>
+            <param name="error">경고 대신 오류로 쓴다.</param></member><member name="T:Devinno.UI.ISurfaceComposer" en-hash="b1e4f486549fb338">
             <summary>
             루트 화면의 칸 구성을 정하는 쪽(DvApp). 루트 <see cref="M:Devinno.UI.DvSurface.Layout(System.Single,System.Single)" /> 가 입력 스레드에서 부른다.
             </summary>
@@ -3029,13 +3028,15 @@
             <summary>지금 페이지 칸의 화면(없으면 null) — 루트가 페이지가 바뀐 것을 알아채 전환 움직임을 그린다.</summary>
         </member><member name="M:Devinno.UI.ISurfaceComposer.TakePageTransition" en-hash="4d5d324577d2b059">
             <summary>방금 적용한 페이지 전환의 움직임을 한 번 가져간다(가져가면 None 으로).</summary>
-        </member><member name="T:Devinno.UI.Layout.AttrReader" en-hash="6e611975ce0cd230"><summary>
+        </member><member name="T:Devinno.UI.Layout.AttrReader" en-hash="258b9a21232a56d6"><summary>
             빌드 중 요소 하나의 속성을 읽는다 — 코드가 쓴 값(핸들의 덮어쓰기)이 있으면 바인딩 풀이 없이 그대로, 없으면 마크업 값을 문맥으로 푼다.
             식(<c>onclick</c>, 양방향 <c>value</c> 경로)은 <see cref="M:Devinno.UI.Layout.AttrReader.Raw(System.String)" /> 로 읽고 덮어쓰지 않는다.
-            </summary></member><member name="M:Devinno.UI.Layout.AttrReader.#ctor(Devinno.UI.Markup.ElementNode,System.Object,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object})" en-hash="6e611975ce0cd230"><summary>
+            자식 요소(DvTab, DvOption, DvColumn …)는 <see cref="M:Devinno.UI.Layout.AttrReader.Child(Devinno.UI.Markup.ElementNode)" /> 로 읽으며, 그 자식 자신의 덮어쓰기를 찾아 쓴다.
+            </summary></member><member name="M:Devinno.UI.Layout.AttrReader.#ctor(Devinno.UI.Markup.ElementNode,System.Object,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object},System.Func{Devinno.UI.Markup.ElementNode,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object}})" en-hash="258b9a21232a56d6"><summary>
             빌드 중 요소 하나의 속성을 읽는다 — 코드가 쓴 값(핸들의 덮어쓰기)이 있으면 바인딩 풀이 없이 그대로, 없으면 마크업 값을 문맥으로 푼다.
             식(<c>onclick</c>, 양방향 <c>value</c> 경로)은 <see cref="M:Devinno.UI.Layout.AttrReader.Raw(System.String)" /> 로 읽고 덮어쓰지 않는다.
-            </summary></member><member name="F:Devinno.UI.Layout.AttrReader.Watch" en-hash="f50e4a853f968146"><summary>테스트용 훅: 읽을 때마다 요소와 속성 이름으로 불린다(이 스레드만).</summary></member><member name="P:Devinno.UI.Layout.AttrReader.Node" en-hash="4b6dc083adcd73f0"><summary>읽고 있는 요소.</summary></member><member name="P:Devinno.UI.Layout.AttrReader.Context" en-hash="f4e26d874443b5d7"><summary>바인딩 문맥(화면 VM, 반복 항목 범위 또는 컴포넌트 파라미터 범위).</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Overridden(System.String)" en-hash="ee195d771e1b98f9"><summary>코드가 <paramref name="name" /> 을 덮어썼는지.</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Has(System.String)" en-hash="63fc144d07e34a92"><summary>속성이 있는지 — 마크업에 있거나 코드가 덮어썼으면 참.</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Raw(System.String)" en-hash="4548b2b6e9aa1ff0"><summary>마크업에 적힌 글자 그대로(풀지 않음, 덮어쓰기 무시). 식과 주인 판별용.</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Value(System.String)" en-hash="631ab17aeba951e5"><summary>값: 코드 덮어쓰기, 없으면 마크업 값을 푼 것(바인딩 하나면 타입 유지). 없으면 <see langword="null" />.</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Text(System.String)" en-hash="1ad19afcb727651e"><summary>값을 글자로(<see cref="M:Devinno.UI.Layout.AttrReader.Value(System.String)" /> 참고).</summary></member><member name="T:Devinno.UI.Layout.LayoutEngine" en-hash="efc960bf6b277669">
+            자식 요소(DvTab, DvOption, DvColumn …)는 <see cref="M:Devinno.UI.Layout.AttrReader.Child(Devinno.UI.Markup.ElementNode)" /> 로 읽으며, 그 자식 자신의 덮어쓰기를 찾아 쓴다.
+            </summary></member><member name="F:Devinno.UI.Layout.AttrReader.Watch" en-hash="f50e4a853f968146"><summary>테스트용 훅: 읽을 때마다 요소와 속성 이름으로 불린다(이 스레드만).</summary></member><member name="P:Devinno.UI.Layout.AttrReader.Node" en-hash="4b6dc083adcd73f0"><summary>읽고 있는 요소.</summary></member><member name="P:Devinno.UI.Layout.AttrReader.Context" en-hash="f4e26d874443b5d7"><summary>바인딩 문맥(화면 VM, 반복 항목 범위 또는 컴포넌트 파라미터 범위).</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Child(Devinno.UI.Markup.ElementNode)" en-hash="2985b612a3b0f462"><summary>같은 문맥에서 <paramref name="child" /> 를 읽는 리더 — 그 자식 자신의 코드 덮어쓰기와 함께(핸들이 없으면 없음).</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Child(Devinno.UI.Markup.ElementNode,System.Object)" en-hash="94392338f07c81d5"><summary><paramref name="childCtx" /> 문맥에서 <paramref name="child" /> 를 읽는 리더 — 그 자식 자신의 코드 덮어쓰기와 함께(핸들이 없으면 없음).</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Overridden(System.String)" en-hash="ee195d771e1b98f9"><summary>코드가 <paramref name="name" /> 을 덮어썼는지.</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Has(System.String)" en-hash="63fc144d07e34a92"><summary>속성이 있는지 — 마크업에 있거나 코드가 덮어썼으면 참.</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Raw(System.String)" en-hash="4548b2b6e9aa1ff0"><summary>마크업에 적힌 글자 그대로(풀지 않음, 덮어쓰기 무시). 식과 주인 판별용.</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Value(System.String)" en-hash="631ab17aeba951e5"><summary>값: 코드 덮어쓰기, 없으면 마크업 값을 푼 것(바인딩 하나면 타입 유지). 없으면 <see langword="null" />.</summary></member><member name="M:Devinno.UI.Layout.AttrReader.Text(System.String)" en-hash="1ad19afcb727651e"><summary>값을 글자로(<see cref="M:Devinno.UI.Layout.AttrReader.Value(System.String)" /> 참고).</summary></member><member name="T:Devinno.UI.Layout.LayoutEngine" en-hash="efc960bf6b277669">
              <summary>
              <see cref="T:Devinno.UI.Markup.ElementNode" /> 트리와 뷰모델로 <see cref="T:Devinno.UI.Layout.LayoutBox" /> 트리를 만들고 각 박스의 위치·크기(px)를 계산하는 레이아웃 엔진입니다.
              </summary>
@@ -4044,7 +4045,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             </summary>
         </member><member name="T:Devinno.UI.Process.ProcessBuilder.Builders" en-hash="cf97a321545a69f7">
             <summary>엔진이 넘기는 상자 만들기 — 문맥(화면 VM 또는 컴포넌트 파라미터 범위)을 받아 만든다.</summary>
-        </member><member name="M:Devinno.UI.Process.ProcessBuilder.Builders.#ctor(System.Func{Devinno.UI.Markup.ElementNode,System.Object,Devinno.UI.Layout.LayoutBox},System.Func{Devinno.UI.Markup.ElementNode,System.Object,Devinno.UI.Layout.LayoutBox},System.Func{Devinno.UI.Markup.ElementNode,System.Object,System.Nullable{System.ValueTuple{Devinno.UI.Markup.ElementNode,Devinno.UI.Markup.ElementNode,System.Object}}},System.Func{System.String,System.Nullable{SkiaSharp.SKColor}},System.Func{Devinno.UI.Markup.ElementNode,System.Nullable{System.Boolean}},System.Action{Devinno.UI.Layout.LayoutBox,Devinno.UI.Markup.ElementNode})" en-hash="cf97a321545a69f7"><summary>엔진이 넘기는 상자 만들기 — 문맥(화면 VM 또는 컴포넌트 파라미터 범위)을 받아 만든다.</summary></member><member name="M:Devinno.UI.Process.ProcessBuilder.Build(Devinno.UI.Layout.LayoutBox,System.Object,Devinno.UI.Components.ComponentRegistry,Devinno.UI.Process.ProcessBuilder.Builders)" en-hash="47b707d93c5d9679">
+        </member><member name="M:Devinno.UI.Process.ProcessBuilder.Builders.#ctor(System.Func{Devinno.UI.Markup.ElementNode,System.Object,Devinno.UI.Layout.LayoutBox},System.Func{Devinno.UI.Markup.ElementNode,System.Object,Devinno.UI.Layout.LayoutBox},System.Func{Devinno.UI.Markup.ElementNode,System.Object,System.Nullable{System.ValueTuple{Devinno.UI.Markup.ElementNode,Devinno.UI.Markup.ElementNode,System.Object}}},System.Func{System.String,System.Nullable{SkiaSharp.SKColor}},System.Func{Devinno.UI.Markup.ElementNode,System.Object,Devinno.UI.Layout.AttrReader},System.Action{Devinno.UI.Layout.LayoutBox,Devinno.UI.Markup.ElementNode})" en-hash="cf97a321545a69f7"><summary>엔진이 넘기는 상자 만들기 — 문맥(화면 VM 또는 컴포넌트 파라미터 범위)을 받아 만든다.</summary></member><member name="M:Devinno.UI.Process.ProcessBuilder.Build(Devinno.UI.Layout.LayoutBox,System.Object,Devinno.UI.Components.ComponentRegistry,Devinno.UI.Process.ProcessBuilder.Builders)" en-hash="47b707d93c5d9679">
             <summary>
             <c>DvProcess</c> 의 자식으로 모델을 만든다. 장비마다 상자를 만들어 <paramref name="box" /> 자식으로 넣고(눌림·onclick 이 일반 컨트롤처럼 동작),
             <c>DvAttach</c> 안 내용도 일반 상자로 만들어 넣는다. 유닛(<c>DvUnit</c>, 또는 템플릿 루트가 <c>DvUnit</c> 인 컴포넌트)은

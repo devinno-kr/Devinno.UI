@@ -102,11 +102,13 @@ public class CommitGateTests
             => WriteLine(message);
     }
 
+    // 경고는 화면마다 한 번(R14) — 화면이 하는 대로 읽기 범위 하나 안에서 세 번 쓴다
     [Fact]
-    public void Missing_gate_warns_once_per_vm_type_and_name()
+    public void Missing_gate_warns_once_per_surface()
     {
         var cap = new Capture("g3-missing-gate");
         Trace.Listeners.Add(cap);
+        var prev = HandlerErrors.EnterRead(new HandlerErrors.ReadScope(null));
         try
         {
             var vm = new Vm();
@@ -115,6 +117,7 @@ public class CommitGateTests
         }
         finally
         {
+            HandlerErrors.ExitRead(prev);
             Trace.Listeners.Remove(cap);
         }
 

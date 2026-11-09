@@ -6,8 +6,10 @@ namespace Devinno.UI.Layout;
 /// <summary>
 /// Reads one element's attributes during a build: a value written from code (the handle's overrides) wins and is used as is, without binding;
 /// otherwise the markup value is resolved against the context. Expressions (<c>onclick</c>, two-way <c>value</c> paths) are read with <see cref="Raw"/> and are never overridden.
+/// A child element (DvTab, DvOption, DvColumn …) is read with <see cref="Child(ElementNode)"/>, which looks up that child's own overrides.
 /// </summary>
-internal readonly struct AttrReader(ElementNode node, object? ctx, IReadOnlyDictionary<string, object?>? overrides)
+internal readonly struct AttrReader(ElementNode node, object? ctx, IReadOnlyDictionary<string, object?>? overrides,
+    Func<ElementNode, IReadOnlyDictionary<string, object?>?>? overridesOf = null)
 {
     /// <summary>Test hook: called with the element and the attribute name on every read (this thread only).</summary>
     [ThreadStatic] internal static Action<ElementNode, string>? Watch;
@@ -17,6 +19,12 @@ internal readonly struct AttrReader(ElementNode node, object? ctx, IReadOnlyDict
 
     /// <summary>The binding context (screen VM, repeat item scope or component parameter scope).</summary>
     public object? Context => ctx;
+
+    /// <summary>A reader for <paramref name="child"/> in the same context, with that child's own code overrides (none if it has no handle).</summary>
+    public AttrReader Child(ElementNode child) => Child(child, ctx);
+
+    /// <summary>A reader for <paramref name="child"/> in <paramref name="childCtx"/>, with that child's own code overrides (none if it has no handle).</summary>
+    public AttrReader Child(ElementNode child, object? childCtx) => new(child, childCtx, overridesOf?.Invoke(child), overridesOf);
 
     /// <summary>Whether code has overridden <paramref name="name"/>.</summary>
     public bool Overridden(string name) => overrides?.ContainsKey(name) == true;

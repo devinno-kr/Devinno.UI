@@ -132,7 +132,7 @@ public class GridEditBuildTests
             => WriteLine(message);
     }
 
-    // F3 — 해석 못 한 min·max 는 조용히 무시하지 않고 경고 1회
+    // F3 — 해석 못 한 min·max 는 조용히 무시하지 않고 경고 1회(화면마다 — R14)
     [Fact]
     public void Unparsable_min_max_warn_once()
     {
@@ -141,8 +141,10 @@ public class GridEditBuildTests
         Trace.Listeners.Add(cap);
         try
         {
-            var c = Spec(Surface(new EditVm(), cols)).Columns;
-            Surface(new EditVm(), cols); // 다시 빌드해도 추가 경고 없음
+            var s = Surface(new EditVm(), cols);
+            var c = Spec(s).Columns;
+            s.Invalidate();
+            s.Layout(W, H); // 같은 화면을 다시 빌드해도 추가 경고 없음
             Assert.Null(c[1].Min);
             Assert.Null(c[1].Max);
         }

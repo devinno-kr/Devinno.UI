@@ -15,7 +15,6 @@ namespace Devinno.UI;
 /// </summary>
 internal sealed class GridCellSlot : IValueSlot
 {
-    private static readonly HashSet<(Type, string)> GateWarned = new();
     private int _view = -1;        // 직전 화면 행(다음 찾기의 힌트)
     private GridEditMark? _mark;   // 이 슬롯이 켠 강조
 
@@ -170,11 +169,7 @@ internal sealed class GridCellSlot : IValueSlot
         var target = withItem ?? valueOnly;
         if (target is null)
         {
-            lock (GateWarned)
-            {
-                if (GateWarned.Add((vm.GetType(), gate)))
-                    Trace.TraceWarning($"Devinno.UI: DvColumn onbeforecommit '{gate}': no bool {gate}(item, {t?.Name}) or bool {gate}({t?.Name}) found; not written");
-            }
+            Interaction.Warnings.Warn($"Devinno.UI: DvColumn onbeforecommit '{gate}': no bool {gate}(item, {t?.Name}) or bool {gate}({t?.Name}) found; not written");
 
             return false;
         }

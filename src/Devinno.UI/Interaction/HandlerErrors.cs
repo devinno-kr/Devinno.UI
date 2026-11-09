@@ -30,6 +30,9 @@ internal static class HandlerErrors
         public DvSurface? Owner { get; } = owner;
         public HashSet<(string Kind, string? Member, string? Tag)> Seen { get; } = new();
 
+        /// <summary>The warnings already written for this surface (<see cref="Warnings.Warn"/>) — kept across rebuilds, cleared when the markup is reloaded.</summary>
+        public HashSet<string> Warned { get; } = new(StringComparer.Ordinal);
+
         /// <summary>The tag of the element currently being built (set per element by LayoutEngine) — used when the binding resolver does not know the tag.</summary>
         public string? Tag { get; set; }
     }

@@ -215,8 +215,6 @@ internal static class GridInteraction
         return en?.GetGenericArguments()[0] ?? typeof(object);
     }
 
-    private static readonly HashSet<(Type, string)> NonBoolWarned = new();
-
     // 체크 반전 → onbeforecommit(항목, bool) 또는 (bool) 확인 → 항목 속성에 바로 씀. bool 아닌 속성·readonly = 쓰지 않음
     private static void CommitCheck(GridColumn col, object item, object? vm, DvSurface? owner, string tag)
     {
@@ -225,11 +223,7 @@ internal static class GridInteraction
         var current = col.Reader.Get(item);
         if (col.Reader.ValueType != typeof(bool) || !col.Reader.Writable)
         {
-            lock (NonBoolWarned)
-            {
-                if (NonBoolWarned.Add((item.GetType(), col.Reader.Path)))
-                    Trace.TraceWarning($"Devinno.UI: DvColumn cell-type=\"check\" field '{col.Reader.Path}' is not a writable bool property; not written");
-            }
+            Warnings.Warn($"Devinno.UI: DvColumn cell-type=\"check\" field '{col.Reader.Path}' is not a writable bool property; not written");
 
             return;
         }

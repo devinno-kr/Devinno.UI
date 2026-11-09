@@ -179,7 +179,7 @@ public sealed partial class LayoutEngine
         var index = 0;
         foreach (var ch in r.Node.Children.Where(c => c.Tag == "DvTrendChannel"))
         {
-            var cr = new AttrReader(ch, r.Context, ControlOf?.Invoke(ch)?.AttrOverrides);
+            var cr = r.Child(ch);
             var name = cr.Text("name") ?? $"ch{index}";
             var points = cr.Value("points") is IEnumerable<Trends.TrendPoint> bound
                 ? HandlerErrors.Snapshot(bound, PathOf(cr.Raw("points")), ch.Tag).ToArray()

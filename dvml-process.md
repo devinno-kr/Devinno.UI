@@ -1047,7 +1047,7 @@ Circle path example (center cx, cy, radius r): `M{cx-r} {cy} A{r} {r} 0 1 0 {cx+
 
 ## 15. Diagnostics and fixes
 
-Process diagram problems are reported through `System.Diagnostics.Trace`. Keep a Trace listener on during development (console: `Trace.Listeners.Add(new ConsoleTraceListener())`). The same message appears only once per process. Layout quality warnings are based on **the layout actually drawn**.
+Process diagram problems are reported through `System.Diagnostics.Trace`. Keep a Trace listener on during development (console: `Trace.Listeners.Add(new ConsoleTraceListener())`). The same message appears only once per screen (`DvSurface`); another screen, or the same screen after its markup is reloaded, reports it again. Layout quality warnings are based on **the layout actually drawn**.
 
 | Message (prefixed with `Devinno.UI process:`) | Kind | Meaning | Fix |
 |---|---|---|---|

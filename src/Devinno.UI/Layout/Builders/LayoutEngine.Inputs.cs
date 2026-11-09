@@ -523,9 +523,9 @@ public sealed partial class LayoutEngine
             var value = BindingResolver.ResolveValueOrLiteral(vm, sourceExpr);
             box.VideoSource = value as Video.IFrameSource;
             if (value is not null && box.VideoSource is null)
-                System.Diagnostics.Trace.TraceWarning($"Devinno.UI: DvVideo source='{sourceExpr}' is a {value.GetType().Name}, not an IFrameSource; nothing is shown");
+                Warnings.Warn($"Devinno.UI: DvVideo source='{sourceExpr}' is a {value.GetType().Name}, not an IFrameSource; nothing is shown");
             if (srcExpr is not null)
-                System.Diagnostics.Trace.TraceWarning("Devinno.UI: DvVideo has both source and src; src is ignored");
+                Warnings.Warn("Devinno.UI: DvVideo has both source and src; src is ignored");
             if (box.VideoSource is Video.VideoPlayer own)
                 BindVideoTime(box, r, own);
             return;
