@@ -236,7 +236,7 @@ Some problems are reported only at run time through `System.Diagnostics.Trace`. 
 | `{kind} '…' ({tag}) threw: …` (Trace error) | A handler, setter or getter threw; also raised as `HandlerError` | [HandlerError](dvml-language.md#handler-error) |
 | `id '…': no element with this id in the markup …` · `… does not match the … handle type …` | Code handle not connected | [handles](dvml-code.md#handles) |
 | `<{tag}> is a custom widget; its child elements are not used` | Children inside a custom widget | [custom widgets](dvml-components.md#dvwidget) |
-| `DvVideo …` · `DvImage could not load image '…'` | Media file missing or unreadable, FFmpeg not found, `source` not an `IFrameSource` | [DvVideo](dvml-widgets.md#dvvideo) · [DvImage](dvml-widgets.md#dvimage) |
+| `DvVideo …` · `SDL2 not found — sound is off …` · `DvImage could not load image '…'` | Media file missing or unreadable, FFmpeg not found, SDL2 not found or no sound device (video plays silently), `source` not an `IFrameSource` | [DvVideo](dvml-widgets.md#dvvideo) · [DvImage](dvml-widgets.md#dvimage) |
 | `string key '…' not found (language=…)` | Missing localization key | [localization](dvml-app.md#localization) |
 | `Devinno.UI process: …` · `{tag} {attr}='…': process names and references are not bindable; used as written` | Process diagram connection, port, placement or layout problem | [process diagnostics](dvml-process-layout.md#process-diagnostics) |
 

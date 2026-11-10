@@ -113,6 +113,8 @@ A WinForms app must target `net9.0-windows10.0.19041.0` or later (the WinForms a
 
 **Platforms.** Tested on Windows 11 (x64) with both adapters. The WinForms adapter runs on Windows only. The core library and the OpenTK adapter do not call Windows-specific APIs, but they have not been tested on Linux (including Raspberry Pi touch panels) yet. On Linux, SkiaSharp also needs the `SkiaSharp.NativeAssets.Linux` package in the app.
 
+**Video and sound.** `DvVideo` plays files with FFmpeg 8 and their sound with SDL2. Neither is in the package; only apps that play files need them. Windows: put the DLLs of an FFmpeg 8 shared build and `SDL2.dll` (SDL 2.x) next to the app. Linux: install FFmpeg 8 (`libavcodec.so.62`) and `libsdl2-2.0-0` from the OS. Without FFmpeg the video box shows why; without SDL2 the video plays silently.
+
 ## Getting started
 
 One screen = a class deriving from `DvPage` + a `.dvml` with the same name. `DvApp` holds the pages and puts them on a window (OpenTK `ViewWindow` or WinForms `ViewControl`).
@@ -140,7 +142,7 @@ Clone the repository and run the demo app:
 dotnet run --project samples/Devinno.UI.Demo
 ```
 
-It opens a water treatment plant showcase driven by a small simulation: an operations dashboard, a P&ID with flow animation, and a Widgets page with one page per feature (grid, trend, alarms, dialogs, input, process diagrams and more). Add `-- shot <folder>` to save every screen as a PNG without opening a window.
+It opens a water treatment plant showcase driven by a small simulation: an operations dashboard, a P&ID with flow animation, and a Widgets page with one page per feature (grid, trend, alarms, dialogs, input, process diagrams, video with sound and more). Add `-- shot <folder>` to save every screen as a PNG without opening a window.
 
 ## Documentation
 

@@ -17,7 +17,7 @@ The documents below sit in the same folder as this file (the package's `docs/`, 
 | Layout: stack/row/grid, sizes, absolute position, scrolling, text wrapping | [dvml-layout.md#layout-sugar](dvml-layout.md#layout-sugar), [#scroll](dvml-layout.md#scroll) |
 | Which style keys exist, value formats, classes, state styles, priority, transitions | [dvml-style.md#style-keys](dvml-style.md#style-keys) |
 | Theme tokens and the built-in themes | [dvml-style.md#theme-tokens](dvml-style.md#theme-tokens) |
-| Page frame, cards, badges, stats, labels, buttons, icons, images, video, toggles, check boxes, radios, knobs, sliders, tabs, expanders, step bars | [dvml-widgets.md#semantic-components](dvml-widgets.md#semantic-components) |
+| Page frame, cards, badges, stats, labels, buttons, icons, images, video with sound, toggles, check boxes, radios, knobs, sliders, tabs, expanders, step bars | [dvml-widgets.md#semantic-components](dvml-widgets.md#semantic-components) |
 | Text/number inputs, selects, segments, date/time and color inputs, list boxes, trees | [dvml-inputs.md#input-common](dvml-inputs.md#input-common) |
 | Gauges, rings, progress, lamps, tanks, charts, trends, alarms | [dvml-instruments.md#instrument-common](dvml-instruments.md#instrument-common) |
 | Data grid (`DvDataGrid`): columns, selection, sorting, editing, filters | [dvml-grid.md#dvdatagrid](dvml-grid.md#dvdatagrid) |
@@ -41,4 +41,4 @@ To show screens, an app also references one host adapter package; each has its o
 
 ## C# API
 
-Devinno.UI.xml (`lib/net9.0/` in the package; the same folder as this file in `.devinno/Devinno.UI/`): C# API reference (XML doc comments, the same text IntelliSense shows). Detailed usage of DvApp, DvPage, DvBar, DvDialog, DvSurface, DvRenderer, DvTheme, AlarmLog, TrendBuffer, DvStrings, ComponentRegistry, DvWidget (custom widgets drawn in C#), FrameSource and VideoPlayer (frames and video files for `DvVideo`) and others. The namespace of each type (the `using` lines): [llm-rules.md#namespaces](llm-rules.md#namespaces).
+Devinno.UI.xml (`lib/net9.0/` in the package; the same folder as this file in `.devinno/Devinno.UI/`): C# API reference (XML doc comments, the same text IntelliSense shows). Detailed usage of DvApp, DvPage, DvBar, DvDialog, DvSurface, DvRenderer, DvTheme, AlarmLog, TrendBuffer, DvStrings, ComponentRegistry, DvWidget (custom widgets drawn in C#), FrameSource and VideoPlayer (frames, and video files with sound, for `DvVideo`) and others. The namespace of each type (the `using` lines): [llm-rules.md#namespaces](llm-rules.md#namespaces).
