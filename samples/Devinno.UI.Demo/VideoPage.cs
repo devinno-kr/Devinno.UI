@@ -1,11 +1,11 @@
 using Devinno.UI.Video;
 using SkiaSharp;
 
-// 동영상 데모 — 왼쪽 = 파일 재생(src, FFmpeg 8), 오른쪽 = 코드가 만든 프레임(FrameSource, 카메라 흉내)
+// 동영상 데모 — 왼쪽 = 파일 재생(src, FFmpeg 8, 소리는 SDL2), 오른쪽 = 코드가 만든 프레임(FrameSource, 카메라 흉내)
 public sealed partial class VideoPage : DemoPage
 {
     public const int Width = 1100;
-    public const int Height = 560;
+    public const int Height = 620;
 
     private Thread? _producer;
     private volatile bool _cameraOn = true;
@@ -31,6 +31,14 @@ public sealed partial class VideoPage : DemoPage
     public string PlayIcon => Playing ? "fa-pause" : "fa-play";
 
     public void TogglePlay() => Playing = !Playing;
+
+    // 소리 — 클립은 매초 흰 사각형과 삐 소리가 함께 나온다(립싱크 확인용, 0초만 높은 음)
+    public double Volume { get; set; } = 0.8;
+    public bool Muted { get; set; }
+    public string MuteIcon => Muted ? "fa-volume-xmark" : "fa-volume-high";
+    public string VolumeText => Muted ? "muted" : $"{Volume * 100:0} %";
+
+    public void ToggleMute() => Muted = !Muted;
 
     // DvVideo 가 재생 위치·길이(초)를 써 넣고, 슬라이더가 Position 을 바꾸면 그 위치로 이동
     public double Position { get; set; }
