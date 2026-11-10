@@ -22,6 +22,7 @@ public class VideoPlayerTests
         if (string.IsNullOrEmpty(dir))
             return false;
         VideoPlayer.FFmpegDirectory = dir;
+        VideoPlayer.InitialVolumeForTests = 0; // 테스트 중 소리는 내지 않는다(장치·시계는 그대로)
         using var probe = new VideoPlayer(Clip);
         return probe.Error is null;
     });

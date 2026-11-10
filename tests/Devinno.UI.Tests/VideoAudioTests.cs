@@ -19,6 +19,7 @@ public class VideoAudioTests
         if (string.IsNullOrEmpty(dir))
             return false;
         VideoPlayer.FFmpegDirectory = dir;
+        VideoPlayer.InitialVolumeForTests = 0; // 테스트 중 소리는 내지 않는다(장치·시계는 그대로)
         using var probe = new VideoPlayer(Video);
         return probe.Error is null;
     });
@@ -91,5 +92,141 @@ public class VideoAudioTests
         p.AudioDecoded += (_, _) => Interlocked.Increment(ref count);
         Assert.True(WaitFor(p, () => p.Ended, 4000));
         Assert.Equal(0, count);
+    }
+
+    [Fact]
+    public void VideoWithSound_PlaysToTheEnd_OnTheSoundClock()
+    {
+        if (!Ready())
+            return;
+        using var p = new VideoPlayer(VideoTone);
+        Assert.Null(p.Error);
+        if (!p.HasSound)
+        {
+            _out.WriteLine("no SDL2 sound device — sound part skipped");
+            return;
+        }
+        Assert.True(WaitFor(p, () => p.Position.TotalSeconds > 1.1, 3000), "1초를 넘는다");
+        var gap = p.Position.TotalSeconds - p.SoundTime;
+        _out.WriteLine($"picture {p.Position.TotalSeconds:F3} sound {p.SoundTime:F3}");
+        Assert.InRange(gap, -0.08, 0.08); // 그림과 소리가 함께 간다
+        Assert.True(WaitFor(p, () => p.Ended, 3000), "끝");
+        Assert.False(p.IsLive);
+    }
+
+    [Fact]
+    public void AudioOnlyFile_Plays_PositionAdvances_ThenEnds()
+    {
+        if (!Ready())
+            return;
+        using var p = new VideoPlayer(Tone);
+        if (p.Error is { } e && e.Contains("sound"))
+        {
+            _out.WriteLine($"{e} — skipped");
+            return;
+        }
+        Assert.Null(p.Error);
+        Assert.True(p.HasSound);
+        Assert.True(p.IsLive);
+        Assert.False(p.UseFrame(_ => { })); // 그림은 없다
+        Assert.True(WaitFor(p, () => p.Position.TotalSeconds > 0.8, 2500), $"위치가 흐른다 {p.Position}");
+        Assert.True(WaitFor(p, () => p.Ended, 3000), "끝");
+        Assert.InRange(p.Position.TotalSeconds, 1.9, 2.2);
+    }
+
+    [Fact]
+    public void AudioOnly_Poster_HasNoError()
+    {
+        if (!Ready())
+            return;
+        using var p = new VideoPlayer(Tone, poster: true);
+        Assert.Null(p.Error);
+        Assert.False(p.IsLive);
+    }
+
+    [Fact]
+    public void AfterSeek_NoSoundFromTheOldPosition()
+    {
+        if (!Ready())
+            return;
+        using var p = new VideoPlayer(VideoTone);
+        if (!p.HasSound)
+            return;
+        Assert.True(WaitFor(p, () => p.SoundTime > 0.2, 2000));
+        p.Seek(TimeSpan.FromSeconds(1.5));
+        var until = Environment.TickCount64 + 400;
+        var seen = 0;
+        while (Environment.TickCount64 < until)
+        {
+            _ = p.FrameVersion;
+            var t = p.SoundTime;
+            if (!double.IsNaN(t))
+            {
+                seen++;
+                Assert.True(t >= 1.5 - 0.001, $"옛 위치 소리 {t:F3}");
+            }
+            Thread.Sleep(5);
+        }
+        Assert.True(seen > 0, "새 위치 소리가 나온다");
+    }
+
+    [Fact]
+    public void PauseAndResume_ClockStops_AndContinuesWithoutAJump()
+    {
+        if (!Ready())
+            return;
+        using var p = new VideoPlayer(VideoTone);
+        if (!p.HasSound)
+            return;
+        Assert.True(WaitFor(p, () => p.ClockNow > 0.5, 2000));
+        p.Playing = false;
+        Thread.Sleep(100);
+        var frozen = p.ClockNow;
+        var sound = p.SoundTime;
+        Thread.Sleep(400);
+        Assert.Equal(frozen, p.ClockNow, 3);
+        Assert.Equal(sound, p.SoundTime, 3);
+        p.Playing = true;
+        Assert.True(WaitFor(p, () => p.ClockNow != frozen, 500));
+        var resumed = p.ClockNow;
+        _out.WriteLine($"frozen {frozen:F3} first after resume {resumed:F3}");
+        Assert.InRange(resumed - frozen, 0, 0.05); // 이어서 — 튀지 않는다
+    }
+
+    [Fact]
+    public void RapidSeeks_FromAnotherThread_NoDeadlock_ThenSettles()
+    {
+        if (!Ready())
+            return;
+        var p = new VideoPlayer(VideoTone) { Loop = true };
+        var rnd = new Random(1);
+        var stop = Environment.TickCount64 + 3000;
+        var seeker = new Thread(() =>
+        {
+            while (Environment.TickCount64 < stop)
+            {
+                p.Seek(TimeSpan.FromSeconds(rnd.NextDouble() * 2.2)); // 끝 뒤도 섞는다
+                if (rnd.Next(10) == 0)
+                    p.Playing = !p.Playing;
+                Thread.Sleep(rnd.Next(0, 16));
+            }
+        });
+        seeker.Start();
+        while (Environment.TickCount64 < stop)
+        {
+            _ = p.FrameVersion;
+            _ = p.IsLive;
+            p.UseFrame(_ => { });
+            Thread.Sleep(16);
+        }
+        seeker.Join();
+        Assert.Null(p.Error);
+        p.Playing = false;
+        p.Seek(TimeSpan.FromSeconds(1.5));
+        Assert.True(WaitFor(p, () => !p.IsLive, 2000), "seek 가 끝난다");
+        Assert.InRange(p.Position.TotalSeconds, 1.4, 1.6);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        p.Dispose();
+        Assert.True(sw.ElapsedMilliseconds < 1000, $"Dispose {sw.ElapsedMilliseconds} ms — 스레드가 바로 끝난다");
     }
 }
