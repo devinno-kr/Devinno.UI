@@ -4,6 +4,7 @@ using Xunit.Abstractions;
 
 // SDL2 소리 출력. SDL2.dll 은 앱 폴더나 VideoPlayer.FFmpegDirectory(테스트는 DEVINNO_FFMPEG_DIR) 에서 찾는다.
 // SDL2 나 소리 장치가 없으면(CI 등) 건너뛴다. 소리는 볼륨 0 으로 넣는다(시각만 본다)
+[Collection("Sound device")] // 소리 장치 테스트끼리는 겹치지 않게 — 장치 열기·닫기는 프로세스 전체에서 줄을 선다
 public class AudioOutputTests
 {
     private readonly ITestOutputHelper _out;
@@ -122,5 +123,29 @@ public class AudioOutputTests
         o.Clear();
         o.Volume = 0.2; // 빈 큐 — 아무것도 다시 넣지 않는다
         Assert.Equal(0, o.QueuedSeconds);
+    }
+
+    [Fact]
+    public void OpenAndDispose_FromManyThreadsAtOnce_DoesNotCrash()
+    {
+        using var probe = OpenOrSkip();
+        if (probe is null)
+            return;
+        // SDL_Init·SDL_QuitSubSystem 은 스레드 안전하지 않다 — 줄 세우지 않으면 여기서 프로세스가 죽는다
+        var until = Environment.TickCount64 + 1500;
+        var opened = 0;
+        var threads = Enumerable.Range(0, 6).Select(_ => new Thread(() =>
+        {
+            while (Environment.TickCount64 < until)
+            {
+                using var o = new AudioOutput { Volume = 0 };
+                if (o.Open())
+                    Interlocked.Increment(ref opened);
+                o.Queue(Silence(0.01), 0);
+            }
+        })).ToList();
+        threads.ForEach(t => t.Start());
+        threads.ForEach(t => t.Join());
+        Assert.True(opened > 0);
     }
 }

@@ -3,6 +3,7 @@ using Xunit;
 using Xunit.Abstractions;
 
 // DvVideo 소리 — 디코딩(48000 Hz 스테레오 float32). FFmpeg 8 은 DEVINNO_FFMPEG_DIR, 없으면 건너뛴다
+[Collection("Sound device")] // 소리 장치 테스트끼리는 겹치지 않게 — 장치 열기·닫기는 프로세스 전체에서 줄을 선다
 public class VideoAudioTests
 {
     private readonly ITestOutputHelper _out;
@@ -277,4 +278,22 @@ public class VideoAudioTests
     private static IEnumerable<Devinno.UI.Layout.LayoutBox> Flatten(Devinno.UI.Layout.LayoutBox b) => new[] { b }.Concat(b.Children.SelectMany(Flatten));
 
     private static Devinno.UI.Layout.LayoutBox Find(Devinno.UI.Layout.LayoutBox root) => Flatten(root).First(b => b.Node.Tag == "DvVideo");
+
+    [Fact]
+    public void ManyPlayers_CreatedAndDisposedOnDifferentThreads_DoNotCrash()
+    {
+        if (!Ready())
+            return;
+        var threads = Enumerable.Range(0, 4).Select(i => new Thread(() =>
+        {
+            for (var n = 0; n < 4; n++)
+            {
+                using var p = new VideoPlayer(i % 2 == 0 ? VideoTone : Tone);
+                Assert.Null(p.Error);
+                Thread.Sleep(30);
+            }
+        })).ToList();
+        threads.ForEach(t => t.Start());
+        threads.ForEach(t => t.Join());
+    }
 }

@@ -14,6 +14,8 @@ namespace Devinno.UI.Video;
 //  - 이름 후보를 차례로 NativeLibrary.TryLoad 하고 함수는 GetExport 함수 포인터로 부른다 — OS 별 코드 분기가 없고,
 //    DllImport 해석기(SetDllImportResolver)를 쓰지 않으므로 앱의 다른 SDL 바인딩과 부딪히지 않는다.
 //  - 함수 시그니처는 SDL2-CS(flibitijibibo, zlib)와 같다.
+//  - SDL_Init·SDL_QuitSubSystem 은 스레드 안전하지 않다(여러 재생기가 동시에 열면 SDL_Init 안에서 접근 위반으로 죽는 것을 재현함).
+//    그래서 오디오 서브시스템은 프로세스에서 한 번만 켜고 끄지 않으며, 장치 열기·닫기는 정적 잠금 하나로 줄 세운다.
 //
 // 모든 멤버는 아무 스레드에서나 불러도 된다(SDL_QueueAudio·SDL_GetQueuedAudioSize 는 장치 잠금 안에서 동작).
 internal sealed unsafe class AudioOutput : IDisposable
@@ -25,7 +27,6 @@ internal sealed unsafe class AudioOutput : IDisposable
 
     private readonly object _gate = new();
     private uint _device;
-    private bool _sdlInit;
     private double _endPts = double.NaN; // 마지막으로 넣은 샘플의 끝 시각. Clear 뒤 = 모름
     private float _volume = 1;
     private float[] _scratch = [];
@@ -86,27 +87,21 @@ internal sealed unsafe class AudioOutput : IDisposable
         {
             if (_device != 0)
                 return true;
-            if (Sdl.Load() is { } loadError)
-            {
-                Error = loadError;
-                return false;
-            }
-            if (Sdl.Init(Sdl.InitAudio) != 0)
-            {
-                Error = "SDL audio init failed: " + Sdl.LastError();
-                return false;
-            }
-            _sdlInit = true;
-
             var want = new Sdl.AudioSpec { Freq = SampleRate, Format = Sdl.AudioF32, Channels = Channels, Samples = DeviceSamples };
             Sdl.AudioSpec have;
-            _device = Sdl.OpenAudioDevice(null, 0, &want, &have, 0); // 0 = 바꾸지 않음 — 장치 형식이 다르면 SDL 이 변환한다
-            if (_device == 0)
+            lock (Sdl.Gate)
             {
-                Error = "cannot open a sound device: " + Sdl.LastError();
-                Sdl.QuitSubSystem(Sdl.InitAudio);
-                _sdlInit = false;
-                return false;
+                if (Sdl.EnsureAudio() is { } initError)
+                {
+                    Error = initError;
+                    return false;
+                }
+                _device = Sdl.OpenAudioDevice(null, 0, &want, &have, 0); // 0 = 바꾸지 않음 — 장치 형식이 다르면 SDL 이 변환한다
+                if (_device == 0)
+                {
+                    Error = "cannot open a sound device: " + Sdl.LastError();
+                    return false;
+                }
             }
             if (have.Samples > 0)
                 ChunkSeconds = have.Samples / (double)SampleRate;
@@ -201,18 +196,14 @@ internal sealed unsafe class AudioOutput : IDisposable
             _disposed = true;
             if (_device != 0)
             {
-                Sdl.CloseAudioDevice(_device);
+                lock (Sdl.Gate)
+                    Sdl.CloseAudioDevice(_device);
                 _device = 0;
-            }
-            if (_sdlInit)
-            {
-                Sdl.QuitSubSystem(Sdl.InitAudio); // 서브시스템은 참조 횟수 — 마지막 장치가 닫힐 때 실제로 내려간다
-                _sdlInit = false;
             }
         }
     }
 
-    // SDL2 함수 9개(SDL2-CS 와 같은 시그니처)
+    // SDL2 함수 8개(SDL2-CS 와 같은 시그니처)
     private static class Sdl
     {
         public const uint InitAudio = 0x00000010;  // SDL_INIT_AUDIO
@@ -232,12 +223,12 @@ internal sealed unsafe class AudioOutput : IDisposable
             public IntPtr Userdata;
         }
 
-        private static readonly object Gate = new();
+        public static readonly object Gate = new(); // 불러오기·오디오 켜기·장치 열기/닫기를 줄 세운다
         private static bool _tried;
         private static string? _error;
+        private static bool _audioOn;
 
         private static delegate* unmanaged[Cdecl]<uint, int> _init;
-        private static delegate* unmanaged[Cdecl]<uint, void> _quitSubSystem;
         private static delegate* unmanaged[Cdecl]<byte*, int, AudioSpec*, AudioSpec*, int, uint> _openAudioDevice;
         private static delegate* unmanaged[Cdecl]<uint, void*, uint, int> _queueAudio;
         private static delegate* unmanaged[Cdecl]<uint, uint> _getQueuedAudioSize;
@@ -246,8 +237,19 @@ internal sealed unsafe class AudioOutput : IDisposable
         private static delegate* unmanaged[Cdecl]<uint, void> _closeAudioDevice;
         private static delegate* unmanaged[Cdecl]<byte*> _getError;
 
-        public static int Init(uint flags) => _init(flags);
-        public static void QuitSubSystem(uint flags) => _quitSubSystem(flags);
+        // Gate 안에서. 라이브러리를 불러오고 오디오 서브시스템을 한 번 켠다(끄지 않음). 실패 이유를 돌려준다
+        public static string? EnsureAudio()
+        {
+            if (Load() is { } loadError)
+                return loadError;
+            if (_audioOn)
+                return null;
+            if (_init(InitAudio) != 0)
+                return "SDL audio init failed: " + LastError(); // 다음 Open 에서 다시 시도
+            _audioOn = true;
+            return null;
+        }
+
         public static uint OpenAudioDevice(byte* device, int capture, AudioSpec* want, AudioSpec* have, int allowedChanges) => _openAudioDevice(device, capture, want, have, allowedChanges);
         public static int QueueAudio(uint dev, void* data, uint len) => _queueAudio(dev, data, len);
         public static uint GetQueuedAudioSize(uint dev) => _getQueuedAudioSize(dev);
@@ -280,7 +282,6 @@ internal sealed unsafe class AudioOutput : IDisposable
                 try
                 {
                     _init = (delegate* unmanaged[Cdecl]<uint, int>)NativeLibrary.GetExport(handle, "SDL_Init");
-                    _quitSubSystem = (delegate* unmanaged[Cdecl]<uint, void>)NativeLibrary.GetExport(handle, "SDL_QuitSubSystem");
                     _openAudioDevice = (delegate* unmanaged[Cdecl]<byte*, int, AudioSpec*, AudioSpec*, int, uint>)NativeLibrary.GetExport(handle, "SDL_OpenAudioDevice");
                     _queueAudio = (delegate* unmanaged[Cdecl]<uint, void*, uint, int>)NativeLibrary.GetExport(handle, "SDL_QueueAudio");
                     _getQueuedAudioSize = (delegate* unmanaged[Cdecl]<uint, uint>)NativeLibrary.GetExport(handle, "SDL_GetQueuedAudioSize");
