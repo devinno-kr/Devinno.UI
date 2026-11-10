@@ -784,6 +784,28 @@ public class DvmlGeneratorTests
         Assert.Contains("txet", d.GetMessage(new System.Globalization.CultureInfo("ko-KR")));
     }
 
+    // content-align 은 글자를 그리는 태그만 받는다 — 다른 태그에서는 아무 효과가 없으니 DVML019
+    [Theory]
+    [InlineData("DvLabel")]
+    [InlineData("DvButton")]
+    [InlineData("DvCheckBox")]
+    [InlineData("DvRadio")]
+    [InlineData("DvInput")]
+    public void ContentAlign_OnTextTags_NoWarning(string tag) =>
+        Assert.Empty(Attrs($"<DvStack><{tag} content-align=\"middle-center\"/></DvStack>"));
+
+    [Theory]
+    [InlineData("DvBox")]
+    [InlineData("DvStack")]
+    [InlineData("DvToggle")]
+    [InlineData("DvSelect")]
+    [InlineData("DvGauge")]
+    public void ContentAlign_OnOtherTags_Warns(string tag)
+    {
+        var d = Assert.Single(Attrs($"<DvStack><{tag} content-align=\"middle-center\"/></DvStack>"));
+        Assert.Contains("content-align", d.GetMessage(Invariant));
+    }
+
     [Fact]
     public void Attribute_Valid_NoWarnings()
     {

@@ -20,7 +20,7 @@ internal static class AttributeCheck
     /// <summary>모든 요소가 받는 속성 — 라이브러리 <c>TagSchema.Common</c> 의 이름과 같아야 한다(테스트가 비교).</summary>
     internal static readonly string[] Common =
     [
-        "id", "class", "style", "hover-style", "press-style", "disabled-style", "content-align", "grow", "width", "height", "visible", "disabled",
+        "id", "class", "style", "hover-style", "press-style", "disabled-style", "grow", "width", "height", "visible", "disabled",
         "onclick", "hold", "onbeforecommit",
     ];
 
@@ -57,17 +57,17 @@ internal static class AttributeCheck
         ["DvStepBar"] = ["steps", "current"],
 
         // 기본·입력
-        ["DvLabel"] = ["text"],
-        ["DvButton"] = ["text", "icon", "variant", "size", "value"],
+        ["DvLabel"] = ["text", "content-align"],
+        ["DvButton"] = ["text", "content-align", "icon", "variant", "size", "value"],
         ["DvIcon"] = ["icon"],
         ["DvImage"] = ["src", "fit"],
         ["DvVideo"] = ["src", "source", "fit", "playing", "loop", "volume", "muted", "position", "duration"],
         ["DvToggle"] = ["value", "readonly"],
-        ["DvCheckBox"] = ["value", "text", "readonly"],
-        ["DvRadio"] = ["option", "value", "group", "text", "readonly"],
+        ["DvCheckBox"] = ["value", "text", "content-align", "readonly"],
+        ["DvRadio"] = ["option", "value", "group", "text", "content-align", "readonly"],
         ["DvKnob"] = ["value", "min", "max", "step", "unit", "readonly", "input-mode"],
         ["DvSlider"] = ["value", "min", "max", "step", "unit", "readonly", "direction", "show-value", "format"],
-        ["DvInput"] = ["value", "keyboard-type", "multiline", "placeholder", "format", "min", "max", "unit", "readonly", "step", "show-stepper"],
+        ["DvInput"] = ["value", "keyboard-type", "multiline", "placeholder", "content-align", "format", "min", "max", "unit", "readonly", "step", "show-stepper"],
         ["DvSelect"] = ["value", "placeholder", "readonly", "items", "item-value", "item-text", "item-icon"],
         ["DvOption"] = ["value", "text", "icon"],
         ["DvSegment"] = ["value", "readonly", "fill", "items", "item-value", "item-text", "item-icon"],
@@ -219,8 +219,10 @@ internal static class AttributeCheck
     /// </summary>
     internal static readonly Dictionary<string, string[]> CommonEnum = new(StringComparer.Ordinal)
     {
-        ["content-align"] = ["top-left", "top-center", "top-right", "middle-left", "middle-center", "middle-right", "bottom-left", "bottom-center", "bottom-right"],
     };
+
+    // content-align 값 — 글자를 그리는 태그(DvLabel·DvButton·DvCheckBox·DvRadio·DvInput)가 같이 쓴다. Enum 보다 먼저 선언(정적 초기화 순서)
+    private static readonly string[] CA = ["top-left", "top-center", "top-right", "middle-left", "middle-center", "middle-right", "bottom-left", "bottom-center", "bottom-right"];
 
     /// <summary>태그별 목록 값 속성(<c>AttrKind.Enum</c>) → 받는 값.</summary>
     internal static readonly Dictionary<string, Dictionary<string, string[]>> Enum = new(StringComparer.Ordinal)
@@ -230,12 +232,15 @@ internal static class AttributeCheck
         ["DvGrid"] = new(StringComparer.Ordinal) { ["align"] = ["start", "center", "end", "stretch"], ["justify"] = ["start", "center", "end", "stretch"] },
         ["DvSpacer"] = new(StringComparer.Ordinal) { ["align"] = ["start", "center", "end", "stretch"], ["justify"] = ["start", "center", "end", "between"] },
         ["DvRepeat"] = new(StringComparer.Ordinal) { ["align"] = ["start", "center", "end", "stretch"], ["justify"] = ["start", "center", "end", "between"] },
-        ["DvButton"] = new(StringComparer.Ordinal) { ["variant"] = ["primary", "secondary", "danger", "ghost"], ["size"] = ["sm", "lg"] },
+        ["DvLabel"] = new(StringComparer.Ordinal) { ["content-align"] = CA },
+        ["DvButton"] = new(StringComparer.Ordinal) { ["content-align"] = CA, ["variant"] = ["primary", "secondary", "danger", "ghost"], ["size"] = ["sm", "lg"] },
+        ["DvCheckBox"] = new(StringComparer.Ordinal) { ["content-align"] = CA },
+        ["DvRadio"] = new(StringComparer.Ordinal) { ["content-align"] = CA },
         ["DvImage"] = new(StringComparer.Ordinal) { ["fit"] = ["contain", "cover", "fill"] },
         ["DvVideo"] = new(StringComparer.Ordinal) { ["fit"] = ["contain", "cover", "fill"] },
         ["DvKnob"] = new(StringComparer.Ordinal) { ["input-mode"] = ["drag", "tap", "both"] },
         ["DvSlider"] = new(StringComparer.Ordinal) { ["direction"] = ["right", "left", "up", "down"] },
-        ["DvInput"] = new(StringComparer.Ordinal) { ["keyboard-type"] = ["text", "numeric", "password"] },
+        ["DvInput"] = new(StringComparer.Ordinal) { ["keyboard-type"] = ["text", "numeric", "password"], ["content-align"] = CA },
         ["DvListBox"] = new(StringComparer.Ordinal) { ["selection-mode"] = ["single", "multi"] },
         ["DvDateTimeInput"] = new(StringComparer.Ordinal) { ["mode"] = ["date", "time", "datetime"] },
         ["DvProgress"] = new(StringComparer.Ordinal) { ["direction"] = ["right", "left", "up", "down"] },

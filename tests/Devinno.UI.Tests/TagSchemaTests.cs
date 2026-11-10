@@ -22,9 +22,10 @@ public class TagSchemaTests
         string[] expected =
         [
             "id", "class", "style", "grow", "width", "height", "visible", "disabled", "onclick", "hold",
-            "hover-style", "press-style", "disabled-style", "content-align", "onbeforecommit",
+            "hover-style", "press-style", "disabled-style", "onbeforecommit",
         ];
         Assert.All(expected, n => Assert.Contains(TagSchema.Common, a => a.Name == n));
+        Assert.DoesNotContain(TagSchema.Common, a => a.Name == "content-align"); // 글자를 그리는 태그의 정의에만
         Assert.Equal(TagSchema.Common.Count, TagSchema.Common.Select(a => a.Name).Distinct().Count());
     }
 

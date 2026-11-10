@@ -139,6 +139,19 @@ public class ContentAlignTests
         Assert.True(ink.Top > rect.MidY - 4); // 아이콘·글자 모두 아래쪽 절반
     }
 
+    // DvCheckBox·DvRadio 의 글자도 9방향을 따른다. DvInput 은 가로만 — 입력 글자는 늘 세로 가운데
+    [Theory]
+    [InlineData("""<DvCheckBox text="운전" content-align="{0}" style="width:300; height:80"/>""", true)]
+    [InlineData("""<DvRadio text="운전" option="a" content-align="{0}" style="width:300; height:80"/>""", true)]
+    [InlineData("""<DvInput value="운전" content-align="{0}" style="width:300; height:80"/>""", false)]
+    public void Check_radio_and_input_text_follow_content_align(string markup, bool vertical)
+    {
+        byte[] Pixels(string align) => Render(string.Format(markup, align)).bmp.Bytes;
+        var topLeft = Pixels("top-left");
+        Assert.False(topLeft.AsSpan().SequenceEqual(Pixels("top-right")));
+        Assert.Equal(vertical, !topLeft.AsSpan().SequenceEqual(Pixels("bottom-left")));
+    }
+
     private static string Ref(string token)
         => DvTheme.Light.TryGet(token, out var raw) ? raw : "#000000";
 }

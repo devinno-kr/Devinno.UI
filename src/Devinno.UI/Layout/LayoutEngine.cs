@@ -365,7 +365,7 @@ public sealed partial class LayoutEngine
         var sugar = ResolveStyle(LayoutSugar.Decls(r), vm);
         var rules = Classes(r, _valueOverride).Select(c => _sheet.TryGet(c, out var rule) ? rule : null).OfType<ClassRule>().ToList();
         var classBase = ResolveStyle(StyleSheet.Join(rules.Select(rule => rule.Base).ToArray()), vm);
-        var attrDecls = AttrRules.Enum(r, "content-align") is { } caValue
+        var attrDecls = TagSchema.Find(node.Tag, "content-align") is not null && AttrRules.Enum(r, "content-align") is { } caValue
             ? "content-align:" + caValue
             : null;
         var inline = ResolveStyle(r.Raw("style"), vm);

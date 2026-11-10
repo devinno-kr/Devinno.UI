@@ -109,8 +109,9 @@ Any other key is ignored at run time, and the build reports it as warning [DVML0
 <a id="content-align"></a>
 ## content-align
 
-Sets where the text (and button icon) of `DvLabel`/`DvButton` is placed inside the padding.
+Sets where the text (and button icon) of `DvLabel`/`DvButton`/`DvCheckBox`/`DvRadio` is placed inside the padding. `DvInput` uses only the horizontal part.
 
+- Only these five tags take the `content-align` attribute; on any other tag it is build warning [DVML019](dvml-diagnostics.md#dvml019) (it would change nothing).
 - 9 values: `top-left` `top-center` `top-right` `middle-left` `middle-center` `middle-right` `bottom-left` `bottom-center` `bottom-right`.
 - As a style key (`style="content-align:middle-left"`), only lowercase kebab-case is accepted; any other value is ignored after one Trace warning.
 - As the `content-align` attribute (`<DvButton content-align="middle-left"/>`), case and surrounding spaces are ignored ([word values](dvml-language.md#value-word)). The attribute is bindable (`content-align="{Align}"`, string).
@@ -121,6 +122,8 @@ Sets where the text (and button icon) of `DvLabel`/`DvButton` is placed inside t
 | `DvButton` with `variant`, or a latching `DvButton` (`value`) | `middle-center` (`.btn` class) |
 | `DvLabel`, a non-latching `DvButton` without `variant` | `top-left` |
 | `DvButton` with only an icon and no text | Vertically centered |
+| `DvCheckBox`, `DvRadio` | `middle-left` (`.checkbox`/`.radio` class) |
+| `DvInput` | Left; vertically centered (`multiline`: from the top) whatever the value |
 
 <a id="classes"></a>
 ## Classes

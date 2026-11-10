@@ -28,6 +28,7 @@ A text, number or password field.
 | `keyboard-type` | `text` `numeric` `password` | `text` | yes | Unknown = `text` + Trace warning |
 | `multiline` | bool | `false` | yes | Multi-line text |
 | `placeholder` | text | empty | yes | Shown when empty |
+| `content-align` | 9 positions ([content-align](dvml-style.md#content-align)) | left | yes | Only the horizontal part is used: the text stays vertically centered (`multiline`: from the top) |
 | `format` | .NET format string | none | yes | Numeric display only. Unusable = raw value + Trace warning |
 | `min` | number | none | yes | Typed values outside are rejected (not clamped). Numeric, both given and `min >= max` = 0..100 + warning |
 | `max` | number | none | yes | As `min` |

@@ -211,6 +211,7 @@ Text.
 | attribute | values | default | bound | notes |
 |---|---|---|---|---|
 | `text` | text | empty | yes | Absent = inner text. A code `Text` override wins and is used as is |
+| `content-align` | 9 positions ([content-align](dvml-style.md#content-align)) | `top-left` | yes | Places the text |
 
 **Behavior**
 - Default size: text size + padding.
@@ -235,6 +236,7 @@ A button; with `value` it is a latching (on/off) button.
 | attribute | values | default | bound | notes |
 |---|---|---|---|---|
 | `text` | text | empty | yes | Absent = inner text. A code `Text` override wins |
+| `content-align` | 9 positions ([content-align](dvml-style.md#content-align)) | `middle-center` with `variant`/`value`, otherwise `top-left` | yes | Places the text and the icon together |
 | `icon` | `fa-name` / `far fa-name` / `fab fa-name` | none | yes | Icon left of the text (gap 8). Unknown name = not drawn (Trace) |
 | `variant` | `primary` `secondary` `danger` `ghost` | none | yes | Adds `.btn .btn-{variant}`. Empty = unstyled button |
 | `size` | `sm` `lg` | none | yes | Adds `.btn-{size}`. Only when `variant` is set |
@@ -394,6 +396,7 @@ Box + text.
 |---|---|---|---|---|
 | `value` | bool | — | yes | `{Bind X}` = VM. Absent + a handle = the handle owns it. One-way/literal = read-only |
 | `text` | text | empty | yes | Absent = inner text. A code `Text` override is honored by the build; the handle exposes no `Text` |
+| `content-align` | 9 positions ([content-align](dvml-style.md#content-align)) | `middle-left` | yes | Places the text |
 | `readonly` | bool | `false` | yes | Read-only also when `value` is one-way or a literal |
 
 **Behavior**
@@ -423,6 +426,7 @@ Circle + text. Among buttons tied to the same value, only one is on (the HTML na
 | `value` | any | — | yes | The group value. `{Bind X}` = VM; one-way/literal = that value (read-only). Absent = the screen remembers the group. A handle cannot own it |
 | `group` | name | none | yes | Read only when `value` is absent. No name + a handle = this element alone |
 | `text` | text | empty | yes | Absent = inner text. A code `Text` override is honored by the build; the handle exposes no `Text` |
+| `content-align` | 9 positions ([content-align](dvml-style.md#content-align)) | `middle-left` | yes | Places the text |
 | `readonly` | bool | `false` | yes | Read-only also when `value` is one-way or a literal. An absent `value` with group memory is writable |
 
 **Behavior**

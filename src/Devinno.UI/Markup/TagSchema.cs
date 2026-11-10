@@ -48,8 +48,6 @@ internal static class TagSchema
         new("hover-style", AttrKind.Style),
         new("press-style", AttrKind.Style),
         new("disabled-style", AttrKind.Style),
-        new("content-align", AttrKind.Enum, Values: ["top-left", "top-center", "top-right", "middle-left", "middle-center", "middle-right", "bottom-left", "bottom-center", "bottom-right"],
-            Note: EnumRule + " (ignored)"),
         new("grow", AttrKind.Number, "0"),
         new("width", AttrKind.Length),
         new("height", AttrKind.Length),
@@ -140,10 +138,11 @@ internal static class TagSchema
         ],
 
         // 기본·입력 (2.3)
-        ["DvLabel"] = [Text()],
+        ["DvLabel"] = [Text(), ContentAlign()],
         ["DvButton"] =
         [
             Text(),
+            ContentAlign("places the icon with the text"),
             Icon(),
             new("variant", AttrKind.Enum, Values: ["primary", "secondary", "danger", "ghost"], Note: "adds the classes btn btn-{variant}; empty after resolving = unstyled button; " + EnumRule + " (no classes)"),
             new("size", AttrKind.Enum, Values: ["sm", "lg"], Note: "adds btn-{size}; only when variant is set; " + EnumRule + " (no size class)"),
@@ -168,13 +167,14 @@ internal static class TagSchema
             new("duration", AttrKind.Number, Note: "seconds; only {Bind X} is used (written out); a one-way value or literal is ignored silently"),
         ],
         ["DvToggle"] = [BoolValue(), ReadOnly()],
-        ["DvCheckBox"] = [BoolValue(), Text("a code Text override is honored by the build, but the handle exposes no Text"), ReadOnly()],
+        ["DvCheckBox"] = [BoolValue(), Text("a code Text override is honored by the build, but the handle exposes no Text"), ContentAlign(), ReadOnly()],
         ["DvRadio"] =
         [
             new("option", AttrKind.Text, "", Note: "converted to the type of the bound value for comparison"),
             new("value", AttrKind.Object, Note: "the group value; {Bind X} = VM; one-way/literal = that value (a handle override is read as checked); absent = the screen remembers the group; a handle cannot own it"),
             new("group", AttrKind.Text, Note: "read only when value is absent; no name + a handle = this element alone"),
             Text("a code Text override is honored by the build, but the handle exposes no Text"),
+            ContentAlign(),
             ReadOnly("read-only also when value is one-way or a literal (absent value with group memory is writable)"),
         ],
         ["DvKnob"] =
@@ -197,6 +197,7 @@ internal static class TagSchema
             new("keyboard-type", AttrKind.Enum, "text", Values: ["text", "numeric", "password"], Note: EnumRule + "; the handle resolves it against the screen VM"),
             new("multiline", AttrKind.Bool, "false"),
             Placeholder(),
+            ContentAlign("horizontal part only; the text stays vertically centered (multiline: from the top)"),
             new("format", AttrKind.Text, Note: "numeric display; " + FormatRule),
             new("min", AttrKind.Number, Note: "typed values out of range are rejected (not clamped), the stepper stops at the bound; numeric only: both given and min >= max = 0..100 + warning; " + NumberRule),
             new("max", AttrKind.Number, Note: "typed values out of range are rejected (not clamped), the stepper stops at the bound; numeric only: both given and min >= max = 0..100 + warning; " + NumberRule),
@@ -585,6 +586,11 @@ internal static class TagSchema
     // 2.3 공용 조각 — 같은 해석을 여러 태그가 쓴다
     private static AttrDef Text(string? note = null) =>
         new("text", AttrKind.Text, "", Note: note ?? "absent = inner text; a code Text override wins and is used as is");
+
+    // 글자를 그리는 태그만(DvLabel·DvButton·DvCheckBox·DvRadio·DvInput) — 다른 태그는 이 값을 쓰지 않는다
+    private static AttrDef ContentAlign(string? note = null) =>
+        new("content-align", AttrKind.Enum, Values: ["top-left", "top-center", "top-right", "middle-left", "middle-center", "middle-right", "bottom-left", "bottom-center", "bottom-right"],
+            Note: (note is null ? "" : note + "; ") + EnumRule + " (ignored)");
 
     private static AttrDef Icon() => new("icon", AttrKind.Text, Note: "fa-name / far fa-name / fab fa-name; unknown = not drawn (Trace)");
 
