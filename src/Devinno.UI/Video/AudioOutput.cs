@@ -1,0 +1,283 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+
+namespace Devinno.UI.Video;
+
+// SDL2 오디오 장치 하나에 48000 Hz·스테레오·float32 소리를 밀어 넣는다(SDL_QueueAudio, 콜백 없음).
+// SDL 은 오디오 서브시스템만 쓴다 — 창·렌더러는 만들지 않는다.
+//
+// 네이티브 라이브러리(SDL2 2.x, 이 패키지에 담지 않음):
+//  - Windows: SDL2.dll(공식 SDL2-2.x-win32-x64.zip 의 것)을 앱 폴더나 VideoPlayer.FFmpegDirectory 폴더에 둔다. 없으면 PATH 검색.
+//  - Linux(라즈베리파이 포함): OS 패키지 `sudo apt install libsdl2-2.0-0` → libSDL2-2.0.so.0.
+//    버전 없는 libSDL2.so 는 개발 패키지(libsdl2-dev)에만 있으므로 버전 붙은 이름을 먼저 찾는다.
+//    출력 백엔드(PipeWire·PulseAudio·ALSA)는 SDL 이 고른다. 바꾸려면 환경 변수 SDL_AUDIODRIVER=alsa 등.
+//  - 이름 후보를 차례로 NativeLibrary.TryLoad 하고 함수는 GetExport 함수 포인터로 부른다 — OS 별 코드 분기가 없고,
+//    DllImport 해석기(SetDllImportResolver)를 쓰지 않으므로 앱의 다른 SDL 바인딩과 부딪히지 않는다.
+//  - 함수 시그니처는 SDL2-CS(flibitijibibo, zlib)와 같다.
+//
+// 모든 멤버는 아무 스레드에서나 불러도 된다(SDL_QueueAudio·SDL_GetQueuedAudioSize 는 장치 잠금 안에서 동작).
+internal sealed unsafe class AudioOutput : IDisposable
+{
+    public const int SampleRate = AudioDecoder.SampleRate;
+    public const int Channels = AudioDecoder.Channels;
+    private const int BytesPerSecond = SampleRate * Channels * sizeof(float);
+    private const ushort DeviceSamples = 1024; // 장치 버퍼(약 21 ms) — 장치가 큐에서 이만큼씩 가져간다
+
+    private readonly object _gate = new();
+    private uint _device;
+    private bool _sdlInit;
+    private double _endPts = double.NaN; // 마지막으로 넣은 샘플의 끝 시각. Clear 뒤 = 모름
+    private float _volume = 1;
+    private float[] _scratch = [];
+    private bool _disposed;
+
+    // 장치를 못 연 이유(SDL2 없음·소리 장치 없음). 열렸으면 null
+    public string? Error { get; private set; }
+
+    // 장치가 큐에서 한 번에 가져가는 길이(초) — 시계 보정용
+    public double ChunkSeconds { get; private set; } = DeviceSamples / (double)SampleRate;
+
+    // 0~1. 큐에 넣기 전에 곱한다(이미 넣은 소리에는 적용되지 않음)
+    public double Volume
+    {
+        get => _volume;
+        set => _volume = (float)Math.Clamp(double.IsNaN(value) ? 1 : value, 0, 1);
+    }
+
+    // 큐에 남은 소리(초)
+    public double QueuedSeconds
+    {
+        get
+        {
+            lock (_gate)
+                return _device == 0 ? 0 : Sdl.GetQueuedAudioSize(_device) / (double)BytesPerSecond;
+        }
+    }
+
+    // 지금 장치로 나가는 위치(초) = 마지막으로 넣은 샘플의 끝 − 큐 잔량. 일시정지 중에는 큐가 줄지 않으므로 멈춰 있다.
+    // Clear 뒤 첫 Queue 전에는 NaN
+    public double CurrentTime
+    {
+        get
+        {
+            lock (_gate)
+                return _device == 0 || double.IsNaN(_endPts) ? double.NaN : _endPts - Sdl.GetQueuedAudioSize(_device) / (double)BytesPerSecond;
+        }
+    }
+
+    // 장치를 연다(일시정지 상태로). 실패하면 false, 이유는 Error
+    public bool Open()
+    {
+        lock (_gate)
+        {
+            if (_device != 0)
+                return true;
+            if (Sdl.Load() is { } loadError)
+            {
+                Error = loadError;
+                return false;
+            }
+            if (Sdl.Init(Sdl.InitAudio) != 0)
+            {
+                Error = "SDL audio init failed: " + Sdl.LastError();
+                return false;
+            }
+            _sdlInit = true;
+
+            var want = new Sdl.AudioSpec { Freq = SampleRate, Format = Sdl.AudioF32, Channels = Channels, Samples = DeviceSamples };
+            Sdl.AudioSpec have;
+            _device = Sdl.OpenAudioDevice(null, 0, &want, &have, 0); // 0 = 바꾸지 않음 — 장치 형식이 다르면 SDL 이 변환한다
+            if (_device == 0)
+            {
+                Error = "cannot open a sound device: " + Sdl.LastError();
+                Sdl.QuitSubSystem(Sdl.InitAudio);
+                _sdlInit = false;
+                return false;
+            }
+            if (have.Samples > 0)
+                ChunkSeconds = have.Samples / (double)SampleRate;
+            Error = null;
+            return true;
+        }
+    }
+
+    // samples(스테레오 interleaved) 를 큐 끝에 넣는다. startPts = 첫 샘플의 시각(초)
+    public void Queue(ReadOnlySpan<float> samples, double startPts)
+    {
+        if (samples.IsEmpty)
+            return;
+        var gain = _volume;
+        ReadOnlySpan<float> data = samples;
+        if (gain != 1)
+        {
+            if (_scratch.Length < samples.Length)
+                _scratch = new float[samples.Length];
+            for (var i = 0; i < samples.Length; i++)
+                _scratch[i] = samples[i] * gain;
+            data = _scratch.AsSpan(0, samples.Length);
+        }
+
+        lock (_gate)
+        {
+            if (_device == 0)
+                return;
+            fixed (float* p = data)
+                if (Sdl.QueueAudio(_device, p, (uint)(data.Length * sizeof(float))) != 0)
+                    return;
+            _endPts = startPts + samples.Length / Channels / (double)SampleRate;
+        }
+    }
+
+    public void Pause(bool pause)
+    {
+        lock (_gate)
+            if (_device != 0)
+                Sdl.PauseAudioDevice(_device, pause ? 1 : 0);
+    }
+
+    // 큐에 남은 소리를 버린다(seek). 장치가 이미 가져간 한 덩어리(ChunkSeconds 이하)는 끝까지 나간다
+    public void Clear()
+    {
+        lock (_gate)
+        {
+            if (_device != 0)
+                Sdl.ClearQueuedAudio(_device);
+            _endPts = double.NaN;
+        }
+    }
+
+    public void Dispose()
+    {
+        lock (_gate)
+        {
+            if (_disposed)
+                return;
+            _disposed = true;
+            if (_device != 0)
+            {
+                Sdl.CloseAudioDevice(_device);
+                _device = 0;
+            }
+            if (_sdlInit)
+            {
+                Sdl.QuitSubSystem(Sdl.InitAudio); // 서브시스템은 참조 횟수 — 마지막 장치가 닫힐 때 실제로 내려간다
+                _sdlInit = false;
+            }
+        }
+    }
+
+    // SDL2 함수 9개(SDL2-CS 와 같은 시그니처)
+    private static class Sdl
+    {
+        public const uint InitAudio = 0x00000010;  // SDL_INIT_AUDIO
+        public const ushort AudioF32 = 0x8120;     // AUDIO_F32LSB = AUDIO_F32(리틀 엔디언 — x64·arm64)
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct AudioSpec
+        {
+            public int Freq;
+            public ushort Format;
+            public byte Channels;
+            public byte Silence;
+            public ushort Samples;
+            public ushort Padding;
+            public uint Size;
+            public IntPtr Callback; // null = 콜백 없음(SDL_QueueAudio 방식)
+            public IntPtr Userdata;
+        }
+
+        private static readonly object Gate = new();
+        private static bool _tried;
+        private static string? _error;
+
+        private static delegate* unmanaged[Cdecl]<uint, int> _init;
+        private static delegate* unmanaged[Cdecl]<uint, void> _quitSubSystem;
+        private static delegate* unmanaged[Cdecl]<byte*, int, AudioSpec*, AudioSpec*, int, uint> _openAudioDevice;
+        private static delegate* unmanaged[Cdecl]<uint, void*, uint, int> _queueAudio;
+        private static delegate* unmanaged[Cdecl]<uint, uint> _getQueuedAudioSize;
+        private static delegate* unmanaged[Cdecl]<uint, void> _clearQueuedAudio;
+        private static delegate* unmanaged[Cdecl]<uint, int, void> _pauseAudioDevice;
+        private static delegate* unmanaged[Cdecl]<uint, void> _closeAudioDevice;
+        private static delegate* unmanaged[Cdecl]<byte*> _getError;
+
+        public static int Init(uint flags) => _init(flags);
+        public static void QuitSubSystem(uint flags) => _quitSubSystem(flags);
+        public static uint OpenAudioDevice(byte* device, int capture, AudioSpec* want, AudioSpec* have, int allowedChanges) => _openAudioDevice(device, capture, want, have, allowedChanges);
+        public static int QueueAudio(uint dev, void* data, uint len) => _queueAudio(dev, data, len);
+        public static uint GetQueuedAudioSize(uint dev) => _getQueuedAudioSize(dev);
+        public static void ClearQueuedAudio(uint dev) => _clearQueuedAudio(dev);
+        public static void PauseAudioDevice(uint dev, int pause) => _pauseAudioDevice(dev, pause);
+        public static void CloseAudioDevice(uint dev) => _closeAudioDevice(dev);
+        public static string LastError() => Marshal.PtrToStringUTF8((IntPtr)_getError()) ?? "";
+
+        // 한 번만 불러 본다. 실패 이유를 돌려준다(성공 = null)
+        public static string? Load()
+        {
+            lock (Gate)
+            {
+                if (_tried)
+                    return _error;
+                _tried = true;
+                var handle = IntPtr.Zero;
+                foreach (var name in Candidates())
+                {
+                    if (NativeLibrary.TryLoad(name, out handle))
+                        break;
+                }
+                if (handle == IntPtr.Zero)
+                {
+                    _error = "SDL2 not found — sound is off. Windows: put SDL2.dll next to the app; Linux: sudo apt install libsdl2-2.0-0";
+                    Trace.TraceWarning($"Devinno.UI: {_error}");
+                    return _error;
+                }
+
+                try
+                {
+                    _init = (delegate* unmanaged[Cdecl]<uint, int>)NativeLibrary.GetExport(handle, "SDL_Init");
+                    _quitSubSystem = (delegate* unmanaged[Cdecl]<uint, void>)NativeLibrary.GetExport(handle, "SDL_QuitSubSystem");
+                    _openAudioDevice = (delegate* unmanaged[Cdecl]<byte*, int, AudioSpec*, AudioSpec*, int, uint>)NativeLibrary.GetExport(handle, "SDL_OpenAudioDevice");
+                    _queueAudio = (delegate* unmanaged[Cdecl]<uint, void*, uint, int>)NativeLibrary.GetExport(handle, "SDL_QueueAudio");
+                    _getQueuedAudioSize = (delegate* unmanaged[Cdecl]<uint, uint>)NativeLibrary.GetExport(handle, "SDL_GetQueuedAudioSize");
+                    _clearQueuedAudio = (delegate* unmanaged[Cdecl]<uint, void>)NativeLibrary.GetExport(handle, "SDL_ClearQueuedAudio");
+                    _pauseAudioDevice = (delegate* unmanaged[Cdecl]<uint, int, void>)NativeLibrary.GetExport(handle, "SDL_PauseAudioDevice");
+                    _closeAudioDevice = (delegate* unmanaged[Cdecl]<uint, void>)NativeLibrary.GetExport(handle, "SDL_CloseAudioDevice");
+                    _getError = (delegate* unmanaged[Cdecl]<byte*>)NativeLibrary.GetExport(handle, "SDL_GetError");
+                }
+                catch (EntryPointNotFoundException ex)
+                {
+                    _error = $"SDL2 library is too old or not SDL2 ({ex.Message}) — sound is off";
+                    Trace.TraceWarning($"Devinno.UI: {_error}");
+                }
+                return _error;
+            }
+        }
+
+        // 앱 폴더 → FFmpeg 폴더(설정했으면) → OS 기본 검색. Windows 이름과 Linux 이름을 함께 두고 열리는 것을 쓴다
+        private static IEnumerable<string> Candidates()
+        {
+            string[] names = ["SDL2.dll", "libSDL2-2.0.so.0", "libSDL2.so"];
+            foreach (var dir in new[] { AppContext.BaseDirectory, VideoPlayer.FFmpegDirectory })
+            {
+                if (string.IsNullOrEmpty(dir))
+                    continue;
+                foreach (var n in names)
+                {
+                    var path = System.IO.Path.Combine(dir, n);
+                    if (File.Exists(path))
+                        yield return path;
+                }
+            }
+            foreach (var n in names)
+                yield return n;
+        }
+
+        internal static void ResetForTests()
+        {
+            lock (Gate)
+            {
+                _tried = false;
+                _error = null;
+            }
+        }
+    }
+}

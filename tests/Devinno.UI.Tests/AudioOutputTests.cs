@@ -1,0 +1,109 @@
+using Devinno.UI.Video;
+using Xunit;
+using Xunit.Abstractions;
+
+// SDL2 소리 출력. SDL2.dll 은 앱 폴더나 VideoPlayer.FFmpegDirectory(테스트는 DEVINNO_FFMPEG_DIR) 에서 찾는다.
+// SDL2 나 소리 장치가 없으면(CI 등) 건너뛴다. 소리는 볼륨 0 으로 넣는다(시각만 본다)
+public class AudioOutputTests
+{
+    private readonly ITestOutputHelper _out;
+
+    public AudioOutputTests(ITestOutputHelper output) => _out = output;
+
+    private AudioOutput? OpenOrSkip()
+    {
+        if (Environment.GetEnvironmentVariable("DEVINNO_FFMPEG_DIR") is { Length: > 0 } dir)
+            VideoPlayer.FFmpegDirectory = dir;
+        var o = new AudioOutput { Volume = 0 };
+        if (o.Open())
+            return o;
+        _out.WriteLine($"no SDL2 sound device ({o.Error}) — skipped");
+        o.Dispose();
+        return null;
+    }
+
+    private static float[] Silence(double seconds) => new float[(int)(seconds * AudioOutput.SampleRate) * AudioOutput.Channels];
+
+    private static bool WaitUntil(Func<bool> cond, int ms)
+    {
+        var until = Environment.TickCount64 + ms;
+        while (Environment.TickCount64 < until)
+        {
+            if (cond())
+                return true;
+            Thread.Sleep(10);
+        }
+        return cond();
+    }
+
+    [Fact]
+    public void CurrentTime_IsEndMinusQueued_AndAdvancesWhilePlaying()
+    {
+        using var o = OpenOrSkip();
+        if (o is null)
+            return;
+        Assert.True(double.IsNaN(o.CurrentTime), "넣기 전에는 모름");
+        o.Queue(Silence(0.5), 10.0);
+        Assert.InRange(o.QueuedSeconds, 0.45, 0.5);
+        Assert.InRange(o.CurrentTime, 10.0, 10.05); // 일시정지로 열림 — 아직 안 나감
+
+        o.Pause(false);
+        Thread.Sleep(250);
+        var t = o.CurrentTime;
+        _out.WriteLine($"after 250 ms: {t:F3}, queued {o.QueuedSeconds:F3}, chunk {o.ChunkSeconds:F3}");
+        Assert.InRange(t, 10.1, 10.4);
+        Assert.True(WaitUntil(() => o.QueuedSeconds == 0, 1500), "다 나간다");
+        Assert.InRange(o.CurrentTime, 10.499, 10.501);
+    }
+
+    [Fact]
+    public void Pause_FreezesCurrentTime()
+    {
+        using var o = OpenOrSkip();
+        if (o is null)
+            return;
+        o.Queue(Silence(1.0), 0);
+        o.Pause(false);
+        Thread.Sleep(200);
+        o.Pause(true);
+        Thread.Sleep(50); // 장치가 가져가던 덩어리가 끝나기를
+        var frozen = o.CurrentTime;
+        Thread.Sleep(300);
+        Assert.Equal(frozen, o.CurrentTime, 3);
+        o.Pause(false);
+        Assert.True(WaitUntil(() => o.CurrentTime > frozen + 0.1, 1000), "다시 흐른다");
+    }
+
+    [Fact]
+    public void Clear_DropsTheQueue_TimeUnknownUntilNextQueue()
+    {
+        using var o = OpenOrSkip();
+        if (o is null)
+            return;
+        o.Queue(Silence(1.0), 0);
+        o.Pause(false);
+        Thread.Sleep(100);
+        o.Clear();
+        Assert.Equal(0, o.QueuedSeconds);
+        Assert.True(double.IsNaN(o.CurrentTime));
+        o.Queue(Silence(0.2), 5.0);
+        Assert.InRange(o.CurrentTime, 5.0, 5.05);
+    }
+
+    [Fact]
+    public void Volume_IsClamped_AndDisposeTwiceIsSafe()
+    {
+        var o = OpenOrSkip();
+        if (o is null)
+            return;
+        o.Volume = 2;
+        Assert.Equal(1, o.Volume);
+        o.Volume = -1;
+        Assert.Equal(0, o.Volume);
+        o.Queue(Silence(0.1), 0);
+        o.Dispose();
+        o.Dispose();
+        Assert.Equal(0, o.QueuedSeconds);
+        o.Queue(Silence(0.1), 0); // 닫힌 뒤에는 아무것도 안 한다
+    }
+}
