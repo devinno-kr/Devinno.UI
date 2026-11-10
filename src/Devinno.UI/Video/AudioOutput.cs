@@ -10,7 +10,10 @@ namespace Devinno.UI.Video;
 //  - Windows: SDL2.dll(공식 SDL2-2.x-win32-x64.zip 의 것)을 앱 폴더나 VideoPlayer.FFmpegDirectory 폴더에 둔다. 없으면 PATH 검색.
 //  - Linux(라즈베리파이 포함): OS 패키지 `sudo apt install libsdl2-2.0-0` → libSDL2-2.0.so.0.
 //    버전 없는 libSDL2.so 는 개발 패키지(libsdl2-dev)에만 있으므로 버전 붙은 이름을 먼저 찾는다.
-//    출력 백엔드(PipeWire·PulseAudio·ALSA)는 SDL 이 고른다. 바꾸려면 환경 변수 SDL_AUDIODRIVER=alsa 등.
+//    출력 백엔드: 앱이 SDL_AUDIODRIVER 를 정하지 않았으면 pipewire → pulseaudio → alsa 순서로 시도하게 힌트를 준다.
+//    SDL 2.26 기본은 PulseAudio 인데, PipeWire 가 도는 라즈베리파이 OS(Bookworm)에서는 그 경로(pipewire-pulse)가 소리를
+//    1.5% 느리게 소비했다(실측: 0.985, PipeWire 직접·ALSA 직접 = 1.000) — 그림이 소리를 따라가므로 재생 전체가 느려진다.
+//    바꾸려면 환경 변수 SDL_AUDIODRIVER=alsa 등(그러면 힌트를 주지 않는다).
 //  - 이름 후보를 차례로 NativeLibrary.TryLoad 하고 함수는 GetExport 함수 포인터로 부른다 — OS 별 코드 분기가 없고,
 //    DllImport 해석기(SetDllImportResolver)를 쓰지 않으므로 앱의 다른 SDL 바인딩과 부딪히지 않는다.
 //  - 함수 시그니처는 SDL2-CS(flibitijibibo, zlib)와 같다.
@@ -203,7 +206,7 @@ internal sealed unsafe class AudioOutput : IDisposable
         }
     }
 
-    // SDL2 함수 8개(SDL2-CS 와 같은 시그니처)
+    // SDL2 함수 9개(SDL2-CS 와 같은 시그니처)
     private static class Sdl
     {
         public const uint InitAudio = 0x00000010;  // SDL_INIT_AUDIO
@@ -236,6 +239,7 @@ internal sealed unsafe class AudioOutput : IDisposable
         private static delegate* unmanaged[Cdecl]<uint, int, void> _pauseAudioDevice;
         private static delegate* unmanaged[Cdecl]<uint, void> _closeAudioDevice;
         private static delegate* unmanaged[Cdecl]<byte*> _getError;
+        private static delegate* unmanaged[Cdecl]<byte*, byte*, int> _setHint;
 
         // Gate 안에서. 라이브러리를 불러오고 오디오 서브시스템을 한 번 켠다(끄지 않음). 실패 이유를 돌려준다
         public static string? EnsureAudio()
@@ -244,7 +248,16 @@ internal sealed unsafe class AudioOutput : IDisposable
                 return loadError;
             if (_audioOn)
                 return null;
-            if (_init(InitAudio) != 0)
+            var hinted = OperatingSystem.IsLinux() && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SDL_AUDIODRIVER"));
+            if (hinted)
+                SetHint("SDL_AUDIODRIVER", "pipewire,pulseaudio,alsa");
+            var r = _init(InitAudio);
+            if (r != 0 && hinted)
+            {
+                SetHint("SDL_AUDIODRIVER", ""); // 목록을 모르는 옛 SDL — SDL 기본 선택으로 다시
+                r = _init(InitAudio);
+            }
+            if (r != 0)
                 return "SDL audio init failed: " + LastError(); // 다음 Open 에서 다시 시도
             _audioOn = true;
             return null;
@@ -256,6 +269,14 @@ internal sealed unsafe class AudioOutput : IDisposable
         public static void ClearQueuedAudio(uint dev) => _clearQueuedAudio(dev);
         public static void PauseAudioDevice(uint dev, int pause) => _pauseAudioDevice(dev, pause);
         public static void CloseAudioDevice(uint dev) => _closeAudioDevice(dev);
+        private static void SetHint(string name, string value)
+        {
+            var n = System.Text.Encoding.UTF8.GetBytes(name + "\0");
+            var v = System.Text.Encoding.UTF8.GetBytes(value + "\0");
+            fixed (byte* pn = n, pv = v)
+                _ = _setHint(pn, pv);
+        }
+
         public static string LastError() => Marshal.PtrToStringUTF8((IntPtr)_getError()) ?? "";
 
         // 한 번만 불러 본다. 실패 이유를 돌려준다(성공 = null)
@@ -289,6 +310,7 @@ internal sealed unsafe class AudioOutput : IDisposable
                     _pauseAudioDevice = (delegate* unmanaged[Cdecl]<uint, int, void>)NativeLibrary.GetExport(handle, "SDL_PauseAudioDevice");
                     _closeAudioDevice = (delegate* unmanaged[Cdecl]<uint, void>)NativeLibrary.GetExport(handle, "SDL_CloseAudioDevice");
                     _getError = (delegate* unmanaged[Cdecl]<byte*>)NativeLibrary.GetExport(handle, "SDL_GetError");
+                    _setHint = (delegate* unmanaged[Cdecl]<byte*, byte*, int>)NativeLibrary.GetExport(handle, "SDL_SetHint");
                 }
                 catch (EntryPointNotFoundException ex)
                 {
