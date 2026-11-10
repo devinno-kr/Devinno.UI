@@ -5405,14 +5405,14 @@ Preview.Publish(SKImage.FromPixelCopy(info, pixels, rowBytes));
 현재 프레임으로 <paramref name="use" /> 를 부르고, 그것이 끝날 때까지 프레임을 살려 둡니다. 그림은 소스 것입니다: 해제하거나 호출 뒤에 붙잡아 두지 마세요.
 </summary>
 <param name="use">프레임을 그리는 코드. 호출한 스레드에서 최대 한 번 불립니다.</param>
-<returns>프레임이 있어 <paramref name="use" /> 를 불렀으면 <see langword="true" />, 아직 프레임이 없으면 <see langword="false" />.</returns></member><member name="T:Devinno.UI.Video.VideoPlayer" en-hash="fd33a72d695f84c4"><summary>
+<returns>프레임이 있어 <paramref name="use" /> 를 불렀으면 <see langword="true" />, 아직 프레임이 없으면 <see langword="false" />.</returns></member><member name="T:Devinno.UI.Video.VideoPlayer" en-hash="ee4e262db212a84f"><summary>
 동영상·소리 파일(MP4, MKV, AVI, M4A 등 FFmpeg 가 디코드할 수 있는 것)을 소리와 함께 <c>&lt;DvVideo source="{…}"/&gt;</c> 용 <see cref="T:Devinno.UI.Video.IFrameSource" /> 로 재생합니다.
 <c>&lt;DvVideo src="…"/&gt;</c> 는 이것을 알아서 만듭니다. 코드에서 제어(위치 이동, 현재 위치, 재생 끝)가 필요할 때 직접 만드세요.
 </summary>
 <remarks>
 <para><b>FFmpeg</b>: 디코드에 FFmpeg 8 공유 라이브러리(<c>avcodec-62</c>, <c>avformat-62</c>, <c>avutil-60</c>, <c>swscale-9</c>)를 쓰며, 이 패키지에는 들어 있지 않습니다.
 Windows 는 FFmpeg 8 "shared" 빌드의 DLL 을 앱 옆(또는 <c>ffmpeg</c> 하위 폴더)에 두거나 <see cref="P:Devinno.UI.Video.VideoPlayer.FFmpegDirectory" /> 를 지정하고,
-Linux 는 OS 패키지(FFmpeg 8 — <c>libavcodec.so.62</c>)를 설치합니다. 없거나 주 버전이 다르면 <see cref="P:Devinno.UI.Video.VideoPlayer.Error" /> 에 그 이유가 들어가고 요소에 그 문구가 보입니다.</para>
+Linux 는 OS 패키지(FFmpeg 8 — <c>libavcodec.so.62</c>)를 설치하거나, OS 의 FFmpeg 이 더 낮으면(Raspberry Pi OS 12 는 5.1) FFmpeg 8 shared 빌드의 라이브러리를 한 폴더에 두고 <see cref="P:Devinno.UI.Video.VideoPlayer.FFmpegDirectory" /> 를 지정합니다. 없거나 주 버전이 다르면 <see cref="P:Devinno.UI.Video.VideoPlayer.Error" /> 에 그 이유가 들어가고 요소에 그 문구가 보입니다.</para>
 <para><b>재생</b>: 재생기를 만들 때 첫 프레임을 디코드하므로 일시정지 상태에서도 바로 보입니다. 그림과 소리는 백그라운드 스레드에서 디코드합니다.
 그림은 소리에 맞춰 넘기고(립싱크 — 늦은 그림은 건너뜀), 소리가 없는 파일은 스톱워치에 맞춥니다. 소리만 있는 파일도 재생합니다(그리는 것은 없음).</para>
 <para><b>소리</b>: SDL2(오디오만, 창 없음)로 내며, 이 패키지에는 들어 있지 않습니다. Windows 는 <c>SDL2.dll</c>(SDL 2.x, x64)을 앱 옆이나 <see cref="P:Devinno.UI.Video.VideoPlayer.FFmpegDirectory" /> 에 두고,

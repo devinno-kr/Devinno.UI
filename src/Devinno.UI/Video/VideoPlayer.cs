@@ -12,7 +12,7 @@ namespace Devinno.UI.Video;
 /// <remarks>
 /// <para><b>FFmpeg</b>: decoding uses the FFmpeg 8 shared libraries (<c>avcodec-62</c>, <c>avformat-62</c>, <c>avutil-60</c>, <c>swscale-9</c>), which are not part of this package.
 /// On Windows put the DLLs of an FFmpeg 8 "shared" build next to the app (or in an <c>ffmpeg</c> subfolder, or set <see cref="FFmpegDirectory"/>);
-/// on Linux install the OS package (FFmpeg 8 — <c>libavcodec.so.62</c>). If they are missing or a different major version, <see cref="Error"/> says so and the element shows that message.</para>
+/// on Linux install the OS package (FFmpeg 8 — <c>libavcodec.so.62</c>), or, where the OS has an older FFmpeg (Raspberry Pi OS 12 has 5.1), put the libraries of an FFmpeg 8 shared build in a folder and set <see cref="FFmpegDirectory"/>. If they are missing or a different major version, <see cref="Error"/> says so and the element shows that message.</para>
 /// <para><b>Playback</b>: the first frame is decoded when the player is created, so it shows at once even while paused. Pictures and sound are decoded on background threads;
 /// pictures are timed by the sound (lip sync — a late picture is skipped), or by a stopwatch when the file has no sound. A file with only sound plays too (nothing is drawn).</para>
 /// <para><b>Sound</b>: played with SDL2 (audio only, no window), which is not part of this package. Windows: <c>SDL2.dll</c> (SDL 2.x, x64) next to the app or in <see cref="FFmpegDirectory"/>;

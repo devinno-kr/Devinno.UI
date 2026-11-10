@@ -95,7 +95,7 @@ UI 코드에서 가장 흔한 실패는 "틀렸는데 아무 일도 안 일어�
 - 알람(ISA-18.2 기반), 트렌드, 데이터 그리드, 가상 키보드, 롱프레스 보호(`hold`), 화면 잠금 같은 현장 요구를 내장했습니다.
 
 ## 설치
-<!-- en-hash: a25e36e2be7ce87f -->
+<!-- en-hash: e080bebfa6788345 -->
 
 앱은 코어 패키지와, 화면을 창에 올리는 호스트 어댑터 하나를 참조합니다.
 
@@ -116,9 +116,9 @@ WinForms 앱은 대상 프레임워크를 `net9.0-windows10.0.19041.0` 이상으
 </PropertyGroup>
 ```
 
-**지원 OS.** Windows 11(x64)에서 두 어댑터 모두 테스트했습니다. WinForms 어댑터는 Windows 에서만 돌아갑니다. 코어 라이브러리와 OpenTK 어댑터는 Windows 전용 API 를 쓰지 않지만, Linux(라즈베리파이 터치 패널 포함)에서는 아직 테스트하지 않았습니다. Linux 에서는 앱에 `SkiaSharp.NativeAssets.Linux` 패키지도 넣어야 합니다.
+**지원 OS.** Windows 11(x64)에서 두 어댑터 모두 테스트했습니다. WinForms 어댑터는 Windows 에서만 돌아갑니다. 코어 라이브러리와 OpenTK 어댑터는 Windows 전용 API 를 쓰지 않습니다. 라즈베리파이 4(Raspberry Pi OS 12, arm64)에서는 OpenTK 어댑터가 `new ViewWindow(..., gles: true)` 로 돌아갑니다. `gles` 없이 만들면 보드에 데스크톱 OpenGL 3.3 이 없어 앱이 시작하자마자 중단됩니다. 다른 Linux 보드는 아직 테스트하지 않았습니다. Linux 에서는 앱에 `SkiaSharp.NativeAssets.Linux` 패키지도 넣어야 합니다.
 
-**동영상과 소리.** `DvVideo` 는 파일을 FFmpeg 8 로, 그 소리를 SDL2 로 재생합니다. 둘 다 패키지에 들어 있지 않으며 파일을 재생하는 앱에만 필요합니다. Windows 는 FFmpeg 8 shared 빌드의 DLL 과 `SDL2.dll`(SDL 2.x)을 앱 옆에 둡니다. Linux 는 OS 에서 FFmpeg 8(`libavcodec.so.62`)과 `libsdl2-2.0-0` 을 설치합니다. FFmpeg 이 없으면 동영상 상자에 이유가 보이고, SDL2 가 없으면 소리 없이 재생됩니다.
+**동영상과 소리.** `DvVideo` 는 파일을 FFmpeg 8 로, 그 소리를 SDL2 로 재생합니다. 둘 다 패키지에 들어 있지 않으며 파일을 재생하는 앱에만 필요합니다. Windows 는 FFmpeg 8 shared 빌드의 DLL 과 `SDL2.dll`(SDL 2.x)을 앱 옆에 둡니다. Linux 는 OS 에서 `libsdl2-2.0-0` 을 설치하고, FFmpeg 8(`libavcodec.so.62`)이 필요합니다. Raspberry Pi OS 12 의 FFmpeg 은 5.1 이므로 arm64 용 FFmpeg 8 shared 빌드의 라이브러리를 한 폴더에 두고 `VideoPlayer.FFmpegDirectory` 를 그 폴더로 지정합니다. FFmpeg 이 없으면 동영상 상자에 이유가 보이고, SDL2 가 없으면 소리 없이 재생됩니다.
 
 ## 시작하기
 <!-- en-hash: 5db506387dc874dd -->

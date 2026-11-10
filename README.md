@@ -111,9 +111,9 @@ A WinForms app must target `net9.0-windows10.0.19041.0` or later (the WinForms a
 </PropertyGroup>
 ```
 
-**Platforms.** Tested on Windows 11 (x64) with both adapters. The WinForms adapter runs on Windows only. The core library and the OpenTK adapter do not call Windows-specific APIs, but they have not been tested on Linux (including Raspberry Pi touch panels) yet. On Linux, SkiaSharp also needs the `SkiaSharp.NativeAssets.Linux` package in the app.
+**Platforms.** Tested on Windows 11 (x64) with both adapters. The WinForms adapter runs on Windows only. The core library and the OpenTK adapter do not call Windows-specific APIs. On a Raspberry Pi 4 (Raspberry Pi OS 12, arm64) the OpenTK adapter runs with `new ViewWindow(..., gles: true)`; without `gles` the app aborts at start because the board has no desktop OpenGL 3.3. Other Linux boards are not tested yet. On Linux, SkiaSharp also needs the `SkiaSharp.NativeAssets.Linux` package in the app.
 
-**Video and sound.** `DvVideo` plays files with FFmpeg 8 and their sound with SDL2. Neither is in the package; only apps that play files need them. Windows: put the DLLs of an FFmpeg 8 shared build and `SDL2.dll` (SDL 2.x) next to the app. Linux: install FFmpeg 8 (`libavcodec.so.62`) and `libsdl2-2.0-0` from the OS. Without FFmpeg the video box shows why; without SDL2 the video plays silently.
+**Video and sound.** `DvVideo` plays files with FFmpeg 8 and their sound with SDL2. Neither is in the package; only apps that play files need them. Windows: put the DLLs of an FFmpeg 8 shared build and `SDL2.dll` (SDL 2.x) next to the app. Linux: `libsdl2-2.0-0` from the OS, and FFmpeg 8 (`libavcodec.so.62`). Raspberry Pi OS 12 ships FFmpeg 5.1, so put the libraries of an FFmpeg 8 shared build for arm64 in a folder and set `VideoPlayer.FFmpegDirectory` to it. Without FFmpeg the video box shows why; without SDL2 the video plays silently.
 
 ## Getting started
 
