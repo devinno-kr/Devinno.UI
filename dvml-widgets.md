@@ -311,7 +311,7 @@ See also: [DvVideo](#dvvideo) · [screens from a picture](dvml-image.md#image-fi
 <a id="dvvideo"></a>
 ### DvVideo
 
-A picture that changes: a video file, or frames your C# code produces (camera, decoder, generated images). Video only — no sound.
+A picture that changes: a video file with its sound, or frames your C# code produces (camera, decoder, generated images). Plays sound-only files too.
 
 **Attributes**
 
@@ -322,13 +322,15 @@ A picture that changes: a video file, or frames your C# code produces (camera, d
 | `fit` | `contain` `cover` `fill` | `contain` | yes | As in `DvImage` |
 | `playing` | bool | `true` | yes | `src` only. `false` pauses on the current frame |
 | `loop` | bool | `false` | yes | `src` only. `false` stops on the last frame |
+| `volume` | number 0–1 | `1` | yes | `src` only. Clamped to 0–1 |
+| `muted` | bool | `false` | yes | `src` only. `true` = no sound; `volume` keeps its value |
 | `position` | number (seconds) | — | yes | A changed value seeks. `{Bind X}` is written back while playing. `src` or `source` = `VideoPlayer` only |
 | `duration` | number (seconds) | — | yes | Only `{Bind X}` is used (written out). One-way or literal is ignored silently |
 
 **Behavior**
 - Default size: 320×180.
 - `src` = video file path, relative to the current directory like `DvImage src`. The element plays it with FFmpeg. Changing `src` closes the old file and opens the new one; the player is closed when the element disappears.
-- `source` = a binding to an `IFrameSource` (namespace `Devinno.UI.Video`): a `FrameSource` your code `Publish`es pictures to from any thread, or a `VideoPlayer` you created for code control (`Seek`, `Position`, `Duration`, `Ended`). `playing`/`loop` are then not used — control the object. `source` and `src` both given → `source` wins (Trace warning).
+- `source` = a binding to an `IFrameSource` (namespace `Devinno.UI.Video`): a `FrameSource` your code `Publish`es pictures to from any thread, or a `VideoPlayer` you created for code control (`Seek`, `Position`, `Duration`, `Ended`, `Volume`, `Muted`). `playing`/`loop`/`volume`/`muted` are then not used — control the object. `source` and `src` both given → `source` wins (Trace warning).
 - `position="{Bind P}"`: the video writes its position about 4 times a second while playing (and once when it stops or ends); when `P` changes elsewhere (a slider, code + `Invalidate`), the video jumps there. One-way `{P}` only jumps.
 - `duration="{Bind D}"` writes the length in seconds once the file is open. `position` and `duration` work with `src`, and with `source` when it is a `VideoPlayer`.
 - A newly opened file (first build, or `src` changed) starts from 0 and writes 0 to `P` — it does not jump to the old value.
@@ -336,14 +338,16 @@ A picture that changes: a video file, or frames your C# code produces (camera, d
 - The picture is clipped to the box. Rounded corners: `overflow:hidden` + `border-radius`. Background and border come from `style` (`background:#000000` for letterbox bars).
 - **FFmpeg 8 is needed for `src` and `VideoPlayer`** and is not part of the package. Windows: the DLLs of an FFmpeg 8 *shared* build (`avcodec-62.dll`, `avformat-62.dll`, `avutil-60.dll`, `swscale-9.dll`, `swresample-6.dll`) next to the app or in an `ffmpeg` subfolder, or set `VideoPlayer.FFmpegDirectory` at startup. Linux: FFmpeg 8 from the OS (`libavcodec.so.62`).
 - FFmpeg missing, a different major version, or an unreadable file → the box shows a one-line reason instead of the picture (one Trace warning). `source` with your own frames needs no FFmpeg.
+- **Sound** plays in sync with the picture: the picture follows the sound clock, and a picture that is late is skipped. A change of `volume`/`muted` is heard after about 20 ms. A file with only sound (`.m4a`, `.mp3`, …) plays with nothing drawn; `position`/`duration` work.
+- **SDL2 is needed for sound** and is not part of the package. Windows: `SDL2.dll` (SDL 2.x, x64) next to the app or in the `VideoPlayer.FFmpegDirectory` folder. Linux: the OS package `libsdl2-2.0-0` (`libSDL2-2.0.so.0`; the `-dev` package is not needed). The same app code on both. SDL2 missing or no sound device → the video plays silently (one Trace warning); a sound-only file shows the reason in the box.
 - Repainting: while playing, only the video box is repainted, and only when a new frame has arrived. A paused or ended video does not repaint.
-- When no screen shows the video for about half a second (its page is hidden), playback time stops and continues when shown again.
+- When no screen shows the video for about half a second (its page is hidden), playback time and sound stop and continue when shown again.
 - A one-off render without a surface (`DvRenderer.RenderToPng(markup, …)`) shows the first frame of `src`.
 
 **Example**
 ```xml
 <DvVideo src="videos/guide.mp4" loop="true" fit="cover" style="height:300"/>
-<DvVideo src="{GuidePath}" playing="{IsPlaying}"/>
+<DvVideo src="{GuidePath}" playing="{IsPlaying}" volume="{Volume}" muted="{IsMuted}"/>
 <DvVideo source="{Preview}" fit="contain"/>
 
 <!-- seek bar: the video writes Pos/Len, the slider writes Pos back -->

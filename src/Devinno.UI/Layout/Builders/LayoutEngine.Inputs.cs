@@ -542,6 +542,8 @@ public sealed partial class LayoutEngine
         var player = _videos.Get(box.Instance, () => new Video.VideoPlayer(path, poster: !live), vp => vp.Path == path);
         player.Playing = playing;
         player.Loop = loop;
+        player.Volume = AttrRules.Number(r, "volume", 1);
+        player.Muted = AttrRules.Bool(r, "muted");
         box.VideoSource = player;
         box.VideoError = player.Error;
         BindVideoTime(box, r, player);

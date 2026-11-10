@@ -229,4 +229,52 @@ public class VideoAudioTests
         p.Dispose();
         Assert.True(sw.ElapsedMilliseconds < 1000, $"Dispose {sw.ElapsedMilliseconds} ms — 스레드가 바로 끝난다");
     }
+
+    [Fact]
+    public void VolumeAndMuted_AreClamped_AndKept()
+    {
+        if (!Ready())
+            return;
+        using var p = new VideoPlayer(VideoTone) { Playing = false };
+        Assert.Equal(1, p.Volume);
+        Assert.False(p.Muted);
+        p.Volume = 3;
+        Assert.Equal(1, p.Volume);
+        p.Volume = 0.25;
+        p.Muted = true;
+        Assert.Equal(0.25, p.Volume);
+        p.Muted = false;
+        Assert.Equal(0.25, p.Volume);
+    }
+
+    public sealed class SoundVm
+    {
+        public string Path { get; set; } = VideoTone;
+        public double Vol { get; set; } = 0.3;
+        public bool Mute { get; set; } = true;
+    }
+
+    [Fact]
+    public void Markup_VolumeAndMuted_GoToTheElementsPlayer()
+    {
+        if (!Ready())
+            return;
+        var vm = new SoundVm();
+        var s = new Devinno.UI.DvSurface("<DvScreen><DvVideo src=\"{Path}\" volume=\"{Vol}\" muted=\"{Mute}\"/></DvScreen>", vm, Devinno.UI.Styling.DvTheme.Light);
+        s.Layout(600, 400);
+        var player = (VideoPlayer)Find(s.Root!).VideoSource!;
+        Assert.Equal(0.3, player.Volume, 3);
+        Assert.True(player.Muted);
+        vm.Mute = false;
+        vm.Vol = 2;
+        s.Invalidate();
+        s.Layout(600, 400);
+        Assert.Same(player, Find(s.Root!).VideoSource);
+        Assert.False(player.Muted);
+        Assert.Equal(1, player.Volume);
+    }
+
+    private static IEnumerable<Devinno.UI.Layout.LayoutBox> Flatten(Devinno.UI.Layout.LayoutBox b) => new[] { b }.Concat(b.Children.SelectMany(Flatten));
+
+    private static Devinno.UI.Layout.LayoutBox Find(Devinno.UI.Layout.LayoutBox root) => Flatten(root).First(b => b.Node.Tag == "DvVideo");
 }

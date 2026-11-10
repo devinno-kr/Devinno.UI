@@ -61,7 +61,7 @@ internal static class AttributeCheck
         ["DvButton"] = ["text", "icon", "variant", "size", "value"],
         ["DvIcon"] = ["icon"],
         ["DvImage"] = ["src", "fit"],
-        ["DvVideo"] = ["src", "source", "fit", "playing", "loop", "position", "duration"],
+        ["DvVideo"] = ["src", "source", "fit", "playing", "loop", "volume", "muted", "position", "duration"],
         ["DvToggle"] = ["value", "readonly"],
         ["DvCheckBox"] = ["value", "text", "readonly"],
         ["DvRadio"] = ["option", "value", "group", "text", "readonly"],
@@ -134,7 +134,7 @@ internal static class AttributeCheck
         ["DvTab"] = ["disabled"],
         ["DvExpander"] = ["expanded"],
         ["DvButton"] = ["value"],
-        ["DvVideo"] = ["playing", "loop"],
+        ["DvVideo"] = ["playing", "loop", "muted"],
         ["DvToggle"] = ["value", "readonly"],
         ["DvCheckBox"] = ["value", "readonly"],
         ["DvRadio"] = ["readonly"],
@@ -184,7 +184,7 @@ internal static class AttributeCheck
     internal static readonly Dictionary<string, string[]> Number = new(StringComparer.Ordinal)
     {
         ["DvStepBar"] = ["current"],
-        ["DvVideo"] = ["position", "duration"],
+        ["DvVideo"] = ["volume", "position", "duration"],
         ["DvKnob"] = ["value", "min", "max", "step"],
         ["DvSlider"] = ["value", "min", "max", "step"],
         ["DvInput"] = ["min", "max", "step"],

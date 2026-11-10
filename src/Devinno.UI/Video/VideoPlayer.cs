@@ -6,16 +6,19 @@ using SkiaSharp;
 namespace Devinno.UI.Video;
 
 /// <summary>
-/// Plays a video file (MP4, MKV, AVI, … — anything FFmpeg can decode) as an <see cref="IFrameSource"/> for <c>&lt;DvVideo source="{…}"/&gt;</c>.
+/// Plays a video or sound file (MP4, MKV, AVI, M4A, … — anything FFmpeg can decode) with its sound, as an <see cref="IFrameSource"/> for <c>&lt;DvVideo source="{…}"/&gt;</c>.
 /// <c>&lt;DvVideo src="…"/&gt;</c> creates one of these for you; create it yourself when code needs control (seek, position, end of playback).
 /// </summary>
 /// <remarks>
 /// <para><b>FFmpeg</b>: decoding uses the FFmpeg 8 shared libraries (<c>avcodec-62</c>, <c>avformat-62</c>, <c>avutil-60</c>, <c>swscale-9</c>), which are not part of this package.
 /// On Windows put the DLLs of an FFmpeg 8 "shared" build next to the app (or in an <c>ffmpeg</c> subfolder, or set <see cref="FFmpegDirectory"/>);
 /// on Linux install the OS package (FFmpeg 8 — <c>libavcodec.so.62</c>). If they are missing or a different major version, <see cref="Error"/> says so and the element shows that message.</para>
-/// <para><b>Playback</b>: the first frame is decoded when the player is created, so it shows at once even while paused. Frames are decoded on a background thread and timed by their timestamps.
-/// Video only — sound is not played.</para>
-/// <para><b>Hidden screens</b>: when no screen has looked at the player for about half a second (e.g. its page is hidden), playback time stops and decoding pauses; it continues where it was when shown again.</para>
+/// <para><b>Playback</b>: the first frame is decoded when the player is created, so it shows at once even while paused. Pictures and sound are decoded on background threads;
+/// pictures are timed by the sound (lip sync — a late picture is skipped), or by a stopwatch when the file has no sound. A file with only sound plays too (nothing is drawn).</para>
+/// <para><b>Sound</b>: played with SDL2 (audio only, no window), which is not part of this package. Windows: <c>SDL2.dll</c> (SDL 2.x, x64) next to the app or in <see cref="FFmpegDirectory"/>;
+/// Linux: the OS package <c>libsdl2-2.0-0</c> (<c>libSDL2-2.0.so.0</c>). Without SDL2 or a sound device the video plays silently (one Trace warning); a file with only sound then reports why in <see cref="Error"/>.
+/// Set the volume with <see cref="Volume"/> and <see cref="Muted"/>.</para>
+/// <para><b>Hidden screens</b>: when no screen has looked at the player for about half a second (e.g. its page is hidden), playback time and sound stop and decoding pauses; it continues where it was when shown again.</para>
 /// <para>All members can be called from any thread. Dispose the player when you created it yourself; players made for <c>src</c> are disposed by the screen.</para>
 /// </remarks>
 /// <example>
@@ -52,6 +55,8 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
     private volatile bool _playing = true;
     private volatile bool _loop;
     private volatile bool _ended;
+    private double _volume = 1;
+    private volatile bool _muted;
     private long _lastSeen = Environment.TickCount64;
     private string? _error;
 
@@ -94,11 +99,12 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
 
     /// <summary>
     /// The folder that holds the FFmpeg 8 shared libraries. <see langword="null"/> (default) = search the app folder, then its <c>ffmpeg</c> subfolder, then the OS default search (PATH, system libraries).
-    /// Set it before the first player is created; it has no effect after FFmpeg has been loaded.
+    /// SDL2 (for sound) is looked for in the app folder, then this folder, then the OS default search.
+    /// Set it before the first player is created; it has no effect after FFmpeg and SDL2 have been loaded.
     /// </summary>
     public static string? FFmpegDirectory { get; set; }
 
-    /// <summary>Opens <paramref name="path"/> and decodes its first frame. Never throws for a bad file or missing FFmpeg — see <see cref="Error"/>.</summary>
+    /// <summary>Opens <paramref name="path"/>, decodes its first frame and opens a sound device when the file has sound. Never throws for a bad file or missing FFmpeg — see <see cref="Error"/>.</summary>
     /// <param name="path">The video file path (relative paths are resolved against the current working directory, like <c>DvImage src</c>).</param>
     public VideoPlayer(string path) : this(path, poster: false) { }
 
@@ -169,7 +175,7 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
     /// <summary>The file path given when the player was created.</summary>
     public string Path { get; }
 
-    /// <summary>Why the video cannot be shown (file missing, unsupported format, FFmpeg 8 not found). <see langword="null"/> if it plays.</summary>
+    /// <summary>Why the file cannot be played (file missing, unsupported format, FFmpeg 8 not found, or SDL2 not found for a file with only sound). <see langword="null"/> if it plays.</summary>
     public string? Error => _error;
 
     /// <summary>Whether playback runs. Default <see langword="true"/>. Set <see langword="false"/> to pause (the current frame stays on screen).</summary>
@@ -196,6 +202,38 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
             _loop = value;
             Wake();
         }
+    }
+
+    /// <summary>
+    /// The sound volume, from 0 (silent) to 1 (full, the default); values outside are clamped. Changing it also changes the sound already buffered (about half a second),
+    /// so it is heard after about 20 ms. No effect on files without sound or when sound cannot be played (see the remarks).
+    /// </summary>
+    public double Volume
+    {
+        get => _volume;
+        set
+        {
+            _volume = Math.Clamp(double.IsNaN(value) ? 1 : value, 0, 1);
+            ApplyVolume();
+        }
+    }
+
+    /// <summary>Whether the sound is off. Default <see langword="false"/>. <see cref="Volume"/> keeps its value and applies again when this is set back to <see langword="false"/>.</summary>
+    public bool Muted
+    {
+        get => _muted;
+        set
+        {
+            _muted = value;
+            ApplyVolume();
+        }
+    }
+
+    private void ApplyVolume()
+    {
+        lock (_audioGate)
+            if (_output is not null)
+                _output.Volume = _muted ? 0 : _volume * InitialVolumeForTests;
     }
 
     /// <summary>Whether playback reached the end (only when <see cref="Loop"/> is off). Setting <see cref="Playing"/> to <see langword="true"/> again starts over.</summary>
@@ -233,7 +271,7 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
     // 디코드된 소리(48000 Hz 스테레오 float32, 첫 샘플 시각 초). 오디오 스레드에서 불린다
     internal event PcmHandler? AudioDecoded;
 
-    // 테스트용 — 소리를 내는 중인가, 지금 재생 시계, 새로 여는 장치의 볼륨
+    // 테스트용 — 소리를 내는 중인가, 지금 재생 시계, 장치 볼륨에 곱하는 값(테스트는 0 = 소리 없이)
     internal bool HasSound => _output is not null;
     internal double ClockNow => _clock.Now;
     internal double SoundTime
@@ -277,7 +315,7 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
         return _frames.UseFrame(use);
     }
 
-    /// <summary>Stops the decode thread and releases FFmpeg resources and the current frame.</summary>
+    /// <summary>Stops playback: closes the sound device, ends the background threads and releases FFmpeg resources and the current frame.</summary>
     public void Dispose()
     {
         if (_disposed)
@@ -864,7 +902,7 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
     // 소리 장치를 연다. 못 열면 비디오만(오디오만 있는 파일이면 그 이유가 오류)
     private void OpenOutput()
     {
-        var output = new AudioOutput { Volume = InitialVolumeForTests };
+        var output = new AudioOutput { Volume = InitialVolumeForTests }; // 아직 Volume·Muted 를 못 받았다 — 생성자 뒤 설정은 ApplyVolume
         if (output.Open())
         {
             _output = output;

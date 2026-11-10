@@ -29,6 +29,9 @@ internal sealed unsafe class AudioOutput : IDisposable
     private double _endPts = double.NaN; // 마지막으로 넣은 샘플의 끝 시각. Clear 뒤 = 모름
     private float _volume = 1;
     private float[] _scratch = [];
+    // 큐에 넣은 소리(게인 곱하기 전) 최근 1초 — 볼륨이 바뀌면 아직 안 나간 부분을 새 게인으로 다시 넣는다
+    private readonly float[] _ring = new float[SampleRate * Channels];
+    private int _ringEnd, _ringCount;
     private bool _disposed;
 
     // 장치를 못 연 이유(SDL2 없음·소리 장치 없음). 열렸으면 null
@@ -37,11 +40,22 @@ internal sealed unsafe class AudioOutput : IDisposable
     // 장치가 큐에서 한 번에 가져가는 길이(초) — 시계 보정용
     public double ChunkSeconds { get; private set; } = DeviceSamples / (double)SampleRate;
 
-    // 0~1. 큐에 넣기 전에 곱한다(이미 넣은 소리에는 적용되지 않음)
+    // 0~1. 큐에 넣기 전에 곱한다. 바꾸면 큐에 남은(아직 안 나간) 소리도 새 볼륨으로 바꿔 넣는다 —
+    // 반영은 장치가 이미 가져간 한 덩어리(ChunkSeconds) 뒤, 큐 잔량(최대 0.5초)만큼 늦지 않다
     public double Volume
     {
         get => _volume;
-        set => _volume = (float)Math.Clamp(double.IsNaN(value) ? 1 : value, 0, 1);
+        set
+        {
+            var v = (float)Math.Clamp(double.IsNaN(value) ? 1 : value, 0, 1);
+            lock (_gate)
+            {
+                if (v == _volume)
+                    return;
+                _volume = v;
+                Requeue();
+            }
+        }
     }
 
     // 큐에 남은 소리(초)
@@ -106,8 +120,19 @@ internal sealed unsafe class AudioOutput : IDisposable
     {
         if (samples.IsEmpty)
             return;
-        var gain = _volume;
-        ReadOnlySpan<float> data = samples;
+        lock (_gate)
+        {
+            if (_device == 0 || !Push(samples, _volume))
+                return;
+            Remember(samples);
+            _endPts = startPts + samples.Length / Channels / (double)SampleRate;
+        }
+    }
+
+    // _gate 안에서. 게인을 곱해 SDL 큐에 넣는다
+    private bool Push(ReadOnlySpan<float> samples, float gain)
+    {
+        var data = samples;
         if (gain != 1)
         {
             if (_scratch.Length < samples.Length)
@@ -116,16 +141,36 @@ internal sealed unsafe class AudioOutput : IDisposable
                 _scratch[i] = samples[i] * gain;
             data = _scratch.AsSpan(0, samples.Length);
         }
+        fixed (float* p = data)
+            return Sdl.QueueAudio(_device, p, (uint)(data.Length * sizeof(float))) == 0;
+    }
 
-        lock (_gate)
-        {
-            if (_device == 0)
-                return;
-            fixed (float* p = data)
-                if (Sdl.QueueAudio(_device, p, (uint)(data.Length * sizeof(float))) != 0)
-                    return;
-            _endPts = startPts + samples.Length / Channels / (double)SampleRate;
-        }
+    private void Remember(ReadOnlySpan<float> samples)
+    {
+        if (samples.Length >= _ring.Length)
+            samples = samples[^_ring.Length..];
+        var first = Math.Min(samples.Length, _ring.Length - _ringEnd);
+        samples[..first].CopyTo(_ring.AsSpan(_ringEnd));
+        samples[first..].CopyTo(_ring);
+        _ringEnd = (_ringEnd + samples.Length) % _ring.Length;
+        _ringCount = Math.Min(_ring.Length, _ringCount + samples.Length);
+    }
+
+    // _gate 안에서. 큐에 남은 소리를 지금 볼륨으로 다시 넣는다(끝 시각·잔량은 그대로)
+    private void Requeue()
+    {
+        if (_device == 0 || _ringCount == 0)
+            return;
+        var queued = (int)(Sdl.GetQueuedAudioSize(_device) / sizeof(float)) & ~1; // 스테레오 짝
+        var n = Math.Min(queued, _ringCount);
+        if (n == 0)
+            return;
+        Sdl.ClearQueuedAudio(_device);
+        var start = (_ringEnd - n + _ring.Length) % _ring.Length;
+        var first = Math.Min(n, _ring.Length - start);
+        Push(_ring.AsSpan(start, first), _volume);
+        if (n > first)
+            Push(_ring.AsSpan(0, n - first), _volume);
     }
 
     public void Pause(bool pause)
@@ -143,6 +188,7 @@ internal sealed unsafe class AudioOutput : IDisposable
             if (_device != 0)
                 Sdl.ClearQueuedAudio(_device);
             _endPts = double.NaN;
+            _ringCount = 0;
         }
     }
 

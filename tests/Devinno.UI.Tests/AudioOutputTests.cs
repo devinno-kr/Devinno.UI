@@ -106,4 +106,21 @@ public class AudioOutputTests
         Assert.Equal(0, o.QueuedSeconds);
         o.Queue(Silence(0.1), 0); // 닫힌 뒤에는 아무것도 안 한다
     }
+
+    [Fact]
+    public void ChangingVolume_RequeuesTheBufferedSound_TimeAndAmountUnchanged()
+    {
+        using var o = OpenOrSkip();
+        if (o is null)
+            return;
+        o.Queue(Silence(0.4), 3.0); // 일시정지 상태 — 그대로 남아 있다
+        var queued = o.QueuedSeconds;
+        var time = o.CurrentTime;
+        o.Volume = 0.5;
+        Assert.Equal(queued, o.QueuedSeconds, 3);
+        Assert.Equal(time, o.CurrentTime, 3);
+        o.Clear();
+        o.Volume = 0.2; // 빈 큐 — 아무것도 다시 넣지 않는다
+        Assert.Equal(0, o.QueuedSeconds);
+    }
 }

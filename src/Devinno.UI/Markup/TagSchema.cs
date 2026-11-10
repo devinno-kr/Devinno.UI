@@ -162,6 +162,8 @@ internal static class TagSchema
             Fit(),
             new("playing", AttrKind.Bool, "true", Note: "src only; read only when src resolves to a non-blank path"),
             new("loop", AttrKind.Bool, "false", Note: "src only; read only when src resolves to a non-blank path"),
+            new("volume", AttrKind.Number, "1", Note: "0..1, clamped; src only (source=VideoPlayer: set VideoPlayer.Volume); heard about 20 ms after a change"),
+            new("muted", AttrKind.Bool, "false", Note: "src only (source=VideoPlayer: set VideoPlayer.Muted); volume keeps its value"),
             new("position", AttrKind.Number, Note: "seconds; a changed value seeks; {Bind X} is written back about every 250 ms while playing (and once when it stops); with src or source=VideoPlayer only"),
             new("duration", AttrKind.Number, Note: "seconds; only {Bind X} is used (written out); a one-way value or literal is ignored silently"),
         ],
