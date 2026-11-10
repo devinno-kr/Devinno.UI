@@ -56,6 +56,7 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
     private double _timeBase;
     private bool _flushing;
     private double _duration;
+    private AudioDecoder? _audio; // 오디오 스트림이 없거나 못 열면 null — 비디오만
 
     // 재생 시계(초) — 멈추면 그 자리
     private readonly Stopwatch _clock = new();
@@ -163,6 +164,9 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
         }
         Wake();
     }
+
+    // 디코드된 소리(48000 Hz 스테레오 float32, 첫 샘플 시각 초). 디코드 스레드에서 불린다
+    internal event PcmHandler? AudioDecoded;
 
     // DvVideo position·duration 바인딩 상태(UI 스레드만) — 상자는 재빌드마다 새로 만들어지므로 재생기에 둔다
     internal double BoundPosition = double.NaN; // 뷰모델에 있는 값(마지막으로 읽거나 쓴 값). NaN = 아직 안 봄
@@ -337,6 +341,7 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
         if (ffmpeg.av_seek_frame(_fmt, -1, ts, ffmpeg.AVSEEK_FLAG_BACKWARD) < 0)
             ffmpeg.av_seek_frame(_fmt, -1, 0, ffmpeg.AVSEEK_FLAG_BACKWARD);
         ffmpeg.avcodec_flush_buffers(_codec);
+        _audio?.Flush();
         _flushing = false;
         _ended = false;
 
@@ -415,6 +420,15 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
 
         _frame = ffmpeg.av_frame_alloc();
         _packet = ffmpeg.av_packet_alloc();
+
+        if (!_poster)
+        {
+            _audio = AudioDecoder.Open(_fmt, _stream, out var audioError);
+            if (audioError is not null)
+                Trace.TraceWarning($"Devinno.UI: DvVideo '{path}' — {audioError}; playing without sound");
+            if (_audio is not null)
+                _audio.Pcm = (samples, pts) => AudioDecoded?.Invoke(samples, pts);
+        }
     }
 
     // 생성자용 — 첫 프레임을 바로 띄운다
@@ -457,12 +471,15 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
             if (read < 0)
             {
                 ffmpeg.avcodec_send_packet(_codec, null); // 끝 — 디코더에 남은 프레임을 빼낸다
+                _audio?.Send(null);
                 _flushing = true;
                 continue;
             }
 
             if (_packet->stream_index == _stream)
                 ffmpeg.avcodec_send_packet(_codec, _packet);
+            else if (_audio is not null && _packet->stream_index == _audio.Stream)
+                _audio.Send(_packet);
             ffmpeg.av_packet_unref(_packet);
         }
     }
@@ -501,6 +518,8 @@ public sealed unsafe class VideoPlayer : IFrameSource, IDisposable
 
     private void Close()
     {
+        _audio?.Dispose();
+        _audio = null;
         if (_sws is not null)
         {
             ffmpeg.sws_freeContext(_sws);

@@ -24,6 +24,9 @@
   <!-- DvVideo 재생 테스트용 동영상(빨강 1초 → 파랑 1초, 160×90 H.264) — 실행에는 FFmpeg 8 공유 라이브러리(DEVINNO_FFMPEG_DIR)가 필요, 없으면 그 테스트는 건너뛴다 -->
   <ItemGroup>
     <None Include="Assets\redblue.mp4" CopyToOutputDirectory="PreserveNewest" />
+    <!-- 소리 테스트: redblue.mp4 + 1 kHz 사인(44.1 kHz 모노 AAC), 오디오만 있는 440 Hz 사인(44.1 kHz 스테레오 AAC) — 둘 다 2초 -->
+    <None Include="Assets\redblue_tone.mp4" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Assets\tone.m4a" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
