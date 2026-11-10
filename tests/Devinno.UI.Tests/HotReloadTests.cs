@@ -58,4 +58,66 @@ public class HotReloadTests
         Assert.Equal("저장한 것", LabelText(page));
         app.HotReload = false;
     }
+
+    // 파일 감시 이벤트는 다른 스레드에서 늦게 온다 — 고정 시간 대신 최대 10초까지 프레임(Layout → 대기열 비우기)을 돌며 기다린다
+    private static bool LayoutUntil(DvApp app, Func<bool> done)
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (sw.Elapsed < TimeSpan.FromSeconds(10))
+        {
+            app.Surface.Layout(W, H);
+            if (done())
+                return true;
+            Thread.Sleep(20);
+        }
+        return false;
+    }
+
+    private static (DvApp app, FilePage page, string path) Shown(string text)
+    {
+        var path = TempDvml($"<DvStack><DvLabel id=\"lbl\" text=\"{text}\"/></DvStack>");
+        var page = new FilePage(path);
+        var app = new DvApp { HotReload = true };
+        app.Pages.Add(page);
+        app.Show(page);
+        app.Surface.Layout(W, H);
+        Assert.Equal(text, LabelText(page));
+        return (app, page, path);
+    }
+
+    [Fact]
+    public void Saving_the_file_reloads_the_shown_page()
+    {
+        var (app, page, path) = Shown("처음");
+        try
+        {
+            var attaches = page.Attaches;
+            File.WriteAllText(path, "<DvStack><DvLabel id=\"lbl\" text=\"저장한 것\"/></DvStack>");
+            Assert.True(LayoutUntil(app, () => LabelText(page) == "저장한 것"), $"not reloaded: '{LabelText(page)}'");
+            Assert.True(page.Attaches > attaches); // 핸들을 새 상자에 다시 묶는다
+            Assert.Equal("저장한 것", page.lbl?.Text);
+        }
+        finally
+        {
+            app.HotReload = false;
+        }
+    }
+
+    // 편집기가 임시 파일에 쓰고 이름을 바꿔 덮어쓰는 저장(Renamed 이벤트)
+    [Fact]
+    public void Replacing_the_file_by_rename_reloads_the_shown_page()
+    {
+        var (app, page, path) = Shown("처음");
+        try
+        {
+            var temp = path + ".tmp";
+            File.WriteAllText(temp, "<DvStack><DvLabel id=\"lbl\" text=\"바꾼 것\"/></DvStack>");
+            File.Move(temp, path, overwrite: true);
+            Assert.True(LayoutUntil(app, () => LabelText(page) == "바꾼 것"), $"not reloaded: '{LabelText(page)}'");
+        }
+        finally
+        {
+            app.HotReload = false;
+        }
+    }
 }
