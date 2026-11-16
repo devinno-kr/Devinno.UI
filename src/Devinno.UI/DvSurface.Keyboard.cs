@@ -207,6 +207,7 @@ public sealed partial class DvSurface
     {
         if (_kb is null)
             return;
+        using var roles = Styling.Roles.Enter(_theme); // 화면 테마의 역할 값으로(팝업과 같음)
         _kb.Paint(canvas, _theme, _strings, Edit, w, h, Clock(), _kbPressed);
     }
 }

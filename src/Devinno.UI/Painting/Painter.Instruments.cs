@@ -221,7 +221,9 @@ public sealed partial class Painter
         if (box.Disabled)
         {
             using var layer = new SKPaint { Color = SKColors.White.WithAlpha(Roles.Alpha("opacity.disabled")) };
-            canvas.SaveLayer(layer);
+            var r = box.Rect;
+            r.Inflate(16f, 16f); // 슬라이더 둘레 원·그림자까지 — 화면 전체 크기 레이어를 만들지 않는다
+            canvas.SaveLayer(r, layer);
         }
         return save;
     }

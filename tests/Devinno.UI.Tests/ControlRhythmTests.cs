@@ -145,6 +145,23 @@ public class SelectionLookTests
         return item.Style.Background!.Value.ToSK();
     }
 
+    // 테마가 덧붙인 자기 CSS 는 스위치 규칙(조용한 선택·평면)보다 이긴다 — 내장 시트 < 스위치 규칙 < 테마 자기 CSS < 화면 DvStyle
+    [Fact]
+    public void Theme_css_wins_over_switch_rules()
+    {
+        var custom = new Devinno.UI.Styling.DvTheme(Devinno.UI.Styling.DvTheme.Dark.Tokens,
+            Devinno.UI.Styling.BuiltInStyles.Sheet + " .segment-item-on { background: #ff0000 }");
+        Assert.Equal(new SkiaSharp.SKColor(0xff, 0, 0), SelectedSegmentBg(custom));
+    }
+
+    // 내장 시트를 쓰지 않는 테마 시트도 스위치 규칙에 지지 않는다
+    [Fact]
+    public void Replacement_theme_sheet_wins_over_switch_rules()
+    {
+        var custom = new Devinno.UI.Styling.DvTheme(Devinno.UI.Styling.DvTheme.Dark.Tokens, ".segment-item-on { background: #00ff00 }");
+        Assert.Equal(new SkiaSharp.SKColor(0, 0xff, 0), SelectedSegmentBg(custom));
+    }
+
     [Fact]
     public void Strong_selection_fills_with_primary()
     {

@@ -555,25 +555,25 @@ public sealed class DvTheme
     internal bool TryResolve(string token, out string value, out string? problem)
     {
         var name = Normalize(token);
-        var chain = new List<string>();
+        List<string>? chain = null; // 참조를 만났을 때만 만든다(대부분의 토큰은 값 그대로 — 매 색 조회마다 할당·정규식 없이)
         for (var depth = 0; depth <= MaxReferenceDepth; depth++)
         {
             if (!Tokens.TryGetValue(name, out var raw))
             {
                 value = "";
-                problem = chain.Count == 0 ? null : $"token '{chain[0]}' references '{name}', which the theme does not have";
+                problem = chain is null ? null : $"token '{chain[0]}' references '{name}', which the theme does not have";
                 return false;
             }
 
-            chain.Add(name);
-            var m = ReferenceOnly.Match(raw);
-            if (!m.Success)
+            var m = MayBeReference(raw) ? ReferenceOnly.Match(raw) : null;
+            if (m is null || !m.Success)
             {
                 value = raw;
                 problem = null;
                 return true;
             }
 
+            (chain ??= new()).Add(name);
             name = Normalize(m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value);
             if (chain.Contains(name, StringComparer.OrdinalIgnoreCase))
             {
@@ -584,11 +584,23 @@ public sealed class DvTheme
         }
 
         value = "";
-        problem = $"token reference chain from '{chain[0]}' is longer than {MaxReferenceDepth}";
+        problem = $"token reference chain from '{chain![0]}' is longer than {MaxReferenceDepth}"; // 여기까지 오면 참조를 만났다(chain 있음)
         return false;
     }
 
     private const int MaxReferenceDepth = 8;
+
+    // token(…)·var(…) 일 수 있는 값만 정규식으로 본다 — 첫 글자 검사
+    private static bool MayBeReference(string raw)
+    {
+        foreach (var c in raw)
+        {
+            if (char.IsWhiteSpace(c))
+                continue;
+            return c is 't' or 'T' or 'v' or 'V';
+        }
+        return false;
+    }
 
     private static readonly System.Text.RegularExpressions.Regex ReferenceOnly = new(
         @"^\s*(?:token\(\s*([A-Za-z0-9_.-]+)\s*\)|var\(\s*--([A-Za-z0-9_.-]+)\s*\))\s*$",

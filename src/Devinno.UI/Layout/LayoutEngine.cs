@@ -79,11 +79,16 @@ public sealed partial class LayoutEngine
         ComponentRegistry? registry = null)
     {
         using var roles = Roles.Enter(_theme); // 배치 동안 역할 값(굵기·글자 크기 …)은 이 테마에서
-        _sheet = StyleSheet.Parse((_theme ?? DvTheme.Default).Stylesheet);
-        if (Roles.Look.Selection == LookSelection.Quiet) // 선택 강조 스위치 — 조용한 선택 규칙(화면 DvStyle 이 이김)
+        // 순서 = 내장 시트 < 스위치 규칙(조용한 선택·평면 질감) < 테마가 덧붙인 자기 CSS < 컴포넌트·화면 DvStyle.
+        // 스위치 규칙은 내장 클래스만 바꾼다 — 테마가 직접 쓴 규칙은 덮지 않는다(내장 시트로 시작하지 않는 테마 시트는 통째로 테마 쪽)
+        var themeSheet = (_theme ?? DvTheme.Default).Stylesheet;
+        var startsWithBuiltIn = themeSheet.StartsWith(BuiltInStyles.Sheet, StringComparison.Ordinal);
+        _sheet = StyleSheet.Parse(startsWithBuiltIn ? BuiltInStyles.Sheet : null);
+        if (Roles.Look.Selection == LookSelection.Quiet)
             _sheet.Add(BuiltInStyles.QuietSelection);
-        if (Roles.Look.Texture == LookTexture.Flat) // 질감 스위치 — 평면이면 그림자 없음(화면 DvStyle 이 이김)
+        if (Roles.Look.Texture == LookTexture.Flat)
             _sheet.Add(BuiltInStyles.FlatTexture);
+        _sheet.Add(startsWithBuiltIn ? themeSheet[BuiltInStyles.Sheet.Length..] : themeSheet);
         if (registry is not null) // 컴포넌트 정의 안 DvStyle — 화면 DvStyle 보다 먼저(같은 클래스는 화면 쪽이 이김)
             foreach (var def in registry.Definitions)
                 foreach (var css in def.Styles)

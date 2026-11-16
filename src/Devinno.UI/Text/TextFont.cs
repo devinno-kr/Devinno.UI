@@ -33,12 +33,27 @@ internal static class TextFont
     }
 
     /// <summary>The width of one digit cell for tabular digits: the widest of 0–9 in <paramref name="font"/>.</summary>
-    internal static float DigitCell(SKFont font)
+    internal static float DigitCell(SKFont font) => Digits(font).Cell;
+
+    // 숫자 칸 폭 + 0~9 가 이미 같은 폭인가 — 글꼴(서체·크기·굵게·가로 배율)마다 한 번만 잰다(프레임마다 숫자 칸마다 10번 재지 않게)
+    [ThreadStatic] private static Dictionary<(nint Face, float Size, bool Embolden, float ScaleX), (float Cell, bool Uniform)>? _digits;
+
+    private static (float Cell, bool Uniform) Digits(SKFont font)
     {
-        var cell = 0f;
+        _digits ??= new();
+        var key = (font.Typeface?.Handle ?? 0, font.Size, font.Embolden, font.ScaleX);
+        if (_digits.TryGetValue(key, out var known))
+            return known;
+        float min = float.MaxValue, max = 0f;
         for (var d = '0'; d <= '9'; d++)
-            cell = MathF.Max(cell, font.MeasureText(d.ToString()));
-        return cell;
+        {
+            var w = font.MeasureText(d.ToString());
+            min = MathF.Min(min, w);
+            max = MathF.Max(max, w);
+        }
+        if (_digits.Count > 256)
+            _digits.Clear();
+        return _digits[key] = (max, max - min < 0.01f);
     }
 
     /// <summary>The width of <paramref name="text"/> with tabular digits: every digit 0–9 takes <see cref="DigitCell"/>, other characters keep their own width.</summary>
@@ -56,6 +71,12 @@ internal static class TextFont
     /// <summary>Draws <paramref name="text"/> with tabular digits (each digit centered in its cell), anchored at <paramref name="x"/> by <paramref name="align"/>.</summary>
     internal static void DrawNumber(SKCanvas canvas, string text, float x, float y, SKTextAlign align, SKFont font, SKPaint paint)
     {
+        if (Digits(font).Uniform) // 이미 고정폭 숫자 글꼴 — 한 번에 그린다(결과 같음)
+        {
+            canvas.DrawText(text, x, y, align, font, paint);
+            return;
+        }
+
         var total = MeasureNumber(text, font);
         var left = align switch
         {

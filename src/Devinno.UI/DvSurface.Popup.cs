@@ -73,6 +73,7 @@ public sealed partial class DvSurface
     /// <summary>Repositions popups to their anchors. Closes a popup whose anchor is gone or fully hidden.</summary>
     private void PlacePopups()
     {
+        using var roles = Styling.Roles.Enter(_theme); // 자리 잡기(글자 재기)도 화면 테마의 역할 값으로
         for (var i = _popups.Count - 1; i >= 0; i--)
         {
             var d = _popups[i];
@@ -219,6 +220,8 @@ public sealed partial class DvSurface
 
     private void PaintPopups(SKCanvas canvas)
     {
+        // 화면 그리기(Painter.Paint)가 끝난 뒤라 역할 값의 테마를 다시 잡는다 — 팝업도 이 화면 테마의 굵기·투명도로
+        using var roles = Styling.Roles.Enter(_theme);
         PlacePopups();
         foreach (var d in _popups)
             d.Paint(canvas, _theme, _strings);

@@ -6,7 +6,7 @@
 
 - `DvWidgetContext.MeasureText` / `DrawText`: the `bool bold` parameter is now `int weight` (100–900, default 400). Replace `bold: true` with `weight: 700`.
 - `ComputedStyle.Bold` is read-only (`FontWeight >= 600`); set `ComputedStyle.FontWeight` instead.
-- Built-in widgets now read many more theme tokens (role tokens, style switches, `texture.depth`, `process-*`, see Added). A theme made from a complete dictionary with `new DvTheme(tokens)` lacks them and draws those parts magenta with a warning. Start from a built-in theme instead — `DvTheme.Light.With(myColors)` keeps every token you do not override.
+- Built-in widgets now read many more theme tokens (role tokens, style switches, `texture.depth`, `process-*`, see Added). A theme made from a complete dictionary with `new DvTheme(tokens)` lacks them: a missing color token draws magenta and a missing number token reads 0 (text of that size disappears), each with a warning. Start from a built-in theme instead — `DvTheme.Light.With(myColors)` keeps every token you do not override.
 - The look changes throughout (see Changed). There is no switch back to the previous look; a theme can bring parts of it back through the tokens (for example `look.selection: strong` for filled selection, `texture.depth` for deeper shading).
 
 ### Added
@@ -21,6 +21,13 @@
 - Theme role tokens (`weight.*`, `stroke.*`, `font.meta`, `alpha.*`, `overlay.*`, `opacity.disabled`, `control.*`, `row.*`, color roles `selection` `value-input` `value-read` `normal`) and style switches `look.texture` (`flat`|`rich`), `look.normal-color`, `look.selection`. Built-in widgets read these instead of fixed numbers; `look.texture: flat` drops gloss, gradients, shadows and glow on instruments.
 
 ### Changed
+
+- Built-in theme values that changed meaning or color (check screens that rely on them):
+  - `Carbon`: `state-run` is neutral gray `#9aa0a6` (was green `#5fa77f`; also `state-run-fg`, `state-run-soft`); running lamps and status no longer use green. `normal` points to `state-run` in `Graphite` and `Carbon`.
+  - `Graphite`: `alarm-minor` is blue-gray `#52708d` with white text (was yellow `#9c8000` with dark text), so minor and major alarms differ in hue; `chart-3` is `#7d8a97` (was `#2f3a44`).
+  - `Light`: `lamp-off` is `#94a3b8` (was `#3a3f47`), `texture.depth` 0.85, and lighter process values (`process-line` `process-pipe` `process-accent` `process-arrow` `process-body*` `process-liquid` `process-detail-on`).
+  - `Dark`/`Carbon`: dark process name tags (`process-tag-*`); `Carbon` running process body `#4a5057`.
+  - All four themes: `look.selection` is `quiet`; `Graphite`/`Carbon` are `look.texture: flat` and `look.normal-color: off`.
 
 - Input and selection controls share one height (`control.md` 40; small and large buttons `control.sm`/`control.lg`) and one corner radius (`radius.md`); list, tree, tab and expander rows are `row.md`. Button labels stay on one line.
 - Weights: buttons and titles 600, tabs, segments, chips and expander headers 500 (were bold). The primary button is a solid color (no gradient).
