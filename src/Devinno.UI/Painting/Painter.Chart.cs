@@ -56,7 +56,7 @@ public sealed partial class Painter
             canvas.DrawPath(area, fp);
         }
 
-        using var lp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2f, StrokeJoin = SKStrokeJoin.Round, Color = color };
+        using var lp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("emphasis"), StrokeJoin = SKStrokeJoin.Round, Color = color };
         canvas.DrawPath(path, lp);
         lp.Style = SKPaintStyle.Fill;
         canvas.DrawCircle(X(v.Length - 1), Y(v[^1]), 3f, lp);
@@ -82,7 +82,7 @@ public sealed partial class Painter
         var color = ThemeColor("tone-" + box.Tone);
         var baseY = Y(Math.Clamp(0, lo, hi));
 
-        using var axis = new SKPaint { IsAntialias = true, StrokeWidth = 1f, Color = ThemeColor("border-strong") };
+        using var axis = new SKPaint { IsAntialias = true, StrokeWidth = Roles.Stroke("hairline"), Color = ThemeColor("border-strong") };
         canvas.DrawLine(r.Left, baseY, r.Right, baseY, axis);
 
         using var bp = new SKPaint { IsAntialias = true, Color = color };
@@ -124,7 +124,7 @@ public sealed partial class Painter
         if (total <= 0)
         {
             p.Style = SKPaintStyle.Stroke;
-            p.StrokeWidth = 2f;
+            p.StrokeWidth = Roles.Stroke("emphasis");
             p.Color = ThemeColor("border");
             canvas.DrawCircle(c, radius - 1f, p);
         }
@@ -148,7 +148,7 @@ public sealed partial class Painter
             // 조각 사이 가는 틈(배경색 선)
             if (v.Count(x => x > 0) > 1)
             {
-                using var gap = new SKPaint { IsAntialias = true, StrokeWidth = 2f, Color = ThemeColor("surface") };
+                using var gap = new SKPaint { IsAntialias = true, StrokeWidth = Roles.Stroke("emphasis"), Color = ThemeColor("surface") };
                 var a = -90f;
                 foreach (var x in v.Where(x => x > 0))
                 {

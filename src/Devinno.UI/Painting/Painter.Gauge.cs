@@ -25,7 +25,7 @@ public sealed partial class Painter
 
         if (box.GaugeMinorTicks > 0)
         {
-            p.StrokeWidth = MathF.Max(1f, gm.Scale);
+            p.StrokeWidth = MathF.Max(Roles.Stroke("hairline"), gm.Scale);
             foreach (var v in ScaleTicks.Values(box.GaugeMin, box.GaugeMax, box.GaugeMinorTicks))
             {
                 var a = Angle(v);
@@ -35,7 +35,7 @@ public sealed partial class Painter
         }
 
         var major = ScaleTicks.Values(box.GaugeMin, box.GaugeMax, box.GaugeTicks);
-        p.StrokeWidth = MathF.Max(1f, 2f * gm.Scale);
+        p.StrokeWidth = MathF.Max(Roles.Stroke("hairline"), Roles.Stroke("emphasis") * gm.Scale);
         foreach (var v in major)
         {
             var a = Angle(v);

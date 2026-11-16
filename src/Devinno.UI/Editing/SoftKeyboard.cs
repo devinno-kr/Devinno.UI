@@ -317,14 +317,14 @@ internal sealed class SoftKeyboard
         var panel = Panel(w, h, now);
         using (var bp = new SKPaint { Color = bg })
             canvas.DrawRect(panel, bp);
-        using (var lp = new SKPaint { Color = border.WithAlpha(0x80), StrokeWidth = 1 })
+        using (var lp = new SKPaint { Color = border.WithAlpha(0x80), StrokeWidth = Roles.Stroke("hairline") })
             canvas.DrawLine(panel.Left, panel.Top + 0.5f, panel.Right, panel.Top + 0.5f, lp);
 
         // 미리보기 줄 — 값 + 끝 캐럿, 오른쪽에 범위·단위 또는 거절 사유
         var pv = Preview(w, h, now);
         using (var pp = new SKPaint { IsAntialias = true, Color = surface })
             canvas.DrawRoundRect(pv, 8, 8, pp);
-        using (var ps = new SKPaint { IsAntialias = true, Color = e.Error is null ? border : danger, Style = SKPaintStyle.Stroke, StrokeWidth = 1 })
+        using (var ps = new SKPaint { IsAntialias = true, Color = e.Error is null ? border : danger, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("hairline") })
             canvas.DrawRoundRect(pv, 8, 8, ps);
 
         var info = e.Error ?? RangeInfo();
@@ -351,7 +351,7 @@ internal sealed class SoftKeyboard
             using var tp = new SKPaint { IsAntialias = true, Color = placeholder is null ? keyFg : subtle };
             if (drawText.Length > 0)
                 canvas.DrawText(drawText, x, Baseline(pv, tf), SKTextAlign.Left, tf, tp);
-            using var cp = new SKPaint { Color = primary, StrokeWidth = 2 };
+            using var cp = new SKPaint { Color = primary, StrokeWidth = Roles.Stroke("emphasis") };
             var cx = x + tw + 1f;
             canvas.DrawLine(cx, pv.MidY - 11f, cx, pv.MidY + 11f, cp);
         }

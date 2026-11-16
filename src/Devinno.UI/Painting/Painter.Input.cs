@@ -8,8 +8,8 @@ namespace Devinno.UI.Painting;
 // DvInput — 상자(배경·테두리)는 .input 클래스로 공통 경로가 그리고, 여기서는 값·placeholder·단위·포커스 링·오류 테두리.
 public sealed partial class Painter
 {
-    private const float FocusRingWidth = 3f;
-    private const float FocusRingGap = 2f;
+    private static float FocusRingWidth => Roles.Stroke("focus");
+    private static float FocusRingGap => Roles.Number("focus.gap");
 
     // show-stepper — 양 끝 −/+ 와 안쪽 구분선. 비활성·읽기 전용이면 흐린 글자색.
     private void PaintStepper(SKCanvas canvas, LayoutBox box, ComputedStyle st)
@@ -19,10 +19,10 @@ public sealed partial class Painter
         var dim = box.Disabled || box.ReadOnly;
         using var tp = new SKPaint
         {
-            IsAntialias = true, StrokeWidth = 2f, StrokeCap = SKStrokeCap.Round,
+            IsAntialias = true, StrokeWidth = Roles.Stroke("emphasis"), StrokeCap = SKStrokeCap.Round,
             Color = dim ? ThemeColor("text-subtle") : st.Color.ToSK()
         };
-        using var lp = new SKPaint { IsAntialias = true, StrokeWidth = 1f, Color = ThemeColor("border") };
+        using var lp = new SKPaint { IsAntialias = true, StrokeWidth = Roles.Stroke("hairline"), Color = ThemeColor("border") };
         var cy = rect.MidY;
         var arm = MathF.Min(6f, rect.Height / 5f);
         var lx = rect.Left + w / 2;
@@ -58,7 +58,7 @@ public sealed partial class Painter
         {
             using var ep = new SKPaint
             {
-                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f,
+                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("outline"),
                 Color = ThemeColor("tone-danger")
             };
             canvas.DrawRoundRect(rect, r, r, ep);

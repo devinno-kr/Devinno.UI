@@ -50,6 +50,17 @@ public class RoleLiteralGuardTests
         Assert.True(bad.Count == 0, "literal font weights:\n" + string.Join("\n", bad.Select(b => $"{b.File}:{b.Line} {b.Text}")));
     }
 
+    // 선 두께 1 / 1.5 / 2 는 stroke.hairline / outline / emphasis 역할로. 해부도 고유 두께(탱크 테두리 2.5×, 노브 표시선, 슬라이더 손잡이 링 3·4,
+    // 단계 연결선 3, 색 고르기 손잡이 5·3, ACK 외곽 1.2)와 공정도 표는 예외 — 단계 3~5에서 생김새와 함께 정한다.
+    [Fact]
+    public void Common_stroke_widths_come_from_theme_roles()
+    {
+        var common = new Regex(@"(?<![\w.])(1|1f|1\.5f|2|2f)(?![\w.])");
+        var bad = DrawingLines(c => c.Contains("StrokeWidth =") && common.IsMatch(c.Substring(c.IndexOf("StrokeWidth =") + 13)))
+            .Where(l => l.File != "Painter.Process.cs").ToList();
+        Assert.True(bad.Count == 0, "literal stroke widths:\n" + string.Join("\n", bad.Select(b => $"{b.File}:{b.Line} {b.Text}")));
+    }
+
     [Fact]
     public void Fixed_small_text_sizes_come_from_theme_roles()
     {

@@ -53,7 +53,7 @@ public sealed partial class Painter
         float X(DateTime t) => plot.Left + (float)((t - start).TotalSeconds / window) * plot.Width;
         float Y(double v) => plot.Bottom - (float)((v - lo) / (hi - lo)) * plot.Height;
 
-        using (var gp = new SKPaint { IsAntialias = true, Color = grid, StrokeWidth = 1f })
+        using (var gp = new SKPaint { IsAntialias = true, Color = grid, StrokeWidth = Roles.Stroke("hairline") })
         using (var lp = new SKPaint { IsAntialias = true, Color = muted })
         {
             foreach (var v in yTicks)
@@ -113,7 +113,7 @@ public sealed partial class Painter
 
                 using var sp = new SKPaint
                 {
-                    IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2f,
+                    IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("emphasis"),
                     StrokeJoin = SKStrokeJoin.Round, StrokeCap = SKStrokeCap.Round, Color = ch.Color
                 };
                 canvas.DrawPath(path, sp);

@@ -75,7 +75,7 @@ public sealed partial class Painter
             canvas.DrawRoundRect(f, 6, 6, bg);
         using (var bp = new SKPaint
                {
-                   IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = editing ? 2 : 1,
+                   IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = editing ? Roles.Stroke("emphasis") : Roles.Stroke("hairline"),
                    Color = editing ? p.FieldEdit.Error is not null ? fault : primary : PopupChrome.Tok(theme, "border-strong")
                })
             canvas.DrawRoundRect(f, 6, 6, bp);
@@ -144,7 +144,7 @@ public sealed partial class Painter
         {
             using var bp = new SKPaint
             {
-                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f,
+                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("outline"),
                 Color = PopupChrome.Tok(theme, "border-strong")
             };
             canvas.DrawRoundRect(SKRect.Inflate(box, -0.75f, -0.75f), 3, 3, bp);
@@ -155,7 +155,7 @@ public sealed partial class Painter
                 canvas.DrawRoundRect(box, 3, 3, fp);
             using var mp = new SKPaint
             {
-                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2f, StrokeCap = SKStrokeCap.Round, StrokeJoin = SKStrokeJoin.Round,
+                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("emphasis"), StrokeCap = SKStrokeCap.Round, StrokeJoin = SKStrokeJoin.Round,
                 Color = PopupChrome.Tok(theme, "primary-fg")
             };
             if (state == 1)
@@ -193,7 +193,7 @@ public sealed partial class Painter
         {
             using (var fp = new SKPaint { IsAntialias = true, Color = raised })
                 canvas.DrawRoundRect(r, 6, 6, fp);
-            using (var cp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1, Color = strong })
+            using (var cp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("hairline"), Color = strong })
                 canvas.DrawRoundRect(r, 6, 6, cp);
             CenterText(canvas, DvStrings.Builtin(strings, key), r, fontSize, false, text);
         }

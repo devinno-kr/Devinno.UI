@@ -50,7 +50,7 @@ public sealed partial class Painter
             if (!done)
             {
                 p.Style = SKPaintStyle.Stroke;
-                p.StrokeWidth = now ? 3f : 1.5f;
+                p.StrokeWidth = now ? 3f : Roles.Stroke("outline");
                 p.Color = now ? primary : border;
                 canvas.DrawCircle(cx, cy, dot / 2f - p.StrokeWidth / 2f, p);
             }

@@ -105,7 +105,7 @@ public sealed partial class Painter
                 canvas.DrawText(T("dv.alarm.col.ack"), h.Right - 12f - AlarmListLayout.AckButtonWidth / 2f, hb, SKTextAlign.Center, hf, hp);
         }
 
-        using (var lp = new SKPaint { IsAntialias = true, Color = line, StrokeWidth = 1f })
+        using (var lp = new SKPaint { IsAntialias = true, Color = line, StrokeWidth = Roles.Stroke("hairline") })
             canvas.DrawLine(h.Left, h.Bottom - 0.5f, h.Right, h.Bottom - 0.5f, lp);
 
         if (layout.Rows.Count == 0)
@@ -176,7 +176,7 @@ public sealed partial class Painter
                     rect.Right - 12f - AlarmListLayout.AckButtonWidth / 2f, Baseline(rect, af), SKTextAlign.Center, af, ap);
             }
 
-            using (var lp = new SKPaint { Color = line.WithAlpha(0x60), StrokeWidth = 1f })
+            using (var lp = new SKPaint { Color = line.WithAlpha(0x60), StrokeWidth = Roles.Stroke("hairline") })
                 canvas.DrawLine(rect.Left, rect.Bottom - 0.5f, rect.Right, rect.Bottom - 0.5f, lp);
         }
 

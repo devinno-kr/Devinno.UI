@@ -760,7 +760,7 @@ public sealed partial class Painter
             canvas.RestoreToCount(saved);
             saved = canvas.Save();
             Interaction.HandlerErrors.ReportRead(ex, "Paint", widget.GetType().Name, box.Node.Tag);
-            using var red = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2, Color = ThemeColor("tone-danger") };
+            using var red = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("emphasis"), Color = ThemeColor("tone-danger") };
             canvas.DrawRect(SKRect.Inflate(rect, -1, -1), red);
         }
         finally

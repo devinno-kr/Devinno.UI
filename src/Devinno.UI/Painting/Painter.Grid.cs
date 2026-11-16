@@ -38,7 +38,7 @@ public sealed partial class Painter
 
         using var fill = new SKPaint();
         using var ink = new SKPaint { IsAntialias = true };
-        using var line = new SKPaint { Color = cLine, StrokeWidth = 1f };
+        using var line = new SKPaint { Color = cLine, StrokeWidth = Roles.Stroke("hairline") };
         using var fonts = new GridFonts(st.FontSize, MathF.Max(9f, st.FontSize - 1f));
 
         var header = SKRect.Create(rect.Left, rect.Top, rect.Width, g.HeaderTotal);
@@ -119,10 +119,10 @@ public sealed partial class Painter
             var band = new SKRect(rect.Left, sTop, rect.Right, sTop + g.SummaryHeight);
             fill.Color = cSummary;
             canvas.DrawRect(band, fill);
-            using (var edge = new SKPaint { Color = ThemeColor("border-strong"), StrokeWidth = 2f })
+            using (var edge = new SKPaint { Color = ThemeColor("border-strong"), StrokeWidth = Roles.Stroke("emphasis") })
                 canvas.DrawLine(rect.Left, sTop + 1f, rect.Right, sTop + 1f, edge);
             ink.Color = cSummaryFg;
-            using var sumLine = new SKPaint { Color = ThemeColor("border"), StrokeWidth = 1f };
+            using var sumLine = new SKPaint { Color = ThemeColor("border"), StrokeWidth = Roles.Stroke("hairline") };
             for (var si = 0; si < g.Summaries.Count; si++)
             {
                 var texts = g.Summaries[si].Texts;
@@ -198,7 +198,7 @@ public sealed partial class Painter
         }
 
         // ⑤ 헤더 아래 2px 진한 경계(요약 행 위 경계와 같음 — 헤더·행·요약이 서로 구분되게), 고정 경계선
-        using (var edge = new SKPaint { Color = ThemeColor("border-strong"), StrokeWidth = 2f })
+        using (var edge = new SKPaint { Color = ThemeColor("border-strong"), StrokeWidth = Roles.Stroke("emphasis") })
             canvas.DrawLine(rect.Left, header.Bottom - 1f, rect.Right, header.Bottom - 1f, edge);
         if (g.FrozenCount > 0)
             canvas.DrawLine(scrollLeft - 0.5f, rect.Top, scrollLeft - 0.5f, body.Bottom + g.SummaryHeight, line);
@@ -269,7 +269,7 @@ public sealed partial class Painter
     {
         using var p = new SKPaint
         {
-            IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2f,
+            IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("emphasis"),
             Color = mark.Error is null
                 ? ThemeColor("focus")
                 : ThemeColor("tone-danger")
@@ -304,7 +304,7 @@ public sealed partial class Painter
         fill.Color = new SKColor(c.Red, c.Green, c.Blue);
         canvas.DrawRoundRect(sw, 4, 4, fill);
         fill.Style = SKPaintStyle.Stroke;
-        fill.StrokeWidth = 1;
+        fill.StrokeWidth = Roles.Stroke("hairline");
         fill.Color = ThemeColor("border");
         canvas.DrawRoundRect(sw, 4, 4, fill);
         fill.Style = SKPaintStyle.Fill;
@@ -337,7 +337,7 @@ public sealed partial class Painter
             canvas.DrawRoundRect(box, 4f, 4f, fill);
             using var sp = new SKPaint
             {
-                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f,
+                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("outline"),
                 Color = ThemeColor("border-strong").WithAlpha(a)
             };
             canvas.DrawRoundRect(box, 4f, 4f, sp);
@@ -426,7 +426,7 @@ public sealed partial class Painter
         fill.IsAntialias = false;
         if (border is { } bc)
         {
-            using var bp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1f, Color = bc };
+            using var bp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("hairline"), Color = bc };
             canvas.DrawRoundRect(r, 6f, 6f, bp);
         }
 

@@ -44,7 +44,7 @@ internal static class PopupChrome
     public static void End(SKCanvas canvas, SKRect bounds, DvTheme? theme)
     {
         canvas.Restore();
-        using var bs = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1, Color = Tok(theme, "border") };
+        using var bs = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("hairline"), Color = Tok(theme, "border") };
         canvas.DrawRoundRect(bounds, Radius, Radius, bs);
     }
 }

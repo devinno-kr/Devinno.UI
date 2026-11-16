@@ -53,7 +53,7 @@ public sealed partial class Painter
             var sw = SKRect.Create(x, content.MidY - PickerSwatch / 2f, PickerSwatch, PickerSwatch);
             using (var fp = new SKPaint { IsAntialias = true, Color = new SKColor(c.Red, c.Green, c.Blue) })
                 canvas.DrawRoundRect(sw, 4, 4, fp);
-            using (var bp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1, Color = ThemeColor("border") })
+            using (var bp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("hairline"), Color = ThemeColor("border") })
                 canvas.DrawRoundRect(sw, 4, 4, bp);
             x += PickerSwatch + LayoutEngine.IconTextGap;
         }
@@ -118,7 +118,7 @@ public sealed partial class Painter
                 {
                     if (d == today)
                     {
-                        using var rp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f, Color = primary };
+                        using var rp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("outline"), Color = primary };
                         canvas.DrawCircle(center, 16f, rp);
                     }
 
@@ -138,7 +138,7 @@ public sealed partial class Painter
                 canvas.DrawRoundRect(f, 6, 6, bg);
             using (var bp = new SKPaint
                    {
-                       IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = editing ? 2 : 1,
+                       IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = editing ? Roles.Stroke("emphasis") : Roles.Stroke("hairline"),
                        Color = editing ? p.FieldEdit.Error is not null ? fault : primary : strong
                    })
                 canvas.DrawRoundRect(f, 6, 6, bp);
@@ -170,7 +170,7 @@ public sealed partial class Painter
         var strong = PopupChrome.Tok(theme, "border-strong");
         using (var fp = new SKPaint { IsAntialias = true, Color = raised })
             canvas.DrawRoundRect(cancel, 6, 6, fp);
-        using (var cp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1, Color = strong })
+        using (var cp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("hairline"), Color = strong })
             canvas.DrawRoundRect(cancel, 6, 6, cp);
         CenterText(canvas, DvStrings.Builtin(strings, "dv.picker.cancel"), cancel, fontSize, false, text);
         using (var op = new SKPaint { IsAntialias = true, Color = primary })
@@ -219,9 +219,9 @@ public sealed partial class Painter
         canvas.Restore();
 
         var cur = new SKPoint(sv.Left + (float)st.S * sv.Width, sv.Top + (float)(1 - st.V) * sv.Height);
-        using (var op = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1, Color = edge })
+        using (var op = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("hairline"), Color = edge })
             canvas.DrawCircle(cur, 8f, op);
-        using (var wp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2, Color = SKColors.White })
+        using (var wp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("emphasis"), Color = SKColors.White })
             canvas.DrawCircle(cur, 7f, wp);
 
         // 막대 — 위→아래 색상 0..360
@@ -255,7 +255,7 @@ public sealed partial class Painter
         using (var np = new SKPaint { Color = st.Rgb })
             canvas.DrawRect(new SKRect(sw.MidX, sw.Top, sw.Right, sw.Bottom), np);
         canvas.Restore();
-        using (var bp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1, Color = border })
+        using (var bp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("hairline"), Color = border })
             canvas.DrawRoundRect(sw, 6, 6, bp);
 
         // # 칸 — .input 모양
@@ -266,7 +266,7 @@ public sealed partial class Painter
             canvas.DrawRoundRect(hex, 6, 6, bg);
         using (var bp = new SKPaint
                {
-                   IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = editing ? 2 : 1,
+                   IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = editing ? Roles.Stroke("emphasis") : Roles.Stroke("hairline"),
                    Color = editing ? err ? fault : primary : strong
                })
             canvas.DrawRoundRect(hex, 6, 6, bp);

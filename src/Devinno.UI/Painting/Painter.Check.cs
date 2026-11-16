@@ -1,3 +1,4 @@
+using Devinno.UI.Styling;
 using Devinno.UI.Interaction;
 using Devinno.UI.Layout;
 using Devinno.UI.Text;
@@ -37,7 +38,7 @@ public sealed partial class Painter
         p.Color = ThemeColor("surface").WithAlpha(a);
         canvas.DrawRoundRect(b, radius, radius, p);
         p.Style = SKPaintStyle.Stroke;
-        p.StrokeWidth = box.ToggleOn || hot ? 2f : 1.5f;
+        p.StrokeWidth = box.ToggleOn || hot ? Roles.Stroke("emphasis") : Roles.Stroke("outline");
         p.Color = box.ToggleOn || hot ? primary : ThemeColor("border-strong").WithAlpha(a);
         var inset = p.StrokeWidth / 2f;
         var sb = SKRect.Inflate(b, -inset, -inset);
@@ -62,7 +63,7 @@ public sealed partial class Painter
         {
             IsAntialias = true,
             Style = SKPaintStyle.Stroke,
-            StrokeWidth = 1.5f,
+            StrokeWidth = Roles.Stroke("outline"),
             PathEffect = dash,
             Color = ThemeColor("border-strong")
         };
