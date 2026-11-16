@@ -60,7 +60,7 @@ public class ThemeTokenContractTests
         ("Painting/Painter.cs", "new SKColor(0, 0, 0, 0), new SKColor(0, 0, 0, 0x30)", "tank cylinder shading (alpha black)"),
         ("Painting/Painter.Alarms.cs", "Mix(comm, SKColors.Black, 0.35f)", "blink-off shade derived from the comm-alarm token"),
         ("Painting/Painter.Alarms.cs", "Mix(prio, SKColors.Black, 0.35f)", "blink-off shade derived from the alarm token"),
-        ("Painting/Painter.Alarms.cs", "new SKColor(0, 0, 0, 0x33)", "translucent chip over the alarm color"),
+        ("Painting/Painter.Alarms.cs", "new SKColor(0, 0, 0, Roles.Alpha(\"alpha.soft\"))", "translucent chip over the alarm color"),
         ("Painting/Painter.Gauge.cs", "new SKColor(0, 0, 0, 0x60)", "needle drop shadow"),
         ("Painting/Painter.Grid.cs", "new SKColor(0xff, 0xff, 0xff, 0x66)", "lamp cell gloss highlight on top of the lit color"),
         ("Painting/Painter.Grid.cs", "SKColors.Transparent", "ghost button background"),

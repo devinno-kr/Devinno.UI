@@ -52,7 +52,7 @@ public sealed partial class Painter
             area.LineTo(X(v.Length - 1), r.Bottom - pad);
             area.LineTo(X(0), r.Bottom - pad);
             area.Close();
-            using var fp = new SKPaint { IsAntialias = true, Color = color.WithAlpha(0x33) };
+            using var fp = new SKPaint { IsAntialias = true, Color = color.WithAlpha(Roles.Alpha("alpha.soft")) };
             canvas.DrawPath(area, fp);
         }
 

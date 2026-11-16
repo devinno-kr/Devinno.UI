@@ -53,7 +53,7 @@ public sealed partial class Painter
             var chipW = chipFont.MeasureText(label) + 16f;
             var chipH = MathF.Min(22f, bottom.Height - 8f);
             var chip = SKRect.Create(bottom.Left + 12f, bottom.MidY - chipH / 2f, chipW, chipH);
-            using (var cp = new SKPaint { IsAntialias = true, Color = new SKColor(0, 0, 0, 0x33) })
+            using (var cp = new SKPaint { IsAntialias = true, Color = new SKColor(0, 0, 0, Roles.Alpha("alpha.soft")) })
                 canvas.DrawRoundRect(chip, chipH / 2f, chipH / 2f, cp);
             DrawBannerText(canvas, label, chip, chip.Left + 8f, fg, Roles.Font("meta"), bold: true);
 
@@ -141,7 +141,7 @@ public sealed partial class Painter
             {
                 var cw = cf.MeasureText(label) + 14f;
                 var chip = SKRect.Create(colPrio, rect.MidY - 10f, cw, 20f);
-                using (var cb = new SKPaint { IsAntialias = true, Color = prio.WithAlpha(row.Acked ? (byte)0x14 : (byte)0x2a) })
+                using (var cb = new SKPaint { IsAntialias = true, Color = prio.WithAlpha(row.Acked ? Roles.Alpha("overlay.hover") : (byte)0x2a) })
                     canvas.DrawRoundRect(chip, 10f, 10f, cb);
                 using var ct = new SKPaint { IsAntialias = true, Color = row.Acked ? subtle : prio };
                 canvas.DrawText(label, chip.MidX, Baseline(chip, cf), SKTextAlign.Center, cf, ct);
@@ -158,7 +158,7 @@ public sealed partial class Painter
 
             if (ack is { } b)
             {
-                using (var bb = new SKPaint { IsAntialias = true, Color = prio.WithAlpha(0x26) })
+                using (var bb = new SKPaint { IsAntialias = true, Color = prio.WithAlpha(Roles.Alpha("alpha.selected")) })
                     canvas.DrawRoundRect(b, 8f, 8f, bb);
                 using (var bs = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.2f, Color = prio })
                     canvas.DrawRoundRect(b, 8f, 8f, bs);
@@ -176,7 +176,7 @@ public sealed partial class Painter
                     rect.Right - 12f - AlarmListLayout.AckButtonWidth / 2f, Baseline(rect, af), SKTextAlign.Center, af, ap);
             }
 
-            using (var lp = new SKPaint { Color = line.WithAlpha(0x60), StrokeWidth = Roles.Stroke("hairline") })
+            using (var lp = new SKPaint { Color = line.WithAlpha(Roles.Alpha("alpha.dim")), StrokeWidth = Roles.Stroke("hairline") })
                 canvas.DrawLine(rect.Left, rect.Bottom - 0.5f, rect.Right, rect.Bottom - 0.5f, lp);
         }
 

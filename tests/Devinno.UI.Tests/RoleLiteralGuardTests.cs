@@ -61,6 +61,16 @@ public class RoleLiteralGuardTests
         Assert.True(bad.Count == 0, "literal stroke widths:\n" + string.Join("\n", bad.Select(b => $"{b.File}:{b.Line} {b.Text}")));
     }
 
+    // 반투명 단계 0x14 / 0x26 / 0x33 / 0x60 / 0x80 은 overlay.hover / alpha.selected / alpha.soft / alpha.dim / opacity.disabled 역할로.
+    // 그림자 색(DropShadow)은 질감(look.texture) 묶음이라 예외.
+    [Fact]
+    public void Alpha_steps_come_from_theme_roles()
+    {
+        var alpha = new Regex(@"0x(14|26|33|60|80)\b");
+        var bad = DrawingLines(c => alpha.IsMatch(c) && !c.Contains("DropShadow")).ToList();
+        Assert.True(bad.Count == 0, "literal alpha steps:\n" + string.Join("\n", bad.Select(b => $"{b.File}:{b.Line} {b.Text}")));
+    }
+
     [Fact]
     public void Fixed_small_text_sizes_come_from_theme_roles()
     {

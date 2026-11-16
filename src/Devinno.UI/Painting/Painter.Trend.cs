@@ -107,7 +107,7 @@ public sealed partial class Painter
                     // 영역 가장자리는 위에 그리는 선이 덮으므로 AA 생략 — 큰 면적 채움 비용 절감
                     using var ap = new SKPaint { IsAntialias = false };
                     ap.Shader = SKShader.CreateLinearGradient(new SKPoint(0, plot.Top), new SKPoint(0, plot.Bottom),
-                        new[] { ch.Color.WithAlpha(0x60), ch.Color.WithAlpha(0x00) }, null, SKShaderTileMode.Clamp);
+                        new[] { ch.Color.WithAlpha(Roles.Alpha("alpha.dim")), ch.Color.WithAlpha(0x00) }, null, SKShaderTileMode.Clamp);
                     canvas.DrawPath(area, ap);
                 }
 

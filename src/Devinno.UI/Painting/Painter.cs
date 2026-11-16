@@ -225,7 +225,7 @@ public sealed partial class Painter
             var tr = WidgetMetrics.ShapeRect(box); // 늘어난 상자에서도 자기 크기로 가운데
             var radius = tr.Height / 2f;
             // 비활성 = 반투명(체크박스·슬라이더와 같음), 읽기 전용 = 점선 테두리(PaintReadOnlyEdge — 모든 값 위젯 같은 모양)
-            var a = box.Disabled ? (byte)0x80 : (byte)0xff;
+            var a = box.Disabled ? Roles.Alpha("opacity.disabled") : (byte)0xff;
             var trackOn = ThemeColor("--toggle-on").WithAlpha(a);
             var trackOff = ThemeColor("--toggle-off").WithAlpha(a);
             using (var trackPaint = new SKPaint

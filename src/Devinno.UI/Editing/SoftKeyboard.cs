@@ -317,7 +317,7 @@ internal sealed class SoftKeyboard
         var panel = Panel(w, h, now);
         using (var bp = new SKPaint { Color = bg })
             canvas.DrawRect(panel, bp);
-        using (var lp = new SKPaint { Color = border.WithAlpha(0x80), StrokeWidth = Roles.Stroke("hairline") })
+        using (var lp = new SKPaint { Color = border.WithAlpha(Roles.Alpha("opacity.disabled")), StrokeWidth = Roles.Stroke("hairline") })
             canvas.DrawLine(panel.Left, panel.Top + 0.5f, panel.Right, panel.Top + 0.5f, lp);
 
         // 미리보기 줄 — 값 + 끝 캐럿, 오른쪽에 범위·단위 또는 거절 사유
@@ -368,7 +368,7 @@ internal sealed class SoftKeyboard
             if (k.Id == pressed)
                 fill = Darken(fill);
             if (!k.Enabled)
-                fill = fill.WithAlpha(0x60);
+                fill = fill.WithAlpha(Roles.Alpha("alpha.dim"));
 
             using (var kp = new SKPaint { IsAntialias = true, Color = fill })
                 canvas.DrawRoundRect(k.Rect, 7, 7, kp);
@@ -390,7 +390,7 @@ internal sealed class SoftKeyboard
                 : label is "±" ? 22f
                 : k.Special ? 15f : 19f;
             using var lf = TextFont.Create(label, size, weight: isDone ? Roles.Weight("bold") : Roles.Weight("regular"));
-            using var lt = new SKPaint { IsAntialias = true, Color = k.Enabled ? ink : ink.WithAlpha(0x60) };
+            using var lt = new SKPaint { IsAntialias = true, Color = k.Enabled ? ink : ink.WithAlpha(Roles.Alpha("alpha.dim")) };
             canvas.DrawText(label, k.Rect.MidX, Baseline(k.Rect, lf), SKTextAlign.Center, lf, lt);
         }
     }

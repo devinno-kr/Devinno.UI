@@ -156,7 +156,7 @@ internal sealed class DropdownPopup : IPopup
             var selected = i == Slot.SelectedIndex;
             if (selected || i == Hover)
             {
-                using var hp = new SKPaint { IsAntialias = true, Color = primary.WithAlpha(selected ? (byte)0x26 : (byte)0x14) };
+                using var hp = new SKPaint { IsAntialias = true, Color = primary.WithAlpha(selected ? Roles.Alpha("alpha.selected") : Roles.Alpha("overlay.hover")) };
                 canvas.DrawRoundRect(SKRect.Inflate(row, -Pad, -1), 6, 6, hp);
             }
 

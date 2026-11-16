@@ -320,7 +320,7 @@ public sealed partial class Painter
         var box = SKRect.Create(cell.MidX - size / 2f, cell.MidY - size / 2f, size, size);
         var on = col.Reader.Get(item) is true;
         var dim = col.ReadOnly || (col.Reader.ValueType is { } vt && (vt != typeof(bool) || !col.Reader.Writable));
-        byte a = dim ? (byte)0x80 : (byte)0xff;
+        byte a = dim ? Roles.Alpha("opacity.disabled") : (byte)0xff;
         fill.IsAntialias = true;
 
         if (on)

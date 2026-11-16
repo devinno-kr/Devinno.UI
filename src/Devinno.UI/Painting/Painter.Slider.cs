@@ -15,7 +15,7 @@ public sealed partial class Painter
         const float bar = 6f;
         var (min, max) = SliderMetrics.Track(box);
         var at = SliderMetrics.PointAt(box, box.KnobValue);
-        var a = box.Disabled ? (byte)0x80 : (byte)0xff;
+        var a = box.Disabled ? Roles.Alpha("opacity.disabled") : (byte)0xff;
         var hot = !box.Disabled && state is not null && (ReferenceEquals(state.Press, box) || ReferenceEquals(state.Hover, box));
         var fill = ThemeColor("knob-fill").WithAlpha(a);
         // 읽기 전용 — 손잡이가 다니는 길 둘레 점선

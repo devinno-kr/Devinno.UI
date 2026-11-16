@@ -19,7 +19,7 @@ public sealed partial class Painter
         var b = SKRect.Create(rect.Left, rect.MidY - CheckSize / 2f, CheckSize, CheckSize);
         var radio = box.Node.Tag == "DvRadio";
         var radius = radio ? CheckSize / 2f : 5f;
-        var a = box.Disabled ? (byte)0x80 : (byte)0xff;
+        var a = box.Disabled ? Roles.Alpha("opacity.disabled") : (byte)0xff;
         var hot = !box.Disabled && state is not null && (ReferenceEquals(state.Press, box) || ReferenceEquals(state.Hover, box));
         var primary = ThemeColor("primary").WithAlpha(a);
         PaintReadOnlyEdge(canvas, box, b, radius);
