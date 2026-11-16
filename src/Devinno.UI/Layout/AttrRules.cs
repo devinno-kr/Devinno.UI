@@ -203,7 +203,7 @@ internal static class AttrRules
             return DvColor.TryParse(text, out color);
 
         var name = m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value;
-        if ((theme ?? DvTheme.Default).TryGet(name, out var tokenValue))
+        if ((theme ?? DvTheme.Default).TryResolve(name, out var tokenValue))
             return DvColor.TryParse(tokenValue, out color);
         Warnings.Warn($"Devinno.UI: {tag} {attr}='{text}' uses a token the theme does not have; drawing {ThemeResolver.MissingColor} (magenta)", key: Key(tag, attr, raw));
         DvColor.TryParse(ThemeResolver.MissingColor, out color);

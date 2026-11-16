@@ -4648,7 +4648,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <param name="s">해석할 문자열. <see langword="null" />·빈 문자열이면 실패합니다.</param>
             <param name="color">성공하면 해석한 색, 실패하면 <see cref="F:Devinno.UI.Styling.DvColor.Transparent" />.</param>
             <returns>지원 표기이고 16진수가 올바르면 <see langword="true" />. 예외는 던지지 않습니다.</returns>
-        </member><member name="T:Devinno.UI.Styling.DvTheme" en-hash="7da878393ff8a21d">
+        </member><member name="T:Devinno.UI.Styling.DvTheme" en-hash="f9c7d5607fa45db2">
             <summary>
             디자인 토큰(이름 → 값 문자열) 묶음과 기본 클래스 스타일시트로 이루어진 테마입니다.
             마크업 스타일의 <c>token(name)</c> 은 렌더링 때 이 테마의 값으로 바뀝니다.
@@ -4659,6 +4659,8 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <para><b>토큰 이름</b>: 정식 표기는 <c>token(spacing.md)</c> 입니다. <c>var(--name)</c> 도 별칭으로 받으며, 이름의 점(<c>.</c>)은 대시(<c>-</c>)로도 찾을 수 있어
             <c>var(--spacing-md)</c> 는 <c>token(spacing.md)</c> 와 같은 값입니다. 이름은 대소문자를 구분하지 않고, 키 앞의 <c>--</c> 는 떼고 저장합니다.
             값은 문자열 그대로 치환되므로 색 토큰은 <see cref="M:Devinno.UI.Styling.DvColor.TryParse(System.String,Devinno.UI.Styling.DvColor@)" /> 형식, 크기 토큰은 숫자, 그림자 토큰은 <c>dx dy blur color</c> 형식입니다.</para>
+            <para><b>참조</b>: 토큰 값 전체를 다른 토큰으로 쓸 수 있습니다(<c>["gauge-track"] = "token(surface-raised)"</c>). 조회는 참조를 따라가 최종 값을 돌려주므로,
+            복사한 테마에서 기준 토큰만 바꿔도 그것을 가리키는 토큰이 함께 바뀝니다. 대상이 없거나 참조가 순환하면 경고와 함께 자홍색으로 그립니다(<see cref="M:Devinno.UI.Styling.DvTheme.TryResolve(System.String,System.String@)" /> 참고).</para>
             <para><b>일부만 바꾸기</b>: <see cref="M:Devinno.UI.Styling.DvTheme.With(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})" /> 로 바꿀 토큰만 담은 사전을 주면 나머지는 그대로인 새 테마가 만들어집니다. 원래 테마는 바뀌지 않습니다(불변).</para>
             <para><b>없는 토큰</b>: 테마에 없는 이름은 경고(<see cref="T:System.Diagnostics.Trace" />)를 남기고 자홍색 <c>#FF00FF</c>(<see cref="F:Devinno.UI.Styling.ThemeResolver.MissingColor" />)로 치환되어
             화면에서 바로 눈에 띕니다. 내장 위젯이 직접 그리는 부분(램프·탱크·차트·그리드·키보드 …)도 같은 방식으로 토큰에서 색을 가져옵니다 — 숨은 대체 색이 없으므로
@@ -4745,6 +4747,18 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <param name="token">토큰 이름(예: <c>primary</c>, <c>spacing.md</c>, <c>--primary</c>). 대소문자는 무시하고 앞의 <c>--</c> 는 떼고 찾습니다.</param>
             <param name="value">찾으면 값 문자열, 없으면 <see langword="null" />.</param>
             <returns>토큰이 있으면 <see langword="true" /></returns>
+        </member><member name="M:Devinno.UI.Styling.DvTheme.TryResolve(System.String,System.String@)" en-hash="ac6b96a13b67d45e">
+            <summary>
+            토큰 값을 찾고 참조를 따라갑니다. 값 전체가 다른 토큰(<c>token(name)</c> 또는 <c>var(--name)</c>)이면 그 토큰의 값을 돌려주며,
+            최대 8단계까지 이어서 따라갑니다. 참조 앞뒤에 다른 글자가 있는 값(<c>0 2 6 token(x)</c>)은 그대로 돌려줍니다.
+            </summary>
+            <remarks>
+            내장 테마는 관계가 있는 토큰을 참조로 씁니다(예: 브랜드 색을 쓰는 위젯 색). 그래서 복사한 테마에서 기준 토큰을 바꾸면
+            그것을 가리키는 토큰도 함께 바뀝니다. 그리기와 스타일의 <c>token(…)</c> 은 이 메서드로 값을 풉니다.
+            </remarks>
+            <param name="token">토큰 이름(대소문자 무시, 앞의 <c>--</c> 는 뗌).</param>
+            <param name="value">최종 값. 찾지 못하면 빈 문자열.</param>
+            <returns>토큰이나 그것이 가리키는 토큰이 없거나 참조가 순환하면 <see langword="false" />.</returns>
         </member><member name="T:Devinno.UI.Styling.LinearGradient" en-hash="890bdd21c473706a">
             <summary>
             선형 그라디언트 배경입니다. 스타일 <c>background: linear-gradient(각도, 색1, 색2, …)</c> 에서 만들어집니다.
@@ -4958,13 +4972,13 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             테마에 없는 토큰을 치환할 때 쓰는 값(자홍색 <c>#FF00FF</c>)입니다. 조용히 실패하는 대신 화면에서 바로 눈에 띄게 하려는 것입니다.
             치환 결과에 이 문자열이 들어 있는지로 미해석 토큰을 감지할 수 있습니다.
             </summary>
-        </member><member name="M:Devinno.UI.Styling.ThemeResolver.ResolveVars(System.String,Devinno.UI.Styling.DvTheme)" en-hash="d7ae7c0143d1b503">
+        </member><member name="M:Devinno.UI.Styling.ThemeResolver.ResolveVars(System.String,Devinno.UI.Styling.DvTheme)" en-hash="e6edc5a32f6cee94">
             <summary>
             <paramref name="style" /> 안의 모든 <c>token(name)</c> 과 <c>var(--name)</c> 을 테마 값으로 바꿉니다. 이름 규칙은 <see cref="T:Devinno.UI.Styling.DvTheme" /> 를 보세요.
             </summary>
             <remarks>
             테마에 없는 이름은 <see cref="F:Devinno.UI.Styling.ThemeResolver.MissingColor" /> 로 바꾸고, 그때마다 <see cref="M:System.Diagnostics.Trace.TraceWarning(System.String)" /> 로 경고를 남깁니다.
-            치환은 한 번만 하므로 토큰 값 안에 다시 들어 있는 토큰은 풀리지 않습니다.
+            값 전체가 다른 토큰인 토큰은 최종 값까지 따라갑니다(<see cref="M:Devinno.UI.Styling.DvTheme.TryResolve(System.String,System.String@)" /> 참고).
             </remarks>
             <param name="style">스타일 선언 문자열(또는 색 하나 같은 값). <see langword="null" />·공백이면 그대로 돌려줍니다.</param>
             <param name="theme">치환에 쓸 테마. <see langword="null" /> 이면 <see cref="P:Devinno.UI.Styling.DvTheme.Default" />.</param>

@@ -139,7 +139,7 @@ public sealed class DvWidgetContext
     /// <param name="token">The token name, with or without a leading <c>--</c>.</param>
     /// <param name="fallback">The color for an unknown token.</param>
     public SKColor Color(string token, SKColor? fallback = null) =>
-        _theme.TryGet(token, out var raw) && DvColor.TryParse(raw, out var c) ? c.ToSK() : fallback ?? SKColors.Magenta;
+        _theme.TryResolve(token, out var raw) && DvColor.TryParse(raw, out var c) ? c.ToSK() : fallback ?? SKColors.Magenta;
 
     /// <summary>Measures the width of a single line of text in px (same fonts as built-in text, including the Korean fallback).</summary>
     /// <param name="text">The text.</param>

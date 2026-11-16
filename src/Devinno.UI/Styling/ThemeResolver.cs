@@ -28,7 +28,7 @@ public static class ThemeResolver
     /// </summary>
     /// <remarks>
     /// Names missing from the theme are replaced with <see cref="MissingColor"/>, and a warning is written with <see cref="Trace.TraceWarning(string)"/> each time.
-    /// Replacement is done only once, so tokens contained inside a token's value are not resolved.
+    /// A token whose whole value is another token is followed to the final value (see <see cref="DvTheme.TryResolve(string, out string)"/>).
     /// </remarks>
     /// <param name="style">A style declaration string (or a value such as a single color). Returned as is if <see langword="null"/> or whitespace.</param>
     /// <param name="theme">The theme to use for replacement. <see langword="null"/> means <see cref="DvTheme.Default"/>.</param>
@@ -42,10 +42,10 @@ public static class ThemeResolver
         return VarRegex.Replace(style, m =>
         {
             var name = m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value;
-            if (theme.TryGet(name, out var value))
+            if (theme.TryResolve(name, out var value, out var problem))
                 return value;
 
-            Trace.TraceWarning($"Devinno.UI: unresolved token '{name}'");
+            Trace.TraceWarning(problem is null ? $"Devinno.UI: unresolved token '{name}'" : $"Devinno.UI: unresolved token '{name}' ({problem})");
             return MissingColor;
         });
     }
@@ -60,7 +60,7 @@ public static class ThemeResolver
     /// <returns>The token color, or magenta.</returns>
     internal static SkiaSharp.SKColor Color(DvTheme? theme, string name)
     {
-        if ((theme ?? DvTheme.Default).TryGet(name, out var raw))
+        if ((theme ?? DvTheme.Default).TryResolve(name, out var raw, out var problem))
         {
             if (DvColor.TryParse(raw, out var c))
                 return c.ToSK();
@@ -69,7 +69,9 @@ public static class ThemeResolver
         }
         else
         {
-            Interaction.Warnings.Warn($"Devinno.UI: unresolved token '{name}'; drawing {MissingColor} (magenta)");
+            Interaction.Warnings.Warn(problem is null
+                ? $"Devinno.UI: unresolved token '{name}'; drawing {MissingColor} (magenta)"
+                : $"Devinno.UI: unresolved token '{name}' ({problem}); drawing {MissingColor} (magenta)");
         }
 
         return Missing;

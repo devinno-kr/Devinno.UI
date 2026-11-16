@@ -12,6 +12,8 @@ namespace Devinno.UI.Styling;
 /// <para><b>Token names</b>: the canonical form is <c>token(spacing.md)</c>. <c>var(--name)</c> is also accepted as an alias, and a dot (<c>.</c>) in a name can also be looked up as a dash (<c>-</c>), so
 /// <c>var(--spacing-md)</c> is the same value as <c>token(spacing.md)</c>. Names are case-insensitive, and a leading <c>--</c> on a key is stripped when stored.
 /// Values are substituted as plain strings, so color tokens use the <see cref="DvColor.TryParse"/> format, size tokens are numbers, and shadow tokens use the <c>dx dy blur color</c> format.</para>
+/// <para><b>References</b>: a token's whole value can be another token (<c>["gauge-track"] = "token(surface-raised)"</c>). Lookups follow the reference to the final value,
+/// so changing the base token in a copied theme also changes the tokens that point to it. A missing target or a cycle draws magenta with a warning (see <see cref="TryResolve(string, out string)"/>).</para>
 /// <para><b>Changing only some tokens</b>: pass <see cref="With(IReadOnlyDictionary{string, string})"/> a dictionary containing only the tokens to change, and a new theme is created with the rest unchanged. The original theme is not changed (immutable).</para>
 /// <para><b>Missing tokens</b>: a name not in the theme writes a warning (<see cref="System.Diagnostics.Trace"/>) and is replaced with magenta <c>#FF00FF</c> (<see cref="ThemeResolver.MissingColor"/>), so
 /// it stands out on screen immediately. Built-in widgets draw their own parts (lamp, tank, chart, grid, keyboard …) from tokens the same way — there is no hidden fallback color,
@@ -449,6 +451,62 @@ public sealed class DvTheme
     /// <param name="value">The value string if found; otherwise <see langword="null"/>.</param>
     /// <returns><see langword="true"/> if the token exists.</returns>
     public bool TryGet(string token, out string value) => Tokens.TryGetValue(Normalize(token), out value!);
+
+    /// <summary>
+    /// Looks up a token value and follows references: when the whole value is another token (<c>token(name)</c> or <c>var(--name)</c>),
+    /// the value of that token is returned, through chains of up to 8 steps. A value with other text around a reference (<c>0 2 6 token(x)</c>) is returned as is.
+    /// </summary>
+    /// <remarks>
+    /// Built-in themes use references for related tokens (for example a widget color that is the brand color), so a copied theme that changes
+    /// the base token also changes the tokens that point to it. Drawing and <c>token(…)</c> in styles resolve through this method.
+    /// </remarks>
+    /// <param name="token">The token name (case is ignored, a leading <c>--</c> is stripped).</param>
+    /// <param name="value">The final value; empty when not found.</param>
+    /// <returns><see langword="false"/> when the token, or a token it references, is missing, or the references form a cycle.</returns>
+    public bool TryResolve(string token, out string value) => TryResolve(token, out value, out _);
+
+    // problem = 참조 사슬 안에서 생긴 문제(없는 대상·순환·너무 깊음)의 설명. 첫 토큰이 없으면 null.
+    internal bool TryResolve(string token, out string value, out string? problem)
+    {
+        var name = Normalize(token);
+        var chain = new List<string>();
+        for (var depth = 0; depth <= MaxReferenceDepth; depth++)
+        {
+            if (!Tokens.TryGetValue(name, out var raw))
+            {
+                value = "";
+                problem = chain.Count == 0 ? null : $"token '{chain[0]}' references '{name}', which the theme does not have";
+                return false;
+            }
+
+            chain.Add(name);
+            var m = ReferenceOnly.Match(raw);
+            if (!m.Success)
+            {
+                value = raw;
+                problem = null;
+                return true;
+            }
+
+            name = Normalize(m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value);
+            if (chain.Contains(name, StringComparer.OrdinalIgnoreCase))
+            {
+                value = "";
+                problem = $"token reference cycle {string.Join(" -> ", chain)} -> {name}";
+                return false;
+            }
+        }
+
+        value = "";
+        problem = $"token reference chain from '{chain[0]}' is longer than {MaxReferenceDepth}";
+        return false;
+    }
+
+    private const int MaxReferenceDepth = 8;
+
+    private static readonly System.Text.RegularExpressions.Regex ReferenceOnly = new(
+        @"^\s*(?:token\(\s*([A-Za-z0-9_.-]+)\s*\)|var\(\s*--([A-Za-z0-9_.-]+)\s*\))\s*$",
+        System.Text.RegularExpressions.RegexOptions.Compiled);
 
     private static string Normalize(string key) => key.StartsWith("--", StringComparison.Ordinal) ? key[2..] : key;
 
