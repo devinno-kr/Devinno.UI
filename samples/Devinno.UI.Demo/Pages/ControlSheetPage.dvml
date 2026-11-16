@@ -1,0 +1,229 @@
+<DvPageFrame vm="ControlSheetPage" style="padding:20; gap:16">
+  <DvStyle>
+    .state { width:120; white-space:nowrap }
+  </DvStyle>
+
+  <DvRow align="end">
+    <DvLabel class="heading" text="Control sheet"/>
+    <DvSpacer/>
+    <DvLabel class="caption" text="Every control and state on one page — compare themes side by side"/>
+  </DvRow>
+
+  <!-- 정렬 줄: 버튼·입력·선택·세그먼트·날짜가 같은 줄에서 높이·모서리가 맞는지 -->
+  <DvCard title="Alignment row">
+    <DvRow gap="sm" align="center">
+      <DvButton variant="primary" text="Start"/>
+      <DvButton variant="secondary" text="Reset"/>
+      <DvInput value="{Bind Name}" style="width:160"/>
+      <DvSelect value="{Bind Recipe}" items="{Recipes}" item-value="Id" item-text="Name" style="width:160"/>
+      <DvSegment value="{Bind Mode}">
+        <DvOption value="auto" text="Auto"/>
+        <DvOption value="manual" text="Manual"/>
+        <DvOption value="off" text="Off"/>
+      </DvSegment>
+      <DvDateTimeInput value="{Bind When}" style="width:200"/>
+      <DvColorInput value="{Bind Pen}" style="width:160"/>
+    </DvRow>
+  </DvCard>
+
+  <DvRow gap="md" align="stretch">
+    <!-- 버튼 -->
+    <DvCard title="Buttons" grow="1" style="width:0">
+      <DvGrid columns="4" style="gap:8">
+        <DvButton variant="primary" size="sm" text="Primary"/>
+        <DvButton variant="secondary" size="sm" text="Secondary"/>
+        <DvButton variant="danger" size="sm" text="Danger"/>
+        <DvButton variant="ghost" size="sm" text="Ghost"/>
+        <DvButton variant="primary" text="Primary"/>
+        <DvButton variant="secondary" text="Secondary"/>
+        <DvButton variant="danger" text="Danger"/>
+        <DvButton variant="ghost" text="Ghost"/>
+        <DvButton variant="primary" size="lg" text="Primary"/>
+        <DvButton variant="secondary" size="lg" text="Secondary"/>
+        <DvButton variant="danger" size="lg" text="Danger"/>
+        <DvButton variant="ghost" size="lg" text="Ghost"/>
+        <DvButton variant="primary" text="Disabled" disabled="true"/>
+        <DvButton variant="secondary" text="Disabled" disabled="true"/>
+        <DvButton variant="secondary" text="Latch on" value="{Bind On}"/>
+        <DvButton variant="secondary" text="Latch off" value="{Bind Off}"/>
+      </DvGrid>
+    </DvCard>
+
+    <!-- 켜짐/꺼짐 -->
+    <DvCard title="On / off" grow="1" style="width:0">
+      <DvRow gap="lg">
+        <DvStack gap="sm" grow="1" style="width:0">
+          <DvSwitch label="Switch on" value="{Bind On}"/>
+          <DvSwitch label="Switch off" value="{Bind Off}"/>
+          <DvSwitch label="Switch disabled" value="{Bind On}" disabled="true"/>
+          <DvRow gap="sm">
+            <DvToggle value="{Bind On}" style="width:46; height:26"/>
+            <DvToggle value="{Bind Off}" style="width:46; height:26"/>
+            <DvToggle value="{Bind On}" disabled="true" style="width:46; height:26"/>
+          </DvRow>
+        </DvStack>
+        <DvStack gap="none" grow="1" style="width:0">
+          <DvCheckBox text="Check on" value="{Bind On}"/>
+          <DvCheckBox text="Check off" value="{Bind Off}"/>
+          <DvCheckBox text="Check disabled" value="{Bind On}" disabled="true"/>
+          <DvRadio text="Radio A" value="{Bind Radio}" option="a"/>
+          <DvRadio text="Radio B" value="{Bind Radio}" option="b"/>
+          <DvRadio text="Radio disabled" value="{Bind Radio}" option="c" disabled="true"/>
+        </DvStack>
+      </DvRow>
+    </DvCard>
+
+    <!-- 입력 -->
+    <DvCard title="Inputs" grow="1" style="width:0">
+      <DvStack gap="sm">
+        <DvInput value="{Bind Name}" placeholder="Name"/>
+        <DvInput value="{Bind Empty}" placeholder="Empty with placeholder"/>
+        <DvInput value="{Bind Setpoint}" unit="℃" step="0.5" min="0" max="120"/>
+        <DvInput value="{Bind Name}" readonly="true"/>
+        <DvInput value="{Bind Name}" disabled="true"/>
+        <DvSlider value="{Bind Rate}" min="0" max="100" step="1" unit="%" show-value="true"/>
+        <DvSlider value="{Bind Rate}" min="0" max="100" step="1" disabled="true"/>
+      </DvStack>
+    </DvCard>
+  </DvRow>
+
+  <DvRow gap="md" align="stretch" style="height:300">
+    <DvCard title="Tabs and expander" grow="1" style="width:0">
+      <DvTabs>
+        <DvTab value="one" text="First">
+          <DvLabel class="body" text="Tab body"/>
+        </DvTab>
+        <DvTab value="two" text="Second">
+          <DvLabel class="body" text="Second body"/>
+        </DvTab>
+        <DvTab value="three" text="Third">
+          <DvLabel class="body" text="Third body"/>
+        </DvTab>
+      </DvTabs>
+      <DvExpander title="Expanded" expanded="{Bind Expanded}">
+        <DvLabel class="body" text="Expander body"/>
+      </DvExpander>
+      <DvExpander title="Collapsed">
+        <DvLabel class="body" text="Hidden body"/>
+      </DvExpander>
+    </DvCard>
+
+    <DvCard title="List and tree" grow="1" style="width:0">
+      <DvRow gap="md" align="stretch" grow="1" style="height:0">
+        <DvListBox value="{Bind Recipe}" items="{Recipes}" item-value="Id" item-text="Name" grow="1" style="width:0"/>
+        <DvTreeView items="{Tree}" item-children="Kids" item-text="Name" value="{Bind PickedNode}" grow="1" style="width:0"/>
+      </DvRow>
+    </DvCard>
+
+    <DvCard title="Dialog surface" grow="1" style="width:0">
+      <DvStack class="dialog" gap="sm">
+        <DvLabel class="title" text="Confirm setpoint"/>
+        <DvLabel class="label muted" text="Apply 72.5 ℃ to line 2?"/>
+        <DvRow gap="sm">
+          <DvSpacer/>
+          <DvButton variant="secondary" text="Cancel"/>
+          <DvButton variant="primary" text="Apply"/>
+        </DvRow>
+      </DvStack>
+    </DvCard>
+  </DvRow>
+
+  <!-- 데이터 표시 -->
+  <DvRow gap="md" align="stretch">
+    <DvStat label="Treated flow" value="1,284" unit="m³/h" delta="+3.2%" tone="success" grow="1" style="width:0"/>
+    <DvStat label="Power demand" value="412" unit="kW" delta="+8.1%" tone="warning" grow="1" style="width:0"/>
+    <DvCard title="Chips and status" badge="4 items" grow="2" style="width:0">
+      <DvRow gap="sm">
+        <DvBadge tone="neutral" text="Neutral"/>
+        <DvBadge tone="info" text="Info"/>
+        <DvBadge tone="success" text="Success"/>
+        <DvBadge tone="warning" text="Warning"/>
+        <DvBadge tone="danger" text="Danger"/>
+      </DvRow>
+      <DvStatusItem label="Intake pump #1" state="run" status="Running"/>
+      <DvStatusItem label="Filter B" state="fault" status="Alarm"/>
+    </DvCard>
+  </DvRow>
+
+  <DvAlarmBanner items="{Alarms}" onack="Ack"/>
+
+  <DvRow gap="md" align="stretch" style="height:280">
+    <DvCard title="Alarm list" grow="3" style="width:0">
+      <DvAlarmList items="{Alarms}" onack="Ack" grow="1" style="height:0"/>
+    </DvCard>
+    <DvCard title="Data grid" grow="3" style="width:0">
+      <DvDataGrid items="{Rows}" row-height="38" header-height="34" grow="1" style="height:0">
+        <DvColumn header="" field="State" cell-type="lamp" width="44" align="center"/>
+        <DvColumn header="Tag" field="Tag" width="72"/>
+        <DvColumn header="Description" field="Description"/>
+        <DvColumn header="Load" field="Load" width="70" align="right" format="0' %'"/>
+        <DvColumn header="Auto" field="Auto" cell-type="check" width="60" align="center"/>
+        <DvColumn header="" cell-type="button" text="Reset" variant="secondary" cell-disabled="ResetDisabled" width="84"/>
+      </DvDataGrid>
+    </DvCard>
+  </DvRow>
+
+  <DvRow gap="md" align="stretch" style="height:260">
+    <DvCard title="Trend" grow="3" style="width:0">
+      <DvTrend source="{Trend}" window="120" area="true" grow="1" style="height:0">
+        <DvTrendChannel name="a" label="Intake" unit="m³/h"/>
+        <DvTrendChannel name="b" label="Treated" unit="m³/h"/>
+      </DvTrend>
+    </DvCard>
+    <DvCard title="Bars" grow="2" style="width:0">
+      <DvBarChart items="{Bars}" item-value="Value" item-text="Name" show-value="true" grow="1" style="height:0"/>
+    </DvCard>
+    <DvCard title="Donut" grow="2" style="width:0">
+      <DvPieChart items="{Bars}" item-value="Value" item-text="Name" inner-radius="0.55" grow="1" style="height:0"/>
+    </DvCard>
+  </DvRow>
+
+  <DvRow gap="md" align="stretch">
+    <DvCard title="Spark, steps, progress" grow="1" style="width:0">
+      <DvSparkline values="{Spark}" area="true" style="height:40"/>
+      <DvStepBar steps="{Steps}" current="2"/>
+      <DvProgress value="64" show-value="true" unit="%" style="height:18"/>
+      <DvProgress value="30" style="height:6"/>
+    </DvCard>
+  </DvRow>
+
+  <!-- 계기 -->
+  <DvRow gap="md" align="stretch" style="height:300">
+    <DvCard title="Gauges" grow="2" style="width:0">
+      <DvRow gap="md" grow="1" align="stretch" style="height:0">
+        <DvGauge value="{Pressure}" min="0" max="10" ticks="2" minor-ticks="0.5" format="0.0"
+                 alarm-zones="0:7:token(tone-success) 7:8.5:token(tone-warning) 8.5:10:token(tone-danger)" grow="1" style="width:0"/>
+        <DvGauge value="{PressureHigh}" min="0" max="10" ticks="2" minor-ticks="0.5" format="0.0"
+                 alarm-zones="0:7:token(tone-success) 7:8.5:token(tone-warning) 8.5:10:token(tone-danger)" grow="1" style="width:0"/>
+        <DvRing value="{Speed}" unit="%" label="speed" format="0" grow="1" style="width:0"/>
+      </DvRow>
+    </DvCard>
+    <DvCard title="Tanks" grow="1" style="width:0">
+      <DvRow gap="md" grow="1" align="stretch" style="height:0">
+        <DvTank value="{Level}" unit="%" format="0" alarm-zones="0:85:#3b82f6 85:95:#f59e0b 95:100:#ef4444" grow="1" style="width:0"/>
+        <DvTank value="{LevelHigh}" unit="%" format="0" alarm-zones="0:85:#3b82f6 85:95:#f59e0b 95:100:#ef4444" grow="1" style="width:0"/>
+      </DvRow>
+    </DvCard>
+    <DvCard title="Knob and lamps" grow="1" style="width:0">
+      <DvRow gap="md" align="center" grow="1">
+        <DvKnob value="{Bind Knob}" min="0" max="2" step="0.05" unit="mg/L" style="width:110; height:110"/>
+        <DvStack gap="sm">
+          <DvRow gap="sm" align="center"><DvLamp on="true" state="run" style="width:14; height:14"/><DvLabel class="label" text="Run"/></DvRow>
+          <DvRow gap="sm" align="center"><DvLamp on="false" style="width:14; height:14"/><DvLabel class="label" text="Off"/></DvRow>
+          <DvRow gap="sm" align="center"><DvLamp on="true" state="fault" style="width:14; height:14"/><DvLabel class="label" text="Fault"/></DvRow>
+        </DvStack>
+      </DvRow>
+    </DvCard>
+    <DvCard title="Process" grow="2" style="width:0">
+      <DvProcess grow="1" style="height:0">
+        <DvVessel name="T1" level="62" label="T-101"/>
+        <DvPump name="P1" running="true" label="P-101"/>
+        <DvValve name="V1" kind="control" open="true" label="FCV-101"/>
+        <DvPump name="P2" running="false" label="P-102"/>
+        <DvLine from="T1.bottom" to="P1.in"/>
+        <DvLine from="P1.out" to="V1.in"/>
+        <DvLine from="V1.out" to="P2.in"/>
+      </DvProcess>
+    </DvCard>
+  </DvRow>
+</DvPageFrame>

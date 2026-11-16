@@ -5,8 +5,10 @@ using Devinno.UI.Styling;
 
 // 데모 — DvApp 하나에 페이지를 전부 넣고, 실행 인자로 시작 페이지를 고른다.
 //   인자 없음 = 쇼케이스(영어): 상단 바 + Overview(운영 대시보드)·Process(P&ID)·Widgets(아래 페이지 목록), PlantSim 이 값을 움직인다.
-//   -- shot <폴더> = 쇼케이스 화면을 창 없이 PNG 로(README 이미지), anim 을 더하면 P&ID 흐름 애니메이션 프레임도
-//   dotnet run --project samples/Devinno.UI.Demo [-- gpu] [-- gles] [-- dashboard|lang|control|equipment|grid|trend [fast]|alarm|input|knob|neon|process|basic|v2|custom] [-- light|graphite|carbon]
+//   -- shot <폴더> = 쇼케이스 화면을 창 없이 PNG 로(README 이미지), anim 을 더하면 P&ID 흐름 애니메이션 프레임도. 컨트롤 시트 sheet-<테마>.png 4장도 함께
+//   -- sheet = 컨트롤 시트(모든 컨트롤·상태 한 화면, 테마 비교용)
+//   -- bench <초> = 그 시간 동안 매 프레임 다시 그리고 끝나면 "frames=… avg_ms=… p95_ms=…" 한 줄을 쓰고 종료(성능 기준선, 다른 인자와 함께)
+//   dotnet run --project samples/Devinno.UI.Demo [-- gpu] [-- gles] [-- dashboard|lang|control|equipment|grid|trend [fast]|alarm|input|knob|neon|process|basic|v2|custom|sheet] [-- light|graphite|carbon]
 //   시나리오: -- top = 상단 바(모니터링·설정·알람) + 홈 + 각 페이지의 "이전",  -- nav = 왼쪽 사이드바,
 //            -- dialog = 레시피 편집 다이얼로그 + 그 위 메시지 박스 + 통신 시뮬레이션 알람(DvApp.Current, 키 중복 방지)
 internal static class Program
@@ -17,7 +19,7 @@ internal static class Program
             : args.Contains("graphite") ? DvTheme.Graphite // ISA-101 주간 관제실
             : args.Contains("carbon") ? DvTheme.Carbon // 야간 관제실
             : DvTheme.Dark;
-        string[] scenarios = ["top", "nav", "dialog", "lang", "control", "equipment", "grid", "trend", "alarm", "input", "knob", "basic", "process", "neon", "v2", "dashboard", "custom", "video"];
+        string[] scenarios = ["top", "nav", "dialog", "lang", "control", "equipment", "grid", "trend", "alarm", "input", "knob", "basic", "process", "neon", "v2", "dashboard", "custom", "video", "sheet"];
         var showcase = !args.Any(scenarios.Contains);
         // 데모 화면은 모두 영어 — 언어 전환 페이지(lang)가 ko·en·ja 를 바꿀 수 있게 그 페이지의 표를 앱 전체에 쓰고, 영어로 시작한다
         var strings = WithLanguage(LangPage.CreateStrings(), "en");
@@ -41,6 +43,7 @@ internal static class Program
         var motionNext = new MotionNextPage();
         var custom = new CustomWidgetPage();
         var video = new VideoPage();
+        var sheet = new ControlSheetPage();
 
         var sim = new PlantSim();
         var overview = new OverviewPage(sim);
@@ -76,7 +79,7 @@ internal static class Program
 #if DEBUG
         app.HotReload = true; // 개발 중 — dvml 을 저장하면 실행 중인 화면에 바로 반영(배포 빌드에서는 꺼짐)
 #endif
-        foreach (var page in new DvPage[] { overview, plantProcess, widgets, home, dashboard, components, control, lang, equipment, grid, trend, fastTrend, alarm, input, knob, neon, dialog, process, basic, motionNext, custom, video })
+        foreach (var page in new DvPage[] { overview, plantProcess, widgets, home, dashboard, components, control, lang, equipment, grid, trend, fastTrend, alarm, input, knob, neon, dialog, process, basic, motionNext, custom, video, sheet })
             app.Pages.Add(page);
 
         // 시작 페이지 · 창 크기 · 제목 · 테마(null = 기본 테마)
@@ -101,6 +104,7 @@ internal static class Program
             : args.Contains("dashboard") ? (dashboard, DashboardPage.Width, DashboardPage.Height, "Devinno.UI Demo — Dashboard", null)
             : args.Contains("custom") ? (custom, CustomWidgetPage.Width, CustomWidgetPage.Height, "Devinno.UI Demo — Custom widgets", theme)
             : args.Contains("video") ? (video, VideoPage.Width, VideoPage.Height, "Devinno.UI Demo — Video", theme)
+            : args.Contains("sheet") ? (sheet, ControlSheetPage.Width, ControlSheetPage.Height, "Devinno.UI Demo — Control sheet", theme)
             : (overview, 1440, 900, "Devinno.UI Demo", theme);
 
         if (args.Contains("top"))
@@ -159,6 +163,15 @@ internal static class Program
                         Shot(app, width, height, Path.Combine(dir, $"process-frame-{frame:000}.png"), frame * 50L);
                     }
                 }
+            }
+
+            // 컨트롤 시트 — 상단 바 없는 앱으로 네 내장 테마를 한 장씩
+            foreach (var (name, sheetTheme) in new[] { ("light", DvTheme.Light), ("dark", DvTheme.Dark), ("graphite", DvTheme.Graphite), ("carbon", DvTheme.Carbon) })
+            {
+                var sheetApp = new DvApp { Strings = strings, Theme = sheetTheme };
+                sheetApp.Pages.Add(new ControlSheetPage());
+                Shot(sheetApp, ControlSheetPage.Width, ControlSheetPage.Height, null);
+                Shot(sheetApp, ControlSheetPage.Width, ControlSheetPage.Height, Path.Combine(dir, $"sheet-{name}.png"));
             }
 
             return;
@@ -233,7 +246,9 @@ internal static class Program
             producer.Start();
         }
 
+        var bench = Bench(args, app, window);
         window.Run();
+        bench?.Invoke();
         Volatile.Write(ref running, false);
         timer?.Dispose();
         plc?.Dispose();
@@ -246,6 +261,33 @@ internal static class Program
     }
 
     // 창 없이 앱 화면(바 + 현재 페이지) 한 프레임 — path 가 null 이면 그리기만(대기 중인 페이지 전환 적용)
+    // -- bench <초>: 프레임마다 다시 그리게 하고(Invalidate) 화면을 바꾼 프레임의 시간(ms)을 모은다. 시간이 다 되면 창을 닫고, 돌려준 동작이 결과 한 줄을 쓴다.
+    private static Action? Bench(string[] args, DvApp app, ViewWindow window)
+    {
+        if (args.SkipWhile(a => a != "bench").Skip(1).FirstOrDefault() is not { } raw
+            || !double.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var seconds))
+            return null;
+
+        var frames = new List<double>();
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        window.FrameRendered = ms =>
+        {
+            frames.Add(ms);
+            if (clock.Elapsed.TotalSeconds >= seconds)
+                window.Close();
+            else
+                app.Invalidate();
+        };
+        app.Invalidate();
+        return () =>
+        {
+            var sorted = frames.Skip(frames.Count / 20).OrderBy(x => x).ToList(); // 처음 5%(시작·캐시 채움)는 뺀다
+            var avg = sorted.Count > 0 ? sorted.Average() : 0;
+            var p95 = sorted.Count > 0 ? sorted[(int)Math.Min(sorted.Count - 1, Math.Ceiling(sorted.Count * 0.95) - 1)] : 0;
+            Console.WriteLine(string.Create(System.Globalization.CultureInfo.InvariantCulture, $"frames={frames.Count} avg_ms={avg:0.00} p95_ms={p95:0.00}"));
+        };
+    }
+
     private static void Shot(DvApp app, int width, int height, string? path, long timestampMs = 0)
     {
         using var bitmap = new SkiaSharp.SKBitmap(width, height);

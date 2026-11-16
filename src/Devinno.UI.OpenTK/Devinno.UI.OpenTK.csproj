@@ -12,6 +12,8 @@
   <ItemGroup>
     <!-- 장시간 스모크 도구(tools/Smoke) — 프레임 시간 고리 -->
     <InternalsVisibleTo Include="Devinno.UI.Smoke" />
+    <!-- 데모의 bench 측정(같은 프레임 시간 고리) -->
+    <InternalsVisibleTo Include="Devinno.UI.Demo" />
   </ItemGroup>
 
   <PropertyGroup>

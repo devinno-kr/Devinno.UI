@@ -42,4 +42,10 @@
     <AdditionalFiles Include="..\..\samples\Devinno.UI.AppSample\Pages\*.dvml" Link="AppSample\%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <!-- 컨트롤 시트(생김새 작업 기준 화면) — 데모의 다른 타입에 기대지 않는 페이지 하나를 그대로 넣어 네 테마로 그려 본다. -->
+  <ItemGroup>
+    <Compile Include="..\..\samples\Devinno.UI.Demo\ControlSheetPage.cs" Link="ControlSheet\ControlSheetPage.cs" />
+    <AdditionalFiles Include="..\..\samples\Devinno.UI.Demo\Pages\ControlSheetPage.dvml" Link="ControlSheet\ControlSheetPage.dvml" />
+  </ItemGroup>
+
 </Project>
