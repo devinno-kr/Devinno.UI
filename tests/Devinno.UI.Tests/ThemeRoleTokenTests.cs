@@ -63,7 +63,7 @@ public class ThemeRoleTokenTests
         var isa = name is "Graphite" or "Carbon";
         Assert.Equal(isa ? LookTexture.Flat : LookTexture.Rich, look.Texture);
         Assert.Equal(!isa, look.NormalColor);
-        Assert.Equal(isa ? LookSelection.Quiet : LookSelection.Strong, look.Selection);
+        Assert.Equal(LookSelection.Quiet, look.Selection); // 네 테마 모두 조용한 선택(Light/Dark 는 단계 6 결정)
         Assert.Equal(name == "Light" ? 0.85f : 1f, ThemeResolver.Number(Theme(name), "texture.depth"), 3);
     }
 

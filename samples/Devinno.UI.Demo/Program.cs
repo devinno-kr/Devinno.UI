@@ -174,6 +174,21 @@ internal static class Program
                 Shot(sheetApp, ControlSheetPage.Width, ControlSheetPage.Height, Path.Combine(dir, $"sheet-{name}.png"));
             }
 
+            // -- shot <폴더> variants = Light·Dark 를 스타일 스위치 조합(질감 rich|flat × 선택 strong|quiet)으로 — 테마 값 고를 때 비교용
+            if (args.Contains("variants"))
+            {
+                foreach (var (name, baseTheme) in new[] { ("light", DvTheme.Light), ("dark", DvTheme.Dark) })
+                foreach (var texture in new[] { "rich", "flat" })
+                foreach (var selection in new[] { "strong", "quiet" })
+                {
+                    var t = baseTheme.With(new Dictionary<string, string> { ["look.texture"] = texture, ["look.selection"] = selection });
+                    var sheetApp = new DvApp { Strings = strings, Theme = t };
+                    sheetApp.Pages.Add(new ControlSheetPage());
+                    Shot(sheetApp, ControlSheetPage.Width, ControlSheetPage.Height, null);
+                    Shot(sheetApp, ControlSheetPage.Width, ControlSheetPage.Height, Path.Combine(dir, $"variant-{name}-{texture}-{selection}.png"));
+                }
+            }
+
             return;
         }
 

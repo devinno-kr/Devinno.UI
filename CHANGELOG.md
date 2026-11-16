@@ -24,7 +24,7 @@
 - Weights: buttons and titles 600, tabs, segments, chips and expander headers 500 (were bold). The primary button is a solid color (no gradient).
 - Borders are drawn inside the box, as in CSS (crisper 1px edges).
 - Editing or open input, select, date and color boxes show an accent border instead of an outer ring. Check boxes, radios and slider thumbs keep their line width on hover (color only); the slider shows a soft halo. The off toggle knob is muted.
-- Selection switch `look.selection: quiet` (Graphite and Carbon): segment, list and tree selection is a raised chip or soft tint instead of a primary fill.
+- Selection switch `look.selection` (`quiet` in all four built-in themes): segment, list and tree selection is a raised chip or soft tint; a theme that sets `strong` fills it with `primary` (the previous look).
 - Expand glyphs are chevrons everywhere; the tab divider is a hairline.
 - Alarm priority has one look everywhere: a chip filled with the priority color and contrast text, with the theme's `alarm-*-icon` before the text when set. Unacknowledged chips blink, acknowledged ones keep their color. The alarm list drops the left priority bar, its ACK button is neutral, and its default row height is `row.md` (40, was 36). `DvStatusItem` blinks at 500 ms like the other alarm displays.
 - `DvStatusItem` shows its status as muted text; the lamp is the only color in the line. With `look.normal-color: off` the calm alarm banner is neutral.

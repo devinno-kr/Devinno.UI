@@ -147,7 +147,11 @@ public class SelectionLookTests
 
     [Fact]
     public void Strong_selection_fills_with_primary()
-        => Assert.Equal(Devinno.UI.Styling.ThemeResolver.Color(Devinno.UI.Styling.DvTheme.Dark, "primary"), SelectedSegmentBg(Devinno.UI.Styling.DvTheme.Dark));
+    {
+        // 내장 테마는 모두 quiet — strong 은 테마 값으로 고른다
+        var strong = Devinno.UI.Styling.DvTheme.Dark.With(new Dictionary<string, string> { ["look.selection"] = "strong" });
+        Assert.Equal(Devinno.UI.Styling.ThemeResolver.Color(strong, "primary"), SelectedSegmentBg(strong));
+    }
 
     [Fact]
     public void Quiet_selection_raises_a_surface_instead()

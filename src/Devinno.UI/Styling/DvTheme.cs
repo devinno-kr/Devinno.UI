@@ -92,7 +92,7 @@ public sealed class DvTheme
         // 스위치 — 질감(flat|rich), 정상 상태 색(on|off), 선택 강조(quiet|strong)
         ["look.texture"] = "rich",
         ["look.normal-color"] = "on",
-        ["look.selection"] = "strong",
+        ["look.selection"] = "quiet", // 내장 네 테마 모두 조용한 선택(Light/Dark 결정 2026-11-16) — strong 은 테마 값으로
         // 입체 음영 깊이(0 = 음영 없음, 1 = 깊은 금속) — rich 질감 전체가 따른다
         ["texture.depth"] = "1",
 
