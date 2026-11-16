@@ -59,10 +59,11 @@ public class ThemeRoleTokenTests
     public void Built_in_themes_keep_the_current_look(string name)
     {
         var look = ThemeLook.Of(Theme(name));
-        Assert.Equal(LookTexture.Rich, look.Texture);
-        Assert.True(look.NormalColor);
-        // 선택 강조: Light/Dark = strong, ISA-101 쪽 Graphite/Carbon = quiet (단계 3)
-        Assert.Equal(name is "Graphite" or "Carbon" ? LookSelection.Quiet : LookSelection.Strong, look.Selection);
+        // ISA-101 쪽 Graphite/Carbon = 평면 · 정상 색 안 씀 · 조용한 선택(설계 3.3). Light/Dark 는 단계 6 결정 전까지 rich · on · strong
+        var isa = name is "Graphite" or "Carbon";
+        Assert.Equal(isa ? LookTexture.Flat : LookTexture.Rich, look.Texture);
+        Assert.Equal(!isa, look.NormalColor);
+        Assert.Equal(isa ? LookSelection.Quiet : LookSelection.Strong, look.Selection);
     }
 
     [Fact]

@@ -11,7 +11,7 @@ How to read the tables: `bound` = the attribute takes a binding (`{X}`). Every t
 
 - **Value text**: integers as integers, otherwise one decimal place (gauge, ring, progress bar, tank, chart numbers; the slider uses the decimals of `step`). A live value then switches between "6" and "6.2" and the text changes width.
 - **`format`** fixes the digits: a .NET format string (InvariantCulture, bindable) — `format="0.0"` → "6.0". It means the same everywhere a number is shown as text (gauge, ring, progress bar, tank, slider, bar/pie chart numbers, `DvInput`, grid columns, summaries). A format not valid for the value (`X` on a real number) shows the default text + Trace warning.
-- **`unit`** is drawn after the value text on the gauge, ring, progress bar, tank, knob and slider: a unit starting with `%`, `‰` or `°` joins the value (`40%`, `20°C`), any other unit follows one space (`3 bar`). `DvInput` keeps it at the right edge of the box; trends show it in the legend.
+- **`unit`** is drawn after the value text on the gauge, ring, progress bar, tank, knob and slider: a unit starting with `%`, `‰` or `°` joins the value (`40%`, `20°C`), any other unit follows one space (`3 bar`). On the gauge, ring, knob and tank the value uses tabular digits and the unit is smaller (value size × the theme's `ratio.unit`) and muted; style it with `::part(unit)` ([widget parts](dvml-style.md#dvstyle)). `DvInput` keeps it at the right edge of the box; trends show it in the legend.
 - **`show-value`** is honored by every tag that has it: `DvGauge` and `DvRing` show the value by default (`show-value="false"` hides it); `DvProgress`, `DvSlider`, `DvBarChart` and `DvPieChart` hide it by default.
 - **Size scaling**: the internals of gauges, rings, knobs and tanks (arc thickness, needle, value text, chip, zone marks) scale with the widget size (default size = 1×; gauges, rings and knobs use the shorter side; tanks the smaller of width/80 and height/160). Proportions stay right when filling a cell with `grow="1"` or `align="stretch"`.
 - **Range** (`min`/`max` on knob, slider, gauge, ring, progress bar, tank, numeric `DvInput`, grid input cells): user input never produces a value outside — drag and the stepper stop at the bound; a typed or keypad value outside is rejected (error shown). A value from code or the VM is not changed; instruments only draw it clamped.
@@ -41,7 +41,8 @@ A 270° needle instrument.
 
 **Behavior**
 - Default size: 120×120.
-- The value text (+ `unit`) and the needle tip use the current zone color.
+- The value text and the needle tip use the current zone color (no zone = the needle color); the unit follows smaller and muted.
+- The track is a thin neutral arc (`gauge-track`) that outlines the range; the needle shows the value. `alarm-zones` are a thin band just inside it. Tick lines are drawn under the needle and the scale numbers over it; the needle reaches the start of the ticks.
 - The value text sits in the open bottom of the arc and scales with the gauge, so a larger gauge gives it no more room. It is fitted between the arc ends: a text that does not fit at the normal size (`1480 rpm`, `10000 kPa`) is drawn smaller, down to 60% of the normal size. Up to about 13 characters with the unit (`10000 m3/hour`) fit; a longer text stays at 60% and reaches the arc ends (no ellipsis). With `ticks` the text sits lower and its normal size is smaller. For a longer text, leave `unit` out and put the unit in a `DvLabel` under the gauge, or set `show-value="false"` and show the value in your own label.
 - The gauge has no `tone`, `direction`, `label`, `sweep` or `thickness` (those belong to the ring and progress bar); written on a gauge they are [DVML019](dvml-diagnostics.md#dvml019).
 
@@ -67,9 +68,9 @@ A thick arc fill.
 | `alarm-zones` | zone list | none | yes | A zone color wins over `tone` ([alarm-zones](#alarm-zones)) |
 | `tone` | theme word | `info` | yes | Fill `tone-{tone}`. Unknown = `info` + warning |
 | `unit` | text | empty | yes | After the value text: `%` `‰` `°…` join it (`40%`), others follow one space (`3 bar`) |
-| `label` | text | empty | yes | Drawn below the value |
+| `label` | text | empty | yes | Drawn below the value (muted, `font.label` size or smaller on a small ring) |
 | `sweep` | number (degrees) | `270` | yes | Clamped to 1..360. `360` = a full circle starting at 12 o'clock |
-| `thickness` | number (px) | 11% of size | yes | Absent or `<= 0` = 11% of the size |
+| `thickness` | number (px) | 1/12 of the size | yes | Absent or `<= 0` = 1/12 of the size (10 px at 120) |
 | `format` | .NET format string | none | yes | Value text digits |
 | `show-value` | bool | `true` | yes | Value (+ unit) in the center. `false` hides it; `label` stays |
 
@@ -184,7 +185,7 @@ A cylindrical vessel with a liquid level.
 | `value` | number | `0` | yes | One-way. Drawn clamped to `min`..`max` |
 | `min` | number | `0` | yes | `min >= max` = 0..100 + warning |
 | `max` | number | `100` | yes | As `min` |
-| `alarm-zones` | zone list | none | yes | Liquid color per zone ([alarm-zones](#alarm-zones)) |
+| `alarm-zones` | zone list | none | yes | Limit marks, and the liquid color per zone when the theme's `look.normal-color` is `on` ([alarm-zones](#alarm-zones)) |
 | `unit` | text | empty | yes | After the value text: `%` `‰` `°…` join it (`40%`), others follow one space (`3 bar`) |
 | `format` | .NET format string | none | yes | Value chip digits. The chip is always drawn (no `show-value`) |
 | `show-zone-marks` | bool | `true` | yes | `false` hides the zone boundary ticks and numbers on the right; zone colors stay |
@@ -192,7 +193,8 @@ A cylindrical vessel with a liquid level.
 **Behavior**
 - Default size: 80×160.
 - Value chip in the center (+ `unit`).
-- Liquid color = current zone color; no zone = the `tank-fill` token.
+- Liquid color = current zone color when the theme's `look.normal-color` is `on` (`Light`, `Dark`); otherwise, or with no zone, the `tank-fill` token (`Graphite`, `Carbon` — the limit lines and the value chip carry the state).
+- Each zone start above `min` is marked twice: a short tick and number outside on the right, and a thin dashed line across the body (zone color). `show-zone-marks="false"` hides both.
 - A process-diagram vessel is a different tag: [DvVessel](dvml-process-equipment.md#equipment).
 
 **Example**

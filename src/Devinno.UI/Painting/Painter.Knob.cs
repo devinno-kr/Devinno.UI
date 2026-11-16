@@ -44,7 +44,8 @@ public sealed partial class Painter
 
         if (t > 0f)
         {
-            using var p = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = stroke, Color = fill };
+            // 값 호 — 둥근 끝(H3, 링과 같음)
+            using var p = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = stroke, StrokeCap = SKStrokeCap.Round, Color = fill };
             using var path = new SKPath();
             path.AddArc(oval, startAngle, sweep * t);
             canvas.DrawPath(path, p);
@@ -61,8 +62,8 @@ public sealed partial class Painter
             else if (!box.Disabled && state is not null && ReferenceEquals(state.Hover, box))
                 face = Mix(face, SKColors.White, 0.06f);
 
-            var rich = Roles.Look.Texture == LookTexture.Rich; // 그림자·결·지시선 그림자 — 질감 rich 에서만
-            if (rich)
+            // 노브는 직접 돌리는 컨트롤이라 떠 보이는 면(그림자·결)이 "돌릴 수 있음" 단서 — 질감 스위치(look.texture)와 무관하게 늘 그린다.
+            // 평면 테마에서 그림자를 그리는 유일한 예외(사용자 결정 2026-11-16)
             using (var sh = new SKPaint { IsAntialias = true, Color = new SKColor(0, 0, 0, 0x48) })
             {
                 sh.MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, km.ShadowBlur);
@@ -73,7 +74,6 @@ public sealed partial class Painter
             var dark = Mix(face, SKColors.Black, 0.10f);
             using (var p = new SKPaint { IsAntialias = true, Color = face })
             {
-                if (rich)
                 p.Shader = SKShader.CreateSweepGradient(
                     new SKPoint(cx, cy),
                     new[] { light, dark, light, dark, light, dark, light, dark, light, dark, light },
@@ -91,7 +91,7 @@ public sealed partial class Painter
                    })
                 canvas.DrawCircle(cx, cy, faceR, rim);
 
-            // 지시선 — 캡슐(둥근 굵은 막대) + 작은 그림자
+            // 지시 표시 — 면 바깥쪽 1/3 의 캡슐(값 글자와 겹치지 않음) + 작은 그림자
             var a = valueAngle * MathF.PI / 180f;
             using var ip = new SKPaint
             {
@@ -100,23 +100,21 @@ public sealed partial class Painter
                 StrokeWidth = MathF.Max(3f * km.Scale, faceR * 0.16f),
                 StrokeCap = SKStrokeCap.Round,
                 Color = fill,
-                ImageFilter = rich
-                    ? SKImageFilter.CreateDropShadow(0.8f * km.Scale, 0.8f * km.Scale, 1.2f * km.Scale, 1.2f * km.Scale, new SKColor(0, 0, 0, 0x90))
-                    : null
+                ImageFilter = SKImageFilter.CreateDropShadow(0.8f * km.Scale, 0.8f * km.Scale, 1.2f * km.Scale, 1.2f * km.Scale, new SKColor(0, 0, 0, 0x90))
             };
             canvas.DrawLine(
-                cx + MathF.Cos(a) * faceR * 0.52f, cy + MathF.Sin(a) * faceR * 0.52f,
-                cx + MathF.Cos(a) * faceR * 0.80f, cy + MathF.Sin(a) * faceR * 0.80f, ip);
+                cx + MathF.Cos(a) * faceR * 0.68f, cy + MathF.Sin(a) * faceR * 0.68f,
+                cx + MathF.Cos(a) * faceR * 0.92f, cy + MathF.Sin(a) * faceR * 0.92f, ip);
         }
 
-        var label = box.KnobValue.ToString("F" + Interaction.KnobBinder.Decimals(box.KnobStep),
+        var value = box.KnobValue.ToString("F" + Interaction.KnobBinder.Decimals(box.KnobStep),
             System.Globalization.CultureInfo.InvariantCulture);
-        label = WithUnit(label, box.KnobUnit);
 
-        using var font = TextFont.Create(label, PartSize(box, "value", MathF.Max(Roles.Font("caption"), radius * 0.34f)), PartWeight(box, "value", Roles.Weight("bold")));
-        using var tp = new SKPaint { IsAntialias = true, Color = PartColor(box, "value", ink) };
+        // 값 + 단위(값 문법 H6)
+        using var font = TextFont.Create(value, PartSize(box, "value", MathF.Max(Roles.Font("caption"), radius * 0.34f)), PartWeight(box, "value", Roles.Weight("strong")));
+        using var unitFont = UnitFont(box, box.KnobUnit, font);
         var baseline = cy - (font.Metrics.Ascent + font.Metrics.Descent) / 2f;
-        canvas.DrawText(label, cx, baseline, SKTextAlign.Center, font, tp);
+        DrawValueUnit(canvas, box, value, box.KnobUnit, cx, baseline, font, unitFont, PartColor(box, "value", ink));
     }
 
     private static SKColor Mix(SKColor a, SKColor b, float t) => new(

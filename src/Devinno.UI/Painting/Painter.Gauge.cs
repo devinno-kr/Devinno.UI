@@ -9,9 +9,10 @@ namespace Devinno.UI.Painting;
 
 public sealed partial class Painter
 {
-    // 눈금: 트랙 안쪽에 큰/작은 눈금, 큰 눈금 숫자는 회전 없이 정립(아래쪽도 읽기 쉽게)
+    // 눈금: 트랙 안쪽에 큰/작은 눈금, 큰 눈금 숫자는 회전 없이 정립(아래쪽도 읽기 쉽게).
+    // labels = false 면 눈금선만, true 면 숫자만 — 눈금선은 바늘 아래, 숫자는 바늘 위에 그린다(바늘이 숫자를 가리지 않음)
     private void DrawGaugeScale(SKCanvas canvas, LayoutBox box, float cx, float cy, WidgetMetrics.GaugeMetrics gm,
-        float startAngle, float sweep)
+        float startAngle, float sweep, bool labels)
     {
         var radius = gm.Radius;
         var range = box.GaugeMax - box.GaugeMin;
@@ -20,6 +21,13 @@ public sealed partial class Painter
 
         var tickColor = ThemeColor("gauge-tick");
         float Angle(double v) => (startAngle + (float)((v - box.GaugeMin) / range) * sweep) * MathF.PI / 180f;
+
+        var major = ScaleTicks.Values(box.GaugeMin, box.GaugeMax, box.GaugeTicks);
+        if (labels)
+        {
+            DrawGaugeTickLabels(canvas, box, cx, cy, gm, major, Angle);
+            return;
+        }
 
         using var p = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, Color = tickColor };
 
@@ -34,7 +42,6 @@ public sealed partial class Painter
             }
         }
 
-        var major = ScaleTicks.Values(box.GaugeMin, box.GaugeMax, box.GaugeTicks);
         p.StrokeWidth = MathF.Max(Roles.Stroke("hairline"), Roles.Stroke("emphasis") * gm.Scale);
         foreach (var v in major)
         {
@@ -42,17 +49,22 @@ public sealed partial class Painter
             canvas.DrawLine(cx + MathF.Cos(a) * (radius - gm.TickInset), cy + MathF.Sin(a) * (radius - gm.TickInset),
                 cx + MathF.Cos(a) * (radius - gm.MajorTickEnd), cy + MathF.Sin(a) * (radius - gm.MajorTickEnd), p);
         }
+    }
 
+    private void DrawGaugeTickLabels(SKCanvas canvas, LayoutBox box, float cx, float cy, WidgetMetrics.GaugeMetrics gm,
+        IEnumerable<double> major, Func<double, float> angle)
+    {
         if (!box.GaugeTickLabels)
             return;
 
+        var radius = gm.Radius;
         var decimals = Interaction.KnobBinder.Decimals(box.GaugeTicks);
         using var font = TextFont.Create("0", PartSize(box, "tick", MathF.Max(9f, radius * 0.15f)), PartWeight(box, "tick", Roles.Weight("regular")));
         using var tp = new SKPaint { IsAntialias = true, Color = PartColor(box, "tick", ThemeColor("text-muted")) };
         var labelR = radius - gm.MajorTickEnd - font.Size * 0.95f;
         foreach (var v in major)
         {
-            var a = Angle(v);
+            var a = angle(v);
             var text = v.ToString("F" + decimals, CultureInfo.InvariantCulture);
             var x = cx + MathF.Cos(a) * labelR;
             var y = cy + MathF.Sin(a) * labelR - (font.Metrics.Ascent + font.Metrics.Descent) / 2f;

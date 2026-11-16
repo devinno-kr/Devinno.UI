@@ -83,7 +83,7 @@ public sealed partial class Painter
         if (size <= 4f)
             return;
 
-        var th = box.RingThickness ?? size * 0.11f;
+        var th = box.RingThickness ?? WidgetMetrics.Gauge(rect).Stroke; // 기본 = 크기의 1/12(계기 호 굵기 단계, H3), thickness 지정이 이김
         var cx = rect.MidX;
         var cy = rect.MidY;
         var r = size / 2f - th / 2f - 1f;
@@ -138,16 +138,18 @@ public sealed partial class Painter
         var hasLabel = !string.IsNullOrEmpty(box.Label);
         if (box.ShowValue) // show-value(기본 참, D2) — 거짓이면 값 글자만 숨기고 label 자리는 그대로
         {
-            var text = WithUnit(FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag), box.Unit);
-            using var font = TextFont.Create(text, PartSize(box, "value", MathF.Max(10f, r * 0.42f)), PartWeight(box, "value", Roles.Weight("bold")));
-            using var tp = new SKPaint { IsAntialias = true, Color = PartColor(box, "value", ThemeColor("text")) };
+            var value = FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag);
+            using var font = TextFont.Create(value, PartSize(box, "value", MathF.Max(10f, r * 0.42f)), PartWeight(box, "value", Roles.Weight("strong")));
+            using var unitFont = UnitFont(box, box.Unit, font);
             var valueY = cy - (hasLabel ? r * 0.10f : 0f);
-            canvas.DrawText(text, cx, valueY - (font.Metrics.Ascent + font.Metrics.Descent) / 2f, SKTextAlign.Center, font, tp);
+            DrawValueUnit(canvas, box, value, box.Unit, cx, valueY - (font.Metrics.Ascent + font.Metrics.Descent) / 2f, font, unitFont,
+                PartColor(box, "value", ThemeColor("text")));
         }
 
         if (hasLabel)
         {
-            using var lf = TextFont.Create(box.Label!, PartSize(box, "name", MathF.Max(9f, r * 0.16f)), PartWeight(box, "name", Roles.Weight("bold")));
+            // 캡션 = KPI 제목 크기(font.label, 링이 작으면 줄임) · 보통 굵기 · 흐림 — 값 문법 H6
+            using var lf = TextFont.Create(box.Label!, PartSize(box, "name", MathF.Max(9f, MathF.Min(Roles.Font("label"), r * 0.22f))), PartWeight(box, "name", Roles.Weight("regular")));
             using var lp = new SKPaint { IsAntialias = true, Color = PartColor(box, "name", ThemeColor("text-muted")) };
             canvas.DrawText(box.Label!, cx, cy + r * 0.36f, SKTextAlign.Center, lf, lp);
         }
@@ -179,6 +181,32 @@ public sealed partial class Painter
         => string.IsNullOrEmpty(unit) ? value
          : UnitJoinsValue(unit) ? value + unit
          : value + " " + unit;
+
+    // 값 문법(H6) — 계기(게이지·링·노브·탱크)의 값 = 값(고정폭 숫자) + 단위(값 크기 × ratio.unit, 흐림, ::part(unit)).
+    // %·‰·° 는 값에 붙이고, 그 밖은 작은 틈. 단위 글꼴은 호출한 쪽이 Dispose.
+    private SKFont? UnitFont(LayoutBox box, string? unit, SKFont valueFont)
+        => string.IsNullOrEmpty(unit)
+            ? null
+            : TextFont.Create(unit, PartSize(box, "unit", valueFont.Size * Roles.Number("ratio.unit")), PartWeight(box, "unit", Roles.Weight("regular")));
+
+    private static float UnitGap(string unit, SKFont valueFont) => UnitJoinsValue(unit) ? valueFont.Size * 0.04f : valueFont.Size * 0.18f;
+
+    private static float ValueUnitWidth(string value, string? unit, SKFont valueFont, SKFont? unitFont)
+        => TextFont.MeasureNumber(value, valueFont) + (unitFont is null ? 0f : UnitGap(unit!, valueFont) + unitFont.MeasureText(unit));
+
+    // 가운데 cx 에 값+단위 한 줄
+    private void DrawValueUnit(SKCanvas canvas, LayoutBox box, string value, string? unit, float cx, float baseline,
+        SKFont valueFont, SKFont? unitFont, SKColor valueColor)
+    {
+        var x = cx - ValueUnitWidth(value, unit, valueFont, unitFont) / 2f;
+        using var vp = new SKPaint { IsAntialias = true, Color = valueColor };
+        TextFont.DrawNumber(canvas, value, x, baseline, SKTextAlign.Left, valueFont, vp);
+        if (unitFont is null)
+            return;
+        x += TextFont.MeasureNumber(value, valueFont) + UnitGap(unit!, valueFont);
+        using var up = new SKPaint { IsAntialias = true, Color = PartColor(box, "unit", ThemeColor("text-muted")) };
+        canvas.DrawText(unit, x, baseline, SKTextAlign.Left, unitFont, up);
+    }
 
     internal static bool UnitJoinsValue(string unit) => unit.Length > 0 && unit[0] is '%' or '‰' or '°';
 

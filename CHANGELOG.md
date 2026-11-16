@@ -28,6 +28,11 @@
 - `DvDataGrid`: header and summary edges are hairlines, header text weight 600, numbers use tabular digits, check cells use `radius.xs`, button cells `radius.sm`; a row whose `cell-disabled` is true has no button (was a dimmed button).
 - `DvTrend`: horizontal grid lines only; the number of value ticks follows the plot height; the area fill starts at 0 and is drawn only for a single channel when 0 is inside the range; the legend is name (muted), value (tabular, weight 600) and unit (smaller, muted).
 - Bar chart bars round only the corners away from the baseline; chart values, the donut total and legend values use tabular digits; the pie legend name is muted. Step bar connectors and the current ring use `stroke.emphasis`.
+- `DvTheme.Graphite` and `DvTheme.Carbon` use `look.texture: flat` and `look.normal-color: off`: instruments, cards and lamps are drawn flat, and tank liquid no longer changes color with the zone (limit lines and the value chip carry the state).
+- Instrument values (gauge, ring, knob, tank) use tabular digits with a smaller, muted unit (`ratio.unit`); the unit is styled with the new `::part(unit)`. Value weight is 600.
+- `DvGauge`: the track is a thin neutral arc (was a 10 px band); `alarm-zones` are a thin band just inside it; tick lines are under the needle and the numbers over it; the needle reaches the start of the ticks.
+- `DvRing` default thickness is 1/12 of the size (was 11%); the label is regular weight at `font.label` size.
+- `DvTank` zone starts are also a thin dashed line across the body. `DvKnob` indicator is a mark on the outer third of the face (clear of the value text), its value arc has round ends, and its face keeps the metal grain and shadow in every theme (also with `look.texture: flat`).
 - `DvStat` accent band is one solid color. With `look.texture: flat` cards, KPI tiles, dialogs and the selected segment have no shadow.
 - Disabled check boxes, radios, toggles and sliders are dimmed as one group (CSS `opacity`), so a thumb or knob no longer shows the track through it.
 - A unit starting with `%`, `‰` or `°` joins its value without a space (`40%`, `20°C`); other units keep one space (`3 bar`). Applies to gauge, knob, slider, tank, progress, trend legend and soft keyboard range. The slider value sits 8px above the thumb.

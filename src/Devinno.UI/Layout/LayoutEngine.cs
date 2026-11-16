@@ -363,10 +363,10 @@ public sealed partial class LayoutEngine
     // 위젯마다 받는 ::part() 이름
     private static readonly Dictionary<string, string[]> WidgetParts = new(StringComparer.Ordinal)
     {
-        ["DvGauge"] = ["value", "tick"],
-        ["DvRing"] = ["value", "name"],
-        ["DvKnob"] = ["value"],
-        ["DvTank"] = ["value", "tick"],
+        ["DvGauge"] = ["value", "unit", "tick"],
+        ["DvRing"] = ["value", "unit", "name"],
+        ["DvKnob"] = ["value", "unit"],
+        ["DvTank"] = ["value", "unit", "tick"],
         ["DvProgress"] = ["value"],
         ["DvSlider"] = ["value"],
     };

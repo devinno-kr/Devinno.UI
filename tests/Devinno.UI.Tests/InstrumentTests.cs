@@ -67,14 +67,14 @@ public class InstrumentTests
     {
         using var bmp = Render(
             "<DvGauge value=\"0\" ticks=\"10\" show-tick-labels=\"false\" style=\"width:140; height:140\"/>", 140, 140);
-        Assert.False(AnyIn(bmp, 62, 30, 78, 40, c => c.Red < 160));
+        Assert.False(AnyIn(bmp, 62, 34, 78, 46, c => c.Red < 160)); // 위쪽 큰 눈금 숫자 자리(눈금선 아래)
     }
 
     [Fact]
     public void Gauge_needle_tip_is_highlighted()
     {
         using var bmp = Render("<DvGauge value=\"50\" style=\"width:140; height:140\"/>", 140, 140, DvTheme.Light);
-        Assert.True(AnyIn(bmp, 66, 16, 74, 28, IsRed), "needle tip not highlighted");
+        Assert.True(AnyIn(bmp, 66, 24, 74, 40, IsRed), "needle tip not highlighted"); // 바늘은 눈금 시작까지(앞 40% 강조)
     }
 
     // ── 2. DvProgress

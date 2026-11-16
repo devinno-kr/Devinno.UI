@@ -51,11 +51,14 @@ internal static class WidgetMetrics
     /// <param name="HubDot">Radius of the dot at the center of the hub.</param>
     /// <param name="ValueFont">Value text size (minimum 9).</param>
     /// <param name="ValueBaseline">Value text baseline: distance down from the center (cy).</param>
+    /// <param name="ZoneRadius">Center radius of the alarm-zone band — a thin band inside the track with a gap, so the zones never cover the track.</param>
+    /// <param name="ZoneWidth">Width of the alarm-zone band.</param>
+    /// <param name="TrackWidth">Width of the gauge track — a thin neutral arc that outlines the range (the needle shows the value, so the track carries no fill).</param>
     internal readonly record struct GaugeMetrics(
         float Scale, float Radius, float Stroke,
         float TickInset, float MinorTickEnd, float MajorTickEnd,
         float NeedleHalf, float NeedleTail, float HubRadius, float HubDot,
-        float ValueFont, float ValueBaseline);
+        float ValueFont, float ValueBaseline, float ZoneRadius, float ZoneWidth, float TrackWidth);
 
     /// <param name="rect">Instrument area (scale is computed from the shorter side).</param>
     /// <param name="tickLabels">When tick numbers are drawn, the value text is moved down into the open gap at the bottom of the arc and made slightly smaller (so it does not overlap the lower tick numbers).</param>
@@ -65,11 +68,15 @@ internal static class WidgetMetrics
         var s = size / 120f;
         var radius = size / 2f - 8f * s;
         var font = MathF.Max(MinFont, (tickLabels ? 15f : 18f) * s);
+        // 게이지 트랙 = 가는 중립 호(1.5) · 틈 2 · 구간 띠 4.5 · 눈금은 띠 바로 안쪽에서 시작. Stroke(10) 은 같은 크기 링의 기본 굵기
+        var track = 1.5f * s;
+        var zone = 4.5f * s;
         return new GaugeMetrics(
             s, radius, 10f * s,
-            9f * s, 13f * s, 17f * s,
+            8f * s, 12f * s, 16f * s,
             3.5f * s, 10f * s, 6f * s, 2.5f * s,
-            font, radius * (tickLabels ? 0.82f : 0.55f));
+            font, radius * (tickLabels ? 0.82f : 0.55f),
+            radius - track / 2f - 2f * s - zone / 2f, zone, track);
     }
 
     /// <summary>

@@ -132,29 +132,30 @@ public class DvGaugeTests
         Assert.True(red, "critical value text not red");
     }
 
+    // 구간은 트랙 안쪽의 얇은 띠라 트랙은 양 끝까지 그대로 보인다(구간이 트랙을 덮지 않음)
     [Fact]
-    public void Gauge_zone_ends_do_not_leave_pale_track_caps()
+    public void Gauge_track_stays_visible_at_the_arc_ends_with_zones()
     {
         using var bmp = Render(
             "<DvGauge value=\"50\" min=\"0\" max=\"100\" " +
             "alarm-zones=\"0:60:#16a34a 60:85:#eab308 85:100:#dc2626\" style=\"width:140; height:140\"/>",
             140, 140);
 
-        AssertNoPalePixels(bmp, 18, 105, 16, 16, "left arc end");
-        AssertNoPalePixels(bmp, 106, 105, 16, 16, "right arc end");
+        Assert.True(HasTrackPixel(bmp, 18, 105, 16, 16), "left arc end");
+        Assert.True(HasTrackPixel(bmp, 106, 105, 16, 16), "right arc end");
     }
 
-    private static void AssertNoPalePixels(SKBitmap bmp, int x, int y, int w, int h, string area)
+    private static bool HasTrackPixel(SKBitmap bmp, int x, int y, int w, int h)
     {
         for (var yy = y; yy < y + h; yy++)
         for (var xx = x; xx < x + w; xx++)
         {
             var c = bmp.GetPixel(xx, yy);
-            var looksLikeTrack = Math.Abs(c.Red - 0xe2) <= 8 &&
-                                 Math.Abs(c.Green - 0xe8) <= 8 &&
-                                 Math.Abs(c.Blue - 0xf0) <= 8;
-            Assert.False(looksLikeTrack, $"{area} has pale cap pixel {c} at ({xx},{yy})");
+            var t = Devinno.UI.Styling.ThemeResolver.Color(Devinno.UI.Styling.DvTheme.Default, "gauge-track");
+            if (Math.Abs(c.Red - t.Red) <= 8 && Math.Abs(c.Green - t.Green) <= 8 && Math.Abs(c.Blue - t.Blue) <= 8)
+                return true;
         }
+        return false;
     }
 }
 

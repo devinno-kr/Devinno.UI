@@ -295,7 +295,7 @@ public sealed partial class Painter
                    {
                        IsAntialias = true,
                        Style = SKPaintStyle.Stroke,
-                       StrokeWidth = gm.Stroke,
+                       StrokeWidth = gm.TrackWidth, // 가는 중립 호 — 범위 테두리(값은 바늘이 보여 줌)
                        StrokeCap = SKStrokeCap.Butt,
                        Color = ThemeColor("gauge-track")
                    })
@@ -308,20 +308,25 @@ public sealed partial class Painter
             var range = box.GaugeMax - box.GaugeMin;
             var t = range <= 0 ? 0f : Math.Clamp((box.GaugeValue - box.GaugeMin) / range, 0f, 1f);
 
-            DrawGaugeZones(canvas, box, oval, startAngle, sweep, gm.Stroke);
+            // 구간 = 트랙과 틈을 둔 안쪽 얇은 띠(트랙을 덮지 않음)
+            var zr = gm.ZoneRadius;
+            DrawGaugeZones(canvas, box, new SKRect(cx - zr, cy - zr, cx + zr, cy + zr), startAngle, sweep, gm.ZoneWidth);
 
+            // 눈금선 → 바늘(눈금 시작까지) → 눈금 숫자(바늘이 숫자를 가리지 않음)
             var needleColor = ThemeColor("gauge-needle");
             if (box.GaugeTicks > 0)
-                DrawGaugeScale(canvas, box, cx, cy, gm, startAngle, sweep);
-            DrawGaugeNeedle(canvas, box, cx, cy, radius * 0.9f, startAngle + t * sweep, needleColor, gm);
+                DrawGaugeScale(canvas, box, cx, cy, gm, startAngle, sweep, labels: false);
+            DrawGaugeNeedle(canvas, box, cx, cy, radius - gm.TickInset, startAngle + t * sweep, needleColor, gm);
+            if (box.GaugeTicks > 0)
+                DrawGaugeScale(canvas, box, cx, cy, gm, startAngle, sweep, labels: true);
 
-            if (box.ShowValue) // show-value(기본 참, D2), 값 + unit(WithUnit) — 호 두 끝 사이에 맞춘 크기
+            if (box.ShowValue) // show-value(기본 참, D2), 값 + 단위(값 문법 H6) — 호 두 끝 사이에 맞춘 크기. 값 색 = 현재 구간색(이상 상태를 글자로도), 없으면 바늘색
             {
-                var label = WithUnit(FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag), box.Unit);
-                using var font = TextFont.Create(label, PartSize(box, "value", WidgetMetrics.GaugeValueFont(gm, label)), PartWeight(box, "value", Roles.Weight("bold")));
-                var valColor = PartColor(box, "value", ZoneColorAt(box) ?? needleColor);
-                using var tp = new SKPaint { IsAntialias = true, Color = valColor };
-                canvas.DrawText(label, cx, cy + gm.ValueBaseline, SKTextAlign.Center, font, tp);
+                var value = FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag);
+                var label = WithUnit(value, box.Unit);
+                using var font = TextFont.Create(label, PartSize(box, "value", WidgetMetrics.GaugeValueFont(gm, label)), PartWeight(box, "value", Roles.Weight("strong")));
+                using var unitFont = UnitFont(box, box.Unit, font);
+                DrawValueUnit(canvas, box, value, box.Unit, cx, cy + gm.ValueBaseline, font, unitFont, PartColor(box, "value", ZoneColorAt(box) ?? needleColor));
             }
         }
 
@@ -482,6 +487,19 @@ public sealed partial class Painter
                 canvas.DrawRect(body, shade);
             }
 
+            // 한계 — 몸통 안 얇은 점선(구간색). 바깥 눈금·숫자와 같은 높이
+            if (marks.Count > 0)
+            {
+                using var dash = SKPathEffect.CreateDash([4f * tm.Scale, 3f * tm.Scale], 0);
+                using var limit = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("outline"), PathEffect = dash };
+                foreach (var (from, color) in marks)
+                {
+                    var ly = body.Bottom - Math.Clamp((from - box.TankMin) / range, 0f, 1f) * body.Height;
+                    limit.Color = color.ToSK();
+                    canvas.DrawLine(body.Left, ly, body.Right, ly, limit);
+                }
+            }
+
             canvas.Restore();
 
             // 테두리 — 얇고 부드럽게
@@ -521,24 +539,26 @@ public sealed partial class Painter
                 }
             }
 
-            // 값 칩 — 반투명 배경 + 대비 텍스트(채움색과 무관하게 항상 가독, 색은 테마 토큰)
-            var label = WithUnit(FormatValue(box.TankValue, box.ValueFormat, box.Node.Tag), box.TankUnit);
+            // 값 칩 — 반투명 배경 + 대비 텍스트(채움색과 무관하게 항상 가독, 색은 테마 토큰). 값 + 단위(값 문법 H6)
+            var value = FormatValue(box.TankValue, box.ValueFormat, box.Node.Tag);
 
             // 칩 글씨는 탱크 크기에 비례, 몸통 폭을 넘으면 폭에 맞춰 줄인다(최소 9)
             var chipPad = 16f * tm.Scale;
             var chipSize = PartSize(box, "value", tm.ChipFont);
-            var chipWeight = PartWeight(box, "value", Roles.Weight("bold"));
-            using (var probe = TextFont.Create(label, chipSize, chipWeight))
+            var chipWeight = PartWeight(box, "value", Roles.Weight("strong"));
+            using (var probe = TextFont.Create(value, chipSize, chipWeight))
+            using (var probeUnit = UnitFont(box, box.TankUnit, probe))
             {
-                var need = probe.MeasureText(label) + chipPad;
+                var need = ValueUnitWidth(value, box.TankUnit, probe, probeUnit) + chipPad;
                 var avail = body.Width - 4f * tm.Scale;
                 if (need > avail && need > 0)
                     chipSize = MathF.Max(9f, chipSize * avail / need);
             }
 
-            using (var font = TextFont.Create(label, chipSize, chipWeight))
+            using (var font = TextFont.Create(value, chipSize, chipWeight))
+            using (var unitFont = UnitFont(box, box.TankUnit, font))
             {
-                var tw = font.MeasureText(label);
+                var tw = ValueUnitWidth(value, box.TankUnit, font, unitFont);
                 var chipW = tw + chipPad * chipSize / tm.ChipFont;
                 var chipH = font.Spacing + 6f * chipSize / 15f;
                 var chip = new SKRect(
@@ -551,13 +571,8 @@ public sealed partial class Painter
                        })
                     canvas.DrawRoundRect(chip, chipH / 2f, chipH / 2f, chipBg);
 
-                using var tp = new SKPaint
-                {
-                    IsAntialias = true,
-                    Color = ThemeColor("tank-chip-fg")
-                };
                 var baseline = body.MidY - (font.Metrics.Ascent + font.Metrics.Descent) / 2f;
-                canvas.DrawText(label, body.MidX, baseline, SKTextAlign.Center, font, tp);
+                DrawValueUnit(canvas, box, value, box.TankUnit, body.MidX, baseline, font, unitFont, PartColor(box, "value", ThemeColor("tank-chip-fg")));
             }
         }
 
@@ -848,8 +863,11 @@ public sealed partial class Painter
         return null;
     }
 
+    // 액체 색 — 정상 색(S2 look.normal-color)이 on 이면 현재 구간색, off 면 늘 tank-fill(한계는 한계선·값 칩이 알림)
     private SKColor TankFillColor(LayoutBox box)
     {
+        if (!Roles.Look.NormalColor)
+            return ThemeColor("tank-fill");
         foreach (var z in box.TankZones)
             if (box.TankValue >= z.From && box.TankValue <= z.To)
                 return z.Color.ToSK();

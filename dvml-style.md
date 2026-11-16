@@ -176,10 +176,10 @@ Define your own classes by placing `<DvStyle>` anywhere in the screen markup.
 
   | Tag | Parts |
   |---|---|
-  | `DvGauge` | `value` (value and unit), `tick` (scale numbers) |
-  | `DvRing` | `value`, `name` (the `label` text) |
-  | `DvKnob` | `value` |
-  | `DvTank` | `value` (the value chip), `tick` (limit numbers) |
+  | `DvGauge` | `value` (the number), `unit`, `tick` (scale numbers) |
+  | `DvRing` | `value`, `unit`, `name` (the `label` text) |
+  | `DvKnob` | `value`, `unit` |
+  | `DvTank` | `value` (the number in the chip), `unit`, `tick` (limit numbers) |
   | `DvProgress` | `value` |
   | `DvSlider` | `value` |
 
@@ -269,7 +269,7 @@ Token groups:
 | Control height | `control.sm` 32 · `control.md` 40 · `control.lg` 48 · `row.md` 40 · `row.lg` 48 |
 | Translucency | `overlay.hover` 0.08 · `overlay.press` 0.12 · `opacity.disabled` 0.5 · `alpha.selected` 0.15 · `alpha.soft` 0.2 · `alpha.dim` 0.38 |
 | Color role | `selection` `selection-fg` `value-input` `value-read` `normal` (each points at another token, e.g. `token(primary)`) |
-| Style switch | `look.texture` `flat`/`rich` (gloss, gradients and shadows on instruments; `flat` also removes the shadow of `.card`, `.stat`, `.dialog` and the selected segment) · `look.normal-color` `on`/`off` (`off` = the calm alarm banner is neutral instead of green) · `look.selection` `quiet`/`strong` |
+| Style switch | `look.texture` `flat`/`rich` (gloss, gradients and shadows on instruments; `flat` also removes the shadow of `.card`, `.stat`, `.dialog` and the selected segment; the `DvKnob` face keeps its metal grain and shadow in every theme, as the cue that it turns) · `look.normal-color` `on`/`off` (`off` = the calm alarm banner is neutral instead of green) · `look.selection` `quiet`/`strong` |
 | Alarm icon | `alarm-critical-icon` `alarm-major-icon` `alarm-minor-icon` (icon name such as `fa-bell`; drawn before the priority text in the severity chip of `DvAlarmBanner` and `DvAlarmList`; empty = color and text only) |
 | Instrument | `gauge-track` `gauge-needle` `gauge-needle-tip` `gauge-tick` |
 | Lamp | `lamp-off` (the off color of `DvLamp` and grid lamp cells) |
@@ -297,8 +297,8 @@ Also defined, not for new screens: `bg` `bg2` `surface-alt` `muted` `border-warn
 |---|---|---|
 | `DvTheme.Dark` (default) | General dark screens | Navy surfaces, light text, light-blue brand |
 | `DvTheme.Light` | General light screens | White and light-gray surfaces, dark text, blue brand |
-| `DvTheme.Graphite` | Bright, daytime control rooms (ISA-101 high-performance HMI) | Neutral gray, dark text, muted steel-blue brand. Normal states are gray (running = dark gray `state-run`, stopped = light gray `state-stop`); saturated color only for abnormal states and alarms |
-| `DvTheme.Carbon` | Night control rooms | Low-luminance warm charcoal without a blue cast, warm off-white text, one brass accent. Dimmer than `Dark`; red and amber only for alarms and faults |
+| `DvTheme.Graphite` | Bright, daytime control rooms (ISA-101 high-performance HMI) | Neutral gray, dark text, muted steel-blue brand. Normal states are gray (running = dark gray `state-run`, stopped = light gray `state-stop`); saturated color only for abnormal states and alarms. Switches: `look.texture: flat`, `look.normal-color: off`, `look.selection: quiet` |
+| `DvTheme.Carbon` | Night control rooms | Low-luminance warm charcoal without a blue cast, warm off-white text, one brass accent. Dimmer than `Dark`; red and amber only for alarms and faults. Switches: `look.texture: flat`, `look.normal-color: off`, `look.selection: quiet` |
 
 Every color and shadow token, with its value in each built-in theme (from `DvTheme`):
 

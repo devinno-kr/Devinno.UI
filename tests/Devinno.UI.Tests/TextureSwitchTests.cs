@@ -49,12 +49,18 @@ public class TextureSwitchTests
     }
 
     [Theory]
-    [InlineData("<DvScreen><DvKnob value=\"50\" min=\"0\" max=\"100\" style=\"width:110; height:110\"/></DvScreen>")]
     [InlineData("<DvScreen><DvRing value=\"70\" style=\"width:110; height:110\"/></DvScreen>")]
     [InlineData("<DvScreen><DvGauge value=\"5\" min=\"0\" max=\"10\" style=\"width:120; height:120\"/></DvScreen>")]
     public void Flat_instrument_differs_from_rich(string markup)
     {
         // 그림자·결·글로우가 빠지므로 그림이 달라진다(내장 테마 = rich 는 지금 모습)
         Assert.NotEqual(DvRenderer.RenderToPng(markup, null, 120, 120, DvTheme.Dark), DvRenderer.RenderToPng(markup, null, 120, 120, Flat));
+    }
+    // 노브는 예외 — 돌리는 손잡이라는 단서(떠 보이는 금속 면·그림자)를 질감 스위치와 무관하게 늘 그린다
+    [Fact]
+    public void Knob_keeps_its_raised_face_with_flat_texture()
+    {
+        const string knob = "<DvScreen><DvKnob value=\"50\" min=\"0\" max=\"100\" style=\"width:110; height:110\"/></DvScreen>";
+        Assert.Equal(DvRenderer.RenderToPng(knob, null, 120, 120, DvTheme.Dark), DvRenderer.RenderToPng(knob, null, 120, 120, Flat));
     }
 }

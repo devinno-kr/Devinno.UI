@@ -271,6 +271,8 @@ public sealed class DvTheme
     public static readonly DvTheme Graphite = new(With(Scales, new Dictionary<string, string>
     {
         ["look.selection"] = "quiet", // ISA-101 — 여럿 중 선택은 조용하게(채움 대신 표면 단계)
+        ["look.texture"] = "flat", // ISA-101 — 광택·그라데이션·그림자 없이 평면
+        ["look.normal-color"] = "off", // ISA-101 — 정상 상태는 무채색, 이상일 때만 색
         // 기존 키(호환 유지)
         ["--bg"] = "#d5d8dc",
         ["--bg2"] = "#cbcfd4",
@@ -359,6 +361,8 @@ public sealed class DvTheme
     public static readonly DvTheme Carbon = new(With(Scales, new Dictionary<string, string>
     {
         ["look.selection"] = "quiet", // ISA-101 — 여럿 중 선택은 조용하게(채움 대신 표면 단계)
+        ["look.texture"] = "flat", // ISA-101 — 광택·그라데이션·그림자 없이 평면
+        ["look.normal-color"] = "off", // ISA-101 — 정상 상태는 무채색, 이상일 때만 색
         // 기존 키(호환 유지)
         ["--bg"] = "#121314",
         ["--bg2"] = "#0e0f10",
