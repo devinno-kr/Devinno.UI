@@ -83,7 +83,7 @@ public class ExpanderTests
         Assert.Equal("펌프 설정", Header(s).ResolvedText);
         Assert.Equal("fa-chevron-right", Header(s).Icon);
         Assert.Empty(All(s, "DvLabel"));                // 접으면 내용을 만들지 않음
-        Assert.InRange(e.Rect.Height, 44, 47);           // 제목 줄 + 테두리
+        Assert.InRange(e.Rect.Height, 40, 43);           // 제목 줄(row.md) + 테두리
 
         Tap(s, Header(s));
         Assert.Single(All(s, "DvLabel"));
@@ -180,7 +180,7 @@ public class ExpanderTests
         var end = Frame(2250);
         Frame(2300);
         var full = All(s, "DvExpander")[0].Rect.Height;
-        Assert.InRange(start, 44, 48);                    // 시작은 제목 줄 높이
+        Assert.InRange(start, 40, 44);                    // 시작은 제목 줄 높이(row.md)
         Assert.InRange(mid, start + 10, full - 5);        // 중간은 사이
         Assert.Equal(full, end, 1);
         Assert.True(Below().Rect.Top > closedTop + 40);   // 아래 내용이 밀려 내려감

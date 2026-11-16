@@ -80,6 +80,8 @@ public sealed partial class LayoutEngine
     {
         using var roles = Roles.Enter(_theme); // 배치 동안 역할 값(굵기·글자 크기 …)은 이 테마에서
         _sheet = StyleSheet.Parse((_theme ?? DvTheme.Default).Stylesheet);
+        if (Roles.Look.Selection == LookSelection.Quiet) // 선택 강조 스위치 — 조용한 선택 규칙(화면 DvStyle 이 이김)
+            _sheet.Add(BuiltInStyles.QuietSelection);
         if (registry is not null) // 컴포넌트 정의 안 DvStyle — 화면 DvStyle 보다 먼저(같은 클래스는 화면 쪽이 이김)
             foreach (var def in registry.Definitions)
                 foreach (var css in def.Styles)

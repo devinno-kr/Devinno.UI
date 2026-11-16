@@ -29,11 +29,17 @@ public sealed partial class Painter
         canvas.DrawLine(min, at, p);
 
         p.StrokeCap = SKStrokeCap.Butt;
+        if (hot) // 올라감·누름 = 손잡이 바깥 반투명 원(누르는 영역을 보여 줌)
+        {
+            p.Style = SKPaintStyle.Fill;
+            p.Color = fill.WithAlpha(Roles.Alpha("alpha.selected"));
+            canvas.DrawCircle(at, SliderMetrics.Thumb + 8f, p);
+        }
         p.Style = SKPaintStyle.Fill;
         p.Color = ThemeColor("surface").WithAlpha(a);
         canvas.DrawCircle(at, SliderMetrics.Thumb, p);
         p.Style = SKPaintStyle.Stroke;
-        p.StrokeWidth = hot ? 4f : 3f;
+        p.StrokeWidth = 3f; // 손잡이 링 — 상태로 굵어지지 않는다(H4)
         p.Color = fill;
         canvas.DrawCircle(at, SliderMetrics.Thumb - p.StrokeWidth / 2f, p);
 

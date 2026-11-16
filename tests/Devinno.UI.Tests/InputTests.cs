@@ -127,23 +127,24 @@ public class InputTests
         var root = Lay("<DvScreen style=\"align-items:start\"><DvInput value=\"\"/></DvScreen>", null, DvTheme.Light);
         var b = Input(root);
         using var bmp = Render(root);
-        // 테두리(왼쪽 변 가운데)는 흰 배경과 다르고, 상자 안쪽은 표면색(흰색)
-        var edge = bmp.GetPixel((int)b.Rect.Left, (int)b.Rect.MidY);
-        Assert.NotEqual(SKColors.White, edge);
+        // 테두리(왼쪽 변)는 흰 배경과 다르고, 상자 안쪽은 표면색(흰색). 글자 값 리터럴은 읽기 전용 점선이라 변 위 어딘가에 선 조각이 있다
+        var left = (int)b.Rect.Left;
+        Assert.Contains(Enumerable.Range((int)b.Rect.Top + 12, (int)b.Rect.Height - 24), y => bmp.GetPixel(left, y) != SKColors.White);
         Assert.Equal(SKColors.White, bmp.GetPixel((int)b.Rect.MidX, (int)b.Rect.MidY));
     }
 
     [Fact]
-    public void Editing_paints_focus_ring_outside_the_box()
+    public void Editing_paints_an_accent_border_inside_the_box()
     {
+        // 편집 중 = 테두리 자체가 강조색(바깥 링 없음, 단계 3 H4)
         var root = Lay("<DvScreen style=\"padding:20\"><DvInput value=\"\"/></DvScreen>", null, DvTheme.Light);
         var b = Input(root);
-        using (var plain = Render(root))
-            Assert.Equal(SKColors.White, plain.GetPixel((int)b.Rect.MidX, (int)b.Rect.Top - 2));
-
         b.Editing = true;
         using var focused = Render(root);
-        Assert.NotEqual(SKColors.White, focused.GetPixel((int)b.Rect.MidX, (int)b.Rect.Top - 2));
+        Assert.Equal(SKColors.White, focused.GetPixel((int)b.Rect.MidX, (int)b.Rect.Top - 2));
+        var edge = focused.GetPixel((int)b.Rect.MidX, (int)b.Rect.Top);
+        var primary = ThemeResolver.Color(DvTheme.Light, "primary");
+        Assert.True(Math.Abs(edge.Blue - primary.Blue) < 40 && Math.Abs(edge.Red - primary.Red) < 40, $"{edge} vs {primary}");
     }
 
     [Fact]

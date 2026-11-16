@@ -16,13 +16,14 @@ public sealed partial class Painter
         var r = st.BorderRadius;
         if (box.Editing) // 열려 있음
         {
-            var ring = SKRect.Inflate(rect, FocusRingGap, FocusRingGap);
+            // 편집 중·열림 = 테두리 자체를 강조색·강조 두께로(바깥 링 없음, H4) — 상자 안쪽에
+            var bw = Roles.Stroke("emphasis");
             using var rp = new SKPaint
             {
-                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = FocusRingWidth,
-                Color = ThemeColor("focus")
+                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = bw,
+                Color = ThemeColor("primary")
             };
-            canvas.DrawRoundRect(ring, r + FocusRingGap, r + FocusRingGap, rp);
+            canvas.DrawRoundRect(SKRect.Inflate(rect, -bw / 2f, -bw / 2f), MathF.Max(0f, r - bw / 2f), MathF.Max(0f, r - bw / 2f), rp);
         }
 
         var pad = st.Padding;
@@ -31,7 +32,7 @@ public sealed partial class Painter
             return;
 
         var muted = ThemeColor("text-muted");
-        if (IconFont.TryResolve(box.Editing ? "fa-angle-up" : "fa-angle-down", out var arrow))
+        if (IconFont.TryResolve(box.Editing ? "fa-chevron-up" : "fa-chevron-down", out var arrow))
         {
             using var ap = new SKPaint { IsAntialias = true, Color = muted };
             IconFont.Draw(canvas, arrow, new SKPoint(content.Right - SelectArrowSize / 2f, content.MidY), SelectArrowSize, ap);

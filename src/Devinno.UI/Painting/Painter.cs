@@ -244,7 +244,7 @@ public sealed partial class Painter
             using var knobPaint = new SKPaint
             {
                 IsAntialias = true,
-                Color = ThemeColor("--toggle-knob").WithAlpha(a)
+                Color = (box.ToggleOn ? ThemeColor("--toggle-knob") : ThemeColor("text-muted")).WithAlpha(a) // 꺼짐 = 흐린 손잡이
             };
             canvas.DrawRoundRect(
                 SKRect.Create(knobX, tr.Top + 2, knobDiameter, knobDiameter),
@@ -728,7 +728,11 @@ public sealed partial class Painter
                 ? SKPathEffect.CreateDash(new[] { 4f + st.BorderWidth * 2, 3f + st.BorderWidth }, 0)
                 : null
         };
-        canvas.DrawRoundRect(rect, st.BorderRadius, st.BorderRadius, p);
+        // CSS 처럼 상자 안쪽에 — 선 중심을 두께 절반만큼 안으로(경계에 걸치면 절반이 밖으로 나가 흐려진다)
+        var half = st.BorderWidth / 2f;
+        var inner = SKRect.Inflate(rect, -half, -half);
+        var r = MathF.Max(0f, st.BorderRadius - half);
+        canvas.DrawRoundRect(inner, r, r, p);
     }
 
     // 넘치는 축에만 — 옅은 트랙 + 둥근 손잡이(뷰포트 안쪽 가장자리에 겹침)

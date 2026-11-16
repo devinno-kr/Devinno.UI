@@ -8,8 +8,6 @@ namespace Devinno.UI.Painting;
 // DvInput — 상자(배경·테두리)는 .input 클래스로 공통 경로가 그리고, 여기서는 값·placeholder·단위·포커스 링·오류 테두리.
 public sealed partial class Painter
 {
-    private static float FocusRingWidth => Roles.Stroke("focus");
-    private static float FocusRingGap => Roles.Number("focus.gap");
 
     // show-stepper — 양 끝 −/+ 와 안쪽 구분선. 비활성·읽기 전용이면 흐린 글자색.
     private void PaintStepper(SKCanvas canvas, LayoutBox box, ComputedStyle st)
@@ -44,14 +42,14 @@ public sealed partial class Painter
 
         if (box.Editing)
         {
-            // 상자 바깥 링(상자 모양 그대로, 간격만큼 키움)
-            var ring = SKRect.Inflate(rect, FocusRingGap, FocusRingGap);
+            // 편집 중·열림 = 테두리 자체를 강조색·강조 두께로(바깥 링 없음, H4) — 상자 안쪽에
+            var bw = Roles.Stroke("emphasis");
             using var rp = new SKPaint
             {
-                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = FocusRingWidth,
-                Color = ThemeColor("focus")
+                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = bw,
+                Color = ThemeColor("primary")
             };
-            canvas.DrawRoundRect(ring, r + FocusRingGap, r + FocusRingGap, rp);
+            canvas.DrawRoundRect(SKRect.Inflate(rect, -bw / 2f, -bw / 2f), MathF.Max(0f, r - bw / 2f), MathF.Max(0f, r - bw / 2f), rp);
         }
 
         if (box.EditError is not null)

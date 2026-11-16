@@ -139,10 +139,10 @@ Sets where the text (and button icon) of `DvLabel`/`DvButton`/`DvCheckBox`/`DvRa
 | Text color | `.muted` (`text-muted`) `.subtle` (`text-subtle`) | |
 | Surface | `.page` (background gradient + padding 24) `.card` (surface, border, radius 16, shadow, padding) `.card-flat` (card without shadow) `.dialog` (`DvDialogFrame` frame: `surface-overlay`, border, radius 12, shadow, padding 20) | |
 | Chip | `.chip` | Small bold text + rounded background |
-| Button | `.btn` `.btn-primary` `.btn-secondary` `.btn-danger` `.btn-ghost` `.btn-sm` `.btn-lg` | Added automatically by `DvButton` `variant`/`size` |
-| Latching / segment | `.btn-on` `.segment` `.segment-item` `.segment-item-on` | `.btn-on` when a latching button is on; the others added automatically to `DvSegment` and its items |
+| Button | `.btn` `.btn-primary` `.btn-secondary` `.btn-danger` `.btn-ghost` `.btn-sm` `.btn-lg` | Added automatically by `DvButton` `variant`/`size`. Height = `control.md` (`sm` `control.sm`, `lg` `control.lg`), one line, weight `weight.strong` |
+| Latching / segment | `.btn-on` `.segment` `.segment-item` `.segment-item-on` | `.btn-on` when a latching button is on; the others added automatically to `DvSegment` and its items. A segment is as tall as a button and an input. The chosen item is filled with `primary`, or a raised outlined chip when the theme's `look.selection` is `quiet` |
 | Checkbox / radio | `.checkbox` `.radio` | Automatic on `DvCheckBox`/`DvRadio` (box/circle in a 34 left margin, height 40 or more) |
-| List | `.listbox` `.listbox-item` `.listbox-item-on` | Automatic on `DvListBox` and its rows |
+| List | `.listbox` `.listbox-item` `.listbox-item-on` | Automatic on `DvListBox` and its rows (`row.md` tall). The chosen row is filled with `primary`, or a soft tint when `look.selection` is `quiet` |
 | Expander | `.expander` `.expander-header` `.expander-body` | Automatic on `DvExpander`, its header row and its content |
 | Tree | `.treeview` `.treeview-item` `.treeview-item-on` | Automatic on `DvTreeView` and its rows |
 | Tabs | `.tabs` `.tab-header` `.tab` `.tab-on` `.tab-rule` `.tab-body` | Added automatically to `DvTabs`, the header, the divider and `DvTab` content |
@@ -265,7 +265,7 @@ Token groups:
 | Shadow | `shadow.sm` `shadow.md` `shadow.lg` (a `dx dy blur color` string) |
 | Font size | `font.display` 32 · `font.heading` 21 · `font.title` 15 · `font.body` 14 · `font.label` 13 · `font.meta` 12 · `font.caption` 11 · `font.mono` 14 |
 | Font weight | `weight.regular` 400 · `weight.medium` 500 · `weight.strong` 600 · `weight.bold` 700 |
-| Line | `stroke.hairline` 1 · `stroke.outline` 1.5 · `stroke.emphasis` 2 · `stroke.focus` 3 (editing ring) · `focus.gap` 2 · `stroke.track` 0.08 (instrument arc, × size) |
+| Line | `stroke.hairline` 1 · `stroke.outline` 1.5 · `stroke.emphasis` 2 · `stroke.focus` 3 · `focus.gap` 2 · `stroke.track` 0.08 (instrument arc, × size) |
 | Control height | `control.sm` 32 · `control.md` 40 · `control.lg` 48 · `row.md` 40 · `row.lg` 48 |
 | Translucency | `overlay.hover` 0.08 · `overlay.press` 0.12 · `opacity.disabled` 0.5 · `alpha.selected` 0.15 · `alpha.soft` 0.2 · `alpha.dim` 0.38 |
 | Color role | `selection` `selection-fg` `value-input` `value-read` `normal` (each points at another token, e.g. `token(primary)`) |

@@ -484,7 +484,7 @@ public class PointerGuardTests
         s.PointerMove(new SKPoint(popup.Bounds.MidX, popup.Bounds.Bottom - 2));
 
         using var bmp = Render(s);
-        Assert.Equal(new SKColor(0, 0, 0xff), bmp.GetPixel((int)sel.Left + 4, (int)sel.Top + 4));
+        Assert.Equal(new SKColor(0, 0, 0xff), bmp.GetPixel((int)sel.Left + 4, (int)sel.MidY)); // 모서리·열림 테두리를 피해 안쪽
     }
 
     [Fact]

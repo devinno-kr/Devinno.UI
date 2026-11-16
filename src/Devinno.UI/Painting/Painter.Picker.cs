@@ -18,13 +18,14 @@ public sealed partial class Painter
         var r = st.BorderRadius;
         if (box.Editing) // 열려 있음
         {
-            var ring = SKRect.Inflate(rect, FocusRingGap, FocusRingGap);
+            // 편집 중·열림 = 테두리 자체를 강조색·강조 두께로(바깥 링 없음, H4) — 상자 안쪽에
+            var bw = Roles.Stroke("emphasis");
             using var rp = new SKPaint
             {
-                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = FocusRingWidth,
-                Color = ThemeColor("focus")
+                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = bw,
+                Color = ThemeColor("primary")
             };
-            canvas.DrawRoundRect(ring, r + FocusRingGap, r + FocusRingGap, rp);
+            canvas.DrawRoundRect(SKRect.Inflate(rect, -bw / 2f, -bw / 2f), MathF.Max(0f, r - bw / 2f), MathF.Max(0f, r - bw / 2f), rp);
         }
 
         var pad = st.Padding;
@@ -90,9 +91,9 @@ public sealed partial class Painter
             CenterText(canvas, title, p.TitleRect, fontSize, true, text);
             using (var ip = new SKPaint { IsAntialias = true, Color = text })
             {
-                if (IconFont.TryResolve("fa-angle-left", out var l))
+                if (IconFont.TryResolve("fa-chevron-left", out var l))
                     IconFont.Draw(canvas, l, new SKPoint(p.PrevRect.MidX, p.PrevRect.MidY), 16f, ip);
-                if (IconFont.TryResolve("fa-angle-right", out var r))
+                if (IconFont.TryResolve("fa-chevron-right", out var r))
                     IconFont.Draw(canvas, r, new SKPoint(p.NextRect.MidX, p.NextRect.MidY), 16f, ip);
             }
 

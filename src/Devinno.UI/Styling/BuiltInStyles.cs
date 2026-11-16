@@ -18,9 +18,9 @@ public static class BuiltInStyles
     /// </summary>
     public const string Sheet = """
         /* 타이포 7클래스 [D §2.3] */
-        .display { font-size: token(font.display); font-weight: bold; color: token(text) }
-        .heading { font-size: token(font.heading); font-weight: bold; color: token(text) }
-        .title   { font-size: token(font.title); font-weight: bold; color: token(text) }
+        .display { font-size: token(font.display); font-weight: token(weight.strong); color: token(text) }
+        .heading { font-size: token(font.heading); font-weight: token(weight.strong); color: token(text) }
+        .title   { font-size: token(font.title); font-weight: token(weight.strong); color: token(text) }
         .body    { font-size: token(font.body); color: token(text) }
         .label   { font-size: token(font.label); color: token(text) }
         .caption { font-size: token(font.caption); color: token(text-muted) }
@@ -35,21 +35,20 @@ public static class BuiltInStyles
                      box-shadow: token(shadow.md); padding: token(spacing.lg) token(spacing.xl) }
         .card-flat { background: token(surface); border: 1 token(border); border-radius: token(radius.lg);
                      padding: token(spacing.lg) }
-        .dialog    { background: token(surface-overlay); border: 1 token(border); border-radius: 12;
-                     box-shadow: token(shadow.lg); padding: 20 }
+        .dialog    { background: token(surface-overlay); border: 1 token(border); border-radius: token(radius.lg);
+                     box-shadow: token(shadow.lg); padding: token(spacing.xl) }
 
         /* 칩 */
-        .chip { font-size: token(font.caption); font-weight: bold; padding: 3 9; border-radius: 9;
+        .chip { font-size: token(font.caption); font-weight: token(weight.medium); padding: 3 9; border-radius: 9;
                 color: token(tone-neutral-fg); background: token(tone-neutral-soft) }
 
         /* 버튼 (DvButton variant="…") */
-        .btn          { padding: 11 20; border-radius: token(radius.md); font-size: 14; font-weight: bold;
-                        content-align: middle-center }
-        .btn-sm       { padding: 7 12; font-size: 12 }
-        .btn-lg       { padding: 14 26; font-size: 16 }
-        .btn-primary  { background: linear-gradient(135deg, token(primary-press), token(primary-hover));
-                        color: token(primary-fg); box-shadow: token(shadow.sm) }
-        .btn-primary:hover { background: linear-gradient(135deg, token(primary-hover), token(primary)) }
+        .btn          { min-height: token(control.md); padding: 0 20; border-radius: token(radius.md); font-size: 14; font-weight: token(weight.strong);
+                        content-align: middle-center; white-space: nowrap }
+        .btn-sm       { min-height: token(control.sm); padding: 0 12; font-size: 12 }
+        .btn-lg       { min-height: token(control.lg); padding: 0 24; font-size: 16 }
+        .btn-primary  { background: token(primary-press); color: token(primary-fg) }
+        .btn-primary:hover { background: token(primary-hover) }
         .btn-primary:press { background: token(primary-press) }
         .btn-secondary       { background: token(surface-raised); color: token(text); border: 1 token(border-strong) }
         .btn-secondary:hover { background: token(surface-overlay) }
@@ -66,9 +65,9 @@ public static class BuiltInStyles
         .btn-on:press { background: token(primary-press) }
 
         /* 세그먼트 (DvSegment) — 항목은 라이브러리가 만든다 */
-        .segment         { display: flex; flex-direction: row; gap: 2; padding: 3; border-radius: token(radius.md);
+        .segment         { display: flex; flex-direction: row; gap: 2; padding: 4; border-radius: token(radius.md); /* 바깥 높이 = control.sm + 4·2 = control.md, 안쪽 반경 = radius.md − 4 = radius.sm */
                            background: token(surface-raised); border: 1 token(border) }
-        .segment-item    { padding: 8 16; border-radius: token(radius.sm); font-size: 14; font-weight: bold;
+        .segment-item    { min-height: token(control.sm); padding: 0 16; border-radius: token(radius.sm); font-size: 14; font-weight: token(weight.medium);
                            color: token(text-muted); content-align: middle-center; text-align: center; white-space: nowrap }
         .segment-item:hover    { color: token(text); background: token(surface-overlay) }
         .segment-item-on       { background: token(primary); color: token(primary-fg); box-shadow: token(shadow.sm) }
@@ -83,9 +82,9 @@ public static class BuiltInStyles
 
         /* 목록 (DvListBox) — 스크롤 패널, 행(높이 40)은 라이브러리가 만든다 */
         .listbox          { display: flex; flex-direction: column; align-items: stretch; gap: 2; overflow: scroll; padding: 4;
-                            background: token(surface); border: 1 token(border-strong); border-radius: token(radius.sm) }
+                            background: token(surface); border: 1 token(border-strong); border-radius: token(radius.md) }
         .listbox:disabled { background: token(surface-raised); border: 1 token(border) }
-        .listbox-item     { height: 40; flex-shrink: 0; padding: 0 12; border-radius: token(radius.sm); font-size: token(font.body);
+        .listbox-item     { height: token(row.md); flex-shrink: 0; padding: 0 12; border-radius: token(radius.sm); font-size: token(font.body);
                             color: token(text); content-align: middle-left; white-space: nowrap }
         .listbox-item:hover    { background: token(surface-raised) }
         .listbox-item:press    { background: token(surface-overlay) }
@@ -95,9 +94,9 @@ public static class BuiltInStyles
 
         /* 트리 (DvTreeView) — 스크롤 패널, 행(높이 40, 깊이마다 들여쓰기)은 라이브러리가 만든다 */
         .treeview          { display: flex; flex-direction: column; align-items: stretch; gap: 2; overflow: scroll; padding: 4;
-                             background: token(surface); border: 1 token(border-strong); border-radius: token(radius.sm) }
+                             background: token(surface); border: 1 token(border-strong); border-radius: token(radius.md) }
         .treeview:disabled { background: token(surface-raised); border: 1 token(border) }
-        .treeview-item     { height: 40; flex-shrink: 0; padding: 0 12; border-radius: token(radius.sm); font-size: token(font.body);
+        .treeview-item     { height: token(row.md); flex-shrink: 0; padding: 0 12; border-radius: token(radius.sm); font-size: token(font.body);
                              color: token(text); content-align: middle-left; white-space: nowrap }
         .treeview-item:hover    { background: token(surface-raised) }
         .treeview-item:press    { background: token(surface-overlay) }
@@ -108,7 +107,7 @@ public static class BuiltInStyles
         /* 접는 패널 (DvExpander) — 제목 줄·내용 상자는 라이브러리가 만든다 */
         .expander        { display: flex; flex-direction: column; align-items: stretch; background: token(surface);
                            border: 1 token(border); border-radius: token(radius.md); overflow: hidden }
-        .expander-header { height: 44; flex-shrink: 0; padding: 0 14; font-size: 14; font-weight: bold; color: token(text);
+        .expander-header { height: token(row.md); flex-shrink: 0; padding: 0 14; font-size: 14; font-weight: token(weight.medium); color: token(text);
                            content-align: middle-left; white-space: nowrap }
         .expander-header:hover    { background: token(surface-raised) }
         .expander-header:press    { background: token(surface-overlay) }
@@ -118,21 +117,21 @@ public static class BuiltInStyles
         /* 탭 (DvTabs · DvTab) — 머리글·구분선은 라이브러리가 만든다 */
         .tabs        { display: flex; flex-direction: column; align-items: stretch; gap: 0 }
         .tab-header  { display: flex; flex-direction: row; gap: 4 }
-        .tab         { padding: 10 18; border-radius: token(radius.sm); font-size: 14; font-weight: bold;
+        .tab         { min-height: token(row.md); padding: 0 18; border-radius: token(radius.sm); font-size: 14; font-weight: token(weight.medium);
                        color: token(text-muted); white-space: nowrap; content-align: middle-center }
         .tab:hover   { color: token(text); background: token(surface-raised) }
         .tab-on      { color: token(primary); background: token(surface-raised) }
         .tab-on:hover { color: token(primary) }
         .tab:disabled { color: token(text-subtle); background: transparent }
-        .tab-rule    { height: 2; background: token(border) }
+        .tab-rule    { height: token(stroke.hairline); background: token(border) }
         .tab-body    { display: flex; flex-direction: column; flex-grow: 1; gap: token(spacing.md); padding: token(spacing.md) 0 0 0 }
 
         /* 아이콘 (DvIcon) — 크기 = font-size, 색 = color */
         .icon { font-size: 24; color: token(text) }
 
         /* 입력 상자 (DvInput) */
-        .input          { background: token(surface); border: 1 token(border-strong); border-radius: token(radius.sm);
-                          padding: 8 12; font-size: token(font.body); color: token(text) }
+        .input          { background: token(surface); border: 1 token(border-strong); border-radius: token(radius.md);
+                          min-height: token(control.md); padding: 8 12; font-size: token(font.body); color: token(text) }
         .input:disabled { background: token(surface-raised); color: token(text-subtle); border: 1 solid token(border) }
         .input-readonly { background: transparent; border: 1 dashed token(border-strong) }
 
@@ -141,8 +140,18 @@ public static class BuiltInStyles
                        box-shadow: token(shadow.md); overflow: hidden }
         .stat-accent { height: 3 }
         .stat-body   { padding: token(spacing.lg) token(spacing.xl) }
-        .stat-value  { font-size: token(font.display); font-weight: bold; color: token(text) }
+        .stat-value  { font-size: token(font.display); font-weight: token(weight.strong); color: token(text) }
         .status-item { padding: token(spacing.sm) token(spacing.xs) }
         .switch-row  { padding: token(spacing.xs) }
+        """;
+
+    // 선택 강조 스위치 look.selection = quiet — 테마 스타일시트 뒤, 컴포넌트·화면 DvStyle 앞에 덧붙인다(화면 쪽이 이김)
+    internal const string QuietSelection = """
+        .segment-item-on       { background: token(surface-overlay); color: token(text); border: 1 token(border-strong); box-shadow: token(shadow.sm) }
+        .segment-item-on:hover { background: token(surface-overlay); color: token(text) }
+        .listbox-item-on       { background: token(tone-info-soft); color: token(text) }
+        .listbox-item-on:hover { background: token(tone-info-soft); color: token(text) }
+        .treeview-item-on       { background: token(tone-info-soft); color: token(text) }
+        .treeview-item-on:hover { background: token(tone-info-soft); color: token(text) }
         """;
 }

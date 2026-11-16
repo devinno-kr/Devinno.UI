@@ -12,13 +12,13 @@ public sealed partial class Painter
     internal const float CheckSize = 24f;
 
     // DvCheckBox·DvRadio — 왼쪽 상자/원(세로 가운데). 켜짐 = primary 채움 + ✓(체크)·가운데 점(라디오), 꺼짐 = surface + border-strong 테두리.
-    // 그리드 체크 셀과 같은 색. 누르는 중·올라감 = 테두리 primary, 비활성 = 반투명.
+    // 그리드 체크 셀과 같은 색. 누르는 중·올라감 = 테두리 색만 primary(두께 그대로), 비활성 = 반투명.
     private void PaintCheck(SKCanvas canvas, LayoutBox box, InteractionState? state)
     {
         var rect = box.Rect;
         var b = SKRect.Create(rect.Left, rect.MidY - CheckSize / 2f, CheckSize, CheckSize);
         var radio = box.Node.Tag == "DvRadio";
-        var radius = radio ? CheckSize / 2f : 5f;
+        var radius = radio ? CheckSize / 2f : Roles.Number("radius.xs");
         var a = box.Disabled ? Roles.Alpha("opacity.disabled") : (byte)0xff;
         var hot = !box.Disabled && state is not null && (ReferenceEquals(state.Press, box) || ReferenceEquals(state.Hover, box));
         var primary = ThemeColor("primary").WithAlpha(a);
@@ -38,7 +38,7 @@ public sealed partial class Painter
         p.Color = ThemeColor("surface").WithAlpha(a);
         canvas.DrawRoundRect(b, radius, radius, p);
         p.Style = SKPaintStyle.Stroke;
-        p.StrokeWidth = box.ToggleOn || hot ? Roles.Stroke("emphasis") : Roles.Stroke("outline");
+        p.StrokeWidth = Roles.Stroke("outline"); // 상태로 굵어지지 않는다 — 올라감·누름·켜짐은 색만(H4)
         p.Color = box.ToggleOn || hot ? primary : ThemeColor("border-strong").WithAlpha(a);
         var inset = p.StrokeWidth / 2f;
         var sb = SKRect.Inflate(b, -inset, -inset);
