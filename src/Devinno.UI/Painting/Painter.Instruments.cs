@@ -55,7 +55,7 @@ public sealed partial class Painter
             return;
 
         // 값 텍스트: 채움 위는 흰색, 빈 트랙 위는 본문색 — 경계를 넘어가도 항상 읽힘. 세로 막대는 폭에 들어갈 때만(가로 글자 그대로)
-        var text = FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
+        var text = WithUnit(FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag), box.Unit);
         using var font = TextFont.Create(text, PartSize(box, "value", MathF.Min(Roles.Font("body"), (vertical ? rect.Width : rect.Height) * 0.62f)), PartWeight(box, "value", Roles.Weight("bold")));
         if (vertical && font.MeasureText(text) > rect.Width - 4f)
             return;
@@ -138,7 +138,7 @@ public sealed partial class Painter
         var hasLabel = !string.IsNullOrEmpty(box.Label);
         if (box.ShowValue) // show-value(기본 참, D2) — 거짓이면 값 글자만 숨기고 label 자리는 그대로
         {
-            var text = FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
+            var text = WithUnit(FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag), box.Unit);
             using var font = TextFont.Create(text, PartSize(box, "value", MathF.Max(10f, r * 0.42f)), PartWeight(box, "value", Roles.Weight("bold")));
             using var tp = new SKPaint { IsAntialias = true, Color = PartColor(box, "value", ThemeColor("text")) };
             var valueY = cy - (hasLabel ? r * 0.10f : 0f);
@@ -172,5 +172,24 @@ public sealed partial class Painter
         return MathF.Abs(v - MathF.Round(v)) < 0.005f
             ? MathF.Round(v).ToString(CultureInfo.InvariantCulture)
             : v.ToString("0.#", CultureInfo.InvariantCulture);
+    }
+
+    // 값 + 단위 — %·‰·° 로 시작하는 단위는 붙여 씀(40%, 20°C), 그 밖에는 한 칸 띄움(3 bar)
+    internal static string WithUnit(string value, string? unit)
+        => string.IsNullOrEmpty(unit) ? value
+         : unit[0] is '%' or '‰' or '°' ? value + unit
+         : value + " " + unit;
+
+    // 비활성 = 컨트롤 전체를 opacity.disabled 로 한 번에 흐리게(CSS opacity) — 손잡이·막대처럼 겹친 부분이 서로 비치지 않는다.
+    // 돌려받은 저장 번호로 RestoreToCount. 활성이면 아무것도 하지 않음.
+    private static int BeginDisabled(SKCanvas canvas, LayoutBox box)
+    {
+        var save = canvas.SaveCount;
+        if (box.Disabled)
+        {
+            using var layer = new SKPaint { Color = SKColors.White.WithAlpha(Roles.Alpha("opacity.disabled")) };
+            canvas.SaveLayer(layer);
+        }
+        return save;
     }
 }

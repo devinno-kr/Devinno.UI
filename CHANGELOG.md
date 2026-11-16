@@ -22,6 +22,8 @@
 - Editing or open input, select, date and color boxes show an accent border instead of an outer ring. Check boxes, radios and slider thumbs keep their line width on hover (color only); the slider shows a soft halo. The off toggle knob is muted.
 - Selection switch `look.selection: quiet` (Graphite and Carbon): segment, list and tree selection is a raised chip or soft tint instead of a primary fill.
 - Expand glyphs are chevrons everywhere; the tab divider is a hairline.
+- Disabled check boxes, radios, toggles and sliders are dimmed as one group (CSS `opacity`), so a thumb or knob no longer shows the track through it.
+- A unit starting with `%`, `‰` or `°` joins its value without a space (`40%`, `20°C`); other units keep one space (`3 bar`). Applies to gauge, knob, slider, tank, progress, trend legend and soft keyboard range. The slider value sits 8px above the thumb.
 - `font-weight` takes 100–900 and draws the font's real face for that weight (the nearest face the installed font has). Synthetic bold is used only when 600 or more is asked for and the font has no bold face. Bold text looks crisper and slightly wider than before.
 - Text is placed at subpixel positions with unhinted advance widths, so letter spacing is even at every size (before, some sizes showed uneven gaps). Text widths change by fractions of a pixel.
 - Screen text no longer splits a Latin word: a word wider than its line stays whole and overflows (CSS `overflow-wrap: normal`). Korean, Chinese and Japanese still break between characters, and multi-line `DvInput` still breaks long words.

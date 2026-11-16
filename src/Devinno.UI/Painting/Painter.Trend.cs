@@ -144,7 +144,7 @@ public sealed partial class Painter
         {
             var name = ch.Label ?? ch.Name;
             var lastVal = pts.LastOrDefault(p => double.IsFinite(p.Value));
-            var val = lastVal.Time.Ticks > 0 ? FormatTick(Math.Round(lastVal.Value, 2)) + (ch.Unit is { Length: > 0 } u ? " " + u : "") : "-";
+            var val = lastVal.Time.Ticks > 0 ? WithUnit(FormatTick(Math.Round(lastVal.Value, 2)), ch.Unit) : "-";
 
             using (var dot = new SKPaint { IsAntialias = true, Color = ch.Color })
                 canvas.DrawCircle(lx + 4f, ly, 4f, dot);

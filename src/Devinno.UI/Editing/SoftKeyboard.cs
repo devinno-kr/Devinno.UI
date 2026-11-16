@@ -402,7 +402,7 @@ internal sealed class SoftKeyboard
         var lo = n.Min?.ToString(CultureInfo.InvariantCulture);
         var hi = n.Max?.ToString(CultureInfo.InvariantCulture);
         var range = lo is null && hi is null ? "" : $"{lo} ~ {hi}";
-        return string.IsNullOrEmpty(n.Unit) ? range : $"{range} {n.Unit}".Trim();
+        return Painting.Painter.WithUnit(range, n.Unit).Trim();
     }
 
     private static SKColor Darken(SKColor c)

@@ -111,8 +111,7 @@ public sealed partial class Painter
 
         var label = box.KnobValue.ToString("F" + Interaction.KnobBinder.Decimals(box.KnobStep),
             System.Globalization.CultureInfo.InvariantCulture);
-        if (!string.IsNullOrEmpty(box.KnobUnit))
-            label += " " + box.KnobUnit;
+        label = WithUnit(label, box.KnobUnit);
 
         using var font = TextFont.Create(label, PartSize(box, "value", MathF.Max(Roles.Font("caption"), radius * 0.34f)), PartWeight(box, "value", Roles.Weight("bold")));
         using var tp = new SKPaint { IsAntialias = true, Color = PartColor(box, "value", ink) };

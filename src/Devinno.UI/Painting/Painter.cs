@@ -224,8 +224,9 @@ public sealed partial class Painter
         {
             var tr = WidgetMetrics.ShapeRect(box); // 늘어난 상자에서도 자기 크기로 가운데
             var radius = tr.Height / 2f;
-            // 비활성 = 반투명(체크박스·슬라이더와 같음), 읽기 전용 = 점선 테두리(PaintReadOnlyEdge — 모든 값 위젯 같은 모양)
-            var a = box.Disabled ? Roles.Alpha("opacity.disabled") : (byte)0xff;
+            // 비활성 = 전체를 한 번에 흐리게(체크박스·슬라이더와 같음), 읽기 전용 = 점선 테두리(PaintReadOnlyEdge — 모든 값 위젯 같은 모양)
+            var save = BeginDisabled(canvas, box);
+            const byte a = 0xff;
             var trackOn = ThemeColor("--toggle-on").WithAlpha(a);
             var trackOff = ThemeColor("--toggle-off").WithAlpha(a);
             using (var trackPaint = new SKPaint
@@ -251,6 +252,7 @@ public sealed partial class Painter
                 knobDiameter / 2,
                 knobDiameter / 2,
                 knobPaint);
+            canvas.RestoreToCount(save);
         }
 
         if (box.Node.Tag == "DvLamp")
@@ -313,9 +315,9 @@ public sealed partial class Painter
                 DrawGaugeScale(canvas, box, cx, cy, gm, startAngle, sweep);
             DrawGaugeNeedle(canvas, box, cx, cy, radius * 0.9f, startAngle + t * sweep, needleColor, gm);
 
-            if (box.ShowValue) // show-value(기본 참, D2), 값 + unit(한 칸 띄고) — 호 두 끝 사이에 맞춘 크기
+            if (box.ShowValue) // show-value(기본 참, D2), 값 + unit(WithUnit) — 호 두 끝 사이에 맞춘 크기
             {
-                var label = FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
+                var label = WithUnit(FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag), box.Unit);
                 using var font = TextFont.Create(label, PartSize(box, "value", WidgetMetrics.GaugeValueFont(gm, label)), PartWeight(box, "value", Roles.Weight("bold")));
                 var valColor = PartColor(box, "value", ZoneColorAt(box) ?? needleColor);
                 using var tp = new SKPaint { IsAntialias = true, Color = valColor };
@@ -520,9 +522,7 @@ public sealed partial class Painter
             }
 
             // 값 칩 — 반투명 배경 + 대비 텍스트(채움색과 무관하게 항상 가독, 색은 테마 토큰)
-            var label = FormatValue(box.TankValue, box.ValueFormat, box.Node.Tag);
-            if (!string.IsNullOrEmpty(box.TankUnit))
-                label += " " + box.TankUnit;
+            var label = WithUnit(FormatValue(box.TankValue, box.ValueFormat, box.Node.Tag), box.TankUnit);
 
             // 칩 글씨는 탱크 크기에 비례, 몸통 폭을 넘으면 폭에 맞춰 줄인다(최소 9)
             var chipPad = 16f * tm.Scale;

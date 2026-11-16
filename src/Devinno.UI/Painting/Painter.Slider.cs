@@ -9,13 +9,20 @@ namespace Devinno.UI.Painting;
 public sealed partial class Painter
 {
     // DvSlider — 막대(두께 6, gauge-track) + 최솟값 쪽부터 손잡이까지 채움(knob-fill) + 손잡이(지름 24, surface 채움 + 채움색 테두리).
-    // show-value 면 손잡이 위(가로)·오른쪽(세로)에 값(+unit). 누르는 중·올라감 = 손잡이 테두리 굵게, 비활성 = 반투명.
+    // show-value 면 손잡이 위(가로)·오른쪽(세로)에 값(+unit). 누르는 중·올라감 = 손잡이 둘레 옅은 원, 비활성 = 전체를 한 번에 흐리게.
     private void PaintSlider(SKCanvas canvas, LayoutBox box, InteractionState? state)
+    {
+        var save = BeginDisabled(canvas, box);
+        PaintSliderParts(canvas, box, state);
+        canvas.RestoreToCount(save);
+    }
+
+    private void PaintSliderParts(SKCanvas canvas, LayoutBox box, InteractionState? state)
     {
         const float bar = 6f;
         var (min, max) = SliderMetrics.Track(box);
         var at = SliderMetrics.PointAt(box, box.KnobValue);
-        var a = box.Disabled ? Roles.Alpha("opacity.disabled") : (byte)0xff;
+        const byte a = 0xff;
         var hot = !box.Disabled && state is not null && (ReferenceEquals(state.Press, box) || ReferenceEquals(state.Hover, box));
         var fill = ThemeColor("knob-fill").WithAlpha(a);
         // 읽기 전용 — 손잡이가 다니는 길 둘레 점선
@@ -49,8 +56,7 @@ public sealed partial class Painter
         // format(공용 규칙) 이 있으면 그것, 없거나 쓸 수 없으면 step 의 소수 자릿수
         var label = AttrRules.FormatOrNull(box.KnobValue, box.ValueFormat, box.Node.Tag)
                     ?? box.KnobValue.ToString("F" + KnobBinder.Decimals(box.KnobStep), System.Globalization.CultureInfo.InvariantCulture);
-        if (!string.IsNullOrEmpty(box.KnobUnit))
-            label += " " + box.KnobUnit;
+        label = WithUnit(label, box.KnobUnit);
         using var font = TextFont.Create(label, PartSize(box, "value", Roles.Font("label")), PartWeight(box, "value", Roles.Weight("bold")));
         using var tp = new SKPaint { IsAntialias = true, Color = PartColor(box, "value", ThemeColor("text")).WithAlpha(a) };
         var mid = -(font.Metrics.Ascent + font.Metrics.Descent) / 2f;
@@ -60,9 +66,9 @@ public sealed partial class Painter
             return;
         }
 
-        // 가로 — 손잡이 위 가운데, 상자 밖으로 나가지 않게 양 끝에서 밀어 넣음
+        // 가로 — 손잡이 위 가운데(글자 바닥선과 손잡이 사이 8), 상자 밖으로 나가지 않게 양 끝에서 밀어 넣음
         var w = font.MeasureText(label);
         var x = Math.Clamp(at.X, box.Rect.Left + w / 2f, box.Rect.Right - w / 2f);
-        canvas.DrawText(label, x, at.Y - SliderMetrics.Thumb - 6f + font.Metrics.Descent, SKTextAlign.Center, font, tp);
+        canvas.DrawText(label, x, at.Y - SliderMetrics.Thumb - 8f, SKTextAlign.Center, font, tp);
     }
 }
