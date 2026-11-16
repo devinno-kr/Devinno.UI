@@ -1100,7 +1100,7 @@ internal static class ProcessBuilder
         else if (n.Terminal)
         {
             var lines = TerminalLines(n);
-            using var f = TextFont.Create(n.Text ?? "", d.Text(12), 700, family);
+            using var f = TextFont.Create(n.Text ?? "", d.Text(12), Styling.Roles.Weight("strong"), family);
             var tw = lines.Max(l => f.MeasureText(l));
             var more = (lines.Length - 1) * f.Spacing; // 둘째 줄부터 한 줄씩 높아진다
             symSize = d.Vertical ? new SKSize(MathF.Max(d.Text(60), tw + d.Text(20)), d.Text(38) + more) : new SKSize(MathF.Max(d.Text(64), tw + d.Text(34)), d.Text(28) + more);
@@ -1137,7 +1137,7 @@ internal static class ProcessBuilder
         var extras = new List<SKRect>();
         if (!string.IsNullOrEmpty(n.Label) && !n.Terminal && !n.IsVessel)
         {
-            using var f = TextFont.Create(n.Label, d.Text(LabelSize), 700, family);
+            using var f = TextFont.Create(n.Label, d.Text(LabelSize), Styling.Roles.Weight("strong"), family);
             var lw = f.MeasureText(n.Label);
             var lh = f.Spacing;
             var used = n.Unit is not null ? new HashSet<PortSide> { PortSide.Bottom } : UsedSides(d, n); // 유닛 이름은 제목(위)
@@ -1298,8 +1298,8 @@ internal static class ProcessBuilder
     internal static float BubbleSize(ProcessInstrument inst, string? family)
     {
         var d = inst.Owner;
-        using var tf = TextFont.Create(inst.Letters ?? "", d.Text(LetterSize), 700, family);
-        using var nf = TextFont.Create(inst.Number ?? "", d.Text(NumberSize), 700, family);
+        using var tf = TextFont.Create(inst.Letters ?? "", d.Text(LetterSize), Styling.Roles.Weight("strong"), family);
+        using var nf = TextFont.Create(inst.Number ?? "", d.Text(NumberSize), Styling.Roles.Weight("strong"), family);
         return MathF.Max(d.Text(BubbleMin), MathF.Max(tf.MeasureText(inst.Letters ?? ""), nf.MeasureText(inst.Number ?? "")) + d.Text(14));
     }
 
@@ -1787,7 +1787,7 @@ internal static class ProcessBuilder
     private static string Signature(ProcessDiagram d, IEnumerable<ProcessLine> lines, IEnumerable<ProcessSignal> signals, float spacing)
     {
         var sb = new System.Text.StringBuilder();
-        sb.Append(d.Vertical ? 'V' : 'H').Append(d.Fixed ? 'F' : 'A').Append(d.Pitch).Append('T').Append(d.TextScale.ToString(CultureInfo.InvariantCulture)).Append('|').Append(spacing.ToString(CultureInfo.InvariantCulture)).Append('|');
+        sb.Append(d.Vertical ? 'V' : 'H').Append(d.Fixed ? 'F' : 'A').Append(d.Pitch).Append('W').Append(Styling.Roles.Weight("strong")).Append('T').Append(d.TextScale.ToString(CultureInfo.InvariantCulture)).Append('|').Append(spacing.ToString(CultureInfo.InvariantCulture)).Append('|');
         foreach (var n in d.Nodes)
         {
             sb.Append(n.Name).Append(':').Append(n.Def?.Name ?? "T").Append(n.TerminalSource ? 's' : 'd')

@@ -324,7 +324,7 @@ public sealed partial class Painter
             {
                 var value = FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag);
                 var label = WithUnit(value, box.Unit);
-                using var font = TextFont.Create(label, PartSize(box, "value", WidgetMetrics.GaugeValueFont(gm, label)), PartWeight(box, "value", Roles.Weight("strong")));
+                using var font = TextFont.Create(label, PartSize(box, "value", WidgetMetrics.GaugeValueFont(gm, value, box.Unit)), PartWeight(box, "value", Roles.Weight("strong")));
                 using var unitFont = UnitFont(box, box.Unit, font);
                 DrawValueUnit(canvas, box, value, box.Unit, cx, cy + gm.ValueBaseline, font, unitFont, PartColor(box, "value", ZoneColorAt(box) ?? needleColor));
             }

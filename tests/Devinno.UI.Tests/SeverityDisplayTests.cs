@@ -120,6 +120,29 @@ public class SeverityDisplayTests
         Assert.True(ChipRight(box, icon) > ChipRight(box, plain) + 8, $"{ChipRight(box, icon)} vs {ChipRight(box, plain)}");
     }
 
+    // 아이콘 토큰도 참조(token(x))를 따라간다
+    [Fact]
+    public void Severity_icon_token_can_reference_another_token()
+    {
+        var plainTheme = DvTheme.Light;
+        var refTheme = DvTheme.Light.With(new Dictionary<string, string> { ["my-alarm-icon"] = "fa-bell", ["alarm-critical-icon"] = "token(my-alarm-icon)" });
+        var (box, plain) = Render(List, ts: 0, theme: plainTheme);
+        var (_, viaRef) = Render(List, ts: 0, theme: refTheme);
+        using var _1 = plain;
+        using var _2 = viaRef;
+        static int ChipRight(LayoutBox box, SKBitmap bmp)
+        {
+            var (r, _) = Row(box, 0);
+            var y = (int)r.MidY - 8;
+            var x = (int)(box.Rect.Left + 16 + 78 + 10);
+            var chip = bmp.GetPixel(x, y);
+            while (x < bmp.Width - 1 && Near(bmp.GetPixel(x + 1, y), chip, 12))
+                x++;
+            return x;
+        }
+        Assert.True(ChipRight(box, viaRef) > ChipRight(box, plain) + 8);
+    }
+
     [Fact]
     public void Alarm_list_default_row_height_is_the_row_step()
     {

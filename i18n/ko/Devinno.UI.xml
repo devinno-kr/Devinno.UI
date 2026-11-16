@@ -3472,7 +3472,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             </summary>
         </member><member name="M:Devinno.UI.Layout.LayoutSugar.Space(System.String)" en-hash="3d2ed10ceeb9bb9c">
             <summary>간격 단계명(xs~2xl) → 토큰, none → 0, 그 외 숫자는 그대로.</summary>
-        </member><member name="T:Devinno.UI.Layout.PartStyle" en-hash="239429680f2782f2"><summary><c>::part()</c> 규칙이 정한 위젯 부분 하나의 덮어쓰기 — 규칙이 정한 키만 값이 있고 나머지는 <see langword="null" /> 입니다.</summary></member><member name="M:Devinno.UI.Layout.PartStyle.#ctor(System.Nullable{System.Single},System.Nullable{System.Int32},System.Nullable{SkiaSharp.SKColor})" en-hash="239429680f2782f2"><summary><c>::part()</c> 규칙이 정한 위젯 부분 하나의 덮어쓰기 — 규칙이 정한 키만 값이 있고 나머지는 <see langword="null" /> 입니다.</summary></member><member name="M:Devinno.UI.Layout.PartStyle.Parse(System.String)" en-hash="a241bb05fadb2988"><summary>해석된 선언에서 <c>font-size</c>, <c>font-weight</c>, <c>color</c> 를 읽습니다. 다른 키는 무시합니다.</summary></member><member name="T:Devinno.UI.Layout.ScreenMap" en-hash="a9323b45f763b3a8"><summary>상자 좌표 → 화면 좌표: 점 × <see cref="P:Devinno.UI.Layout.ScreenMap.Scale" /> + <see cref="P:Devinno.UI.Layout.ScreenMap.Offset" />. 이동과 균일 배율만 있다(스크롤 오프셋과 <see cref="F:Devinno.UI.Layout.LayoutBox.ContentScale" />).</summary></member><member name="M:Devinno.UI.Layout.ScreenMap.#ctor(System.Single,SkiaSharp.SKPoint)" en-hash="a9323b45f763b3a8"><summary>상자 좌표 → 화면 좌표: 점 × <see cref="P:Devinno.UI.Layout.ScreenMap.Scale" /> + <see cref="P:Devinno.UI.Layout.ScreenMap.Offset" />. 이동과 균일 배율만 있다(스크롤 오프셋과 <see cref="F:Devinno.UI.Layout.LayoutBox.ContentScale" />).</summary></member><member name="M:Devinno.UI.Layout.ScreenMap.Into(Devinno.UI.Layout.LayoutBox)" en-hash="6fc1fcea301ec10e"><summary><paramref name="box" /> 의 자식에 쓰는 변환 — 그 스크롤 오프셋 다음 내용 변환(페인터가 적용하는 순서와 같음).</summary></member><member name="T:Devinno.UI.Localization.BuiltInStrings" en-hash="827d7806217a22ad">
+        </member><member name="T:Devinno.UI.Layout.PartStyle" en-hash="239429680f2782f2"><summary><c>::part()</c> 규칙이 정한 위젯 부분 하나의 덮어쓰기 — 규칙이 정한 키만 값이 있고 나머지는 <see langword="null" /> 입니다.</summary></member><member name="M:Devinno.UI.Layout.PartStyle.#ctor(System.Nullable{System.Single},System.Nullable{System.Int32},System.Nullable{SkiaSharp.SKColor})" en-hash="239429680f2782f2"><summary><c>::part()</c> 규칙이 정한 위젯 부분 하나의 덮어쓰기 — 규칙이 정한 키만 값이 있고 나머지는 <see langword="null" /> 입니다.</summary></member><member name="M:Devinno.UI.Layout.PartStyle.Parse(System.String)" en-hash="6ebdd9fe80a9b1b3"><summary>해석된 선언에서 <c>font-size</c>, <c>font-weight</c>, <c>color</c> 를 읽습니다. 다른 키와 쓸 수 없는 값은 무시합니다.</summary></member><member name="T:Devinno.UI.Layout.ScreenMap" en-hash="a9323b45f763b3a8"><summary>상자 좌표 → 화면 좌표: 점 × <see cref="P:Devinno.UI.Layout.ScreenMap.Scale" /> + <see cref="P:Devinno.UI.Layout.ScreenMap.Offset" />. 이동과 균일 배율만 있다(스크롤 오프셋과 <see cref="F:Devinno.UI.Layout.LayoutBox.ContentScale" />).</summary></member><member name="M:Devinno.UI.Layout.ScreenMap.#ctor(System.Single,SkiaSharp.SKPoint)" en-hash="a9323b45f763b3a8"><summary>상자 좌표 → 화면 좌표: 점 × <see cref="P:Devinno.UI.Layout.ScreenMap.Scale" /> + <see cref="P:Devinno.UI.Layout.ScreenMap.Offset" />. 이동과 균일 배율만 있다(스크롤 오프셋과 <see cref="F:Devinno.UI.Layout.LayoutBox.ContentScale" />).</summary></member><member name="M:Devinno.UI.Layout.ScreenMap.Into(Devinno.UI.Layout.LayoutBox)" en-hash="6fc1fcea301ec10e"><summary><paramref name="box" /> 의 자식에 쓰는 변환 — 그 스크롤 오프셋 다음 내용 변환(페인터가 적용하는 순서와 같음).</summary></member><member name="T:Devinno.UI.Localization.BuiltInStrings" en-hash="827d7806217a22ad">
             <summary>라이브러리 내장 화면 문구(<c>dv.</c> 키)의 영어·한국어 표입니다. 찾는 순서: 앱 표의 현재 언어 → 내장 표의 현재 언어 → 앱 표의 <see cref="P:Devinno.UI.Localization.DvStrings.FallbackLanguage" /> → 내장 영어. <see cref="T:Devinno.UI.Localization.DvStrings" /> 가 없으면 내장 영어를 씁니다.</summary>
         </member><member name="M:Devinno.UI.Localization.BuiltInStrings.Get(Devinno.UI.Localization.DvStrings,System.String)" en-hash="712bb2c7ebaa3b8e">
             <summary><c>dv.</c> 키의 내장 문구 — <paramref name="strings" /> 로 앱마다 바꿀 수 있습니다.</summary>
@@ -3816,13 +3816,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
         </member><member name="P:Devinno.UI.Painting.WidgetMetrics.GaugeMetrics.ZoneRadius" en-hash="63bb78770add1325"><summary>경보 구간 띠의 중심 반지름 — 트랙 안쪽에 틈을 둔 얇은 띠라 구간이 트랙을 덮지 않음.</summary></member><member name="P:Devinno.UI.Painting.WidgetMetrics.GaugeMetrics.ZoneWidth" en-hash="0425125d643c9d28"><summary>경보 구간 띠 두께.</summary></member><member name="P:Devinno.UI.Painting.WidgetMetrics.GaugeMetrics.TrackWidth" en-hash="048af1f0bfbee28f"><summary>게이지 트랙 두께 — 범위를 그리는 가는 중립 호(값은 바늘이 보여 주므로 트랙은 채우지 않음).</summary></member><member name="M:Devinno.UI.Painting.WidgetMetrics.Gauge(SkiaSharp.SKRect,System.Boolean)" en-hash="aa58e5eb5d1877ac">
             <param name="rect">계기 영역(짧은 변 기준으로 배율 계산)</param>
             <param name="tickLabels">눈금 숫자를 그리면 값 글씨를 호가 열린 아래 틈으로 내리고 조금 줄인다(아래쪽 눈금 숫자와 겹치지 않게)</param>
-        </member><member name="M:Devinno.UI.Painting.WidgetMetrics.GaugeValueFont(Devinno.UI.Painting.WidgetMetrics.GaugeMetrics,System.String)" en-hash="90b1b65fae8e0b69">
-            <summary>
-            <paramref name="label" /> 을 <see cref="P:Devinno.UI.Painting.WidgetMetrics.GaugeMetrics.ValueBaseline" /> 에서 호의 두 끝 사이(270° 호의 열린 아래)에 맞추는 값 글씨 크기:
-            들어가면 <see cref="P:Devinno.UI.Painting.WidgetMetrics.GaugeMetrics.ValueFont" />, 아니면 그 60% 까지 줄인다(<see cref="F:Devinno.UI.Painting.WidgetMetrics.MinFont" /> 아래로는 줄이지 않음 — 보통 크기가 이미 그 크기면 그대로).
-            최소 크기에서도 들어가지 않는 글자는 최소 크기를 유지한다.
-            </summary>
-        </member><member name="M:Devinno.UI.Painting.WidgetMetrics.Tank(SkiaSharp.SKRect)" en-hash="92d0d982b284c4a2">
+        </member><member name="M:Devinno.UI.Painting.WidgetMetrics.GaugeValueFont(Devinno.UI.Painting.WidgetMetrics.GaugeMetrics,System.String,System.String)" en-hash="47bb8295f639878e"><summary><paramref name="value" /> 와 그보다 작은 <paramref name="unit" /> 을(그리는 모양대로: 값은 <c>weight.strong</c>, 단위는 값 크기 × <c>ratio.unit</c>) <see cref="P:Devinno.UI.Painting.WidgetMetrics.GaugeMetrics.ValueBaseline" /> 높이의 호 두 끝 사이(270° 호의 열린 아래쪽)에 맞추는 값 글자 크기: 들어가면 <see cref="P:Devinno.UI.Painting.WidgetMetrics.GaugeMetrics.ValueFont" />, 아니면 그 60% 까지 작게(보통 크기가 이미 작지 않다면 <see cref="F:Devinno.UI.Painting.WidgetMetrics.MinFont" /> 아래로는 내리지 않음). 최소에서도 안 들어가는 글자는 최소를 유지합니다.</summary></member><member name="M:Devinno.UI.Painting.WidgetMetrics.Tank(SkiaSharp.SKRect)" en-hash="92d0d982b284c4a2">
             <summary>탱크는 가늘고 길거나 넓고 낮게 쓰이므로 폭·높이 중 덜 커진 쪽을 배율로 쓴다.</summary>
         </member><member name="T:Devinno.UI.Process.BuiltInSymbols" en-hash="c74804710d4403a3">
             <summary>
@@ -4711,14 +4705,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             </remarks>
             <param name="overrides">바꾸거나 추가할 토큰(이름 → 값). 키 앞의 <c>--</c> 는 있어도 됩니다.</param>
             <returns>지정한 토큰만 바뀐 새 <see cref="T:Devinno.UI.Styling.DvTheme" /></returns>
-        </member><member name="M:Devinno.UI.Styling.DvTheme.TryGet(System.String,System.String@)" en-hash="5741d15a16635339">
-            <summary>
-            토큰 값을 찾습니다. 커스텀 위젯에서 테마 색을 직접 쓸 때 <see cref="M:Devinno.UI.Styling.DvColor.TryParse(System.String,Devinno.UI.Styling.DvColor@)" /> 와 함께 씁니다.
-            </summary>
-            <param name="token">토큰 이름(예: <c>primary</c>, <c>spacing.md</c>, <c>--primary</c>). 대소문자는 무시하고 앞의 <c>--</c> 는 떼고 찾습니다.</param>
-            <param name="value">찾으면 값 문자열, 없으면 <see langword="null" />.</param>
-            <returns>토큰이 있으면 <see langword="true" /></returns>
-        </member><member name="M:Devinno.UI.Styling.DvTheme.TryResolve(System.String,System.String@)" en-hash="ac6b96a13b67d45e">
+        </member><member name="M:Devinno.UI.Styling.DvTheme.TryGet(System.String,System.String@)" en-hash="4b838bb27fa12da3"><summary>테마에 적힌 그대로의 토큰 값을 찾습니다 — <c>token(primary)</c> 같은 참조는 그대로 돌려줍니다. 위젯이 그릴 때 쓸 값은 <see cref="M:Devinno.UI.Styling.DvTheme.TryResolve(System.String,System.String@)" />(참조를 따라감)로 읽고, 색이면 <see cref="M:Devinno.UI.Styling.DvColor.TryParse(System.String,Devinno.UI.Styling.DvColor@)" /> 로 바꾸세요.</summary><param name="token">토큰 이름(예: <c>primary</c>, <c>spacing.md</c>, <c>--primary</c>). 대소문자는 무시하고 앞의 <c>--</c> 는 떼고 찾습니다.</param><param name="value">찾으면 값 문자열, 없으면 <see langword="null" />.</param><returns>토큰이 있으면 <see langword="true" /></returns></member><member name="M:Devinno.UI.Styling.DvTheme.TryResolve(System.String,System.String@)" en-hash="ac6b96a13b67d45e">
             <summary>
             토큰 값을 찾고 참조를 따라갑니다. 값 전체가 다른 토큰(<c>token(name)</c> 또는 <c>var(--name)</c>)이면 그 토큰의 값을 돌려주며,
             최대 8단계까지 이어서 따라갑니다. 참조 앞뒤에 다른 글자가 있는 값(<c>0 2 6 token(x)</c>)은 그대로 돌려줍니다.
@@ -4892,7 +4879,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <summary>누르고 있을 때 적용되는 <c>.name:press { … }</c> 또는 <c>.name:active { … }</c>(같은 뜻의 별칭)의 선언. 없으면 <see langword="null" />.</summary>
         </member><member name="P:Devinno.UI.Styling.ClassRule.Disabled" en-hash="24e37a512a121571">
             <summary>비활성일 때 적용되는 <c>.name:disabled { … }</c> 의 선언. 없으면 <see langword="null" />.</summary>
-        </member><member name="T:Devinno.UI.Styling.StyleSheet" en-hash="7c1353e971e8dd41">
+        </member><member name="T:Devinno.UI.Styling.StyleSheet" en-hash="ceea3d5fc18d5e7d">
              <summary>
              클래스 스타일 규칙 모음입니다. 테마 스타일시트(<see cref="P:Devinno.UI.Styling.DvTheme.Stylesheet" />)와 마크업의 <c>&lt;DvStyle&gt;</c> 내용이 이 형식으로 해석됩니다.
              </summary>
@@ -4900,13 +4887,13 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
              <para><b>문법</b>: <c>셀렉터 { 선언; 선언 }</c> 을 이어 씁니다. 지원 셀렉터는 단일 클래스 <c>.name</c> 과
              <c>.name:hover</c>·<c>:press</c>·<c>:active</c>(= press)·<c>:disabled</c> 뿐이며(대소문자 구분), 쉼표로 여러 셀렉터를 나열할 수 있습니다.
              위젯 부분은 태그나 클래스에 CSS <c>::part()</c> 셀렉터를 붙여 꾸밉니다: <c>DvGauge::part(value) { font-size: 40 }</c>, <c>.big::part(value) { color: token(primary) }</c>
-             (키 <c>font-size</c>, <c>font-weight</c>, <c>color</c>. 클래스 부분 규칙이 태그 부분 규칙을 이깁니다). 부분: <c>DvGauge</c> value, tick · <c>DvRing</c> value, name ·
-             <c>DvKnob</c> value · <c>DvTank</c> value, tick · <c>DvProgress</c> value · <c>DvSlider</c> value.
+             (키 <c>font-size</c>, <c>font-weight</c>, <c>color</c>. 클래스 부분 규칙이 태그 부분 규칙을 이깁니다). 부분: <c>DvGauge</c> value, unit, tick · <c>DvRing</c> value, unit, name ·
+             <c>DvKnob</c> value, unit · <c>DvTank</c> value, unit, tick · <c>DvProgress</c> value · <c>DvSlider</c> value.
              <c>.a.b</c>, 태그·자손·<c>#id</c> 셀렉터처럼 지원하지 않는 셀렉터는 그 셀렉터만 경고(<see cref="T:System.Diagnostics.Trace" />)를 남기고 무시됩니다.
              <c>/* … */</c> 주석은 지워집니다. 선언 값 안에 중괄호를 쓸 수는 없습니다.</para>
              <para><b>선언</b>: 인라인 <c>style</c> 과 같은 키를 쓰며(<see cref="T:Devinno.UI.Styling.ComputedStyle" /> 참고), <c>token(...)</c> 을 쓸 수 있습니다.</para>
              <para><b>우선순위</b>(낮음 → 높음): 레이아웃 슈가 &lt; 클래스 &lt; 클래스:상태 &lt; <c>content-align</c> 속성 &lt; 인라인 <c>style</c> &lt; 인라인 <c>hover-style</c> 등.
-             요소에 클래스가 여럿이면(<c>class="a b"</c>) 뒤 클래스가 이깁니다. 테마 스타일시트가 먼저, 컴포넌트 정의 안 <c>&lt;DvStyle&gt;</c>(<see cref="T:Devinno.UI.Components.ComponentRegistry" />)가 다음, 화면 마크업의 <c>&lt;DvStyle&gt;</c> 가 마지막에 추가되므로 같은 클래스·같은 속성은 뒤에 추가된 쪽이 이깁니다.</para>
+             요소에 클래스가 여럿이면(<c>class="a b"</c>) 뒤 클래스가 이깁니다. 테마 스타일시트의 내장 부분(<see cref="F:Devinno.UI.Styling.BuiltInStyles.Sheet" />)이 먼저, 그다음 테마의 스타일 스위치 규칙(<c>look.selection: quiet</c> 의 조용한 선택, <c>look.texture: flat</c> 의 그림자 없음), 그다음 테마 스타일시트의 나머지(테마가 <c>BuiltInStyles.Sheet</c> 뒤에 덧붙인 것, 또는 통째로 바꾼 시트), 그다음 컴포넌트 정의 안 <c>&lt;DvStyle&gt;</c>(<see cref="T:Devinno.UI.Components.ComponentRegistry" />)가 다음, 화면 마크업의 <c>&lt;DvStyle&gt;</c> 가 마지막에 추가되므로 같은 클래스·같은 속성은 뒤에 추가된 쪽이 이깁니다.</para>
              <para><b>코드에서 클래스 정의하기</b>: 렌더링에 쓰이는 스타일시트는 테마에서 오므로, 코드로 클래스를 추가하려면
              <see cref="M:Devinno.UI.Styling.DvTheme.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String)" /> 에 <c>BuiltInStyles.Sheet + 내 CSS</c> 를 넘겨 테마를 만드세요.
              마크업에 직접 쓰려면 <c>&lt;DvStyle&gt;</c> 요소를 씁니다. <see cref="M:Devinno.UI.Styling.StyleSheet.Parse(System.String)" />/<see cref="M:Devinno.UI.Styling.StyleSheet.TryGet(System.String,Devinno.UI.Styling.ClassRule@)" /> 은 규칙을 직접 읽어 보는 도구·커스텀 위젯용입니다.</para>

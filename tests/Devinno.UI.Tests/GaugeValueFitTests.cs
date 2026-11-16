@@ -65,4 +65,14 @@ public class GaugeValueFitTests
         var gm = WidgetMetrics.Gauge(SKRect.Create(0, 0, 120, 120));
         Assert.Equal(gm.ValueFont * 0.6f, WidgetMetrics.GaugeValueFont(gm, "1234567890 kPa/min"), 3);
     }
+    // 그리는 모양대로 잰다 — 값(굵기 strong) + 작은 단위(ratio.unit). 단위를 값 크기로 재면 필요보다 작게 줄어든다
+    [Fact]
+    public void Fit_measures_the_unit_at_its_smaller_size()
+    {
+        using var _ = Devinno.UI.Styling.Roles.Enter(Devinno.UI.Styling.DvTheme.Dark);
+        var gm = WidgetMetrics.Gauge(new SkiaSharp.SKRect(0, 0, 140, 140), tickLabels: true);
+        var split = WidgetMetrics.GaugeValueFont(gm, "12345", "kPa/min");
+        var whole = WidgetMetrics.GaugeValueFont(gm, "12345 kPa/min");
+        Assert.True(split > whole + 0.5f, $"split {split} vs whole {whole}");
+    }
 }

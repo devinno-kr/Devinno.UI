@@ -46,6 +46,23 @@ public class ProcessThemeTests
         Assert.Equal(Png("look=\"rich\"", DvTheme.Light), Png("", DvTheme.Light));
     }
 
+    // 이름표는 그리는 굵기(weight.strong)로 재서 자리를 잡는다 — 굵기를 올린 테마에서 글자가 자리를 넘지 않게
+    [Fact]
+    public void Labels_are_measured_with_the_theme_label_weight()
+    {
+        float Width(string w)
+        {
+            var theme = DvTheme.Light.With(new Dictionary<string, string> { ["weight.strong"] = w });
+            var s = new DvSurface("<DvScreen><DvProcess look=\"plain\"><DvPump name=\"P1\" label=\"WWWWWWWW-101\"/></DvProcess></DvScreen>", null, theme);
+            s.Layout(600, 300);
+            var d = Flatten(s.Root!).First(b => b.Process is not null).Process!;
+            return d.Nodes.Single(n => n.Name == "P1").LabelRect.Width;
+        }
+        Assert.True(Width("900") > Width("300") + 4, $"900 → {Width("900")}, 300 → {Width("300")}");
+    }
+
+    private static IEnumerable<Devinno.UI.Layout.LayoutBox> Flatten(Devinno.UI.Layout.LayoutBox b) => new[] { b }.Concat(b.Children.SelectMany(Flatten));
+
     [Fact]
     public void Look_attribute_overrides_the_theme()
     {

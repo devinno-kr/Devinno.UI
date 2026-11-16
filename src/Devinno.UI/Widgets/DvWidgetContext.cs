@@ -170,6 +170,7 @@ public sealed class DvWidgetContext
             : 0f;
         if (amount <= 0f)
             return fill;
+        amount = MathF.Min(amount, 1f); // 1 을 넘는 세기 — 글자색이 끝(바이트가 넘쳐 뒤집히지 않게)
         var ink = Color("text");
         return new SKColor(
             (byte)(fill.Red + (ink.Red - fill.Red) * amount),

@@ -85,8 +85,8 @@ public static class ThemeResolver
     {
         if ((theme ?? DvTheme.Default).TryResolve(name, out var raw, out var problem))
         {
-            if (float.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v))
-                return v;
+            if (float.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) && float.IsFinite(v))
+                return v; // NaN·무한대는 숫자로 쓰지 않는다(색·크기 계산이 망가짐)
             Interaction.Warnings.Warn($"Devinno.UI: token '{name}' is not a number ('{raw}'); using 0");
         }
         else

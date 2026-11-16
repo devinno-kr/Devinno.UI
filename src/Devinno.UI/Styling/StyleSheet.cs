@@ -29,13 +29,13 @@ public sealed class ClassRule
 /// <para><b>Syntax</b>: a sequence of <c>셀렉터 { 선언; 선언 }</c> (selector { declaration; declaration }). The only supported selectors are a single class <c>.name</c> and
 /// <c>.name:hover</c>, <c>:press</c>, <c>:active</c> (= press) and <c>:disabled</c> (case-sensitive); several selectors can be listed separated by commas.
 /// Widget parts are styled with the CSS <c>::part()</c> selector on a tag or a class: <c>DvGauge::part(value) { font-size: 40 }</c>, <c>.big::part(value) { color: token(primary) }</c>
-/// (keys <c>font-size</c>, <c>font-weight</c>, <c>color</c>; a class part rule wins over the tag part rule). Parts: <c>DvGauge</c> value, tick · <c>DvRing</c> value, name ·
-/// <c>DvKnob</c> value · <c>DvTank</c> value, tick · <c>DvProgress</c> value · <c>DvSlider</c> value.
+/// (keys <c>font-size</c>, <c>font-weight</c>, <c>color</c>; a class part rule wins over the tag part rule). Parts: <c>DvGauge</c> value, unit, tick · <c>DvRing</c> value, unit, name ·
+/// <c>DvKnob</c> value, unit · <c>DvTank</c> value, unit, tick · <c>DvProgress</c> value · <c>DvSlider</c> value.
 /// Unsupported selectors such as <c>.a.b</c>, tag, descendant or <c>#id</c> selectors are ignored, with a warning (<see cref="Trace"/>) for that selector only.
 /// <c>/* … */</c> comments are removed. Braces cannot be used inside declaration values.</para>
 /// <para><b>Declarations</b>: use the same keys as the inline <c>style</c> (see <see cref="ComputedStyle"/>), and <c>token(...)</c> can be used.</para>
 /// <para><b>Precedence</b> (low → high): layout sugar &lt; class &lt; class:state &lt; <c>content-align</c> attribute &lt; inline <c>style</c> &lt; inline <c>hover-style</c>, etc.
-/// If an element has several classes (<c>class="a b"</c>), the later class wins. The theme stylesheet is added first, then <c>&lt;DvStyle&gt;</c> inside component definitions (<see cref="Components.ComponentRegistry"/>), and the screen markup's <c>&lt;DvStyle&gt;</c> last, so for the same class and property the one added later wins.</para>
+/// If an element has several classes (<c>class="a b"</c>), the later class wins. The built-in part of the theme stylesheet (<see cref="BuiltInStyles.Sheet"/>) is added first, then the theme's style switch rules (quiet selection for <c>look.selection: quiet</c>, no shadows for <c>look.texture: flat</c>), then the rest of the theme stylesheet (what a theme appends after <c>BuiltInStyles.Sheet</c>, or a whole replacement sheet), then <c>&lt;DvStyle&gt;</c> inside component definitions (<see cref="Components.ComponentRegistry"/>), and the screen markup's <c>&lt;DvStyle&gt;</c> last, so for the same class and property the one added later wins.</para>
 /// <para><b>Defining classes in code</b>: the stylesheet used for rendering comes from the theme, so to add classes in code,
 /// create a theme by passing <c>BuiltInStyles.Sheet + 내 CSS</c> (your CSS) to <see cref="DvTheme(IReadOnlyDictionary{string, string}, string)"/>.
 /// To write them directly in markup, use the <c>&lt;DvStyle&gt;</c> element. <see cref="Parse"/>/<see cref="TryGet"/> are for tools and custom widgets that read rules directly.</para>

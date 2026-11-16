@@ -225,7 +225,7 @@ public sealed partial class Painter
     {
         glyph = default;
         var token = p switch { AlarmPriority.Critical => "alarm-critical-icon", AlarmPriority.Major => "alarm-major-icon", _ => "alarm-minor-icon" };
-        return _theme.TryGet(token, out var name) && !string.IsNullOrWhiteSpace(name) && IconFont.TryResolve(name.Trim(), out glyph);
+        return _theme.TryResolve(token, out var name) && !string.IsNullOrWhiteSpace(name) && IconFont.TryResolve(name.Trim(), out glyph); // 참조(token(x))도 따라감
     }
 
     private string PriorityLabel(AlarmPriority p) => p switch

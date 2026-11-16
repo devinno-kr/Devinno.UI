@@ -531,7 +531,8 @@ public sealed class DvTheme
         => new(With(Tokens, overrides), Stylesheet);
 
     /// <summary>
-    /// Looks up a token value. Use it with <see cref="DvColor.TryParse"/> when a custom widget uses theme colors directly.
+    /// Looks up a token's raw value, as written in the theme — a reference such as <c>token(primary)</c> is returned as is.
+    /// To read the value a widget should draw with, use <see cref="TryResolve(string, out string)"/> (follows references), then <see cref="DvColor.TryParse"/> for a color.
     /// </summary>
     /// <param name="token">The token name (e.g. <c>primary</c>, <c>spacing.md</c>, <c>--primary</c>). Case is ignored and a leading <c>--</c> is stripped before lookup.</param>
     /// <param name="value">The value string if found; otherwise <see langword="null"/>.</param>

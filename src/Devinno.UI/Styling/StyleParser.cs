@@ -25,9 +25,11 @@ public static class StyleParser
     /// <summary>Parses a declaration list string into a new <see cref="ComputedStyle"/>.</summary>
     /// <param name="style">The declaration list (e.g. <c>color:#fff; padding:8</c>). If <see langword="null"/> or whitespace, returns a style with all default values.</param>
     /// <returns>A newly created <see cref="ComputedStyle"/>. Does not throw.</returns>
-    public static ComputedStyle Parse(string? style)
+    public static ComputedStyle Parse(string? style) => ParseInto(new ComputedStyle(), style);
+
+    // 주어진 스타일 위에 선언을 덮는다 — 쓸 수 없는 값은 그 키를 건드리지 않는다(::part() 가 쓸 수 있는 값만 고를 때 씀)
+    internal static ComputedStyle ParseInto(ComputedStyle s, string? style)
     {
-        var s = new ComputedStyle();
         if (string.IsNullOrWhiteSpace(style))
             return s;
 
@@ -156,7 +158,7 @@ public static class StyleParser
                     s.Padding = s.Padding.WithSide(key[8..], ps.Top);
                 break;
             case "font-size":
-                s.FontSize = F(v, 14f);
+                s.FontSize = F(v, s.FontSize); // 쓸 수 없는 값 = 그대로(새 스타일이면 기본 14)
                 break;
             case "font-family":
                 s.FontFamily = v.Trim();
@@ -420,7 +422,7 @@ public static class StyleParser
         return float.TryParse(v.Replace("px", "").Replace("dp", "").Trim(),
             NumberStyles.Float,
             CultureInfo.InvariantCulture,
-            out var f)
+            out var f) && float.IsFinite(f) // NaN·무한대 = 쓸 수 없는 값
             ? f
             : dflt;
     }

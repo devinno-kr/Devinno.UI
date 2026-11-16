@@ -80,19 +80,31 @@ internal static class WidgetMetrics
     }
 
     /// <summary>
-    /// Value text size that fits <paramref name="label"/> between the arc ends (the open bottom of the 270° arc) at <see cref="GaugeMetrics.ValueBaseline"/>:
+    /// Value text size that fits <paramref name="value"/> and its smaller <paramref name="unit"/> (as drawn: value at <c>weight.strong</c>, unit at value size × <c>ratio.unit</c>) between the arc ends (the open bottom of the 270° arc) at <see cref="GaugeMetrics.ValueBaseline"/>:
     /// <see cref="GaugeMetrics.ValueFont"/> when it fits, otherwise smaller, down to 60% of it (not below <see cref="MinFont"/> unless the normal size already is).
     /// A text that does not fit at the minimum keeps the minimum.
     /// </summary>
-    internal static float GaugeValueFont(GaugeMetrics gm, string label)
+    // 그리는 모양 그대로 — 값(고정폭 숫자, weight.strong) + 틈 + 단위(값 크기 × ratio.unit, 보통 굵기)
+    internal static float GaugeValueFont(GaugeMetrics gm, string value, string? unit) => Fit(gm, value, unit);
+
+    internal static float GaugeValueFont(GaugeMetrics gm, string label) => Fit(gm, label, null);
+
+    private static float Fit(GaugeMetrics gm, string value, string? unit)
     {
         var normal = gm.ValueFont;
         var min = MathF.Min(normal, MathF.Max(MinFont, normal * 0.6f));
         var size = normal;
+        var ratio = Roles.Number("ratio.unit");
         for (var i = 0; i < 4; i++)
         {
-            using var font = Text.TextFont.Create(label, size, weight: Roles.Weight("bold"));
-            var width = font.MeasureText(label, out var bounds);
+            using var font = Text.TextFont.Create(value, size, weight: Roles.Weight("strong"));
+            font.MeasureText(value, out var bounds);
+            var width = Text.TextFont.MeasureNumber(value, font);
+            if (!string.IsNullOrEmpty(unit))
+            {
+                using var uf = Text.TextFont.Create(unit, size * ratio, weight: Roles.Weight("regular"));
+                width += (Painter.UnitJoinsValue(unit) ? size * 0.04f : size * 0.18f) + uf.MeasureText(unit);
+            }
             var room = 2f * (GaugeGapHalf(gm, gm.ValueBaseline + bounds.Top, gm.ValueBaseline + bounds.Bottom) - 3f * gm.Scale);
             if (width <= room || size <= min)
                 break;
