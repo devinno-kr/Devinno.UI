@@ -60,7 +60,7 @@ public static class BuiltInStyles
                            box-shadow: 0 0 0 transparent }
 
         /* 래칭 버튼 (DvButton value="{Bind …}") 켜짐 */
-        .btn-on       { background: token(primary); color: token(primary-fg); border: 1 token(primary) }
+        .btn-on       { background: token(primary-press); color: token(primary-fg); border: 1 token(primary-press) } /* 주 버튼과 같은 진한 채움 — 흰 글자 대비 */
         .btn-on:hover { background: token(primary-hover); color: token(primary-fg) }
         .btn-on:press { background: token(primary-press) }
 

@@ -198,7 +198,7 @@ public sealed class DvTheme
         ["trend-grid"] = "#e2e8f0",
         ["chart-1"] = "#3b82f6", ["chart-2"] = "#22d3ee", ["chart-3"] = "#a78bfa",
         ["chart-4"] = "#f59e0b", ["chart-5"] = "#10b981", ["chart-6"] = "#ef4444",
-        ["lamp-off"] = "#3a3f47",
+        ["lamp-off"] = "#94a3b8", // 밝은 바탕 — 꺼진 램프가 화면을 누르지 않게 중간 회색
         ["scrollbar-thumb"] = "#64748b80",
         ["scrollbar-track"] = "#0f172a0f",
         ["grid-header"] = "#eef2f6", ["grid-header-fg"] = "#475569",
@@ -351,6 +351,7 @@ public sealed class DvTheme
 
         // 정상 상태는 무채색(운전 = 진한 회색, 정지 = 밝은 회색), 이상 상태만 채도 — ISA-101
         ["state-run"] = "#2f3a44", ["state-run-fg"] = "#2f3a44", ["state-run-soft"] = "#d0d5db",
+        ["normal"] = "token(state-run)", // 정상 색 안 씀 — 정상 역할도 무채색
         ["state-stop"] = "#9aa1aa", ["state-stop-fg"] = "#4a525c", ["state-stop-soft"] = "#eceef0",
         ["state-fault"] = "#d92d20", ["state-fault-fg"] = "#a8231a", ["state-fault-soft"] = "#f9dad6",
         ["state-warn"] = "#f08c00", ["state-warn-fg"] = "#7a4300", ["state-warn-soft"] = "#fbe6c4",
@@ -359,7 +360,7 @@ public sealed class DvTheme
 
         ["alarm-critical"] = "#d92d20", ["alarm-critical-fg"] = "#ffffff",
         ["alarm-major"] = "#c86e00", ["alarm-major-fg"] = "#111111",
-        ["alarm-minor"] = "#9c8000", ["alarm-minor-fg"] = "#111111",
+        ["alarm-minor"] = "#52708d", ["alarm-minor-fg"] = "#ffffff",
         ["comm-alarm"] = "#6b2c91", ["comm-alarm-fg"] = "#ffffff",
 
         // 위젯(Painter) 색 — 회색 판, 강조는 강철 청색 하나
@@ -369,7 +370,7 @@ public sealed class DvTheme
         ["knob-face"] = "#f2f3f5", ["knob-fill"] = "#4a6278", ["knob-indicator"] = "#1e2329",
         ["gauge-tick"] = "#8e959e", ["gauge-needle-tip"] = "#2f3a44",
         ["trend-grid"] = "#c9ced4",
-        ["chart-1"] = "#4a6278", ["chart-2"] = "#4f8a8b", ["chart-3"] = "#2f3a44",
+        ["chart-1"] = "#4a6278", ["chart-2"] = "#4f8a8b", ["chart-3"] = "#7d8a97",
         ["chart-4"] = "#9a8455", ["chart-5"] = "#7a7396", ["chart-6"] = "#8fa6ba",
         ["lamp-off"] = "#b4bac2",
         ["scrollbar-thumb"] = "#5b636d80",
@@ -440,7 +441,8 @@ public sealed class DvTheme
         ["tone-warning"] = "#f5a524", ["tone-warning-fg"] = "#f5c878", ["tone-warning-soft"] = "#f5a5241f",
         ["tone-danger"] = "#e5484d", ["tone-danger-fg"] = "#f2898c", ["tone-danger-soft"] = "#e5484d1f",
 
-        ["state-run"] = "#5fa77f", ["state-run-fg"] = "#8fc4a3", ["state-run-soft"] = "#5fa77f1f",
+        ["state-run"] = "#9aa0a6", ["state-run-fg"] = "#c9c5bd", ["state-run-soft"] = "#9aa0a61f",
+        ["normal"] = "token(state-run)", // 정상 색 안 씀 — 운전·정상은 무채색(밝은 회색 = 켜짐)
         ["state-stop"] = "#5c5f65", ["state-stop-fg"] = "#a8a39a", ["state-stop-soft"] = "#8e8a8226",
         ["state-fault"] = "#e5484d", ["state-fault-fg"] = "#f2898c", ["state-fault-soft"] = "#e5484d1f",
         ["state-warn"] = "#f5a524", ["state-warn-fg"] = "#f5c878", ["state-warn-soft"] = "#f5a5241f",

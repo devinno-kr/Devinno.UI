@@ -156,6 +156,22 @@ public class InstrumentLookTests
         Assert.True(Near(px, want, 6), $"{attrs} ({normal}): {px} vs {want}");
     }
 
+    // 정상 색 off — 액체는 그대로라 값 칩 글자가 현재 구간색(이상 상태를 글자로), on 이면 칩 글자는 기본색
+    [Fact]
+    public void Tank_value_text_takes_the_zone_color_when_normal_color_is_off()
+    {
+        var off = DvTheme.Light.With(new Dictionary<string, string> { ["look.normal-color"] = "off" });
+        const string tank = "<DvTank value=\"93\" alarm-zones=\"88:100:#ff0000\" style=\"width:120; height:200\"/>";
+        var (_, offBmp) = Render(tank, off);
+        var (_, onBmp) = Render(tank, DvTheme.Light);
+        using var _1 = offBmp;
+        using var _2 = onBmp;
+        int Red(SKBitmap b) { var n = 0; for (var y = 80; y < 120; y++) for (var x = 10; x < 110; x++) { var c = b.GetPixel(x, y); if (c.Red > 200 && c.Green < 80 && c.Blue < 80) n++; } return n; }
+        Assert.True(Red(offBmp) > 15, $"off: {Red(offBmp)} red text px");
+        // on 은 액체가 빨강이라 칩 바깥이 빨강 — 칩 글자 자체는 기본색이므로 칩 가운데 줄만 본다
+        Assert.True(Red(offBmp) != Red(onBmp));
+    }
+
     // 눈금 숫자는 바늘 위에 그린다(바늘이 숫자를 가리지 않음)
     [Fact]
     public void Gauge_tick_labels_are_drawn_over_the_needle()

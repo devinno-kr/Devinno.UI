@@ -12,8 +12,8 @@
         <DvGrid columns="2">
         <DvCard title="No binding (handle owns it)" badge="id">
           <DvStack gap="sm">
-            <DvRow>
-              <DvLabel class="label" text="Pump run"/>
+            <DvRow class="switch-row" gap="md">
+              <DvLabel class="body" text="Pump run"/>
               <DvSpacer/>
               <DvToggle id="tgPump" style="width:46; height:26"/>
             </DvRow>

@@ -6,6 +6,8 @@
 
 - `DvWidgetContext.MeasureText` / `DrawText`: the `bool bold` parameter is now `int weight` (100–900, default 400). Replace `bold: true` with `weight: 700`.
 - `ComputedStyle.Bold` is read-only (`FontWeight >= 600`); set `ComputedStyle.FontWeight` instead.
+- Built-in widgets now read many more theme tokens (role tokens, style switches, `texture.depth`, `process-*`, see Added). A theme made from a complete dictionary with `new DvTheme(tokens)` lacks them and draws those parts magenta with a warning. Start from a built-in theme instead — `DvTheme.Light.With(myColors)` keeps every token you do not override.
+- The look changes throughout (see Changed). There is no switch back to the previous look; a theme can bring parts of it back through the tokens (for example `look.selection: strong` for filled selection, `texture.depth` for deeper shading).
 
 ### Added
 

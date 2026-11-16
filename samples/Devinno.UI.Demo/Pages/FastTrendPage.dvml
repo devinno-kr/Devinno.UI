@@ -8,8 +8,8 @@
   </DvRow>
   <DvCard title="Waveform" badge="window 1 s" grow="1">
     <DvTrend source="{Trend}" window="1" y-min="-120" y-max="120" area="true" grow="1">
-      <DvTrendChannel name="a" label="25 Hz" color="#22d3ee"/>
-      <DvTrendChannel name="b" label="7 Hz + noise" color="#a78bfa"/>
+      <DvTrendChannel name="a" label="25 Hz"/>
+      <DvTrendChannel name="b" label="7 Hz + noise"/>
     </DvTrend>
   </DvCard>
 </DvPageFrame>

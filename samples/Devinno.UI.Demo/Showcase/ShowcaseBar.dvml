@@ -3,7 +3,7 @@
     .brand { width:40; height:40; border-radius: token(radius.md); background: linear-gradient(135deg, #06b6d4, #3b82f6); display:flex; justify-content:center; align-items:center }
     .nav { padding:8 16; border-radius: token(radius.md); color: token(text-muted); font-size: token(font.body) }
     .nav:hover { background: token(surface-raised); color: token(text) }
-    .nav-on, .nav-on:hover { background: token(primary); color: token(primary-fg) }
+    .nav-on, .nav-on:hover { background: token(surface-overlay); color: token(text); border: 1 token(border-strong); box-shadow: token(shadow.sm) }
     .clock { font-size: token(font.title); font-weight: bold; color: token(text); white-space: nowrap }
   </DvStyle>
   <DvBox class="brand"><DvIcon icon="fa-droplet" style="font-size:20; color:#ffffff"/></DvBox>

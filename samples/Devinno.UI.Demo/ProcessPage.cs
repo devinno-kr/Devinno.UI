@@ -9,7 +9,7 @@ public sealed partial class ProcessPage : DemoPage
 {
     public const int Width = 1600, Height = 1080;
 
-    public string Look { get; set; } = "rich";
+    public string Look { get; set; } = ""; // 빈 값 = 테마 질감을 따름
 
     // 흐름 표시(flow-animation) — 라이브러리가 연결·장비 상태로 흐르는 배관을 판단해 점선을 움직인다
     public bool FlowAnim { get; set; } = true;

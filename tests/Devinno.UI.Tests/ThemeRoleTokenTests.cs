@@ -50,7 +50,8 @@ public class ThemeRoleTokenTests
         Assert.Equal(ThemeResolver.Color(t, "primary-fg"), ThemeResolver.Color(t, "selection-fg"));
         Assert.Equal(ThemeResolver.Color(t, "primary"), ThemeResolver.Color(t, "value-input"));
         Assert.Equal(ThemeResolver.Color(t, "primary"), ThemeResolver.Color(t, "value-read"));
-        Assert.Equal(ThemeResolver.Color(t, "tone-success"), ThemeResolver.Color(t, "normal"));
+        // 정상 역할 — 정상 색을 쓰는 테마(Light/Dark)는 tone-success, 안 쓰는 테마(Graphite/Carbon)는 무채색 운전색
+        Assert.Equal(ThemeResolver.Color(t, name is "Graphite" or "Carbon" ? "state-run" : "tone-success"), ThemeResolver.Color(t, "normal"));
         Assert.True(t.TryGet("alarm-critical-icon", out var icon) && icon == "");
     }
 

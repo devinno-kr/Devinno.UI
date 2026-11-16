@@ -8,19 +8,19 @@
   </DvRow>
   <DvCard title="Process values" badge="2 min" grow="1">
     <DvTrend source="{Trend}" window="120" area="true" grow="1">
-      <DvTrendChannel name="temp" label="Temperature" unit="C" color="#22d3ee"/>
-      <DvTrendChannel name="press" label="Pressure" unit="bar" color="#a78bfa"/>
+      <DvTrendChannel name="temp" label="Temperature" unit="C"/>
+      <DvTrendChannel name="press" label="Pressure" unit="bar"/>
     </DvTrend>
   </DvCard>
   <DvGrid columns="2">
     <DvCard title="Flow" badge="m3/h">
       <DvTrend source="{Trend}" window="120" y-min="0" y-max="200" style="height:150">
-        <DvTrendChannel name="flow" label="Flow" unit="m3/h" color="#10b981"/>
+        <DvTrendChannel name="flow" label="Flow" unit="m3/h"/>
       </DvTrend>
     </DvCard>
     <DvCard title="Power" badge="kW">
       <DvTrend source="{Trend}" window="120" area="true" smooth="false" style="height:150">
-        <DvTrendChannel name="power" label="Power" unit="kW" color="#f59e0b"/>
+        <DvTrendChannel name="power" label="Power" unit="kW"/>
       </DvTrend>
     </DvCard>
   </DvGrid>

@@ -192,16 +192,16 @@
     <DvCard title="Gauges" grow="2" style="width:0">
       <DvRow gap="md" grow="1" align="stretch" style="height:0">
         <DvGauge value="{Pressure}" min="0" max="10" ticks="2" minor-ticks="0.5" format="0.0"
-                 alarm-zones="0:7:token(tone-success) 7:8.5:token(tone-warning) 8.5:10:token(tone-danger)" grow="1" style="width:0"/>
+                 alarm-zones="0:7:token(normal) 7:8.5:token(tone-warning) 8.5:10:token(tone-danger)" grow="1" style="width:0"/>
         <DvGauge value="{PressureHigh}" min="0" max="10" ticks="2" minor-ticks="0.5" format="0.0"
-                 alarm-zones="0:7:token(tone-success) 7:8.5:token(tone-warning) 8.5:10:token(tone-danger)" grow="1" style="width:0"/>
+                 alarm-zones="0:7:token(normal) 7:8.5:token(tone-warning) 8.5:10:token(tone-danger)" grow="1" style="width:0"/>
         <DvRing value="{Speed}" unit="%" label="speed" format="0" grow="1" style="width:0"/>
       </DvRow>
     </DvCard>
     <DvCard title="Tanks" grow="1" style="width:0">
       <DvRow gap="md" grow="1" align="stretch" style="height:0">
-        <DvTank value="{Level}" unit="%" format="0" alarm-zones="0:85:#3b82f6 85:95:#f59e0b 95:100:#ef4444" grow="1" style="width:0"/>
-        <DvTank value="{LevelHigh}" unit="%" format="0" alarm-zones="0:85:#3b82f6 85:95:#f59e0b 95:100:#ef4444" grow="1" style="width:0"/>
+        <DvTank value="{Level}" unit="%" format="0" alarm-zones="0:85:token(tank-fill) 85:95:token(tone-warning) 95:100:token(tone-danger)" grow="1" style="width:0"/>
+        <DvTank value="{LevelHigh}" unit="%" format="0" alarm-zones="0:85:token(tank-fill) 85:95:token(tone-warning) 95:100:token(tone-danger)" grow="1" style="width:0"/>
       </DvRow>
     </DvCard>
     <DvCard title="Knob and lamps" grow="1" style="width:0">

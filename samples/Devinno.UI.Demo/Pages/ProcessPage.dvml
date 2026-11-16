@@ -1,6 +1,7 @@
 <DvPageFrame vm="ProcessPage" style="padding:16 24">
   <DvRow gap="md" align="center">
     <DvSegment value="{Bind Look}">
+      <DvOption value="" text="theme"/>
       <DvOption value="rich" text="rich"/>
       <DvOption value="plain" text="plain"/>
     </DvSegment>

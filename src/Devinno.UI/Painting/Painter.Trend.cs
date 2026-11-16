@@ -68,7 +68,12 @@ public sealed partial class Painter
                     // 시간 눈금은 글자만 — 세로 격자 없음(가로 격자만, 조사 4.2)
                     var t = new DateTime(ticks);
                     var x = X(t);
-                    canvas.DrawText(TrendScale.TimeLabel(t, step), x, plot.Bottom + 15f, SKTextAlign.Center, axisFont, lp);
+                    // 플롯 밖으로 나가는 눈금 글자는 그리지 않는다 — 왼쪽 아래 Y 눈금 글자와 겹치지 않게
+                    var label = TrendScale.TimeLabel(t, step);
+                    var half = axisFont.MeasureText(label) / 2f;
+                    if (x - half < plot.Left || x + half > content.Right)
+                        continue;
+                    canvas.DrawText(label, x, plot.Bottom + 15f, SKTextAlign.Center, axisFont, lp);
                 }
             }
         }
@@ -78,6 +83,10 @@ public sealed partial class Painter
             var empty = T("dv.trend.empty");
             using var ef = TextFont.Create(empty, Roles.Font("label"), weight: Roles.Weight("regular"));
             using var ep = new SKPaint { IsAntialias = true, Color = muted };
+            // 격자선 위에 놓여 줄 그은 글자처럼 보이지 않게 — 글자 뒤를 화면 표면색으로 덮는다
+            var ew = ef.MeasureText(empty);
+            using (var bg = new SKPaint { Color = ThemeColor("surface") })
+                canvas.DrawRect(new SKRect(plot.MidX - ew / 2f - 6f, plot.MidY + ef.Metrics.Ascent - 3f, plot.MidX + ew / 2f + 6f, plot.MidY + ef.Metrics.Descent + 3f), bg);
             canvas.DrawText(empty, plot.MidX, plot.MidY, SKTextAlign.Center, ef, ep);
         }
 

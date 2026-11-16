@@ -572,7 +572,9 @@ public sealed partial class Painter
                     canvas.DrawRoundRect(chip, chipH / 2f, chipH / 2f, chipBg);
 
                 var baseline = body.MidY - (font.Metrics.Ascent + font.Metrics.Descent) / 2f;
-                DrawValueUnit(canvas, box, value, box.TankUnit, body.MidX, baseline, font, unitFont, PartColor(box, "value", ThemeColor("tank-chip-fg")));
+                // 정상 색(S2)을 안 쓰는 테마는 액체 색이 그대로라, 값 글자가 현재 구간색으로 상태를 알린다(게이지 값과 같은 방식)
+                var chipInk = !Roles.Look.NormalColor && TankZoneColor(box) is { } zc ? zc : ThemeColor("tank-chip-fg");
+                DrawValueUnit(canvas, box, value, box.TankUnit, body.MidX, baseline, font, unitFont, PartColor(box, "value", chipInk));
             }
         }
 
@@ -860,6 +862,14 @@ public sealed partial class Painter
             if (box.GaugeValue >= z.From && box.GaugeValue <= z.To)
                 return z.Color.ToSK();
 
+        return null;
+    }
+
+    private static SKColor? TankZoneColor(LayoutBox box)
+    {
+        foreach (var z in box.TankZones)
+            if (box.TankValue >= z.From && box.TankValue <= z.To)
+                return z.Color.ToSK();
         return null;
     }
 

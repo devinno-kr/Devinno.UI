@@ -64,7 +64,15 @@ public sealed partial class Painter
 
             canvas.Save();
             canvas.ClipRect(new SKRect(chip.Right + 10f, bottom.Top, bottom.Right - 24f - rw, bottom.Bottom));
-            DrawBannerText(canvas, AlarmText(top), bottom, chip.Right + Roles.Font("meta"), fg, Roles.Font("body"), bold: true);
+            var bannerMsg = AlarmText(top);
+            var msgLeft = chip.Right + Roles.Font("meta");
+            using (var bf = TextFont.Create(bannerMsg, Roles.Font("body"), Roles.Weight("bold")))
+            {
+                var room = bottom.Right - 24f - rw - msgLeft;
+                if (bf.MeasureText(bannerMsg) > room)
+                    bannerMsg = Ellipsize(bannerMsg, MathF.Max(0f, room), bf); // 글자 중간에서 잘리지 않게 "…"
+            }
+            DrawBannerText(canvas, bannerMsg, bottom, msgLeft, fg, Roles.Font("body"), bold: true);
             canvas.Restore();
         }
 
@@ -138,7 +146,13 @@ public sealed partial class Painter
             canvas.ClipRect(new SKRect(colMsg, rect.Top, msgRight, rect.Bottom));
             using (var mf = TextFont.Create(AlarmText(row), Roles.Font("label"), weight: !row.Acked ? Roles.Weight("bold") : Roles.Weight("regular")))
             using (var mp = new SKPaint { IsAntialias = true, Color = rowInk })
-                canvas.DrawText(AlarmText(row), colMsg, Baseline(rect, mf), SKTextAlign.Left, mf, mp);
+            {
+                // 열보다 긴 메시지는 "…" 로 줄인다(글자 중간에서 잘려 보이지 않게)
+                var msg = AlarmText(row);
+                if (mf.MeasureText(msg) > msgRight - colMsg)
+                    msg = Ellipsize(msg, MathF.Max(0f, msgRight - colMsg), mf);
+                canvas.DrawText(msg, colMsg, Baseline(rect, mf), SKTextAlign.Left, mf, mp);
+            }
             canvas.Restore();
 
             if (ack is { } b)

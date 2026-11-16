@@ -103,14 +103,14 @@ public class GridCellTypeTests
         vm.Rows[0].On = true;
         using var bmp = Render(Surface(vm));
         Assert.Equal(Token("state-run"), bmp.GetPixel(150, (int)Y(0)));
-        Assert.Equal(new SKColor(0x3a, 0x3f, 0x47), bmp.GetPixel(150, (int)Y(1)));
+        Assert.Equal(Token("lamp-off"), bmp.GetPixel(150, (int)Y(1)));
 
         vm.Rows[0].State = "fault";
         vm.Rows[1].State = "nope";
         using var s2 = Render(Surface(vm, "<DvColumn field=\"Id\" width=\"120\"/><DvColumn field=\"State\" width=\"60\" cell-type=\"lamp\"/>" +
                                           "<DvColumn field=\"On\" width=\"60\" cell-type=\"lamp\" on-color=\"#ff0000\"/>"));
         Assert.Equal(Token("state-fault"), s2.GetPixel(150, (int)Y(0)));
-        Assert.Equal(new SKColor(0x3a, 0x3f, 0x47), s2.GetPixel(150, (int)Y(1)));
+        Assert.Equal(Token("lamp-off"), s2.GetPixel(150, (int)Y(1)));
         Assert.Equal(new SKColor(0xff, 0, 0), s2.GetPixel(210, (int)Y(0)));
     }
 
@@ -124,7 +124,7 @@ public class GridCellTypeTests
             Assert.Equal(Token("state-run"), on.GetPixel(150, (int)Y(0)));
         s.Repaint();
         using (var off = Render(s, 500))
-            Assert.Equal(new SKColor(0x3a, 0x3f, 0x47), off.GetPixel(150, (int)Y(0)));
+            Assert.Equal(Token("lamp-off"), off.GetPixel(150, (int)Y(0)));
         Assert.Equal(500, s.NextAnimationDue(100));
         Assert.Null(Surface(vm).NextAnimationDue(100)); // 점멸 램프 없음
     }

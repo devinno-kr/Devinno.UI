@@ -177,10 +177,13 @@ public class ThemeTokenContractTests
     {
         var expected = new Dictionary<string, string>
         {
-            ["lamp-off"] = "#3a3f47", ["tank-fill"] = "#3a7bd5", ["comm-alarm-fg"] = "#ffffff",
+            ["tank-fill"] = "#3a7bd5", ["comm-alarm-fg"] = "#ffffff",
             ["chart-1"] = "#3b82f6", ["chart-2"] = "#22d3ee", ["chart-3"] = "#a78bfa",
             ["chart-4"] = "#f59e0b", ["chart-5"] = "#10b981", ["chart-6"] = "#ef4444",
         };
+        // 꺼진 램프는 테마마다 — Light 는 밝은 바탕에서 가벼운 회색(단계 6), Dark 는 그대로
+        Assert.True(DvTheme.Light.TryGet("lamp-off", out var lightOff) && lightOff == "#94a3b8");
+        Assert.True(DvTheme.Dark.TryGet("lamp-off", out var darkOff) && darkOff == "#3a3f47");
         foreach (var theme in new[] { DvTheme.Light, DvTheme.Dark })
             foreach (var (k, v) in expected)
             {
@@ -222,7 +225,7 @@ public class ThemeTokenContractTests
         foreach (var theme in new[] { DvTheme.Light, DvTheme.Dark })
         {
             var lamp = DvRenderer.RenderToPng("<DvScreen><DvLamp on=\"false\" style=\"width:40; height:40\"/></DvScreen>", null, 40, 40, theme);
-            Assert.Equal(new SKColor(0x3a, 0x3f, 0x47), Pixel(lamp, 20, 20));
+            Assert.Equal(ThemeResolver.Color(theme, "lamp-off"), Pixel(lamp, 20, 20)); // 꺼진 램프 = 테마 lamp-off
         }
     }
 
