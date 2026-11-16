@@ -94,6 +94,9 @@ public sealed partial class LayoutEngine
         box.TankZones = ParseZones(r);
         // show-zone-marks 거짓 → 구간 색은 유지하고 경계 눈금·숫자만 숨김 (없으면 true)
         box.TankZoneMarks = AttrRules.Bool(r, "show-zone-marks");
+        // 액체 색 — color(직접) · medium(공정도 배관과 같은 매체 색)
+        box.TankMedium = AttrRules.Enum(r, "medium");
+        box.TankColor = Color(r, "color", "using the medium or tank-fill color");
     }
 
     private static void BuildAlarms(LayoutBox box, AttrReader r)

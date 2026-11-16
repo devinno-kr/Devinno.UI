@@ -270,6 +270,7 @@ Token groups:
 | Translucency | `overlay.hover` 0.08 · `overlay.press` 0.12 · `opacity.disabled` 0.5 · `alpha.selected` 0.15 · `alpha.soft` 0.2 · `alpha.dim` 0.38 |
 | Color role | `selection` `selection-fg` `value-input` `value-read` `normal` (each points at another token, e.g. `token(primary)`) |
 | Style switch | `look.texture` `flat`/`rich` (gloss, gradients and shadows on instruments; `flat` also removes the shadow of `.card`, `.stat`, `.dialog` and the selected segment; the `DvKnob` face keeps its metal grain and shadow in every theme, as the cue that it turns) · `look.normal-color` `on`/`off` (`off` = the calm alarm banner is neutral instead of green) · `look.selection` `quiet`/`strong` |
+| Texture depth | `texture.depth` 0–1 (built-in: 1, `Light` 0.85) — how deep the rich texture shades: metal and pipe shading on process diagrams, tank cylinder, knob grain and shadow, progress and ring gradients, lamp gloss, needle shadow, trend glow. 0 = rich drawing without shading |
 | Alarm icon | `alarm-critical-icon` `alarm-major-icon` `alarm-minor-icon` (icon name such as `fa-bell`; drawn before the priority text in the severity chip of `DvAlarmBanner` and `DvAlarmList`; empty = color and text only) |
 | Instrument | `gauge-track` `gauge-needle` `gauge-needle-tip` `gauge-tick` |
 | Lamp | `lamp-off` (the off color of `DvLamp` and grid lamp cells) |

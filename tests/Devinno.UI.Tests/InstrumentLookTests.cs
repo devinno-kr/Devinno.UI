@@ -138,6 +138,24 @@ public class InstrumentLookTests
         Assert.True(At(0.85f), "indicator at the edge");
     }
 
+    // 탱크 액체 색 — 구간색(S2 on) > color > medium(process-pipe-{매체}) > tank-fill
+    [Theory]
+    [InlineData("medium=\"water\"", "on", null, "process-pipe-water")]
+    [InlineData("medium=\"water\" color=\"#00c800\"", "on", "#00c800", null)]
+    [InlineData("color=\"#00c800\" alarm-zones=\"0:100:#ff0000\"", "on", "#ff0000", null)]
+    [InlineData("color=\"#00c800\" alarm-zones=\"0:100:#ff0000\"", "off", "#00c800", null)]
+    [InlineData("medium=\"oil\" alarm-zones=\"0:100:#ff0000\"", "off", null, "process-pipe-oil")]
+    public void Tank_liquid_color_order(string attrs, string normal, string? hex, string? token)
+    {
+        var theme = DvTheme.Light.With(new Dictionary<string, string> { ["look.normal-color"] = normal, ["look.texture"] = "flat" });
+        var (s, bmp) = Render($"<DvTank value=\"50\" {attrs} style=\"width:120; height:200\"/>", theme);
+        using var _ = bmp;
+        var r = Find(s, "DvTank").Rect;
+        var px = bmp.GetPixel((int)(r.Left + r.Width * 0.2f), (int)(r.Bottom - 20));
+        var want = hex is not null && DvColor.TryParse(hex, out var c) ? c.ToSK() : ThemeResolver.Color(theme, token!);
+        Assert.True(Near(px, want, 6), $"{attrs} ({normal}): {px} vs {want}");
+    }
+
     // 눈금 숫자는 바늘 위에 그린다(바늘이 숫자를 가리지 않음)
     [Fact]
     public void Gauge_tick_labels_are_drawn_over_the_needle()

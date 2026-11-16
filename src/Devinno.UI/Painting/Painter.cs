@@ -275,7 +275,7 @@ public sealed partial class Painter
                 using var hi = new SKPaint
                 {
                     IsAntialias = true,
-                    Color = new SKColor(0xff, 0xff, 0xff, 0x66)
+                    Color = Fade(new SKColor(0xff, 0xff, 0xff, 0x66), Roles.Depth)
                 };
                 canvas.DrawCircle(cx - radius * 0.3f, cy - radius * 0.3f, radius * 0.35f, hi);
             }
@@ -455,7 +455,7 @@ public sealed partial class Painter
                     if (Roles.Look.Texture == LookTexture.Rich)
                         fill.Shader = SKShader.CreateLinearGradient(
                         new SKPoint(body.Left, levelTop), new SKPoint(body.Left, body.Bottom),
-                        new[] { Lighten(fillColor, 0.22f), fillColor },
+                        new[] { Lighten(fillColor, 0.22f * Roles.Depth), fillColor },
                         null, SKShaderTileMode.Clamp);
                     canvas.DrawRect(new SKRect(body.Left, levelTop, body.Right, body.Bottom), fill);
                 }
@@ -480,8 +480,8 @@ public sealed partial class Painter
                     new SKPoint(body.Left, body.Top), new SKPoint(body.Right, body.Top),
                     new[]
                     {
-                        new SKColor(0, 0, 0, 0x38), new SKColor(0xff, 0xff, 0xff, 0x1f),
-                        new SKColor(0, 0, 0, 0), new SKColor(0, 0, 0, 0x30)
+                        Fade(new SKColor(0, 0, 0, 0x38), Roles.Depth), Fade(new SKColor(0xff, 0xff, 0xff, 0x1f), Roles.Depth),
+                        new SKColor(0, 0, 0, 0), Fade(new SKColor(0, 0, 0, 0x30), Roles.Depth)
                     },
                     new[] { 0f, 0.3f, 0.55f, 1f }, SKShaderTileMode.Clamp);
                 canvas.DrawRect(body, shade);
@@ -863,16 +863,27 @@ public sealed partial class Painter
         return null;
     }
 
-    // 액체 색 — 정상 색(S2 look.normal-color)이 on 이면 현재 구간색, off 면 늘 tank-fill(한계는 한계선·값 칩이 알림)
+    // 액체 색 — 현재 구간색(정상 색 S2 look.normal-color 가 on 일 때만) > color > medium(process-pipe-{매체}) > tank-fill.
+    // S2 off 면 구간이 액체 색을 바꾸지 않는다(한계는 한계선·값 칩이 알림)
     private SKColor TankFillColor(LayoutBox box)
     {
-        if (!Roles.Look.NormalColor)
-            return ThemeColor("tank-fill");
-        foreach (var z in box.TankZones)
-            if (box.TankValue >= z.From && box.TankValue <= z.To)
-                return z.Color.ToSK();
+        if (Roles.Look.NormalColor)
+            foreach (var z in box.TankZones)
+                if (box.TankValue >= z.From && box.TankValue <= z.To)
+                    return z.Color.ToSK();
 
-        return ThemeColor("tank-fill");
+        if (box.TankColor is { } c)
+            return c.ToSK();
+        return box.TankMedium switch
+        {
+            "water" => ThemeColor("process-pipe-water"),
+            "steam" => ThemeColor("process-pipe-steam"),
+            "air" => ThemeColor("process-pipe-air"),
+            "gas" => ThemeColor("process-pipe-gas"),
+            "oil" => ThemeColor("process-pipe-oil"),
+            "acid" => ThemeColor("process-pipe-acid"),
+            _ => ThemeColor("tank-fill"),
+        };
     }
 
     private static SKColor Lighten(SKColor c, float f) => new(

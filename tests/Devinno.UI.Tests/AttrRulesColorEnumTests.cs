@@ -376,7 +376,7 @@ public class AttrRulesColorEnumTests
         Assert.True(p1.FlipH && p1.FlipV);
         var p2 = d.Nodes.Single(n => n.Name == "P2");
         Assert.False(p2.FlipH || p2.FlipV);
-        Assert.False(d.Rich);
+        Assert.True(d.Rich); // 모르는 look = 경고 + 테마 질감(Light = rich)
         Assert.False(d.Lines[0].ArrowEnd || d.Lines[0].ArrowStart);
         Assert.Equal(4, w.Count);
         Assert.All(w, line => Assert.Contains("is not one of", line));

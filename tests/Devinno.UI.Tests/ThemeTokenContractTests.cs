@@ -10,7 +10,7 @@ using Xunit;
 
 // 3단계 R11 — 그리는 색은 모두 테마 토큰. 내장 테마(Light·Dark·Graphite·Carbon)에 그리기가 쓰는 토큰이 다 있고, 대체 hex 는 없다.
 // 없는 토큰 = 마젠타(ThemeResolver.MissingColor) + 경고 한 정책. 그리기 파일의 리터럴 색은 아래 허용 목록(D 분류)만.
-// 공정도(Painter.Process.cs) 색은 look 팔레트라 예외(규칙표 R11·D5 승인).
+// 공정도(Painter.Process.cs) 색도 process-* 테마 토큰(단계 5b) — 남은 리터럴은 금속·그림자용 흑백 알파뿐.
 public class ThemeTokenContractTests
 {
     // ── 소스 검사 범위: 그리기 코드(그리는 파일 + 테마 색 헬퍼를 부르는 곳)
@@ -53,19 +53,22 @@ public class ThemeTokenContractTests
     // ── 리터럴 색 허용 목록(D 분류 — 테마 색이 아닌 것). (파일, 줄에 들어 있는 글자, 이유). Snippet null = 파일 전체.
     private static readonly (string File, string? Snippet, string Why)[] LiteralAllowList =
     [
-        ("Painting/Painter.Process.cs", null, "process symbol colors follow look (plain/rich), not the theme — the R11 exception (D5)"),
+        ("Painting/Painter.Process.cs", "SKColors.Black", "metal, flow and liquid shades derived from the process-* tokens"),
+        ("Painting/Painter.Process.cs", "SKColors.White", "metal, flow and liquid shades derived from the process-* tokens"),
+        ("Painting/Painter.Process.cs", "new SKColor(0xff, 0xff, 0xff, 0x99)", "rich pipe highlight line"),
+        ("Painting/Painter.Process.cs", "new SKColor(0x66000000)", "rich symbol drop shadow"),
         ("Painting/Painter.cs", "SKColors.White.WithAlpha((byte)MathF.Round(opacity * 255f))", "SaveLayer opacity: only the alpha is used"),
         ("Painting/Painter.cs", "new SKColor(0xff, 0xff, 0xff, 0x66)", "lamp gloss highlight on top of the lit color"),
-        ("Painting/Painter.cs", "new SKColor(0, 0, 0, 0x38), new SKColor(0xff, 0xff, 0xff, 0x1f)", "tank cylinder shading (alpha black/white)"),
-        ("Painting/Painter.cs", "new SKColor(0, 0, 0, 0), new SKColor(0, 0, 0, 0x30)", "tank cylinder shading (alpha black)"),
+        ("Painting/Painter.cs", "Fade(new SKColor(0, 0, 0, 0x38), Roles.Depth), Fade(new SKColor(0xff, 0xff, 0xff, 0x1f), Roles.Depth)", "tank cylinder shading (alpha black/white)"),
+        ("Painting/Painter.cs", "new SKColor(0, 0, 0, 0), Fade(new SKColor(0, 0, 0, 0x30), Roles.Depth)", "tank cylinder shading (alpha black)"),
         ("Painting/Painter.Alarms.cs", "Mix(comm, SKColors.Black, 0.35f)", "blink-off shade derived from the comm-alarm token"),
         ("Painting/Painter.Alarms.cs", "Mix(prio, SKColors.Black, 0.35f)", "blink-off shade derived from the alarm token"),
         ("Painting/Painter.Gauge.cs", "new SKColor(0, 0, 0, 0x60)", "needle drop shadow"),
         ("Painting/Painter.Grid.cs", "new SKColor(0xff, 0xff, 0xff, 0x66)", "lamp cell gloss highlight on top of the lit color"),
         ("Painting/Painter.Grid.cs", "SKColors.Transparent", "ghost button background"),
-        ("Painting/Painter.Instruments.cs", "Mix(color, SKColors.White, 0.25f)", "bar gradient derived from the zone/tone color"),
+        ("Painting/Painter.Instruments.cs", "Mix(color, SKColors.White, 0.25f * Roles.Depth)", "bar gradient derived from the zone/tone color"),
         ("Painting/Painter.Instruments.cs", "Color = SKColors.White", "value text on the filled bar (contrast on any zone/tone color)"),
-        ("Painting/Painter.Instruments.cs", "Mix(color, SKColors.Black, 0.08f), Mix(color, SKColors.White, 0.28f)", "ring gradient derived from the zone/tone color"),
+        ("Painting/Painter.Instruments.cs", "Mix(color, SKColors.Black, 0.08f * Roles.Depth), Mix(color, SKColors.White, 0.28f * Roles.Depth)", "ring gradient derived from the zone/tone color"),
         ("Painting/Painter.Knob.cs", "SKColors.White", "face light/dark shades derived from the knob-face token"),
         ("Painting/Painter.Knob.cs", "SKColors.Black", "face light/dark shades derived from the knob-face token"),
         ("Painting/Painter.Knob.cs", "new SKColor(0, 0, 0, 0x48)", "knob shadow"),

@@ -120,7 +120,7 @@ public sealed partial class Painter
             {
                 var c = new SKPoint(X(last.Time), Y(last.Value));
                 if (Roles.Look.Texture == LookTexture.Rich) // 마지막 점 글로우 — 질감 rich 에서만
-                using (var glow = new SKPaint { IsAntialias = true, Color = ch.Color.WithAlpha(0x55) })
+                using (var glow = new SKPaint { IsAntialias = true, Color = Fade(ch.Color.WithAlpha(0x55), Roles.Depth) })
                 {
                     glow.MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 4);
                     canvas.DrawCircle(c, 6f, glow);

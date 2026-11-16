@@ -64,14 +64,14 @@ public sealed partial class Painter
 
             // 노브는 직접 돌리는 컨트롤이라 떠 보이는 면(그림자·결)이 "돌릴 수 있음" 단서 — 질감 스위치(look.texture)와 무관하게 늘 그린다.
             // 평면 테마에서 그림자를 그리는 유일한 예외(사용자 결정 2026-11-16)
-            using (var sh = new SKPaint { IsAntialias = true, Color = new SKColor(0, 0, 0, 0x48) })
+            using (var sh = new SKPaint { IsAntialias = true, Color = Fade(new SKColor(0, 0, 0, 0x48), Roles.Depth) })
             {
                 sh.MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, km.ShadowBlur);
                 canvas.DrawCircle(cx, cy + km.ShadowDy, faceR, sh);
             }
 
-            var light = Mix(face, SKColors.White, 0.07f);
-            var dark = Mix(face, SKColors.Black, 0.10f);
+            var light = Mix(face, SKColors.White, 0.07f * Roles.Depth);
+            var dark = Mix(face, SKColors.Black, 0.10f * Roles.Depth);
             using (var p = new SKPaint { IsAntialias = true, Color = face })
             {
                 p.Shader = SKShader.CreateSweepGradient(
@@ -100,7 +100,7 @@ public sealed partial class Painter
                 StrokeWidth = MathF.Max(3f * km.Scale, faceR * 0.16f),
                 StrokeCap = SKStrokeCap.Round,
                 Color = fill,
-                ImageFilter = SKImageFilter.CreateDropShadow(0.8f * km.Scale, 0.8f * km.Scale, 1.2f * km.Scale, 1.2f * km.Scale, new SKColor(0, 0, 0, 0x90))
+                ImageFilter = SKImageFilter.CreateDropShadow(0.8f * km.Scale, 0.8f * km.Scale, 1.2f * km.Scale, 1.2f * km.Scale, Fade(new SKColor(0, 0, 0, 0x90), Roles.Depth))
             };
             canvas.DrawLine(
                 cx + MathF.Cos(a) * faceR * 0.68f, cy + MathF.Sin(a) * faceR * 0.68f,

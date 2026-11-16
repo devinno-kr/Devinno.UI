@@ -64,6 +64,7 @@ public class ThemeRoleTokenTests
         Assert.Equal(isa ? LookTexture.Flat : LookTexture.Rich, look.Texture);
         Assert.Equal(!isa, look.NormalColor);
         Assert.Equal(isa ? LookSelection.Quiet : LookSelection.Strong, look.Selection);
+        Assert.Equal(name == "Light" ? 0.85f : 1f, ThemeResolver.Number(Theme(name), "texture.depth"), 3);
     }
 
     [Fact]

@@ -366,7 +366,7 @@ public sealed partial class Painter
         canvas.DrawCircle(cell.MidX, cell.MidY, radius, fill);
         if (lit is not null && Roles.Look.Texture == LookTexture.Rich) // 램프 광택 — 질감 rich 에서만
         {
-            fill.Color = new SKColor(0xff, 0xff, 0xff, 0x66);
+            fill.Color = Fade(new SKColor(0xff, 0xff, 0xff, 0x66), Roles.Depth);
             canvas.DrawCircle(cell.MidX - radius * 0.3f, cell.MidY - radius * 0.3f, radius * 0.35f, fill);
         }
 

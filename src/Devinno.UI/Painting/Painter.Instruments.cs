@@ -44,7 +44,7 @@ public sealed partial class Painter
             canvas.ClipRoundRect(new SKRoundRect(rect, r, r), SKClipOperation.Intersect, antialias: true);
             using var p = new SKPaint { IsAntialias = true, Color = color };
             if (Roles.Look.Texture == LookTexture.Rich) // 끝으로 밝아지는 그라데이션 — 질감 rich 에서만
-                p.Shader = SKShader.CreateLinearGradient(from, to, new[] { color, Mix(color, SKColors.White, 0.25f) },
+                p.Shader = SKShader.CreateLinearGradient(from, to, new[] { color, Mix(color, SKColors.White, 0.25f * Roles.Depth) },
                     null, SKShaderTileMode.Clamp);
             canvas.DrawRoundRect(fill, r, r, p);
             canvas.Restore();
@@ -126,11 +126,11 @@ public sealed partial class Painter
             if (Roles.Look.Texture == LookTexture.Rich) // 쓸어 가는 그라데이션 + 글로우 — 질감 rich 에서만
             {
             p.Shader = SKShader.CreateSweepGradient(new SKPoint(cx, cy),
-                new[] { Mix(color, SKColors.Black, 0.08f), Mix(color, SKColors.White, 0.28f) },
+                new[] { Mix(color, SKColors.Black, 0.08f * Roles.Depth), Mix(color, SKColors.White, 0.28f * Roles.Depth) },
                 new[] { pre / 360f, MathF.Min(1f, (pre + valueSweep) / 360f) },
                 SKShaderTileMode.Clamp, 0f, 360f,
                 SKMatrix.CreateRotationDegrees(start - pre, cx, cy));
-            p.ImageFilter = SKImageFilter.CreateDropShadow(0, 0, 3.5f, 3.5f, color.WithAlpha(0x55));
+            p.ImageFilter = SKImageFilter.CreateDropShadow(0, 0, 3.5f, 3.5f, Fade(color.WithAlpha(0x55), Roles.Depth));
             }
             canvas.DrawArc(oval, start, valueSweep, false, p);
         }
@@ -207,6 +207,9 @@ public sealed partial class Painter
         using var up = new SKPaint { IsAntialias = true, Color = PartColor(box, "unit", ThemeColor("text-muted")) };
         canvas.DrawText(unit, x, baseline, SKTextAlign.Left, unitFont, up);
     }
+
+    // 입체 음영(광택·그림자·글로우)의 투명도를 깊이(texture.depth)만큼 — 0 이면 투명
+    internal static SKColor Fade(SKColor c, float depth) => c.WithAlpha((byte)MathF.Round(c.Alpha * Math.Clamp(depth, 0f, 1f)));
 
     internal static bool UnitJoinsValue(string unit) => unit.Length > 0 && unit[0] is '%' or '‰' or '°';
 

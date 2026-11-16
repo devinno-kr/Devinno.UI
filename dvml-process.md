@@ -180,7 +180,7 @@ AI MUST follow the order below exactly. Each step says what to decide.
 | attribute | values | default | bound | notes |
 |---|---|---|---|---|
 | `direction` | `lr` · `tb` | `lr` | yes | Flow direction: `lr` = left → right, `tb` = top → bottom |
-| `look` | `plain` · `rich` | `plain` | yes | Appearance ([look](#look-flow-medium)); units follow it |
+| `look` | `plain` · `rich` | the theme's `look.texture` | yes | Appearance ([look](#look-flow-medium)); units follow it |
 | `flow-animation` | true/false | false | yes | Moving dashes over pipes that have flow ([flow display](#look-flow-medium)); units follow the outer value |
 | `align` | `auto` · `step` · `row` | `auto` | yes | Row alignment of the next equipment connected to a port that leaves perpendicular to the flow (the bottom port in `lr`, the right port in `tb`): `step` = staircase (the next equipment below the tank), `row` = the next equipment's inlet at the tank's mid height (the pipe climbs back up in a U), `auto` = staircase, or same row when the staircase cannot shrink into the area ([automatic placement](dvml-process-layout.md#auto-layout)). It shapes the natural-size drawing only: a taller area stretches the height difference either way ([staircase FAQ](#process-faq)). Ignored with a Trace warning in `fixed` |
 | `placement` | `auto` · `fixed` | `auto` | yes | `auto` = automatic placement; `fixed` = every piece of equipment sits at its `x`·`y` ([placement mode](#placement-mode)) |
@@ -379,7 +379,7 @@ Connects instruments, or an instrument and equipment, with a **thin line**: dash
 <DvSignal from="FIC1" to="V1"/>
 ```
 
-- Signal lines and `tap` connection lines take the **theme text color**, not the `look` palette, so they read on a light and on a dark background in both looks. Use `color`·`thickness` only when a drawing or site standard says so; a fixed `#color` does not follow the theme, so check it on the dark theme too. `tap` connection lines have no `color`·`thickness`. Pipe color is `medium` only.
+- Signal lines and `tap` connection lines take the **theme text color**, not the `process-*` colors, so they read on a light and on a dark background in both looks. Use `color`·`thickness` only when a drawing or site standard says so; a fixed `#color` does not follow the theme, so check it on the dark theme too. `tap` connection lines have no `color`·`thickness`. Pipe color is `medium` only.
 - It is a different tag from pipes. **Do not draw signals with `DvLine`.** Signal lines are drawn **after all pipes** and have **no effect** on equipment placement, flow judgment or flow animation; adding or removing them leaves equipment positions unchanged.
 - Lines are orthogonal and avoid equipment bodies, labels, attached boxes and other instruments. Where they cross pipes they pass straight through **without a jump** (ISA convention). Paths running right alongside a pipe are avoided. There is no `via` on signal lines.
 - Where the ends land: for an instrument, the center of the bubble face toward the counterpart, avoiding the face with the value text, faces used by other signal lines, a face with no room in front of it (something within about 12px) and, for a bubble beside its equipment, the face toward that equipment; for a control valve (`DvValve` or `DvValve3` with `kind="control"`), **the top of the actuator**; for other equipment, the center of the body's face toward the counterpart (the body includes accessories, so a pump with a `DvMotor` is reached at the motor). On a user symbol that is the center of a face of its rectangle, so draw an actuator there for the line to land on it.
@@ -555,19 +555,19 @@ registry.Register(blenderMarkup); // the <DvComponent name="Blender"> string abo
 
 **Look (`look`)**
 
-| | `plain` (default) | `rich` |
+| | `plain` | `rich` |
 |---|---|---|
-| Intent | ISA-101 high-performance HMI — gray, color only for state | Good-looking dashboard — metallic texture |
-| Body (no state) | Flat gray | Metal gradient + shadow |
-| Running / open | Dark gray (inner lines bright) | Green gradient |
-| Stopped / closed | White | Gray gradient |
-| Liquid | Gray-blue | Blue gradient + gloss |
-| Pipe | 3px gray, corner radius 6 | 11px tube (three layers, center highlight), corner radius 10 |
+| Intent | ISA-101 high-performance HMI — flat fills | Good-looking dashboard — metallic texture |
+| Body (no state) | Flat `process-body` | Metal gradient of `process-body` + shadow |
+| Running / open | Flat `process-body-on` (= the theme's `state-run`: green in `Light`/`Dark`, dark gray in `Graphite`; inner lines `process-detail-on`) | Metal gradient of `process-body-on` |
+| Stopped / closed | Flat `process-body-off` | Metal gradient of `process-body-off` |
+| Liquid | Flat `process-liquid` | Gradient of `process-liquid` + gloss |
+| Pipe | 3px `process-pipe`, corner radius 6 | 11px tube (three layers, center highlight), corner radius 10 |
 | Pipe spacing | 12px | 16px |
-| Suitable background | Light theme / gray | Dark theme |
 
-- Colors are a fixed process-diagram palette, not theme tokens — the one exception to "every color a built-in widget draws is a theme token" ([theme tokens](dvml-style.md#theme-tokens)). Label text, signal lines and `tap` connection lines use theme `--text` instead, and a signal line can set its own `color` ([`DvSignal`](#dvsignal)).
-- The background is not painted. It follows the app theme's background or the `background` in `style`. `rich` looks best on a dark background, `plain` on a light or gray background.
+- **Default = the theme's `look.texture`**: no `look` → `rich` in `Light`/`Dark`, `plain` in `Graphite`/`Carbon`. Writing `look` overrides it for that diagram (and its units).
+- Colors are the theme's `process-*` tokens in both looks (`process-line` outline, `process-detail`, `process-body*`, `process-accent`, `process-liquid`, `process-glass`, `process-screen`, `process-tag-bg` `-border` `-fg` (name tags, terminals, bubbles), `process-arrow`, `process-pipe` and `process-pipe-{medium}`); `rich` computes its metal shading from the same colors. A copied theme changes them like any token ([theme tokens](dvml-style.md#theme-tokens)). Label text, signal lines and `tap` connection lines use theme `--text`, and a signal line can set its own `color` ([`DvSignal`](#dvsignal)).
+- The background is not painted. It follows the app theme's background or the `background` in `style`.
 - The process diagram does not decide alarm colors (red, etc.). Show alarms with `DvLamp`·`DvBadge` inside `DvAttach`, or with alarm widgets.
 - Pipes are not colored by medium **by default** (ISA-101 recommendation). Opt in per line with `medium` (below).
 
@@ -606,7 +606,7 @@ Automatic decision rules (an inference for display, not a measurement):
 
 Look and cost of the animation:
 
-- A base stripe (plain = light sky blue, rich = dark teal) is laid on flowing pipes, and a thick dashed line (plain = blue 4px, rich = teal 5px) moves on top. On a pipe with `medium` the stripe and the dashes use darker and lighter tones of that medium's color, so the medium stays visible while it flows. Speed 40px/s.
+- A base stripe (a light tint of the theme `primary` in plain, a dark shade in rich) is laid on flowing pipes, and a thick dashed line (`primary`, 4px plain / 5px rich) moves on top. On a pipe with `medium` the stripe and the dashes use darker and lighter tones of that medium's color, so the medium stays visible while it flows. Speed 40px/s.
 - While at least one pipe flows, it **redraws at 20 frames per second**. With no flow, or `flow-animation` off, it does not redraw.
 - The adapters (OpenTK CPU raster and GPU, WinForms) redraw **only the area containing the process diagram** (`DvSurface.PartialRender`): the cost grows with the area of the flowing diagram, not the whole screen. Measured in a 1600×1080 window, CPU raster: a small diagram covering about 7% of the screen costs about 7% of one core; a page that is mostly process diagram about 50%. `ViewWindow.Gpu` mode on the same small diagram: 3.8% (CPU time).
 - With animation off, flow does not appear in the drawing (only the decision result exists).
@@ -620,16 +620,16 @@ Shows what flows inside (water, steam …) through pipe color. **None by default
 <DvLine from="STM" to="E1.in2" medium="steam"/>
 ```
 
-| Value | Meaning | plain | rich (tube center stripe) |
-|---|---|---|---|
-| `water` | Water | Blue | Light blue |
-| `steam` | Steam | Dark red | Red |
-| `air` | Air | Pale gray | White |
-| `gas` | Gas | Dark yellow | Yellow |
-| `oil` | Oil | Dark yellow-red | Orange |
-| `acid` | Acid / alkali | Gray-violet | Light purple |
+| Value | Meaning | Token (built-in value) |
+|---|---|---|
+| `water` | Water | `process-pipe-water` (blue) |
+| `steam` | Steam | `process-pipe-steam` (brown-gray — kept away from alarm red) |
+| `air` | Air | `process-pipe-air` (pale gray) |
+| `gas` | Gas | `process-pipe-gas` (dark yellow) |
+| `oil` | Oil | `process-pipe-oil` (dark orange) |
+| `acid` | Acid / alkali | `process-pipe-acid` (gray-violet) |
 
-Colors follow the KS A 0503 pipe identification color family, chosen to read in both looks. **You cannot give color values directly** (only the 6 names; no `style` or color on pipes). Any other value → default gray + Trace warning. Bindable (`medium="{M}"`).
+Colors follow the KS A 0503 pipe identification color family; rich draws them slightly lighter as the tube's center stripe. A theme changes them through the tokens; **a line cannot take a color value directly** (only the 6 names; no `style` or color on pipes). `DvTank medium` uses the same colors for its liquid ([DvTank](dvml-instruments.md#dvtank)). Any other value → default gray + Trace warning. Bindable (`medium="{M}"`).
 
 **Write it once on the first line of a run and it spreads in the flow direction:**
 

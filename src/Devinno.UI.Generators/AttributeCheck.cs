@@ -81,7 +81,7 @@ internal static class AttributeCheck
         ["DvGauge"] = ["value", "min", "max", "alarm-zones", "ticks", "minor-ticks", "show-tick-labels", "format", "unit", "show-value"],
         ["DvRing"] = ["value", "min", "max", "alarm-zones", "tone", "unit", "label", "sweep", "thickness", "format", "show-value"],
         ["DvLamp"] = ["on", "blink", "blink-interval", "color", "state"],
-        ["DvTank"] = ["value", "min", "max", "alarm-zones", "unit", "format", "show-zone-marks"],
+        ["DvTank"] = ["value", "min", "max", "alarm-zones", "unit", "format", "show-zone-marks", "medium", "color"],
         ["DvSparkline"] = ["values", "tone", "y-min", "y-max", "area"],
         ["DvBarChart"] = ["items", "item-value", "item-text", "tone", "y-min", "y-max", "show-value", "format"],
         ["DvPieChart"] = ["items", "item-value", "item-text", "show-value", "format", "inner-radius"],
@@ -262,6 +262,7 @@ internal static class AttributeCheck
         ["DvMotor"] = new(StringComparer.Ordinal) { ["kind"] = ["isa"] },
         ["DvAttach"] = new(StringComparer.Ordinal) { ["side"] = ["left", "right", "top", "bottom"] },
         ["DvLine"] = new(StringComparer.Ordinal) { ["arrow"] = ["end", "start", "both", "none"], ["medium"] = ["water", "steam", "air", "gas", "oil", "acid"] },
+        ["DvTank"] = new(StringComparer.Ordinal) { ["medium"] = ["water", "steam", "air", "gas", "oil", "acid"] },
         ["DvSignal"] = new(StringComparer.Ordinal) { ["arrow"] = ["end", "start", "both", "none"], ["kind"] = ["electric", "pneumatic"] },
     };
 
@@ -270,6 +271,7 @@ internal static class AttributeCheck
     {
         ["DvLamp"] = ["color"],
         ["DvTrendChannel"] = ["color"],
+        ["DvTank"] = ["color"],
         ["DvDataGrid"] = ["header-color", "header-text-color", "text-color", "row-color", "row-alt-color", "hover-color", "selected-color", "line-color", "summary-color", "summary-text-color"],
         ["DvColumn"] = ["on-color"],
         ["DvSignal"] = ["color"],

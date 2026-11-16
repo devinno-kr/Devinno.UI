@@ -299,6 +299,12 @@ public sealed class LayoutBox
     public List<GaugeZone> TankZones { get; set; } = new();
     /// <summary>Whether a <c>DvTank</c> shows zone boundary ticks and numbers (<c>show-zone-marks</c>, default <see langword="true"/>). Zone colors are still painted when off.</summary>
     public bool TankZoneMarks { get; set; } = true;
+
+    /// <summary><c>DvTank</c> liquid medium (<c>medium</c>: <c>water</c> <c>steam</c> <c>air</c> <c>gas</c> <c>oil</c> <c>acid</c>) — the liquid takes the theme's <c>process-pipe-{medium}</c> color, the same as a <c>DvLine</c> of that medium. <see langword="null"/> = none.</summary>
+    public string? TankMedium { get; set; }
+
+    /// <summary><c>DvTank</c> liquid color (<c>color</c>). Wins over <see cref="TankMedium"/>; a current zone color wins over it only when the theme's <c>look.normal-color</c> is on. <see langword="null"/> = none.</summary>
+    public DvColor? TankColor { get; set; }
     /// <summary>Current value of a <c>DvKnob</c> (<c>value</c>, default 0).</summary>
     public float KnobValue { get; set; }
     /// <summary>Minimum of a <c>DvKnob</c> (<c>min</c>, default 0).</summary>

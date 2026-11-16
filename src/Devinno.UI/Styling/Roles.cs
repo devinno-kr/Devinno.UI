@@ -38,6 +38,9 @@ internal static class Roles
     /// <summary>An alpha role (<c>alpha.selected</c>, <c>overlay.hover</c>, <c>opacity.disabled</c> …) as a byte 0–255.</summary>
     internal static byte Alpha(string token) => (byte)Math.Clamp(MathF.Round(Number(token) * 255f), 0f, 255f);
 
+    /// <summary>Shading depth of the rich texture (<c>texture.depth</c>, clamped to 0..1) — multiplies the gradients, shadows and gloss of rich drawing.</summary>
+    internal static float Depth => Math.Clamp(Number("texture.depth"), 0f, 1f);
+
     /// <summary>The style switches of the ambient theme.</summary>
     internal static ThemeLook Look => LookCache.GetValue(Ambient ?? DvTheme.Default, ThemeLook.Of);
 

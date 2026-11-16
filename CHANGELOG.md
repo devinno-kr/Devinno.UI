@@ -10,7 +10,10 @@
 ### Added
 
 - `font-variant-numeric: tabular-nums` draws every digit 0–9 at the same width, so live values do not shift.
+- Theme token `texture.depth` (0–1) sets how deep the rich texture shades (process metal and pipes, tank, knob, progress, ring, lamp gloss, needle shadow, trend glow). Built-in themes use 1, `Light` 0.85.
 - `DvTrendChannel format` — number format of the legend's latest value (same rule as `format` on the other widgets).
+- `DvTank medium` (`water` `steam` `air` `gas` `oil` `acid`, the same colors as process pipes) and `DvTank color` set the liquid color. Order: zone color (only with `look.normal-color: on`), `color`, `medium`, `tank-fill`.
+- Process diagram theme tokens: `process-line` `process-detail` `process-detail-on` `process-body` `process-body-on` `process-body-off` `process-accent` `process-liquid` `process-glass` `process-screen` `process-tag-bg` `process-tag-border` `process-tag-fg` `process-arrow` `process-pipe` `process-pipe-{water,steam,air,gas,oil,acid}`.
 - Custom widgets: `DvWidgetContext.Look`, `TokenNumber(name)` and `StateOverlay(fill)` follow the theme the same way built-in widgets do.
 - Widget parts with the CSS `::part()` selector: `DvGauge::part(value) { font-size: 28 }`, `.hot::part(value) { color: … }` (gauge, ring, knob, tank, progress, slider).
 - Theme role tokens (`weight.*`, `stroke.*`, `font.meta`, `alpha.*`, `overlay.*`, `opacity.disabled`, `control.*`, `row.*`, color roles `selection` `value-input` `value-read` `normal`) and style switches `look.texture` (`flat`|`rich`), `look.normal-color`, `look.selection`. Built-in widgets read these instead of fixed numbers; `look.texture: flat` drops gloss, gradients, shadows and glow on instruments.
@@ -33,6 +36,7 @@
 - `DvGauge`: the track is a thin neutral arc (was a 10 px band); `alarm-zones` are a thin band just inside it; tick lines are under the needle and the numbers over it; the needle reaches the start of the ticks.
 - `DvRing` default thickness is 1/12 of the size (was 11%); the label is regular weight at `font.label` size.
 - `DvTank` zone starts are also a thin dashed line across the body. `DvKnob` indicator is a mark on the outer third of the face (clear of the value text), its value arc has round ends, and its face keeps the metal grain and shadow in every theme (also with `look.texture: flat`).
+- `DvProcess` colors come from the `process-*` theme tokens instead of a fixed palette, and a diagram without `look` follows the theme's `look.texture` (rich in `Light`/`Dark`, plain in `Graphite`/`Carbon`; was always plain). Running equipment takes the theme's `state-run` color (green in `Light`/`Dark`). The default steam color is brown-gray instead of red, and flow dashes use the theme `primary`. Rich pipes take their casing from the pipe color; `Light` uses lighter process values for a white background (outlines, pipes, parts, arrows, bodies, an emerald running body, a lighter liquid, dark running details), `Dark` and `Carbon` use dark name tags. Process labels are weight 600.
 - `DvStat` accent band is one solid color. With `look.texture: flat` cards, KPI tiles, dialogs and the selected segment have no shadow.
 - Disabled check boxes, radios, toggles and sliders are dimmed as one group (CSS `opacity`), so a thumb or knob no longer shows the track through it.
 - A unit starting with `%`, `‰` or `°` joins its value without a space (`40%`, `20°C`); other units keep one space (`3 bar`). Applies to gauge, knob, slider, tank, progress, trend legend and soft keyboard range. The slider value sits 8px above the thumb.

@@ -93,11 +93,37 @@ public sealed class DvTheme
         ["look.texture"] = "rich",
         ["look.normal-color"] = "on",
         ["look.selection"] = "strong",
+        // 입체 음영 깊이(0 = 음영 없음, 1 = 깊은 금속) — rich 질감 전체가 따른다
+        ["texture.depth"] = "1",
 
         // 알람 등급 아이콘(아이콘 이름, 빈 값 = 아이콘 없이 색 + 글자)
         ["alarm-critical-icon"] = "",
         ["alarm-major-icon"] = "",
-        ["alarm-minor-icon"] = ""
+        ["alarm-minor-icon"] = "",
+
+        // 공정도(DvProcess) — 장비·배관 색. 네 테마 공통 기본값(테마가 덮어쓸 수 있음). 운전 몸통은 테마의 운전 상태색
+        ["process-line"] = "#464b51",
+        ["process-detail"] = "#464b51",
+        ["process-detail-on"] = "#e6e8ea",
+        ["process-body"] = "#c3c8cd",
+        ["process-body-on"] = "token(state-run)",
+        ["process-body-off"] = "#f1f2f3",
+        ["process-accent"] = "#8e959c",
+        ["process-liquid"] = "token(tank-fill)", // 용기 액체 = 탱크 위젯 액체와 같은 색
+        ["process-glass"] = "#e9eef2",
+        ["process-screen"] = "#f4f5f6",
+        ["process-tag-bg"] = "#f1f2f3",
+        ["process-tag-border"] = "#464b51",
+        ["process-tag-fg"] = "#2e3338",
+        ["process-arrow"] = "#5f656c",
+        ["process-pipe"] = "#5f656c",
+        // 매체(KS A 0503 계열) — 증기는 알람 빨강과 헷갈리지 않게 갈색 회색
+        ["process-pipe-water"] = "#3b6ea8",
+        ["process-pipe-steam"] = "#8c6d62",
+        ["process-pipe-air"] = "#aab5be",
+        ["process-pipe-gas"] = "#c29a1f",
+        ["process-pipe-oil"] = "#b5652b",
+        ["process-pipe-acid"] = "#7e6a93"
     };
 
     /// <summary>The built-in theme for light backgrounds. Uses white and light-gray surfaces, dark text and a blue (<c>#2563eb</c>) brand color.</summary>
@@ -161,6 +187,11 @@ public sealed class DvTheme
         // 위젯(Painter) 색
         ["gauge-track"] = "#e2e8f0", ["gauge-needle"] = "#0f172a",
         ["tank-empty-top"] = "#f5f8fc", ["tank-empty-bottom"] = "#e6ecf3", ["tank-frame"] = "#cbd5e1", ["tank-fill"] = "#3a7bd5",
+        ["texture.depth"] = "0.85", // 밝은 바탕 — 그늘은 조금 얕게, 반사광은 살림
+        ["process-line"] = "#6b7280", // 밝은 바탕 — 장비 외곽선을 한 단계 밝게
+        ["process-pipe"] = "#8a939d", ["process-accent"] = "#aab1b8", ["process-arrow"] = "#7c858f", // 밝은 바탕 — 배관·보조 부품·화살표도 한 단계 밝게
+        ["process-body"] = "#d1d5db", ["process-body-off"] = "#e5e7eb", ["process-body-on"] = "#10b981", ["process-liquid"] = "#4f8fe0", // 밝은 바탕 — 몸통·액체를 맑게(정지 몸통은 흰 카드와 면으로 구분)
+        ["process-detail-on"] = "#0e3d24", // 운전 몸통이 밝은 초록 — 안쪽 선(임펠러 등)은 진하게
         ["tank-chip-bg"] = "#ffffffdd", ["tank-chip-fg"] = "#0f172a",
         ["knob-face"] = "#f8fafc", ["knob-fill"] = "#2563eb", ["knob-indicator"] = "#0f172a",
         ["gauge-tick"] = "#94a3b8", ["gauge-needle-tip"] = "#ef4444",
@@ -240,6 +271,8 @@ public sealed class DvTheme
         // 위젯(Painter) 색 — 어두운 배경에서 흰 판이 튀지 않게
         ["gauge-track"] = "#334155", ["gauge-needle"] = "#e2e8f0",
         ["tank-empty-top"] = "#1e293b", ["tank-empty-bottom"] = "#0f172a", ["tank-frame"] = "#475569", ["tank-fill"] = "#3a7bd5",
+        ["process-detail-on"] = "#0e3d24", // 운전 몸통이 밝은 초록 — 안쪽 선(임펠러 등)은 진하게
+        ["process-tag-bg"] = "#243242", ["process-tag-border"] = "#7f95ab", ["process-tag-fg"] = "#dce4ec", // 어두운 바탕 — 이름표·단말·계기 버블도 어둡게
         ["tank-chip-bg"] = "#0f172acc", ["tank-chip-fg"] = "#f1f5f9",
         ["knob-face"] = "#273449", ["knob-fill"] = "#3b82f6", ["knob-indicator"] = "#f1f5f9",
         ["gauge-tick"] = "#64748b", ["gauge-needle-tip"] = "#f87171",
@@ -361,6 +394,7 @@ public sealed class DvTheme
     public static readonly DvTheme Carbon = new(With(Scales, new Dictionary<string, string>
     {
         ["look.selection"] = "quiet", // ISA-101 — 여럿 중 선택은 조용하게(채움 대신 표면 단계)
+        ["process-body-on"] = "#4a5057", // 정상 색 안 씀 — 운전 장비는 무채색(이 테마의 state-run 램프는 초록)
         ["look.texture"] = "flat", // ISA-101 — 광택·그라데이션·그림자 없이 평면
         ["look.normal-color"] = "off", // ISA-101 — 정상 상태는 무채색, 이상일 때만 색
         // 기존 키(호환 유지)
@@ -421,6 +455,7 @@ public sealed class DvTheme
         // 위젯(Painter) 색 — 낮은 밝기, 푸른 기 없는 숯색
         ["gauge-track"] = "#2c2e32", ["gauge-needle"] = "#e8e4dc",
         ["tank-empty-top"] = "#202124", ["tank-empty-bottom"] = "#141516", ["tank-frame"] = "#46494e", ["tank-fill"] = "#6e8a9a",
+        ["process-tag-bg"] = "#2a2c30", ["process-tag-border"] = "#6b6f75", ["process-tag-fg"] = "#d8d4cc", // 야간 — 밝은 흰 이름표 대신 어둡게
         ["tank-chip-bg"] = "#121314cc", ["tank-chip-fg"] = "#e8e4dc",
         ["knob-face"] = "#242629", ["knob-fill"] = "#bda67e", ["knob-indicator"] = "#e8e4dc",
         ["gauge-tick"] = "#5a5750", ["gauge-needle-tip"] = "#bda67e",

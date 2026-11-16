@@ -250,7 +250,7 @@ public class ProcessSignalRoomTests
     }
 
     [Fact]
-    public void Detail_IsLightOnlyOverARunningBody()
+    public void Detail_UsesTheRunningColorOnlyOverARunningBody()
     {
         var registry = new ComponentRegistry();
         registry.Register("""
@@ -263,9 +263,14 @@ public class ProcessSignalRoomTests
         const string on = """<HalfBody name="S" run="true" x="300" y="200"/>""";
         const string off = """<HalfBody name="S" run="false" x="300" y="200"/>""";
 
-        Assert.True(Sample(on, Fixed, 25, 20, registry).Red > 0xB0); // 켜진 몸통 위 — 밝게
-        Assert.True(Sample(on, Fixed, 75, 20, registry).Red < 0xB0); // 몸통 밖 — 평소 색
-        Assert.True(Sample(off, Fixed, 25, 20, registry).Red < 0xB0);
-        Assert.True(Sample(off, Fixed, 75, 20, registry).Red < 0xB0);
+        // 켜진 몸통 위 = process-detail-on(테마 값 — 몸통과 대비되는 색), 몸통 밖·꺼짐 = process-detail
+        var detailOn = Devinno.UI.Styling.ThemeResolver.Color(Devinno.UI.Styling.DvTheme.Light, "process-detail-on");
+        var detail = Devinno.UI.Styling.ThemeResolver.Color(Devinno.UI.Styling.DvTheme.Light, "process-detail");
+        static bool Near(SKColor a, SKColor b) => Math.Abs(a.Red - b.Red) <= 45 && Math.Abs(a.Green - b.Green) <= 45 && Math.Abs(a.Blue - b.Blue) <= 45; // 1.6px 선 가장자리 표본
+        Assert.True(Near(Sample(on, Fixed, 25, 20, registry), detailOn));
+        var outside = Sample(on, Fixed, 75, 20, registry);
+        Assert.True(Near(outside, detail), $"outside {outside} vs {detail}");
+        Assert.True(Near(Sample(off, Fixed, 25, 20, registry), detail));
+        Assert.True(Near(Sample(off, Fixed, 75, 20, registry), detail));
     }
 }

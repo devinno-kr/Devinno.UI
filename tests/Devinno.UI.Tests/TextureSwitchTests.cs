@@ -56,6 +56,31 @@ public class TextureSwitchTests
         // 그림자·결·글로우가 빠지므로 그림이 달라진다(내장 테마 = rich 는 지금 모습)
         Assert.NotEqual(DvRenderer.RenderToPng(markup, null, 120, 120, DvTheme.Dark), DvRenderer.RenderToPng(markup, null, 120, 120, Flat));
     }
+    // 음영 깊이(texture.depth) — rich 그대로여도 0 이면 음영이 없다(같은 줄의 왼쪽·가운데·오른쪽이 같은 색)
+    [Theory]
+    [InlineData("<DvScreen><DvTank value=\"100\" style=\"width:80; height:160\"/></DvScreen>", 80, 160, 12, 40, 30)]
+    [InlineData("<DvScreen style=\"padding:0\"><DvProcess look=\"rich\" style=\"width:300; height:240\"><DvVessel name=\"T1\" level=\"0\"/></DvProcess></DvScreen>", 300, 240, 0, 0, 0)]
+    public void Depth_zero_draws_rich_texture_without_shading(string markup, int w, int h, int x0, int x1, int y)
+    {
+        var none = DvTheme.Dark.With(new Dictionary<string, string> { ["texture.depth"] = "0" });
+        var flatPng = DvRenderer.RenderToPng(markup, null, w, h, none);
+        var deepPng = DvRenderer.RenderToPng(markup, null, w, h, DvTheme.Dark);
+        if (y == 0) // 공정도 — 용기 몸통 가운데 가로줄에서 몸통 픽셀(배경과 다른 것)의 색 수
+        {
+            int Colors(byte[] png)
+            {
+                using var bmp = SKBitmap.Decode(png);
+                var bg = bmp.GetPixel(2, 2);
+                return Enumerable.Range(0, w).Select(x => bmp.GetPixel(x, h / 2)).Where(c => !Near(c, bg, 6)).Select(c => (uint)c).Distinct().Count();
+            }
+            Assert.True(Colors(flatPng) < 8, $"depth 0 body colors {Colors(flatPng)}");
+            Assert.True(Colors(deepPng) > 20, $"depth 1 body colors {Colors(deepPng)}");
+            return;
+        }
+        Assert.True(Near(Pixel(flatPng, x0, y), Pixel(flatPng, x1, y), 2), "depth 0 tank row is one color");
+        Assert.False(Near(Pixel(deepPng, x0, y), Pixel(deepPng, x1, y), 2), "depth 1 tank row is shaded");
+    }
+
     // 노브는 예외 — 돌리는 손잡이라는 단서(떠 보이는 금속 면·그림자)를 질감 스위치와 무관하게 늘 그린다
     [Fact]
     public void Knob_keeps_its_raised_face_with_flat_texture()

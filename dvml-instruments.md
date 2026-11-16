@@ -189,11 +189,13 @@ A cylindrical vessel with a liquid level.
 | `unit` | text | empty | yes | After the value text: `%` `‰` `°…` join it (`40%`), others follow one space (`3 bar`) |
 | `format` | .NET format string | none | yes | Value chip digits. The chip is always drawn (no `show-value`) |
 | `show-zone-marks` | bool | `true` | yes | `false` hides the zone boundary ticks and numbers on the right; zone colors stay |
+| `medium` | `water` · `steam` · `air` · `gas` · `oil` · `acid` | none | yes | Liquid color = the theme's `process-pipe-{medium}`, the same as a process pipe of that medium ([medium](dvml-process.md#look-flow-medium)). Other word = none + Trace warning |
+| `color` | `#RRGGBB`, `token(name)`, `var(--name)` | none | yes | Liquid color; wins over `medium`. Unknown token = magenta + warning |
 
 **Behavior**
 - Default size: 80×160.
 - Value chip in the center (+ `unit`).
-- Liquid color = current zone color when the theme's `look.normal-color` is `on` (`Light`, `Dark`); otherwise, or with no zone, the `tank-fill` token (`Graphite`, `Carbon` — the limit lines and the value chip carry the state).
+- Liquid color, first that applies: the current zone color (only when the theme's `look.normal-color` is `on` — `Light`, `Dark`), `color`, `medium`, the `tank-fill` token. In `Graphite`/`Carbon` zones never recolor the liquid; the limit lines and the value chip carry the state.
 - Each zone start above `min` is marked twice: a short tick and number outside on the right, and a thin dashed line across the body (zone color). `show-zone-marks="false"` hides both.
 - A process-diagram vessel is a different tag: [DvVessel](dvml-process-equipment.md#equipment).
 

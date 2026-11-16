@@ -98,7 +98,7 @@ public sealed partial class Painter
                 new[] { needleColor, needleColor, tip, tip }, new[] { 0f, 0.6f, 0.61f, 1f }, SKShaderTileMode.Clamp);
             var sh = 1.5f * gm.Scale;
             if (Roles.Look.Texture == LookTexture.Rich) // 바늘 그림자 — 질감 rich 에서만
-                p.ImageFilter = SKImageFilter.CreateDropShadow(sh, sh, sh, sh, new SKColor(0, 0, 0, 0x60));
+                p.ImageFilter = SKImageFilter.CreateDropShadow(sh, sh, sh, sh, Fade(new SKColor(0, 0, 0, 0x60), Roles.Depth));
             canvas.DrawPath(path, p);
         }
 

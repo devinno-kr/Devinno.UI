@@ -272,7 +272,8 @@ internal static class ProcessBuilder
         {
             Source = node,
             Vertical = Direction(r),
-            Rich = AttrRules.Enum(r, "look") is "rich",
+            // look 이 없으면 테마 질감(look.texture)을 따른다 — 레이아웃 때 한 번 정해 배치 간격·그리기가 같은 값을 쓴다
+            Rich = AttrRules.Enum(r, "look") switch { "rich" => true, "plain" => false, _ => Styling.Roles.Look.Texture == Styling.LookTexture.Rich },
         };
         d.Align = AttrRules.Enum(r, "align") switch
         {

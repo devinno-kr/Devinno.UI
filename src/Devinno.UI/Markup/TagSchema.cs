@@ -295,6 +295,8 @@ internal static class TagSchema
             new("unit", AttrKind.Text, Note: UnitRule),
             new("format", AttrKind.Text, Note: FormatRule + "; the value chip is always drawn (no show-value)"),
             new("show-zone-marks", AttrKind.Bool, "true", Note: BoolRule + "; off hides the zone boundary marks; the zone colors stay either way"),
+            new("medium", AttrKind.Enum, Values: Process.ProcessMedium.Names, Note: "liquid color = the theme's process-pipe-{medium} (same as a DvLine of that medium); " + EnumRule + " (none)"),
+            new("color", AttrKind.Color, Note: "liquid color; wins over medium; a zone color wins over it only with look.normal-color on; " + ColorRule + " (medium or tank-fill)"),
         ],
         ["DvSparkline"] =
         [
@@ -411,7 +413,7 @@ internal static class TagSchema
         ["DvProcess"] =
         [
             Direction(),
-            new("look", AttrKind.Enum, "plain", Values: ["plain", "rich"], Note: EnumRule + "; units inherit it (no per-unit look); the symbol colors are the look's own palette, not theme tokens (the one exception to \"every drawn color is a theme token\")"),
+            new("look", AttrKind.Enum, Values: ["plain", "rich"], Note: "absent = the theme's look.texture (rich -> rich, flat -> plain); " + EnumRule + "; units inherit it (no per-unit look); colors are the process-* theme tokens either way"),
             new("align", AttrKind.Enum, "auto", Values: ["auto", "step", "row"], Note: EnumRule + "; with placement=fixed ignored + warning"),
             new("placement", AttrKind.Enum, "auto", Values: ["auto", "fixed"], Note: EnumRule + "; a structural switch (the layout cache keys on it)"),
             new("base-size", AttrKind.Text, Note: "\"W H\" px (space or comma); fixed placement only, otherwise ignored + warning; a bad value = ignored + warning"),
@@ -464,7 +466,7 @@ internal static class TagSchema
             ProcessRef("to", "eq.port, eq, eq.face@0-1, unit.port or a port name inside a unit"),
             ProcessArrow(),
             new("flow", AttrKind.Bool, Note: "absent or a null binding = computed; otherwise " + BoolRule),
-            new("medium", AttrKind.Enum, Values: Process.ProcessMedium.Names, Note: "absent = default gray; " + EnumRule + " (default gray); a fixed palette (no color attribute)"),
+            new("medium", AttrKind.Enum, Values: Process.ProcessMedium.Names, Note: "absent = process-pipe gray; color = the theme's process-pipe-{medium}; " + EnumRule + " (process-pipe gray); no color attribute"),
             new("via", AttrKind.Text, Note: "\"x,y x,y\" bend points; fixed placement only, otherwise ignored + warning; a bad format = automatic route + warning"),
             new("label", AttrKind.Text),
             LineVisible("the pipe"),
@@ -476,7 +478,7 @@ internal static class TagSchema
             ProcessArrow(),
             new("label", AttrKind.Text, Note: "small text beside the from end"),
             new("kind", AttrKind.Enum, "electric", Values: ["electric", "pneumatic"], Note: EnumRule),
-            new("color", AttrKind.Color, Note: "absent = theme text color; " + ColorRule + " (theme text color); the only process color attribute (the rest use a fixed palette)"),
+            new("color", AttrKind.Color, Note: "absent = theme text color; " + ColorRule + " (theme text color); the only process color attribute (the rest use the process-* theme tokens)"),
             new("thickness", AttrKind.Number, "1.6", Note: "stroke px > 0; not a number or <= 0 = default + warning; named like DvRing thickness (width is a box/body width elsewhere)"),
             LineVisible("the signal line"),
         ],

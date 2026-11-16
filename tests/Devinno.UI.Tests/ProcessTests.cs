@@ -21,6 +21,9 @@ public class ProcessTests(ITestOutputHelper output)
     internal static (DvSurface S, ProcessDiagram D) Start(string body, string attrs = "", float w = 1100, float h = 700,
         ComponentRegistry? registry = null, object? vm = null)
     {
+        // 배치·그리기 검사는 평면 기하 기준 — look 을 안 주면 plain(look 없음은 테마를 따르므로 Light 에서는 rich 가 된다)
+        if (!attrs.Contains("look=", StringComparison.Ordinal))
+            attrs = "look=\"plain\" " + attrs;
         var s = new DvSurface($"<DvScreen><DvProcess {attrs}>{body}</DvProcess></DvScreen>", vm ?? new Vm(), DvTheme.Light, registry);
         s.Layout(w, h);
         return (s, Diagram(s));

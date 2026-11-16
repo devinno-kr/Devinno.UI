@@ -9,61 +9,54 @@ namespace Devinno.UI.Painting;
 // 공정도(DvProcess) — 배관(겹별로 한 번에), 화살표, 장비 심볼, 이름표. 모양은 look(plain·rich)
 public sealed partial class Painter
 {
-    /// <summary>Process diagram look — plain (ISA-101 style gray, color only for states) · rich (dark background, metallic gradients, thick pipes).</summary>
+    /// <summary>
+    /// Process diagram look — colors from the theme's <c>process-*</c> tokens. plain = flat fills (ISA-101 style), rich = metallic gradients,
+    /// drop shadows and thick pipes computed from the same colors. Which one a diagram uses is <see cref="ProcessDiagram.Rich"/> (the <c>look</c> attribute, else the theme's <c>look.texture</c>).
+    /// </summary>
     private sealed class ProcessLook
     {
         public bool Rich;
-        public SKColor Stroke, Detail, DetailOn, Screen, Glass, TagFill, TagStroke, TagText, Arrow;
+        public SKColor Stroke, Detail, DetailOn, BodyColor, BodyOn, BodyOff, AccentColor, LiquidColor, Screen, Glass, TagFill, TagStroke, TagText, Arrow,
+            Pipe, Water, Steam, Air, Gas, Oil, Acid, Flow, Error;
         public float StrokeW, Corner, Hop;
+        public float Depth; // texture.depth — 입체 음영 깊이(0 = 음영 없음)
 
-        public static readonly ProcessLook Plain = new()
-        {
-            Stroke = new(0xFF464B51), StrokeW = 1.5f, Detail = new(0xFF464B51), DetailOn = new(0xFFE6E8EA),
-            Screen = new(0xFFF4F5F6), Glass = new(0xFFE9EEF2), TagFill = new(0xFFF1F2F3), TagStroke = new(0xFF464B51),
-            TagText = new(0xFF2E3338), Arrow = new(0xFF5F656C), Corner = 6, Hop = 7,
-        };
-
-        public static readonly ProcessLook RichLook = new()
-        {
-            Rich = true, Stroke = new(0xFF0E151D), StrokeW = 1.2f, Detail = new(0xFF1A222B), DetailOn = new(0xFF0E3D24),
-            Screen = new(0xFF0B1620), Glass = new(0xFF7FD3F7), TagFill = new(0xFF243242), TagStroke = new(0xFF7F95AB),
-            TagText = new(0xFFDCE4EC), Arrow = new(0xFFC7D0D9), Corner = 10, Hop = 13,
-        };
-
-        private static SKShader HGrad(SKRect r, params (uint c, float p)[] stops) =>
+        private static SKShader HGrad(SKRect r, params (SKColor c, float p)[] stops) =>
             SKShader.CreateLinearGradient(new SKPoint(r.Left, 0), new SKPoint(r.Right, 0),
-                stops.Select(s => new SKColor(s.c)).ToArray(), stops.Select(s => s.p).ToArray(), SKShaderTileMode.Clamp);
+                stops.Select(s => s.c).ToArray(), stops.Select(s => s.p).ToArray(), SKShaderTileMode.Clamp);
 
-        // on: null = 상태 없는 몸통(vessel), true/false = 상태색 몸통
-        public SKShader Body(SKRect r, bool? on) => Rich
-            ? on switch
-            {
-                null => HGrad(r, (0xFF5E6975, 0), (0xFFB9C4CF, .28f), (0xFFEEF3F7, .4f), (0xFFA3AFBB, .7f), (0xFF4C5662, 1)),
-                true => HGrad(r, (0xFF16703F, 0), (0xFF35C27A, .28f), (0xFF8AF0BC, .4f), (0xFF2AA463, .7f), (0xFF125C34, 1)),
-                false => HGrad(r, (0xFF4A525C, 0), (0xFF8F98A2, .28f), (0xFFC2C9D0, .4f), (0xFF7D8690, .7f), (0xFF3E464F, 1)),
-            }
-            : SKShader.CreateColor(new SKColor(on switch { true => 0xFF4A5057u, false => 0xFFF1F2F3u, null => 0xFFC3C8CDu }));
+        // 금속 원통 — 바탕색에서 어두운 가장자리 · 밝은 띠 · 반사광을 계산. 깊이 = 테마 texture.depth
+        private SKShader Metal(SKRect r, SKColor c) => HGrad(r,
+            (Mix(c, SKColors.Black, 0.45f * Depth), 0), (Mix(c, SKColors.White, 0.35f * Depth), .28f), (Mix(c, SKColors.White, 0.78f * Depth), .4f),
+            (Mix(c, SKColors.Black, 0.10f * Depth), .7f), (Mix(c, SKColors.Black, 0.55f * Depth), 1));
+
+        // on: null = 상태 없는 몸통(vessel), true/false = 운전·정지 몸통
+        public SKShader Body(SKRect r, bool? on)
+        {
+            var c = on switch { true => BodyOn, false => BodyOff, null => BodyColor };
+            return Rich ? Metal(r, c) : SKShader.CreateColor(c);
+        }
 
         public SKShader Accent(SKRect r) => Rich
-            ? HGrad(r, (0xFF2B333D, 0), (0xFF5D6874, .35f), (0xFF7B8794, .45f), (0xFF3A434E, 1))
-            : SKShader.CreateColor(new SKColor(0xFF8E959C));
+            ? HGrad(r, (Mix(AccentColor, SKColors.Black, 0.6f * Depth), 0), (Mix(AccentColor, SKColors.Black, 0.2f * Depth), .35f), (AccentColor, .45f), (Mix(AccentColor, SKColors.Black, 0.5f * Depth), 1))
+            : SKShader.CreateColor(AccentColor);
 
         public SKShader Liquid(SKRect r) => Rich
-            ? SKShader.CreateLinearGradient(new SKPoint(0, r.Top), new SKPoint(0, r.Bottom), [new SKColor(0xFF4FB8F0), new SKColor(0xFF1E64A8)], SKShaderTileMode.Clamp)
-            : SKShader.CreateColor(new SKColor(0xFF93A9BF));
+            ? SKShader.CreateLinearGradient(new SKPoint(0, r.Top), new SKPoint(0, r.Bottom),
+                [Mix(LiquidColor, SKColors.White, 0.25f * Depth), Mix(LiquidColor, SKColors.Black, 0.3f * Depth)], SKShaderTileMode.Clamp)
+            : SKShader.CreateColor(LiquidColor);
 
-        // 매체 색(KS A 0503 배관 식별색 계열) — plain 은 밝은 바탕에서 읽히는 차분한 톤, rich 는 금속 관 가운데 줄
-        public SKColor PipeColor(string? medium) => (medium, Rich) switch
+        public SKColor LiquidSurface => Rich ? Mix(LiquidColor, SKColors.White, 0.5f) : Mix(LiquidColor, SKColors.Black, 0.3f);
+
+        // 매체 색(process-pipe-{매체}) — rich 는 금속 관 가운데 줄이라 조금 밝게
+        public SKColor PipeColor(string? medium)
         {
-            ("water", false) => new SKColor(0xFF3B6EA8), ("water", true) => new SKColor(0xFF4F86C6),
-            ("steam", false) => new SKColor(0xFF9B3B3B), ("steam", true) => new SKColor(0xFFB0524F),
-            ("air", false) => new SKColor(0xFFAAB5BE), ("air", true) => new SKColor(0xFFE6ECF0),
-            ("gas", false) => new SKColor(0xFFC29A1F), ("gas", true) => new SKColor(0xFFE3C04A),
-            ("oil", false) => new SKColor(0xFFB5652B), ("oil", true) => new SKColor(0xFFC9783C),
-            ("acid", false) => new SKColor(0xFF7E6A93), ("acid", true) => new SKColor(0xFF9A86B0),
-            (_, false) => new SKColor(0xFF5F656C),
-            (_, true) => new SKColor(0xFF8C98A5),
-        };
+            var c = medium switch
+            {
+                "water" => Water, "steam" => Steam, "air" => Air, "gas" => Gas, "oil" => Oil, "acid" => Acid, _ => Pipe,
+            };
+            return Rich ? Mix(c, SKColors.White, 0.12f) : c;
+        }
 
         // 배관 — 겹별로 모든 관을 한 번에(T 자 이음매가 보이지 않게). 매체가 있는 관은 그 색
         public void Pipes(SKCanvas c, IReadOnlyList<(SKPath Path, string? Medium)> paths)
@@ -71,8 +64,9 @@ public sealed partial class Painter
             using var body = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Rich ? 7 : 3 };
             if (Rich)
             {
-                using var a = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 11, Color = new SKColor(0xFF3D4753) };
-                using var h = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2, Color = new SKColor(0x99E3EAF0) };
+                // 관 껍질 = 매체 없는 배관 색을 깊이만큼 어둡게(밝은 테마에서 검은 관이 되지 않게), 가운데 반사 줄 = 깊이만큼
+                using var a = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 11, Color = Mix(Pipe, SKColors.Black, 0.45f * Depth) };
+                using var h = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2, Color = Fade(new SKColor(0xff, 0xff, 0xff, 0x99), Depth) };
                 foreach (var (p, _) in paths) c.DrawPath(p, a);
                 foreach (var (p, m) in paths)
                 {
@@ -93,7 +87,25 @@ public sealed partial class Painter
         }
     }
 
-    private static ProcessLook LookOf(ProcessDiagram d) => d.Rich ? ProcessLook.RichLook : ProcessLook.Plain;
+    // 테마 토큰으로 만든 모양 — 평면·입체 하나씩, 이 Painter(테마 하나)에서 재사용
+    private ProcessLook? _plainLook, _richLook;
+
+    private ProcessLook LookOf(ProcessDiagram d) => d.Rich ? _richLook ??= BuildLook(true) : _plainLook ??= BuildLook(false);
+
+    private ProcessLook BuildLook(bool rich) => new()
+    {
+        Rich = rich,
+        Stroke = ThemeColor("process-line"), Detail = ThemeColor("process-detail"), DetailOn = ThemeColor("process-detail-on"),
+        BodyColor = ThemeColor("process-body"), BodyOn = ThemeColor("process-body-on"), BodyOff = ThemeColor("process-body-off"),
+        AccentColor = ThemeColor("process-accent"), LiquidColor = ThemeColor("process-liquid"),
+        Screen = ThemeColor("process-screen"), Glass = ThemeColor("process-glass"),
+        TagFill = ThemeColor("process-tag-bg"), TagStroke = ThemeColor("process-tag-border"), TagText = ThemeColor("process-tag-fg"),
+        Arrow = ThemeColor("process-arrow"), Pipe = ThemeColor("process-pipe"),
+        Water = ThemeColor("process-pipe-water"), Steam = ThemeColor("process-pipe-steam"), Air = ThemeColor("process-pipe-air"),
+        Gas = ThemeColor("process-pipe-gas"), Oil = ThemeColor("process-pipe-oil"), Acid = ThemeColor("process-pipe-acid"),
+        Flow = ThemeColor("primary"), Error = ThemeColor("tone-danger"), Depth = Roles.Depth,
+        StrokeW = rich ? 1.2f : Roles.Stroke("outline"), Corner = rich ? 10 : 6, Hop = rich ? 13 : 7,
+    };
 
     // 공정도 상자 — 배관·화살표·오류 선(배경은 앱 테마·style 그대로). 장비는 자식 상자로 그 위에 그린다
     private void PaintProcess(SKCanvas canvas, LayoutBox box, long timestampMs)
@@ -102,7 +114,7 @@ public sealed partial class Painter
         if (d.Graph is null)
             return;
         ProcessBuilder.Report(d);
-        PaintPipes(canvas, d, timestampMs, ThemeColor("--text"), box.Style.FontFamily);
+        PaintPipes(canvas, d, LookOf(d), timestampMs, ThemeColor("--text"), box.Style.FontFamily);
     }
 
     /// <summary>Flow animation frame interval (ms) — capped at 20 frames per second (saves CPU, since the whole screen is redrawn).</summary>
@@ -111,7 +123,7 @@ public sealed partial class Painter
     /// <summary>Speed of the moving flow dashes (px/s).</summary>
     private const float FlowSpeed = 40f;
 
-    // 흐르는 배관 위 표시 — 바탕 줄(rich 어둡게·plain 밝게) 위에 굵은 점선이 흐름 방향(from → to)으로 움직인다.
+    // 흐르는 배관 위 표시 — 바탕 줄(rich 어둡게·plain 밝게) 위에 굵은 점선(테마 primary)이 흐름 방향(from → to)으로 움직인다.
     // 매체가 있는 관은 바탕 줄·점선을 그 매체 색의 톤으로(고정색이면 매체 색이 가려진다).
     // 점선과 간격의 명암 대비가 커서 금속 관(rich)·회색 관(plain) 위에서도 또렷하다. 위상은 시각에서 계산(같은 시각 = 같은 그림)
     private static void PaintFlow(SKCanvas canvas, IReadOnlyList<(SKPath Path, bool Flowing, string? Medium)> pipes, ProcessLook look, long timestampMs)
@@ -124,13 +136,13 @@ public sealed partial class Painter
         using var under = new SKPaint
         {
             IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = width,
-            Color = rich ? new SKColor(0xFF0B3A4A) : new SKColor(0xFFDCE8FF),
+            Color = FlowUnder(look, look.Flow),
         };
         using var effect = SKPathEffect.CreateDash([dash, gap], period - offset); // 위상을 줄이면 무늬가 경로 앞쪽으로 나아간다
         using var paint = new SKPaint
         {
             IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeCap = SKStrokeCap.Round, PathEffect = effect, StrokeWidth = width,
-            Color = rich ? new SKColor(0xFF22D3EE) : new SKColor(0xFF2563EB),
+            Color = FlowDash(look, look.Flow),
         };
         var flowColor = paint.Color;
         foreach (var (path, flowing, medium) in pipes)
@@ -139,7 +151,7 @@ public sealed partial class Painter
                 continue;
             if (medium is null)
             {
-                under.Color = rich ? new SKColor(0xFF0B3A4A) : new SKColor(0xFFDCE8FF);
+                under.Color = FlowUnder(look, look.Flow);
                 paint.Color = flowColor;
                 canvas.DrawPath(path, under);
                 canvas.DrawPath(path, paint);
@@ -147,18 +159,21 @@ public sealed partial class Painter
             else
             {
                 var m = look.PipeColor(medium);
-                under.Color = rich ? Mix(m, SKColors.Black, 0.55f) : Mix(m, SKColors.White, 0.72f);
-                paint.Color = rich ? Mix(m, SKColors.White, 0.35f) : m;
+                under.Color = FlowUnder(look, m);
+                paint.Color = FlowDash(look, m);
                 canvas.DrawPath(path, under);
                 canvas.DrawPath(path, paint);
             }
         }
     }
 
+    // 흐름 바탕 줄·점선 색 — 점선과 간격의 명암 대비가 크게(금속 관·회색 관 위에서도 또렷)
+    private static SKColor FlowUnder(ProcessLook look, SKColor c) => look.Rich ? Mix(c, SKColors.Black, 0.55f) : Mix(c, SKColors.White, 0.8f);
+    private static SKColor FlowDash(ProcessLook look, SKColor c) => look.Rich ? Mix(c, SKColors.White, 0.35f) : c;
+
     // text·family = 라인 번호·신호선 라벨 글자(이름표처럼 테마 글자색)
-    private static void PaintPipes(SKCanvas canvas, ProcessDiagram d, long timestampMs, SKColor text, string? family)
+    private static void PaintPipes(SKCanvas canvas, ProcessDiagram d, ProcessLook look, long timestampMs, SKColor text, string? family)
     {
-        var look = LookOf(d);
         canvas.Save();
         canvas.Translate(d.Origin.X, d.Origin.Y);
         var paths = new List<SKPath>();
@@ -230,7 +245,7 @@ public sealed partial class Painter
             // 잘못된 선 — 두 장비 가운데를 빨간 점선으로
             using var err = new SKPaint
             {
-                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2, Color = new SKColor(0xFFE5484D),
+                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2, Color = look.Error,
                 PathEffect = SKPathEffect.CreateDash([6, 4], 0),
             };
             foreach (var l in d.Lines.Where(l => l.Error && l.FromNode >= 0 && l.ToNode >= 0))
@@ -405,13 +420,13 @@ public sealed partial class Painter
         using var tp = new SKPaint { IsAntialias = true, Color = look.TagText };
         if (!string.IsNullOrEmpty(inst.Letters))
         {
-            using var f = TextFont.Create(inst.Letters, d.Text(ProcessBuilder.LetterSize), Roles.Weight("bold"), st.FontFamily);
+            using var f = TextFont.Create(inst.Letters, d.Text(ProcessBuilder.LetterSize), Roles.Weight("strong"), st.FontFamily);
             canvas.DrawText(inst.Letters, r.MidX, r.MidY - d.Text(3) - f.Metrics.Descent, SKTextAlign.Center, f, tp);
         }
 
         if (!string.IsNullOrEmpty(inst.Number))
         {
-            using var f = TextFont.Create(inst.Number, d.Text(ProcessBuilder.NumberSize), Roles.Weight("bold"), st.FontFamily);
+            using var f = TextFont.Create(inst.Number, d.Text(ProcessBuilder.NumberSize), Roles.Weight("strong"), st.FontFamily);
             canvas.DrawText(inst.Number, r.MidX, r.MidY + d.Text(3) - f.Metrics.Ascent, SKTextAlign.Center, f, tp);
         }
 
@@ -526,14 +541,14 @@ public sealed partial class Painter
             // 유닛 — 제목(왼쪽 위) + 안쪽 배관. 안쪽 장비는 이 상자의 자식으로 그 위에 그린다. 테두리·배경은 style
             if (!string.IsNullOrEmpty(n.Label))
             {
-                using var font = TextFont.Create(n.Label, d.Text(ProcessBuilder.LabelSize), Roles.Weight("bold"), st.FontFamily);
+                using var font = TextFont.Create(n.Label, d.Text(ProcessBuilder.LabelSize), Roles.Weight("strong"), st.FontFamily);
                 using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("--text") };
                 canvas.DrawText(n.Label, d.Origin.X + n.G.X + n.LabelRect.Left, d.Origin.Y + n.G.Y + n.LabelRect.Top - font.Metrics.Ascent,
                     SKTextAlign.Left, font, tp);
             }
 
             if (unit.Graph is not null)
-                PaintPipes(canvas, unit, timestampMs, ThemeColor("--text"), st.FontFamily);
+                PaintPipes(canvas, unit, LookOf(unit), timestampMs, ThemeColor("--text"), st.FontFamily);
             return;
         }
 
@@ -553,7 +568,7 @@ public sealed partial class Painter
                 }
 
                 var lines = ProcessBuilder.TerminalLines(n);
-                using var font = TextFont.Create(n.Text ?? "", d.Text(12), Roles.Weight("bold"), st.FontFamily);
+                using var font = TextFont.Create(n.Text ?? "", d.Text(12), Roles.Weight("strong"), st.FontFamily);
                 using var tp = new SKPaint { IsAntialias = true, Color = look.TagText };
                 var cx = d.Vertical ? n.Sym.MidX : n.Sym.Left + (n.Sym.Width - d.Text(14)) / 2;
                 var cy = (d.Vertical ? n.Sym.Top + (n.Sym.Height - d.Text(10)) / 2 : n.Sym.MidY) - (font.Metrics.Ascent + font.Metrics.Descent) / 2
@@ -593,7 +608,7 @@ public sealed partial class Painter
 
             if (n.Error)
             {
-                using var ep = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2, Color = new SKColor(0xFFE5484D) };
+                using var ep = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2, Color = look.Error };
                 var r = n.Body;
                 r.Inflate(4, 4);
                 canvas.DrawRoundRect(r, 4, 4, ep);
@@ -613,17 +628,17 @@ public sealed partial class Painter
         {
             // 용기 이름표 — 몸통 가운데 칩(액체·금속 위에서도 읽히게)
             var d = n.Owner;
-            using var font = TextFont.Create(n.Label, d.Text(14), Roles.Weight("bold"), st.FontFamily);
+            using var font = TextFont.Create(n.Label, d.Text(14), Roles.Weight("strong"), st.FontFamily);
             var tw = font.MeasureText(n.Label);
             var chip = SKRect.Create(n.Sym.MidX - tw / 2 - d.Text(8), n.Sym.MidY - font.Spacing / 2 - d.Text(2), tw + d.Text(16), font.Spacing + d.Text(4));
-            using var bg = new SKPaint { IsAntialias = true, Color = look.Rich ? new SKColor(0xCC0E151D) : new SKColor(0xDDFFFFFF) };
+            using var bg = new SKPaint { IsAntialias = true, Color = look.TagFill.WithAlpha(0xDD) };
             canvas.DrawRoundRect(chip, chip.Height / 2, chip.Height / 2, bg);
-            using var tp = new SKPaint { IsAntialias = true, Color = look.Rich ? new SKColor(0xFFDCE4EC) : new SKColor(0xFF2E3338) };
+            using var tp = new SKPaint { IsAntialias = true, Color = look.TagText };
             canvas.DrawText(n.Label, chip.MidX, chip.MidY - (font.Metrics.Ascent + font.Metrics.Descent) / 2, SKTextAlign.Center, font, tp);
             return;
         }
 
-        using (var font = TextFont.Create(n.Label, n.Owner.Text(ProcessBuilder.LabelSize), Roles.Weight("bold"), st.FontFamily))
+        using (var font = TextFont.Create(n.Label, n.Owner.Text(ProcessBuilder.LabelSize), Roles.Weight("strong"), st.FontFamily))
         using (var tp = new SKPaint { IsAntialias = true, Color = text })
             canvas.DrawText(n.Label, n.LabelRect.MidX, n.LabelRect.Top - font.Metrics.Ascent, SKTextAlign.Center, font, tp);
     }
@@ -650,7 +665,7 @@ public sealed partial class Painter
                     using (var fill = new SKPaint { IsAntialias = true, Shader = look.Body(b, state) })
                     {
                         if (look.Rich)
-                            fill.ImageFilter = SKImageFilter.CreateDropShadow(0, 3, 3, 3, new SKColor(0x66000000));
+                            fill.ImageFilter = SKImageFilter.CreateDropShadow(0, 3, 3, 3, Fade(new SKColor(0x66000000), look.Depth));
                         canvas.DrawPath(l.Path, fill);
                     }
 
@@ -726,7 +741,7 @@ public sealed partial class Painter
             {
                 IsAntialias = true,
                 Shader = SKShader.CreateLinearGradient(new SKPoint(b.Left, 0), new SKPoint(b.Right, 0),
-                    [new SKColor(0x55000000), new SKColor(0x00FFFFFF), new SKColor(0x40FFFFFF), new SKColor(0x00FFFFFF), new SKColor(0x66000000)],
+                    [Fade(new SKColor(0x55000000), look.Depth), new SKColor(0x00FFFFFF), Fade(new SKColor(0x40FFFFFF), look.Depth), new SKColor(0x00FFFFFF), Fade(new SKColor(0x66000000), look.Depth)],
                     [0, .3f, .4f, .62f, 1], SKShaderTileMode.Clamp),
             };
             canvas.DrawRect(lr, sheen);
@@ -735,7 +750,7 @@ public sealed partial class Painter
         using (var surf = new SKPaint
                {
                    IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f,
-                   Color = look.Rich ? new SKColor(0xCCA8E2FF) : new SKColor(0xFF6E8399),
+                   Color = look.LiquidSurface,
                })
             canvas.DrawLine(b.Left, top, b.Right, top, surf);
         canvas.Restore();
