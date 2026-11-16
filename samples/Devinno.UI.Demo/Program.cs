@@ -141,6 +141,19 @@ internal static class Program
 
             if (args.Contains("anim")) // -- shot <폴더> anim = P&ID 운전 전환 시퀀스를 50ms 프레임으로(README 애니메이션 WebP)
             {
+                // 대시보드(Overview) 먼저 — 75프레임(3.75초), 200ms 마다 시뮬레이션: 값·트렌드·스파크라인이 움직이는 모습.
+                // 공정도 시퀀스(P-102 기동·정지)보다 앞에 찍는다 — 뒤에 찍으면 그 유량 계단이 트렌드 끝에 남는다
+                app.Show(overview);
+                Shot(app, width, height, null);
+                var t1 = DateTime.Now;
+                for (var f = 0; f < 75; f++)
+                {
+                    if (f % 4 == 0)
+                        sim.Tick(t1.AddMilliseconds(f * 50));
+                    app.Invalidate();
+                    Shot(app, width, height, Path.Combine(dir, $"dashboard-frame-{f:000}.png"), f * 50L);
+                }
+
                 // 단계마다 1.2초(점선 한 주기 600ms 의 배수) — 예비 펌프 P-102 기동(유량 상승) 후 정지, 처음 상태로 돌아와 끊김 없이 반복
                 Action[] steps =
                 [
@@ -163,6 +176,7 @@ internal static class Program
                         Shot(app, width, height, Path.Combine(dir, $"process-frame-{frame:000}.png"), frame * 50L);
                     }
                 }
+
             }
 
             // 컨트롤 시트 — 상단 바 없는 앱으로 네 내장 테마를 한 장씩
