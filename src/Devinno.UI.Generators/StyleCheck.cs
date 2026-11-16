@@ -57,6 +57,8 @@ internal static class StyleCheck
         "tone-info-soft", "tone-neutral", "tone-neutral-fg", "tone-neutral-soft", "tone-success", "tone-success-fg",
         "tone-success-soft", "tone-warning", "tone-warning-fg", "tone-warning-soft", "trend-grid", "warn-bg",
         "warn-text",
+        // 역할 토큰(단계 2)
+        "font.meta", "weight.regular", "weight.medium", "weight.strong", "weight.bold", "stroke.hairline", "stroke.outline", "stroke.emphasis", "stroke.focus", "stroke.track", "focus.gap", "control.sm", "control.md", "control.lg", "row.md", "row.lg", "radius.xs", "ratio.unit", "overlay.hover", "overlay.press", "opacity.disabled", "alpha.selected", "alpha.soft", "alpha.dim", "look.texture", "look.normal-color", "look.selection", "font-meta", "weight-regular", "weight-medium", "weight-strong", "weight-bold", "stroke-hairline", "stroke-outline", "stroke-emphasis", "stroke-focus", "stroke-track", "focus-gap", "control-sm", "control-md", "control-lg", "row-md", "row-lg", "radius-xs", "ratio-unit", "overlay-hover", "overlay-press", "opacity-disabled", "alpha-selected", "alpha-soft", "alpha-dim", "look-texture", "look-normal-color", "look-selection", "selection", "selection-fg", "value-input", "value-read", "normal", "alarm-critical-icon", "alarm-major-icon", "alarm-minor-icon",
     };
 
     /// <summary>내장 클래스 — 라이브러리 <c>BuiltInStyles.Sheet</c> 와 같아야 한다(테스트가 비교).</summary>

@@ -78,4 +78,22 @@ public static class ThemeResolver
     }
 
     private static readonly SkiaSharp.SKColor Missing = new(0xff, 0x00, 0xff);
+
+    // 숫자 역할 토큰(굵기·선 두께·투명도 …) 한 곳 — 없는 토큰·숫자 아닌 값 = 0 + 경고(화면마다 한 번)
+    /// <summary>The number value of theme token <paramref name="name"/> (role tokens such as <c>stroke.hairline</c>, <c>weight.bold</c>, <c>alpha.soft</c>). A missing token or a value that is not a number gives 0 with a warning.</summary>
+    internal static float Number(DvTheme? theme, string name)
+    {
+        if ((theme ?? DvTheme.Default).TryResolve(name, out var raw, out var problem))
+        {
+            if (float.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v))
+                return v;
+            Interaction.Warnings.Warn($"Devinno.UI: token '{name}' is not a number ('{raw}'); using 0");
+        }
+        else
+        {
+            Interaction.Warnings.Warn(problem is null ? $"Devinno.UI: unresolved token '{name}'; using 0" : $"Devinno.UI: unresolved token '{name}' ({problem}); using 0");
+        }
+
+        return 0;
+    }
 }

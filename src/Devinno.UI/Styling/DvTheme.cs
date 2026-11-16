@@ -54,7 +54,50 @@ public sealed class DvTheme
         ["font.body"] = "14",
         ["font.label"] = "13",
         ["font.caption"] = "11",
-        ["font.mono"] = "14"
+        ["font.mono"] = "14",
+        ["font.meta"] = "12",
+
+        // 역할 토큰(단계 2) — 위젯은 이 이름만 읽는다. 값은 지금 생김새 그대로.
+        ["weight.regular"] = "400",
+        ["weight.medium"] = "500",
+        ["weight.strong"] = "600",
+        ["weight.bold"] = "700",
+        ["stroke.hairline"] = "1",
+        ["stroke.outline"] = "1.5",
+        ["stroke.emphasis"] = "2",
+        ["stroke.focus"] = "3",
+        ["stroke.track"] = "0.08",
+        ["focus.gap"] = "2",
+        ["control.sm"] = "32",
+        ["control.md"] = "40",
+        ["control.lg"] = "48",
+        ["row.md"] = "40",
+        ["row.lg"] = "48",
+        ["radius.xs"] = "4",
+        ["ratio.unit"] = "0.6",
+        ["overlay.hover"] = "0.08",
+        ["overlay.press"] = "0.12",
+        ["opacity.disabled"] = "0.5",
+        ["alpha.selected"] = "0.15",
+        ["alpha.soft"] = "0.2",
+        ["alpha.dim"] = "0.38",
+
+        // 색 역할 — 테마의 다른 토큰을 가리킨다(복사한 테마에서 기준 색만 바꿔도 따라감)
+        ["selection"] = "token(primary)",
+        ["selection-fg"] = "token(primary-fg)",
+        ["value-input"] = "token(primary)",
+        ["value-read"] = "token(primary)",
+        ["normal"] = "token(tone-success)",
+
+        // 스위치 — 질감(flat|rich), 정상 상태 색(on|off), 선택 강조(quiet|strong)
+        ["look.texture"] = "rich",
+        ["look.normal-color"] = "on",
+        ["look.selection"] = "strong",
+
+        // 알람 등급 아이콘(아이콘 이름, 빈 값 = 아이콘 없이 색 + 글자)
+        ["alarm-critical-icon"] = "",
+        ["alarm-major-icon"] = "",
+        ["alarm-minor-icon"] = ""
     };
 
     /// <summary>The built-in theme for light backgrounds. Uses white and light-gray surfaces, dark text and a blue (<c>#2563eb</c>) brand color.</summary>
