@@ -273,7 +273,7 @@ public sealed partial class Painter
         if (!p.HexEdit.Hide)
         {
             var label = p.HexEdit.Text ?? PickerValue.Hex(st.Rgb);
-            using var font = TextFont.Create(label, fontSize, 400);
+            using var font = TextFont.Create(label, fontSize, Roles.Weight("regular"));
             using var tp = new SKPaint { IsAntialias = true, Color = text };
             canvas.DrawText(label, hex.Left + 12f, hex.MidY - (font.Metrics.Ascent + font.Metrics.Descent) / 2f, SKTextAlign.Left, font, tp);
         }
@@ -292,7 +292,7 @@ public sealed partial class Painter
     {
         if (s.Length == 0)
             return;
-        using var font = TextFont.Create(s, size, bold ? 700 : 400);
+        using var font = TextFont.Create(s, size, bold ? Roles.Weight("bold") : Roles.Weight("regular"));
         using var tp = new SKPaint { IsAntialias = true, Color = color };
         canvas.DrawText(s, r.MidX, r.MidY - (font.Metrics.Ascent + font.Metrics.Descent) / 2f, SKTextAlign.Center, font, tp);
     }

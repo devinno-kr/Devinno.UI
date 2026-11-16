@@ -1,3 +1,4 @@
+using Devinno.UI.Styling;
 using System.Globalization;
 using Devinno.UI.Layout;
 using Devinno.UI.Text;
@@ -46,7 +47,7 @@ public sealed partial class Painter
             return;
 
         var decimals = Interaction.KnobBinder.Decimals(box.GaugeTicks);
-        using var font = TextFont.Create("0", MathF.Max(9f, radius * 0.15f), weight: 400);
+        using var font = TextFont.Create("0", MathF.Max(9f, radius * 0.15f), weight: Roles.Weight("regular"));
         using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted") };
         var labelR = radius - gm.MajorTickEnd - font.Size * 0.95f;
         foreach (var v in major)

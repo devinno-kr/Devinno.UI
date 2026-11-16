@@ -332,7 +332,7 @@ internal sealed class SoftKeyboard
         float infoW = 0;
         if (!string.IsNullOrEmpty(info))
         {
-            using var inf = TextFont.Create(info, 13f, weight: 400);
+            using var inf = TextFont.Create(info, Roles.Font("label"), weight: Roles.Weight("regular"));
             using var ip = new SKPaint { IsAntialias = true, Color = e.Error is null ? muted : danger };
             canvas.DrawText(info, infoRight, Baseline(pv, inf), SKTextAlign.Right, inf, ip);
             infoW = inf.MeasureText(info) + 16f;
@@ -344,7 +344,7 @@ internal sealed class SoftKeyboard
         canvas.ClipRect(textArea);
         var placeholder = shown.Length == 0 ? e.Placeholder : null;
         var drawText = placeholder ?? shown;
-        using (var tf = TextFont.Create(drawText.Length > 0 ? drawText : "가", 18f, weight: 400))
+        using (var tf = TextFont.Create(drawText.Length > 0 ? drawText : "가", 18f, weight: Roles.Weight("regular")))
         {
             var tw = shown.Length > 0 ? tf.MeasureText(shown) : 0f;
             var x = Math.Min(textArea.Left, textArea.Right - 4f - tw); // 넘치면 끝이 보이게
@@ -389,7 +389,7 @@ internal sealed class SoftKeyboard
             var size = label.Length == 1 && label[0] is >= 'ㄱ' and <= 'ㆎ' ? 24f
                 : label is "±" ? 22f
                 : k.Special ? 15f : 19f;
-            using var lf = TextFont.Create(label, size, weight: isDone ? 700 : 400);
+            using var lf = TextFont.Create(label, size, weight: isDone ? Roles.Weight("bold") : Roles.Weight("regular"));
             using var lt = new SKPaint { IsAntialias = true, Color = k.Enabled ? ink : ink.WithAlpha(0x60) };
             canvas.DrawText(label, k.Rect.MidX, Baseline(k.Rect, lf), SKTextAlign.Center, lf, lt);
         }

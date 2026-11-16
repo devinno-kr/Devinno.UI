@@ -1,3 +1,4 @@
+using Devinno.UI.Styling;
 using Devinno.UI.Interaction;
 using Devinno.UI.Layout;
 using Devinno.UI.Text;
@@ -109,7 +110,7 @@ public sealed partial class Painter
         if (!string.IsNullOrEmpty(box.KnobUnit))
             label += " " + box.KnobUnit;
 
-        using var font = TextFont.Create(label, MathF.Max(11f, radius * 0.34f), weight: 700);
+        using var font = TextFont.Create(label, MathF.Max(Roles.Font("caption"), radius * 0.34f), weight: Roles.Weight("bold"));
         using var tp = new SKPaint { IsAntialias = true, Color = ink };
         var baseline = cy - (font.Metrics.Ascent + font.Metrics.Descent) / 2f;
         canvas.DrawText(label, cx, baseline, SKTextAlign.Center, font, tp);

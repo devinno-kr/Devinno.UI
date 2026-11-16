@@ -1,3 +1,4 @@
+using Devinno.UI.Styling;
 using Devinno.UI.Interaction;
 using Devinno.UI.Layout;
 using Devinno.UI.Text;
@@ -44,7 +45,7 @@ public sealed partial class Painter
                     ?? box.KnobValue.ToString("F" + KnobBinder.Decimals(box.KnobStep), System.Globalization.CultureInfo.InvariantCulture);
         if (!string.IsNullOrEmpty(box.KnobUnit))
             label += " " + box.KnobUnit;
-        using var font = TextFont.Create(label, 13f, weight: 700);
+        using var font = TextFont.Create(label, Roles.Font("label"), weight: Roles.Weight("bold"));
         using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text").WithAlpha(a) };
         var mid = -(font.Metrics.Ascent + font.Metrics.Descent) / 2f;
         if (SliderMetrics.Vertical(box))

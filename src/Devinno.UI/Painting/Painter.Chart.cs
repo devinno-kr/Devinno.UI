@@ -1,3 +1,4 @@
+using Devinno.UI.Styling;
 using System.Globalization;
 using Devinno.UI.Layout;
 using Devinno.UI.Text;
@@ -68,7 +69,7 @@ public sealed partial class Painter
         if (v.Length == 0)
             return;
         var r = box.Rect;
-        using var font = TextFont.Create(string.Concat(box.ChartLabels) + "0123456789", 12f, weight: 400);
+        using var font = TextFont.Create(string.Concat(box.ChartLabels) + "0123456789", Roles.Font("meta"), weight: Roles.Weight("regular"));
         var labelH = font.Spacing + 4f;
         var top = r.Top + (box.ShowValue ? font.Spacing + 4f : 4f);
         var bottom = r.Bottom - labelH;
@@ -165,7 +166,7 @@ public sealed partial class Painter
             canvas.DrawCircle(c, radius * box.ChartInner, p);
             if (box.ShowValue && total > 0) // 도넛 가운데 합계
             {
-                using var big = TextFont.Create("0123456789", MathF.Max(12f, radius * box.ChartInner * 0.5f), weight: 700);
+                using var big = TextFont.Create("0123456789", MathF.Max(Roles.Font("meta"), radius * box.ChartInner * 0.5f), weight: Roles.Weight("bold"));
                 using var bp = new SKPaint { IsAntialias = true, Color = ThemeColor("text") };
                 canvas.DrawText(ChartNumber(total, box), c.X, c.Y - (big.Metrics.Ascent + big.Metrics.Descent) / 2f, SKTextAlign.Center, big, bp);
             }
@@ -173,7 +174,7 @@ public sealed partial class Painter
 
         if (!legend)
             return;
-        using var font = TextFont.Create(string.Concat(box.ChartLabels) + "0123456789%", 12f, weight: 400);
+        using var font = TextFont.Create(string.Concat(box.ChartLabels) + "0123456789%", Roles.Font("meta"), weight: Roles.Weight("regular"));
         var lx = r.Left + size + 12f;
         var rows = v.Length;
         var lineH = font.Spacing + 6f;

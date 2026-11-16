@@ -74,7 +74,7 @@ public sealed partial class Painter
         // 단위(한 줄만) — 오른쪽, 흐린 색
         if (!box.InputMultiline && box.Unit is { Length: > 0 } unit)
         {
-            using var uf = TextFont.Create(unit, st.FontSize, weight: 400);
+            using var uf = TextFont.Create(unit, st.FontSize, weight: Roles.Weight("regular"));
             using var up = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted") };
             canvas.DrawText(unit, content.Right, Baseline(content, uf), SKTextAlign.Right, uf, up);
             content.Right -= uf.MeasureText(unit) + 6f;

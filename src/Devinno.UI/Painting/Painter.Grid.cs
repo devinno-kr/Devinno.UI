@@ -525,7 +525,7 @@ public sealed partial class Painter
             if (k >= 0 && g.Sort.Count > 1)
             {
                 var num = (k + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
-                using var nf = TextFont.Create(num, 10f, weight: 700);
+                using var nf = TextFont.Create(num, 10f, weight: Roles.Weight("bold"));
                 var nx = iconX - 9f - nf.MeasureText(num);
                 canvas.DrawText(num, nx, Baseline(cell, nf), SKTextAlign.Left, nf, ip);
                 textRight = nx - 3f;
@@ -585,9 +585,9 @@ public sealed partial class Painter
     {
         public GridFonts(float cellSize, float headerSize)
         {
-            Cell = new Slot(cellSize, weight: 400);
-            CellBold = new Slot(cellSize, weight: 700);
-            Header = new Slot(headerSize, weight: 700);
+            Cell = new Slot(cellSize, weight: Roles.Weight("regular"));
+            CellBold = new Slot(cellSize, weight: Roles.Weight("bold"));
+            Header = new Slot(headerSize, weight: Roles.Weight("bold"));
         }
 
         public Slot Cell { get; }

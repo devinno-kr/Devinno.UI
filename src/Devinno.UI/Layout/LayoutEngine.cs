@@ -78,6 +78,7 @@ public sealed partial class LayoutEngine
     public LayoutBox Layout(ElementNode root, object? vm, float width, float height,
         ComponentRegistry? registry = null)
     {
+        using var roles = Roles.Enter(_theme); // 배치 동안 역할 값(굵기·글자 크기 …)은 이 테마에서
         _sheet = StyleSheet.Parse((_theme ?? DvTheme.Default).Stylesheet);
         if (registry is not null) // 컴포넌트 정의 안 DvStyle — 화면 DvStyle 보다 먼저(같은 클래스는 화면 쪽이 이김)
             foreach (var def in registry.Definitions)

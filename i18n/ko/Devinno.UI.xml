@@ -4860,7 +4860,14 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <summary>천천히 시작하고 천천히 끝남(<c>ease-in-out</c>).</summary>
         </member><member name="M:Devinno.UI.Styling.EasingMath.Apply(Devinno.UI.Styling.Easing,System.Single)" en-hash="18d2983651741645">
             <summary>진행률 x(0~1) → 곡선 값(0~1). CSS cubic-bezier 를 뉴턴법으로 푼다.</summary>
-        </member><member name="T:Devinno.UI.Styling.StyleParser" en-hash="25ae71ad2b8e1447">
+        </member><member name="T:Devinno.UI.Styling.Roles" en-hash="4825d7d2ccfc2a45"><summary>
+            내장 그리기의 역할 값 — 글자 굵기·작은 글자 크기·선 두께·투명도를 그리기 코드의 숫자가 아니라 테마의 역할 토큰
+            (<c>weight.*</c>, <c>font.*</c>, <c>stroke.*</c>, <c>alpha.*</c> …)에서 읽습니다.
+            </summary>
+            <remarks>
+            테마는 지금 배치·그리기 중인 것(<see cref="F:Devinno.UI.Styling.Roles.Ambient" />, 배치 엔진과 Painter 가 그 스레드에 정함)이고,
+            그 밖에서는 <see cref="P:Devinno.UI.Styling.DvTheme.Default" /> 입니다. 값은 테마마다 캐시합니다(테마는 불변).
+            </remarks></member><member name="F:Devinno.UI.Styling.Roles.Ambient" en-hash="cd5cbb8ceb9fa916"><summary>이 스레드에서 진행 중인 배치·그리기의 테마. 한 번의 배치·그리기는 UI 스레드 하나라고 가정합니다.</summary></member><member name="M:Devinno.UI.Styling.Roles.Number(System.String)" en-hash="ba14ca67c7602f8e"><summary>지금 테마의 숫자 역할 토큰(없으면 경고와 함께 0).</summary></member><member name="M:Devinno.UI.Styling.Roles.Weight(System.String)" en-hash="f208d56c6665cfa2"><summary>역할 <c>weight.{role}</c> 의 글자 굵기(<c>regular</c>, <c>medium</c>, <c>strong</c>, <c>bold</c>).</summary></member><member name="M:Devinno.UI.Styling.Roles.Font(System.String)" en-hash="aac1604a199cff5d"><summary>역할 <c>font.{role}</c> 의 글자 크기(<c>caption</c>, <c>meta</c>, <c>label</c>, <c>body</c> …).</summary></member><member name="M:Devinno.UI.Styling.Roles.Stroke(System.String)" en-hash="f455f3d6bd184341"><summary>역할 <c>stroke.{role}</c> 의 선 두께(<c>hairline</c>, <c>outline</c>, <c>emphasis</c>, <c>focus</c>).</summary></member><member name="M:Devinno.UI.Styling.Roles.Alpha(System.String)" en-hash="50fbc5ec1823459f"><summary>투명도 역할(<c>alpha.selected</c>, <c>overlay.hover</c>, <c>opacity.disabled</c> …)을 0–255 바이트로.</summary></member><member name="P:Devinno.UI.Styling.Roles.Look" en-hash="c9414a7e1224be8d"><summary>지금 테마의 스타일 스위치.</summary></member><member name="M:Devinno.UI.Styling.Roles.Enter(Devinno.UI.Styling.DvTheme)" en-hash="9b65d2249ca46f8a"><summary>한 번의 배치·그리기 동안 <see cref="F:Devinno.UI.Styling.Roles.Ambient" /> 를 정하고, 끝나면(Dispose) 이전 값으로 되돌립니다.</summary></member><member name="T:Devinno.UI.Styling.StyleParser" en-hash="25ae71ad2b8e1447">
             <summary>
             CSS 형태의 선언 목록 문자열(<c>key: value; key: value</c>)을 <see cref="T:Devinno.UI.Styling.ComputedStyle" /> 로 해석합니다.
             </summary>

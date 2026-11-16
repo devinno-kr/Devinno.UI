@@ -1,3 +1,4 @@
+using Devinno.UI.Styling;
 using Devinno.UI.Layout;
 using Devinno.UI.Text;
 using SkiaSharp;
@@ -35,7 +36,7 @@ public sealed partial class Painter
             canvas.DrawLine(x0, cy, x1, cy, p);
         }
 
-        using var num = TextFont.Create("0123456789", 13f, weight: 700);
+        using var num = TextFont.Create("0123456789", Roles.Font("label"), weight: Roles.Weight("bold"));
         for (var i = 0; i < names.Length; i++)
         {
             var step = i + 1;
@@ -70,7 +71,7 @@ public sealed partial class Painter
 
             // 이름 — 칸 폭에 맞춰 줄임표, 진행 중은 굵게
             var name = names[i];
-            using var font = TextFont.Create(name, 12f, weight: now ? 700 : 400);
+            using var font = TextFont.Create(name, Roles.Font("meta"), weight: now ? Roles.Weight("bold") : Roles.Weight("regular"));
             var shown = font.MeasureText(name) > cell - 6f ? Ellipsize(name, cell - 6f, font) : name;
             ink.Color = step > current ? muted : text;
             canvas.DrawText(shown, cx, cy + dot / 2f + 8f - font.Metrics.Ascent, SKTextAlign.Center, font, ink);

@@ -75,7 +75,10 @@ public sealed partial class Painter
     /// <param name="state">The hover/press target boxes. If <see langword="null"/>, painting uses no state styles.</param>
     /// <param name="timestampMs">Paint time (ms). Used only to set the blink phase of lamps and alarms. The same time produces the same image, so pass a fixed value for screen captures and tests.</param>
     public void Paint(SKCanvas canvas, LayoutBox box, object? vm, InteractionState? state = null, long timestampMs = 0)
-        => PaintAt(canvas, box, vm, state, timestampMs, 17);
+    {
+        using var roles = Roles.Enter(_theme); // 그리기 동안 역할 값(굵기·선 두께 …)은 이 테마에서
+        PaintAt(canvas, box, vm, state, timestampMs, 17);
+    }
 
     /// <summary>CSS <c>transition</c> state (held by the surface between frames). If null, the chosen style is used as is, without transitions.</summary>
     internal MotionStore? MotionState { get; set; }
@@ -313,7 +316,7 @@ public sealed partial class Painter
             if (box.ShowValue) // show-value(기본 참, D2), 값 + unit(한 칸 띄고) — 호 두 끝 사이에 맞춘 크기
             {
                 var label = FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
-                using var font = TextFont.Create(label, WidgetMetrics.GaugeValueFont(gm, label), weight: 700);
+                using var font = TextFont.Create(label, WidgetMetrics.GaugeValueFont(gm, label), weight: Roles.Weight("bold"));
                 var valColor = ZoneColorAt(box) ?? needleColor;
                 using var tp = new SKPaint { IsAntialias = true, Color = valColor };
                 canvas.DrawText(label, cx, cy + gm.ValueBaseline, SKTextAlign.Center, font, tp);
@@ -405,7 +408,7 @@ public sealed partial class Painter
                 : new List<(float From, DvColor Color)>();
             // 레이아웃: [벽] 3px 간격 · 6px 눈금 · 4px 간격 · 숫자
             float tickGap = tm.TickGap, tickLen = tm.TickLen, labelGap = tm.LabelGap;
-            using var markFont = TextFont.Create("0", tm.MarkFont, weight: 400);
+            using var markFont = TextFont.Create("0", tm.MarkFont, weight: Roles.Weight("regular"));
             var gutter = marks.Count == 0
                 ? 0f
                 : marks.Max(m => markFont.MeasureText(m.From.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)))
@@ -521,7 +524,7 @@ public sealed partial class Painter
             // 칩 글씨는 탱크 크기에 비례, 몸통 폭을 넘으면 폭에 맞춰 줄인다(최소 9)
             var chipPad = 16f * tm.Scale;
             var chipSize = tm.ChipFont;
-            using (var probe = TextFont.Create(label, chipSize, weight: 700))
+            using (var probe = TextFont.Create(label, chipSize, weight: Roles.Weight("bold")))
             {
                 var need = probe.MeasureText(label) + chipPad;
                 var avail = body.Width - 4f * tm.Scale;
@@ -529,7 +532,7 @@ public sealed partial class Painter
                     chipSize = MathF.Max(9f, chipSize * avail / need);
             }
 
-            using (var font = TextFont.Create(label, chipSize, weight: 700))
+            using (var font = TextFont.Create(label, chipSize, weight: Roles.Weight("bold")))
             {
                 var tw = font.MeasureText(label);
                 var chipW = tw + chipPad * chipSize / tm.ChipFont;
@@ -616,7 +619,7 @@ public sealed partial class Painter
     {
         if (box.VideoError is { Length: > 0 } error)
         {
-            using var font = TextFont.Create(error, 13f, weight: 400);
+            using var font = TextFont.Create(error, Roles.Font("label"), weight: Roles.Weight("regular"));
             using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted") };
             canvas.Save();
             canvas.ClipRect(rect);
