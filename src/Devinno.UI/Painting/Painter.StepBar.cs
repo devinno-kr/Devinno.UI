@@ -8,7 +8,7 @@ namespace Devinno.UI.Painting;
 public sealed partial class Painter
 {
     // DvStepBar — 단계마다 같은 폭 칸, 가운데 점(지름 28) + 아래 이름. 점 사이는 선으로 잇는다.
-    // 끝난 단계 = primary 채움 + ✓, 진행 중 = primary 테두리 + 번호(굵게), 대기 = border-strong 테두리 + 흐린 번호.
+    // 끝난 단계 = primary 채움 + ✓, 진행 중 = primary 테두리(stroke.emphasis) + 번호(strong), 대기 = border-strong 테두리 + 흐린 번호.
     // 선은 양쪽 점이 모두 끝났거나(진행 중 포함) 지나간 구간이면 primary, 아니면 border.
     private void PaintStepBar(SKCanvas canvas, LayoutBox box)
     {
@@ -25,7 +25,8 @@ public sealed partial class Painter
         var text = ThemeColor("text");
         var muted = ThemeColor("text-muted");
 
-        using var p = new SKPaint { IsAntialias = true, StrokeWidth = 3f };
+        var emphasis = Roles.Stroke("emphasis"); // 연결선·진행 중 링(H3)
+        using var p = new SKPaint { IsAntialias = true, StrokeWidth = emphasis };
         for (var i = 0; i + 1 < names.Length; i++)
         {
             var x0 = rect.Left + cell * (i + 0.5f) + dot / 2f + 4f;
@@ -36,7 +37,7 @@ public sealed partial class Painter
             canvas.DrawLine(x0, cy, x1, cy, p);
         }
 
-        using var num = TextFont.Create("0123456789", Roles.Font("label"), weight: Roles.Weight("bold"));
+        using var num = TextFont.Create("0123456789", Roles.Font("label"), weight: Roles.Weight("strong"));
         for (var i = 0; i < names.Length; i++)
         {
             var step = i + 1;
@@ -50,7 +51,7 @@ public sealed partial class Painter
             if (!done)
             {
                 p.Style = SKPaintStyle.Stroke;
-                p.StrokeWidth = now ? 3f : Roles.Stroke("outline");
+                p.StrokeWidth = now ? emphasis : Roles.Stroke("outline");
                 p.Color = now ? primary : border;
                 canvas.DrawCircle(cx, cy, dot / 2f - p.StrokeWidth / 2f, p);
             }
@@ -71,7 +72,7 @@ public sealed partial class Painter
 
             // 이름 — 칸 폭에 맞춰 줄임표, 진행 중은 굵게
             var name = names[i];
-            using var font = TextFont.Create(name, Roles.Font("meta"), weight: now ? Roles.Weight("bold") : Roles.Weight("regular"));
+            using var font = TextFont.Create(name, Roles.Font("meta"), weight: now ? Roles.Weight("strong") : Roles.Weight("regular"));
             var shown = font.MeasureText(name) > cell - 6f ? Ellipsize(name, cell - 6f, font) : name;
             ink.Color = step > current ? muted : text;
             canvas.DrawText(shown, cx, cy + dot / 2f + 8f - font.Metrics.Ascent, SKTextAlign.Center, font, ink);

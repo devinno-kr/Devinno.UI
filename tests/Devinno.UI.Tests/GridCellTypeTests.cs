@@ -130,13 +130,13 @@ public class GridCellTypeTests
     }
 
     [Fact]
-    public void Button_uses_variant_and_dims_when_disabled()
+    public void Button_uses_variant_and_is_hidden_when_disabled()
     {
         var vm = new Vm();
         vm.Rows[1].AckDisabled = true;
         using var bmp = Render(Surface(vm));
         Assert.Equal(Token("primary"), bmp.GetPixel(188, (int)Y(0)));
-        Assert.Equal(Token("surface-raised"), bmp.GetPixel(188, (int)Y(1)));
+        Assert.Equal(Token("grid-row-alt"), bmp.GetPixel(188, (int)Y(1))); // 할 수 없는 동작 = 버튼 없음(행 배경)
     }
 
     // ── 입력

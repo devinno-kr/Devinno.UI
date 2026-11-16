@@ -69,7 +69,7 @@ internal sealed class GridColumn
             return GridFilterKind.Values;
         return GridFilterKind.Text;
     }
-    /// <summary>Button <c>cell-disabled</c> — an item bool property; when true, the button is dimmed and does nothing.</summary>
+    /// <summary>Button <c>cell-disabled</c> — an item bool property; when true, that row has no button (not drawn, does nothing).</summary>
     public FieldReader? CellDisabled { get; init; }
 
     /// <summary>Whether the button of <paramref name="item"/> is disabled (<c>cell-disabled</c> reads <see langword="true"/>; anything else = enabled).</summary>

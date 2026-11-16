@@ -47,6 +47,8 @@ public sealed class TrendChannelData
     public string? Label { get; init; }
     /// <summary>Unit appended after the latest value in the legend (<c>unit</c>). <see langword="null"/> if none.</summary>
     public string? Unit { get; init; }
+    /// <summary>Number format of the latest value in the legend (<c>format</c>; same rule as <c>format</c> on other widgets: a .NET numeric format, InvariantCulture). <see langword="null"/> = integers as integers, otherwise up to 3 decimals.</summary>
+    public string? Format { get; init; }
     /// <summary>Line color (<c>color</c>; <c>#색</c> or <c>token(이름)</c> resolved against the theme). If not set or not resolvable, the theme token <c>chart-1</c>…<c>chart-6</c> in channel order (built-in values: <see cref="TrendSpec.Palette"/>).</summary>
     public required SKColor Color { get; init; }
     /// <summary>Samples to draw: the <c>points</c> binding value if present, otherwise <see cref="TrendBuffer.Snapshot"/> of the <c>source</c> buffer, or an empty array if neither exists.</summary>

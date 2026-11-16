@@ -112,8 +112,9 @@ public sealed partial class LayoutEngine
             : !string.IsNullOrEmpty(box.OnAck);
         if (node.Tag != "DvAlarmList")
             return;
-        var rh = ToFloat(r, "row-height", 36f); // 행 높이는 목록만
-        box.AlarmRowHeight = rh > 0 ? rh : 36f;
+        var row = Styling.Roles.Number("row.md"); // 행 높이는 목록만 — 기본 = 행 단계 row.md(그리드·목록·트리와 같음)
+        var rh = ToFloat(r, "row-height", row);
+        box.AlarmRowHeight = rh > 0 ? rh : row;
     }
 
     /// <summary>
@@ -204,6 +205,7 @@ public sealed partial class LayoutEngine
                 Name = name,
                 Label = cr.Text("label"),
                 Unit = cr.Text("unit"),
+                Format = cr.Text("format"),
                 Color = color,
                 Points = points
             });

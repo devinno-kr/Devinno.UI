@@ -62,7 +62,7 @@ public sealed partial class Painter
         canvas.DrawCircle(X(v.Length - 1), Y(v[^1]), 3f, lp);
     }
 
-    // DvBarChart — 세로 막대(색 = tone-{tone}), 아래 이름, 바닥선(값 0 또는 y-min). show-value 면 막대 위 값.
+    // DvBarChart — 세로 막대(색 = tone-{tone}, 바닥선 반대쪽 모서리만 radius.xs), 아래 이름, 바닥선(값 0 또는 y-min). show-value 면 막대 위 값(고정폭 숫자).
     private void PaintBarChart(SKCanvas canvas, LayoutBox box)
     {
         var v = box.ChartValues;
@@ -86,6 +86,9 @@ public sealed partial class Painter
         canvas.DrawLine(r.Left, baseY, r.Right, baseY, axis);
 
         using var bp = new SKPaint { IsAntialias = true, Color = color };
+        using var round = new SKRoundRect();
+        var rr = new SKPoint(Roles.Number("radius.xs"), Roles.Number("radius.xs"));
+        SKPoint[] upRadii = [rr, rr, SKPoint.Empty, SKPoint.Empty], downRadii = [SKPoint.Empty, SKPoint.Empty, rr, rr];
         using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted") };
         using var vp = new SKPaint { IsAntialias = true, Color = ThemeColor("text") };
         for (var i = 0; i < v.Length; i++)
@@ -93,7 +96,8 @@ public sealed partial class Painter
             var cx = r.Left + cell * (i + 0.5f);
             var y = Y(v[i]);
             var bar = new SKRect(cx - barW / 2f, MathF.Min(y, baseY), cx + barW / 2f, MathF.Max(y, baseY));
-            canvas.DrawRoundRect(bar, 3f, 3f, bp);
+            round.SetRectRadii(bar, y <= baseY ? upRadii : downRadii); // 바닥선에 붙은 쪽은 각지게
+            canvas.DrawRoundRect(round, bp);
 
             if (i < box.ChartLabels.Length && box.ChartLabels[i] is { Length: > 0 } name)
             {
@@ -101,7 +105,7 @@ public sealed partial class Painter
                 canvas.DrawText(shown, cx, r.Bottom - 4f - font.Metrics.Descent, SKTextAlign.Center, font, tp);
             }
             if (box.ShowValue)
-                canvas.DrawText(ChartNumber(v[i], box), cx, bar.Top - 4f - font.Metrics.Descent, SKTextAlign.Center, font, vp);
+                TextFont.DrawNumber(canvas, ChartNumber(v[i], box), cx, bar.Top - 4f - font.Metrics.Descent, SKTextAlign.Center, font, vp);
         }
     }
 
@@ -166,9 +170,9 @@ public sealed partial class Painter
             canvas.DrawCircle(c, radius * box.ChartInner, p);
             if (box.ShowValue && total > 0) // 도넛 가운데 합계
             {
-                using var big = TextFont.Create("0123456789", MathF.Max(Roles.Font("meta"), radius * box.ChartInner * 0.5f), weight: Roles.Weight("bold"));
+                using var big = TextFont.Create("0123456789", MathF.Max(Roles.Font("meta"), radius * box.ChartInner * 0.5f), weight: Roles.Weight("strong"));
                 using var bp = new SKPaint { IsAntialias = true, Color = ThemeColor("text") };
-                canvas.DrawText(ChartNumber(total, box), c.X, c.Y - (big.Metrics.Ascent + big.Metrics.Descent) / 2f, SKTextAlign.Center, big, bp);
+                TextFont.DrawNumber(canvas, ChartNumber(total, box), c.X, c.Y - (big.Metrics.Ascent + big.Metrics.Descent) / 2f, SKTextAlign.Center, big, bp);
             }
         }
 
@@ -179,6 +183,8 @@ public sealed partial class Painter
         var rows = v.Length;
         var lineH = font.Spacing + 6f;
         var ly = r.MidY - rows * lineH / 2f + lineH / 2f;
+        // 범례 줄 = 트렌드 범례와 같은 문법: 이름(흐림) + 값(strong, 고정폭 숫자)
+        using var vf = TextFont.Create("0123456789%", Roles.Font("meta"), weight: Roles.Weight("strong"));
         using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text") };
         using var mp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted") };
         for (var i = 0; i < rows; i++, ly += lineH)
@@ -188,13 +194,13 @@ public sealed partial class Painter
             p.Color = ThemeColor(Layout.LayoutEngine.ChartToken(i));
             canvas.DrawCircle(lx + 5f, ly, 5f, p);
             var amount = box.ShowValue ? ChartNumber(v[i], box) : total > 0 && v[i] > 0 ? $"{v[i] / total * 100:0}%" : "0%";
-            var aw = font.MeasureText(amount);
+            var aw = TextFont.MeasureNumber(amount, vf);
             var name = i < box.ChartLabels.Length ? box.ChartLabels[i] : "";
             var room = r.Right - (lx + 16f) - aw - 8f;
             var shown = font.MeasureText(name) > room ? Ellipsize(name, MathF.Max(room, 0f), font) : name;
             var baseline = ly - (font.Metrics.Ascent + font.Metrics.Descent) / 2f;
-            canvas.DrawText(shown, lx + 16f, baseline, SKTextAlign.Left, font, tp);
-            canvas.DrawText(amount, r.Right, baseline, SKTextAlign.Right, font, mp);
+            canvas.DrawText(shown, lx + 16f, baseline, SKTextAlign.Left, font, mp);
+            TextFont.DrawNumber(canvas, amount, r.Right, baseline, SKTextAlign.Right, vf, tp);
         }
     }
 }

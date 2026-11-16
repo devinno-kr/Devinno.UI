@@ -86,7 +86,7 @@ internal static class AttributeCheck
         ["DvBarChart"] = ["items", "item-value", "item-text", "tone", "y-min", "y-max", "show-value", "format"],
         ["DvPieChart"] = ["items", "item-value", "item-text", "show-value", "format", "inner-radius"],
         ["DvTrend"] = ["source", "window", "end", "y-min", "y-max", "area", "smooth"],
-        ["DvTrendChannel"] = ["name", "label", "unit", "color", "points"],
+        ["DvTrendChannel"] = ["name", "label", "unit", "format", "color", "points"],
         ["DvAlarmBanner"] = ["items", "onack", "show-ack", "comm-alarm"],
         ["DvAlarmList"] = ["items", "onack", "show-ack", "row-height"],
 

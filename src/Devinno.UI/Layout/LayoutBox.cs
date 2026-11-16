@@ -254,8 +254,8 @@ public sealed class LayoutBox
     public string? CommAlarm { get; set; }
     /// <summary>Acknowledge (ACK) command of <c>DvAlarmBanner</c>/<c>DvAlarmList</c> (raw <c>onack</c> attribute). <see langword="null"/> if absent.</summary>
     public string? OnAck { get; set; }
-    /// <summary><c>DvAlarmList</c> row height (px, <c>row-height</c>, default 36). Values of 0 or less are replaced with the default.</summary>
-    public float AlarmRowHeight { get; set; } = 36f;
+    /// <summary><c>DvAlarmList</c> row height (px, <c>row-height</c>, default = the theme <c>row.md</c>, 40 in the built-in themes). Values of 0 or less are replaced with the default.</summary>
+    public float AlarmRowHeight { get; set; } = 40f;
     /// <summary>Whether to show the acknowledge (ACK) button. If <c>show-ack</c> is set, its value is used (the true/false rule; other text = shown + warning); otherwise shown only when <see cref="OnAck"/> is present.</summary>
     public bool AlarmShowAck { get; set; }
     /// <summary><c>DvProcess</c> process diagram model (equipment, lines, arrange result). <see langword="null"/> for other tags.</summary>

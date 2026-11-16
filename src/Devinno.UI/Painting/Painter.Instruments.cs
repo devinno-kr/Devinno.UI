@@ -177,8 +177,10 @@ public sealed partial class Painter
     // 값 + 단위 — %·‰·° 로 시작하는 단위는 붙여 씀(40%, 20°C), 그 밖에는 한 칸 띄움(3 bar)
     internal static string WithUnit(string value, string? unit)
         => string.IsNullOrEmpty(unit) ? value
-         : unit[0] is '%' or '‰' or '°' ? value + unit
+         : UnitJoinsValue(unit) ? value + unit
          : value + " " + unit;
+
+    internal static bool UnitJoinsValue(string unit) => unit.Length > 0 && unit[0] is '%' or '‰' or '°';
 
     // 비활성 = 컨트롤 전체를 opacity.disabled 로 한 번에 흐리게(CSS opacity) — 손잡이·막대처럼 겹친 부분이 서로 비치지 않는다.
     // 돌려받은 저장 번호로 RestoreToCount. 활성이면 아무것도 하지 않음.

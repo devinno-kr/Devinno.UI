@@ -251,10 +251,13 @@ public class DesignSystemTests
     {
         var root = Lay("<DvScreen><DvStatusItem label=\"P1\" state=\"{S}\" status=\"정지\"/></DvScreen>",
             new { S = "fault" }, DvTheme.Dark);
-        Assert.Equal(Hex("#fca5a5"), ByText(root, "정지").Style.Color);
+        // 상태 색 표시는 램프 하나(한 행에 색 하나) — 상태 글자는 흐린 글자
+        Assert.Equal("fault", All(root).Single(b => b.Node.Tag == "DvLamp").LampState);
+        Assert.True(DvTheme.Dark.TryGet("text-muted", out var muted));
+        Assert.Equal(Hex(muted), ByText(root, "정지").Style.Color);
     }
 
-    // 모르는 state 단어 = 기본(off) + 경고 한 번 — 램프와 상태 칩이 같은 off 색(칩이 마젠타가 되지 않는다)
+    // 모르는 state 단어 = 기본(off) + 경고 한 번 — 램프가 off 색(마젠타가 되지 않는다), 상태 글자는 색 없는 흐린 글자
     [Theory]
     [InlineData("Zq7Bogus")]
     [InlineData("run-fg")]
@@ -275,10 +278,9 @@ public class DesignSystemTests
         Assert.Contains("off", cap.Lines[0]);
         Assert.Equal("off", All(root).Single(b => b.Node.Tag == "DvLamp").LampState);
         var chip = ByText(root, "정지");
-        Assert.True(DvTheme.Dark.TryGet("state-off-fg", out var fg));
-        Assert.True(DvTheme.Dark.TryGet("state-off-soft", out var soft));
-        Assert.Equal(Hex(fg), chip.Style.Color);
-        Assert.Equal(Hex(soft), chip.Style.Background);
+        Assert.True(DvTheme.Dark.TryGet("text-muted", out var muted));
+        Assert.Equal(Hex(muted), chip.Style.Color);
+        Assert.Null(chip.Style.Background);
     }
 
     [Fact]

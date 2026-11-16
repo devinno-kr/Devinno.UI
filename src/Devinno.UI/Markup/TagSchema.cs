@@ -331,6 +331,7 @@ internal static class TagSchema
             new("name", AttrKind.Text, Note: "the source buffer key; absent = ch{index}"),
             new("label", AttrKind.Text, Note: "legend text; absent = name"),
             new("unit", AttrKind.Text, Note: "legend only"),
+            new("format", AttrKind.Text, Note: "the legend latest value; " + FormatRule),
             new("color", AttrKind.Color, Note: "absent = palette[index]; " + ColorRule + " (the palette color)"),
             new("points", AttrKind.Items, Note: "an IEnumerable<TrendPoint> that wins over source; any other type = from source by name"),
         ],
@@ -342,7 +343,7 @@ internal static class TagSchema
         ["DvAlarmList"] =
         [
             .. AlarmCommon(),
-            new("row-height", AttrKind.Number, "36", Note: "px; <= 0 = 36; " + NumberRule + " (the geometry keeps at least 24)"),
+            new("row-height", AttrKind.Number, "40", Note: "px; absent or <= 0 = the theme row.md (40); " + NumberRule + " (the geometry keeps at least 24)"),
         ],
 
         // 그리드 (2.5)

@@ -269,8 +269,8 @@ Token groups:
 | Control height | `control.sm` 32 · `control.md` 40 · `control.lg` 48 · `row.md` 40 · `row.lg` 48 |
 | Translucency | `overlay.hover` 0.08 · `overlay.press` 0.12 · `opacity.disabled` 0.5 · `alpha.selected` 0.15 · `alpha.soft` 0.2 · `alpha.dim` 0.38 |
 | Color role | `selection` `selection-fg` `value-input` `value-read` `normal` (each points at another token, e.g. `token(primary)`) |
-| Style switch | `look.texture` `flat`/`rich` (gloss, gradients, shadows on instruments) · `look.normal-color` `on`/`off` · `look.selection` `quiet`/`strong` |
-| Alarm icon | `alarm-critical-icon` `alarm-major-icon` `alarm-minor-icon` (icon name; empty = color and text only) |
+| Style switch | `look.texture` `flat`/`rich` (gloss, gradients and shadows on instruments; `flat` also removes the shadow of `.card`, `.stat`, `.dialog` and the selected segment) · `look.normal-color` `on`/`off` (`off` = the calm alarm banner is neutral instead of green) · `look.selection` `quiet`/`strong` |
+| Alarm icon | `alarm-critical-icon` `alarm-major-icon` `alarm-minor-icon` (icon name such as `fa-bell`; drawn before the priority text in the severity chip of `DvAlarmBanner` and `DvAlarmList`; empty = color and text only) |
 | Instrument | `gauge-track` `gauge-needle` `gauge-needle-tip` `gauge-tick` |
 | Lamp | `lamp-off` (the off color of `DvLamp` and grid lamp cells) |
 | Tank | `tank-empty-top` `tank-empty-bottom` `tank-frame` `tank-chip-bg` `tank-chip-fg` `tank-fill` (liquid when no `alarm-zones` zone applies) |

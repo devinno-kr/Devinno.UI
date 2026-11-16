@@ -11,7 +11,7 @@ How to read the tables: `bound` = the attribute takes a binding (`{X}`). Every t
 
 - **Value text**: integers as integers, otherwise one decimal place (gauge, ring, progress bar, tank, chart numbers; the slider uses the decimals of `step`). A live value then switches between "6" and "6.2" and the text changes width.
 - **`format`** fixes the digits: a .NET format string (InvariantCulture, bindable) — `format="0.0"` → "6.0". It means the same everywhere a number is shown as text (gauge, ring, progress bar, tank, slider, bar/pie chart numbers, `DvInput`, grid columns, summaries). A format not valid for the value (`X` on a real number) shows the default text + Trace warning.
-- **`unit`** is drawn after the value text with one space (`40 %`) on the gauge, ring, progress bar, tank, knob and slider. `DvInput` keeps it at the right edge of the box; trends show it in the legend.
+- **`unit`** is drawn after the value text on the gauge, ring, progress bar, tank, knob and slider: a unit starting with `%`, `‰` or `°` joins the value (`40%`, `20°C`), any other unit follows one space (`3 bar`). `DvInput` keeps it at the right edge of the box; trends show it in the legend.
 - **`show-value`** is honored by every tag that has it: `DvGauge` and `DvRing` show the value by default (`show-value="false"` hides it); `DvProgress`, `DvSlider`, `DvBarChart` and `DvPieChart` hide it by default.
 - **Size scaling**: the internals of gauges, rings, knobs and tanks (arc thickness, needle, value text, chip, zone marks) scale with the widget size (default size = 1×; gauges, rings and knobs use the shorter side; tanks the smaller of width/80 and height/160). Proportions stay right when filling a cell with `grow="1"` or `align="stretch"`.
 - **Range** (`min`/`max` on knob, slider, gauge, ring, progress bar, tank, numeric `DvInput`, grid input cells): user input never produces a value outside — drag and the stepper stop at the bound; a typed or keypad value outside is rejected (error shown). A value from code or the VM is not changed; instruments only draw it clamped.
@@ -36,7 +36,7 @@ A 270° needle instrument.
 | `minor-ticks` | number | `0` | yes | Minor tick interval. Drawn only when `ticks` is set |
 | `show-tick-labels` | bool | `true` | yes | `false` hides tick numbers |
 | `format` | .NET format string | none | yes | Value text digits |
-| `unit` | text | empty | yes | After the value text with one space |
+| `unit` | text | empty | yes | After the value text: `%` `‰` `°…` join it (`40%`), others follow one space (`3 bar`) |
 | `show-value` | bool | `true` | yes | Value text (+ unit) below the needle |
 
 **Behavior**
@@ -66,7 +66,7 @@ A thick arc fill.
 | `max` | number | `100` | yes | As `min` |
 | `alarm-zones` | zone list | none | yes | A zone color wins over `tone` ([alarm-zones](#alarm-zones)) |
 | `tone` | theme word | `info` | yes | Fill `tone-{tone}`. Unknown = `info` + warning |
-| `unit` | text | empty | yes | After the value text with one space |
+| `unit` | text | empty | yes | After the value text: `%` `‰` `°…` join it (`40%`), others follow one space (`3 bar`) |
 | `label` | text | empty | yes | Drawn below the value |
 | `sweep` | number (degrees) | `270` | yes | Clamped to 1..360. `360` = a full circle starting at 12 o'clock |
 | `thickness` | number (px) | 11% of size | yes | Absent or `<= 0` = 11% of the size |
@@ -99,7 +99,7 @@ A progress bar.
 | `tone` | theme word | `info` | yes | Fill `tone-{tone}`. Unknown = `info` + warning |
 | `direction` | `right` `left` `up` `down` | `right` | yes | Fill direction; `up`/`down` = vertical. Unknown = `right` + warning |
 | `show-value` | bool | `false` | yes | Value (+ unit) in the center |
-| `unit` | text | empty | yes | After the value text with one space |
+| `unit` | text | empty | yes | After the value text: `%` `‰` `°…` join it (`40%`), others follow one space (`3 bar`) |
 | `format` | .NET format string | none | yes | Value text digits |
 | `alarm-zones` | zone list | none | yes | A zone color wins over `tone` ([alarm-zones](#alarm-zones)) |
 
@@ -185,7 +185,7 @@ A cylindrical vessel with a liquid level.
 | `min` | number | `0` | yes | `min >= max` = 0..100 + warning |
 | `max` | number | `100` | yes | As `min` |
 | `alarm-zones` | zone list | none | yes | Liquid color per zone ([alarm-zones](#alarm-zones)) |
-| `unit` | text | empty | yes | After the value text with one space |
+| `unit` | text | empty | yes | After the value text: `%` `‰` `°…` join it (`40%`), others follow one space (`3 bar`) |
 | `format` | .NET format string | none | yes | Value chip digits. The chip is always drawn (no `show-value`) |
 | `show-zone-marks` | bool | `true` | yes | `false` hides the zone boundary ticks and numbers on the right; zone colors stay |
 
@@ -311,11 +311,11 @@ A time-series chart for real-time or historical values. Children are `DvTrendCha
 | `end` | `DateTime` binding | latest sample | yes | Time at the right edge. Any other type (`DateTimeOffset`, text) is ignored silently |
 | `y-min` | number | automatic | yes | Vertical range |
 | `y-max` | number | automatic | yes | Vertical range |
-| `area` | bool | `false` | yes | Fill below the line |
+| `area` | bool | `false` | yes | Fill between the line and 0. Drawn only with one channel that has data and only when 0 is inside the vertical range (a fill from another baseline misstates the amount; fills of several channels overlap) |
 | `smooth` | bool | `true` | yes | Curve interpolation. Empty = off |
 
 **Behavior**
-- Default size: 480×240. Grid line color: the `trend-grid` token.
+- Default size: 480×240. Horizontal grid lines only (`trend-grid` token); the time axis has labels without lines. The number of value ticks follows the plot height (gridlines at least 28 px apart, at most 6 ticks).
 - **One vertical axis is shared by all channels.** For values on very different scales (40 ℃ and 4 bar) use two `DvTrend`s, or scale the values when adding them.
 - Real-time: the VM holds a [TrendBuffer](#trendbuffer), adds samples, then calls `Invalidate()`.
 - History: bind an `IEnumerable<TrendPoint>` to a channel's `points` and pin the right edge with `end="{EndTime}"`.
@@ -343,12 +343,13 @@ One line of a `DvTrend` (child element; takes only these attributes + `id`).
 |---|---|---|---|---|
 | `name` | text | `ch0`, `ch1` … | yes | Channel name looked up in the `source` buffer |
 | `label` | text | `name` | yes | Legend name |
-| `unit` | text | empty | yes | Legend only: shown after the latest value. The legend value is rounded to 2 decimals (`1191.03`); there is no `format` here — round the values you add to the buffer for fewer digits |
+| `unit` | text | empty | yes | Legend only: shown smaller and muted after the latest value (`%`, `‰`, `°…` join the value, others follow a small gap) |
+| `format` | .NET numeric format | none | yes | Legend latest value, same rule as `format` on the other widgets (`0.0`). Absent = integers as integers, otherwise up to 3 decimals after rounding to 2. Unusable format = default + warning |
 | `color` | `#RRGGBB`, `token(name)`, `var(--name)` | `chart-1` … `chart-6` in channel order | yes | Unknown token = magenta + warning. Unparsable = that palette color + warning |
 | `points` | `IEnumerable<TrendPoint>` | none | yes | Wins over `source`. Any other type = from `source` by `name` |
 
 **Behavior**
-- The legend shows `label` (absent = `name`) and the latest value + `unit`.
+- The legend shows `label` (absent = `name`, muted), the latest value (tabular digits) and `unit` (smaller, muted).
 
 **Example**
 ```xml
@@ -400,7 +401,8 @@ A one-line bar showing the top unacknowledged alarm and the unacknowledged count
 - Order: unacknowledged → priority → newest. The banner shows the first such alarm and the unacknowledged count.
 - **ACK = pressing the bar.** With `onack` set (and `show-ack` not off), a press anywhere on the banner, the communication-fault strip included, calls `onack` with that representative alarm. There is no ACK button and nothing on the bar marks it as pressable; if operators need a visible ACK control, put a `DvAlarmList` (one ACK button per row) or your own button beside it.
 - With no unacknowledged alarm, a press does nothing.
-- Color tokens: `alarm-critical` `alarm-major` `alarm-minor` (+ `-fg`), `comm-alarm` (+ `comm-alarm-fg` text) ([theme tokens](dvml-style.md#theme-tokens)).
+- Color tokens: `alarm-critical` `alarm-major` `alarm-minor` (+ `-fg`), `comm-alarm` (+ `comm-alarm-fg` text) ([theme tokens](dvml-style.md#theme-tokens)). The bar is the priority color and blinks while unacknowledged; the priority chip on it is drawn inverted (`-fg` fill, priority-color text), with the theme's `alarm-*-icon` before the text when set.
+- No unacknowledged alarm: a calm bar — green tint when the theme's `look.normal-color` is `on`, neutral (`surface-raised`, muted text) when `off`.
 - Asking for confirmation of an ACK is done in the `onack` handler with a message box, not by an attribute ([confirm-before-ACK pattern](dvml-dialogs.md#dialog-patterns)).
 
 **Example**
@@ -422,11 +424,12 @@ A list of alarms with an ACK button per row.
 | `items` | `IEnumerable<AlarmRow>` | none | yes | Any other type = no rows, silently |
 | `onack` | method name | none | no | `M(AlarmRow)` or `M(long id)`. A missing method is silent |
 | `show-ack` | bool | shown when `onack` is set | yes | See Behavior |
-| `row-height` | number (px) | `36` | yes | `<= 0` = 36. The geometry keeps at least 24 |
+| `row-height` | number (px) | theme `row.md` (40) | yes | `<= 0` = `row.md`. The geometry keeps at least 24 |
 
 **Behavior**
 - Default size: 560 × (30 + 5 × `row-height`).
 - Order and `AlarmRow` fields: as in [DvAlarmBanner](#dvalarmbanner).
+- Each row has one priority mark: a chip filled with the priority color (`alarm-*`) and contrast text (`alarm-*-fg`), with the theme's `alarm-*-icon` before the text when set. Unacknowledged rows blink the chip (500 ms, the same phase as the banner and blinking lamps) and show the message bold; acknowledged rows keep the chip color without blinking. The ACK button is a neutral small button.
 - `onack="Ack"` → `public void Ack(AlarmRow row)` or `public void Ack(long id)`; the list calls it with the row whose ACK button was tapped.
 - `show-ack` = show the ACK button. Omitted = shown when `onack` is present. Given = the [bool rule](dvml-language.md#value-bool) with default shown: empty, `false` or `0` = hidden; any other non-bool text = shown + Trace warning. Bindable (show per permission).
 - After an `await` inside a handler the screen redraws automatically.

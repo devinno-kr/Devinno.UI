@@ -114,13 +114,13 @@ public sealed partial class Painter
         {
             if (g.SummaryDirty)
                 GridSummary.Compute(g);
-            // 일반 행과 확실히 구분: 한 단계 진한 배경 + 위쪽 2px 진한 경계 + 굵은 글자 + 요약 행 사이 구분선
+            // 일반 행과 확실히 구분: 한 단계 진한 배경 + 위쪽 진한 hairline 경계 + 굵은 글자 + 요약 행 사이 구분선
             var sTop = body.Bottom;
             var band = new SKRect(rect.Left, sTop, rect.Right, sTop + g.SummaryHeight);
             fill.Color = cSummary;
             canvas.DrawRect(band, fill);
-            using (var edge = new SKPaint { Color = ThemeColor("border-strong"), StrokeWidth = Roles.Stroke("emphasis") })
-                canvas.DrawLine(rect.Left, sTop + 1f, rect.Right, sTop + 1f, edge);
+            using (var edge = new SKPaint { Color = ThemeColor("border-strong"), StrokeWidth = Roles.Stroke("hairline") })
+                canvas.DrawLine(rect.Left, sTop + 0.5f, rect.Right, sTop + 0.5f, edge);
             ink.Color = cSummaryFg;
             using var sumLine = new SKPaint { Color = ThemeColor("border"), StrokeWidth = Roles.Stroke("hairline") };
             for (var si = 0; si < g.Summaries.Count; si++)
@@ -197,9 +197,9 @@ public sealed partial class Painter
             canvas.DrawLine(rect.Left, frow.Top + 0.5f, rect.Right, frow.Top + 0.5f, line);
         }
 
-        // ⑤ 헤더 아래 2px 진한 경계(요약 행 위 경계와 같음 — 헤더·행·요약이 서로 구분되게), 고정 경계선
-        using (var edge = new SKPaint { Color = ThemeColor("border-strong"), StrokeWidth = Roles.Stroke("emphasis") })
-            canvas.DrawLine(rect.Left, header.Bottom - 1f, rect.Right, header.Bottom - 1f, edge);
+        // ⑤ 헤더 아래 진한 hairline 경계(요약 행 위 경계와 같음, H3), 고정 경계선
+        using (var edge = new SKPaint { Color = ThemeColor("border-strong"), StrokeWidth = Roles.Stroke("hairline") })
+            canvas.DrawLine(rect.Left, header.Bottom - 0.5f, rect.Right, header.Bottom - 0.5f, edge);
         if (g.FrozenCount > 0)
             canvas.DrawLine(scrollLeft - 0.5f, rect.Top, scrollLeft - 0.5f, body.Bottom + g.SummaryHeight, line);
 
@@ -256,7 +256,7 @@ public sealed partial class Painter
             default:
                 if (mark is { HideText: true })
                     break; // 네이티브 편집기가 셀 위에 겹침
-                DrawGridCell(canvas, mark?.Text ?? col.Text(item), cell, col.EffectiveAlign, font, ink);
+                DrawGridCell(canvas, mark?.Text ?? col.Text(item), cell, col.EffectiveAlign, font, ink, number: col.IsNumericValue);
                 break;
         }
 
@@ -318,6 +318,7 @@ public sealed partial class Painter
     {
         const float size = 20f;
         var box = SKRect.Create(cell.MidX - size / 2f, cell.MidY - size / 2f, size, size);
+        var radius = Roles.Number("radius.xs"); // 독립 체크박스와 같은 반경
         var on = col.Reader.Get(item) is true;
         var dim = col.ReadOnly || (col.Reader.ValueType is { } vt && (vt != typeof(bool) || !col.Reader.Writable));
         byte a = dim ? Roles.Alpha("opacity.disabled") : (byte)0xff;
@@ -326,7 +327,7 @@ public sealed partial class Painter
         if (on)
         {
             fill.Color = ThemeColor("primary").WithAlpha(a);
-            canvas.DrawRoundRect(box, 4f, 4f, fill);
+            canvas.DrawRoundRect(box, radius, radius, fill);
             using var ip = new SKPaint { IsAntialias = true, Color = ThemeColor("primary-fg").WithAlpha(a) };
             if (IconFont.TryResolve("fa-check", out var glyph))
                 IconFont.Draw(canvas, glyph, new SKPoint(box.MidX, box.MidY), 13f, ip);
@@ -334,13 +335,13 @@ public sealed partial class Painter
         else
         {
             fill.Color = ThemeColor("surface").WithAlpha(a);
-            canvas.DrawRoundRect(box, 4f, 4f, fill);
+            canvas.DrawRoundRect(box, radius, radius, fill);
             using var sp = new SKPaint
             {
                 IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("outline"),
                 Color = ThemeColor("border-strong").WithAlpha(a)
             };
-            canvas.DrawRoundRect(box, 4f, 4f, sp);
+            canvas.DrawRoundRect(box, radius, radius, sp);
         }
 
         fill.IsAntialias = false;
@@ -381,53 +382,49 @@ public sealed partial class Painter
         return _theme.TryGet(name, out _) ? ThemeColor(name) : null;
     }
 
-    // 버튼 — 셀 안쪽(가로 6·세로 8 여백) 둥근 사각형 + [아이콘] 글자, variant 색은 DvButton 과 같음, cell-disabled 가 true 면 흐림
+    // 버튼 — 셀 안쪽(가로 6·세로 8 여백) 둥근 사각형(radius.sm) + [아이콘] 글자, variant 색은 DvButton 과 같음.
+    // cell-disabled 가 true 인 행 = 그 행에서 할 수 없는 동작이라 버튼을 그리지 않는다
     private void DrawButtonCell(SKCanvas canvas, GridColumn col, object item, SKRect cell, GridFonts fonts, SKPaint ink, SKPaint fill)
     {
         var r = new SKRect(cell.Left + 6f, cell.Top + 8f, cell.Right - 6f, cell.Bottom - 8f);
         if (r.Width <= 4 || r.Height <= 4)
             return;
-        var enabled = !col.IsButtonDisabled(item);
+        if (col.IsButtonDisabled(item))
+            return;
         SKColor bg, fg;
         SKColor? border = null;
-        if (!enabled)
+        switch (col.Variant)
         {
-            bg = ThemeColor("surface-raised");
-            fg = ThemeColor("text-subtle");
-        }
-        else
-        {
-            switch (col.Variant)
-            {
-                case "secondary":
-                    bg = ThemeColor("surface-raised");
-                    fg = ThemeColor("text");
-                    border = ThemeColor("border-strong");
-                    break;
-                case "danger":
-                    bg = ThemeColor("tone-danger-soft");
-                    fg = ThemeColor("tone-danger-fg");
-                    border = ThemeColor("tone-danger");
-                    break;
-                case "ghost":
-                    bg = SKColors.Transparent;
-                    fg = ThemeColor("text-muted");
-                    break;
-                default:
-                    bg = ThemeColor("primary");
-                    fg = ThemeColor("primary-fg");
-                    break;
-            }
+            case "secondary":
+                bg = ThemeColor("surface-raised");
+                fg = ThemeColor("text");
+                border = ThemeColor("border-strong");
+                break;
+            case "danger":
+                bg = ThemeColor("tone-danger-soft");
+                fg = ThemeColor("tone-danger-fg");
+                border = ThemeColor("tone-danger");
+                break;
+            case "ghost":
+                bg = SKColors.Transparent;
+                fg = ThemeColor("text-muted");
+                break;
+            default:
+                bg = ThemeColor("primary");
+                fg = ThemeColor("primary-fg");
+                break;
         }
 
         fill.IsAntialias = true;
         fill.Color = bg;
-        canvas.DrawRoundRect(r, 6f, 6f, fill);
+        var br = Roles.Number("radius.sm");
+        canvas.DrawRoundRect(r, br, br, fill);
         fill.IsAntialias = false;
         if (border is { } bc)
         {
-            using var bp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Roles.Stroke("hairline"), Color = bc };
-            canvas.DrawRoundRect(r, 6f, 6f, bp);
+            var hw = Roles.Stroke("hairline"); // 테두리는 상자 안쪽(DvButton 과 같음)
+            using var bp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = hw, Color = bc };
+            canvas.DrawRoundRect(SKRect.Inflate(r, -hw / 2f, -hw / 2f), br - hw / 2f, br - hw / 2f, bp);
         }
 
         ink.Color = fg;
@@ -536,14 +533,26 @@ public sealed partial class Painter
             col.EffectiveAlign, fonts.Header, ink);
     }
 
-    // 셀 글자 — 좌우 패딩, 넘치면 "…" 로 자름, 세로 가운데
-    private static void DrawGridCell(SKCanvas canvas, string text, SKRect cell, TextAlign align, GridFonts.Slot slot, SKPaint ink)
+    // 셀 글자 — 좌우 패딩, 넘치면 "…" 로 자름, 세로 가운데. number = 숫자 값 열(고정폭 숫자, H6 — 자릿수가 세로로 맞음)
+    private static void DrawGridCell(SKCanvas canvas, string text, SKRect cell, TextAlign align, GridFonts.Slot slot, SKPaint ink, bool number = false)
     {
         var avail = cell.Width - GridCellPad * 2;
         if (text.Length == 0 || avail <= 0)
             return;
 
         var font = slot.For(text);
+        if (number && TextFont.MeasureNumber(text, font) is var nw && nw <= avail)
+        {
+            var nx = align switch
+            {
+                TextAlign.Right => cell.Right - GridCellPad - nw,
+                TextAlign.Center => cell.MidX - nw / 2f,
+                _ => cell.Left + GridCellPad
+            };
+            TextFont.DrawNumber(canvas, text, nx, Baseline(cell, font), SKTextAlign.Left, font, ink);
+            return;
+        }
+
         var w = font.MeasureText(text);
         if (w > avail)
         {
@@ -586,8 +595,8 @@ public sealed partial class Painter
         public GridFonts(float cellSize, float headerSize)
         {
             Cell = new Slot(cellSize, weight: Roles.Weight("regular"));
-            CellBold = new Slot(cellSize, weight: Roles.Weight("bold"));
-            Header = new Slot(headerSize, weight: Roles.Weight("bold"));
+            CellBold = new Slot(cellSize, weight: Roles.Weight("strong"));
+            Header = new Slot(headerSize, weight: Roles.Weight("strong"));
         }
 
         public Slot Cell { get; }

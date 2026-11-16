@@ -34,10 +34,12 @@ public sealed partial class Painter
         var top = AlarmView.Top(box.AlarmItems);
         if (top is null)
         {
-            using (var p = new SKPaint { IsAntialias = true, Color = ThemeColor("tone-success-soft") })
+            // 알람 없음 — 정상 색(S2 look.normal-color)이 on 이면 정상 틴트, off 면 중립 면
+            var normal = Roles.Look.NormalColor;
+            using (var p = new SKPaint { IsAntialias = true, Color = normal ? ThemeColor("tone-success-soft") : ThemeColor("surface-raised") })
                 canvas.DrawRect(bottom, p);
-            var fg = ThemeColor("tone-success-fg");
-            using (var dot = new SKPaint { IsAntialias = true, Color = ThemeColor("tone-success") })
+            var fg = normal ? ThemeColor("tone-success-fg") : ThemeColor("text-muted");
+            using (var dot = new SKPaint { IsAntialias = true, Color = normal ? ThemeColor("normal") : ThemeColor("text-muted") })
                 canvas.DrawCircle(bottom.Left + 20f, bottom.MidY, 5f, dot);
             DrawBannerText(canvas, T("dv.alarm.none"), bottom, bottom.Left + 34f, fg, Roles.Font("body"), bold: true);
         }
@@ -47,15 +49,10 @@ public sealed partial class Painter
             using (var p = new SKPaint { IsAntialias = true, Color = on ? prio : Mix(prio, SKColors.Black, 0.35f) })
                 canvas.DrawRect(bottom, p);
 
-            // 등급 칩 — 배경을 살짝 어둡게
-            var label = PriorityLabel(top.Priority);
-            using var chipFont = TextFont.Create(label, Roles.Font("meta"), weight: Roles.Weight("bold"));
-            var chipW = chipFont.MeasureText(label) + 16f;
+            // 등급 칩 — 등급색 면 위라 뒤집은 칩(대비 글자색 채움 + 등급색 글자)
             var chipH = MathF.Min(22f, bottom.Height - 8f);
+            var chipW = DrawSeverityChip(canvas, top.Priority, bottom.Left + 12f, bottom.MidY, chipH, blinkOff: false, inverted: true);
             var chip = SKRect.Create(bottom.Left + 12f, bottom.MidY - chipH / 2f, chipW, chipH);
-            using (var cp = new SKPaint { IsAntialias = true, Color = new SKColor(0, 0, 0, Roles.Alpha("alpha.soft")) })
-                canvas.DrawRoundRect(chip, chipH / 2f, chipH / 2f, cp);
-            DrawBannerText(canvas, label, chip, chip.Left + 8f, fg, Roles.Font("meta"), bold: true);
 
             // 오른쪽: 미확인 건수 + 시각
             var unacked = box.AlarmItems.Count(a => !a.Acked);
@@ -87,7 +84,9 @@ public sealed partial class Painter
 
         var colTime = box.Rect.Left + 16f;
         var colPrio = colTime + 78f;
-        var colMsg = colPrio + 62f;
+        // 메시지 열 = 가장 넓은 등급 칩(아이콘 포함) 뒤
+        var chipMax = MathF.Max(46f, new[] { AlarmPriority.Critical, AlarmPriority.Major, AlarmPriority.Minor }.Max(SeverityChipWidth));
+        var colMsg = colPrio + chipMax + 16f;
 
         canvas.Save();
         canvas.ClipRect(box.Rect);
@@ -119,15 +118,10 @@ public sealed partial class Painter
         for (var i = 0; i < layout.Rows.Count; i++)
         {
             var (row, rect, ack) = layout.Rows[i];
-            var (prio, _) = PriorityColors(row.Priority);
 
             if (i % 2 == 1)
                 using (var zp = new SKPaint { Color = text.WithAlpha(0x08) })
                     canvas.DrawRect(rect, zp);
-
-            if (!row.Acked)
-                using (var bar = new SKPaint { IsAntialias = true, Color = on ? prio : prio.WithAlpha(0x66) })
-                    canvas.DrawRoundRect(SKRect.Create(rect.Left + 3f, rect.Top + 6f, 4f, rect.Height - 12f), 2f, 2f, bar);
 
             var rowInk = row.Acked ? subtle : text;
             using (var tf = TextFont.Create("00:00:00", Roles.Font("meta"), weight: Roles.Weight("regular")))
@@ -135,17 +129,8 @@ public sealed partial class Painter
                 canvas.DrawText(row.Time.ToString("HH:mm:ss", CultureInfo.InvariantCulture), colTime, Baseline(rect, tf),
                     SKTextAlign.Left, tf, tp);
 
-            // 등급 칩
-            var label = PriorityLabel(row.Priority);
-            using (var cf = TextFont.Create(label, Roles.Font("caption"), weight: Roles.Weight("bold")))
-            {
-                var cw = cf.MeasureText(label) + 14f;
-                var chip = SKRect.Create(colPrio, rect.MidY - 10f, cw, 20f);
-                using (var cb = new SKPaint { IsAntialias = true, Color = prio.WithAlpha(row.Acked ? Roles.Alpha("overlay.hover") : (byte)0x2a) })
-                    canvas.DrawRoundRect(chip, 10f, 10f, cb);
-                using var ct = new SKPaint { IsAntialias = true, Color = row.Acked ? subtle : prio };
-                canvas.DrawText(label, chip.MidX, Baseline(chip, cf), SKTextAlign.Center, cf, ct);
-            }
+            // 등급 칩 — 행의 색 표시는 이것 하나. 미확인만 깜빡임, 확인은 색 유지
+            DrawSeverityChip(canvas, row.Priority, colPrio, rect.MidY, 20f, blinkOff: !row.Acked && !on);
 
             // 메시지(열 폭으로 클립)
             var msgRight = showAck ? (ack?.Left ?? rect.Right - 12f - AlarmListLayout.AckButtonWidth) - 12f : rect.Right - 12f;
@@ -158,13 +143,16 @@ public sealed partial class Painter
 
             if (ack is { } b)
             {
-                using (var bb = new SKPaint { IsAntialias = true, Color = prio.WithAlpha(Roles.Alpha("alpha.selected")) })
-                    canvas.DrawRoundRect(b, 8f, 8f, bb);
-                using (var bs = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.2f, Color = prio })
-                    canvas.DrawRoundRect(b, 8f, 8f, bs);
+                // ACK — 중립 작은 버튼(등급색은 등급 칩에만)
+                var br = Roles.Number("radius.sm");
+                using (var bb = new SKPaint { IsAntialias = true, Color = ThemeColor("surface-raised") })
+                    canvas.DrawRoundRect(b, br, br, bb);
+                var hw = Roles.Stroke("hairline");
+                using (var bs = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = hw, Color = ThemeColor("border-strong") })
+                    canvas.DrawRoundRect(SKRect.Inflate(b, -hw / 2f, -hw / 2f), br - hw / 2f, br - hw / 2f, bs);
                 var ackText = T("dv.alarm.ack");
-                using var af = TextFont.Create(ackText, Roles.Font("meta"), weight: Roles.Weight("bold"));
-                using var ap = new SKPaint { IsAntialias = true, Color = prio };
+                using var af = TextFont.Create(ackText, Roles.Font("meta"), weight: Roles.Weight("strong"));
+                using var ap = new SKPaint { IsAntialias = true, Color = text };
                 canvas.DrawText(ackText, b.MidX, Baseline(b, af), SKTextAlign.Center, af, ap);
             }
             else if (showAck && row.AckTime is { } at)
@@ -181,6 +169,49 @@ public sealed partial class Painter
         }
 
         canvas.Restore();
+    }
+
+    // 등급 표시 한 벌(H8) — 배너·알람 목록이 같은 칩을 쓴다. 칩 = 등급색 채움 + 대비 글자(alarm-*-fg, 굵기 strong),
+    // 테마의 alarm-*-icon(아이콘 이름, 기본 빈 값)이 있으면 글자 앞에 아이콘. blinkOff = 미확인의 꺼짐 위상(등급색을 표면 쪽으로 흐림).
+    // inverted = 등급색 면 위에 놓는 칩(대비 글자색 채움 + 등급색 글자). 돌려주는 값 = 칩 폭.
+    private float DrawSeverityChip(SKCanvas canvas, AlarmPriority p, float left, float midY, float height, bool blinkOff, bool inverted = false)
+    {
+        var (prio, fg) = PriorityColors(p);
+        if (blinkOff)
+            prio = Mix(prio, ThemeColor("surface"), 0.6f);
+        var (bg, ink) = inverted ? (fg, prio) : (prio, fg);
+        var label = PriorityLabel(p);
+        var size = Roles.Font("caption");
+        using var font = TextFont.Create(label, size, Roles.Weight("strong"));
+        var hasIcon = SeverityIcon(p, out var glyph);
+        var w = SeverityChipWidth(p);
+        var chip = SKRect.Create(left, midY - height / 2f, w, height);
+        using var paint = new SKPaint { IsAntialias = true, Color = bg };
+        canvas.DrawRoundRect(chip, height / 2f, height / 2f, paint);
+        paint.Color = ink;
+        var x = chip.Left + 8f;
+        if (hasIcon)
+        {
+            IconFont.Draw(canvas, glyph, new SKPoint(x + size / 2f, midY), size, paint);
+            x += size + 4f;
+        }
+        canvas.DrawText(label, x, Baseline(chip, font), SKTextAlign.Left, font, paint);
+        return w;
+    }
+
+    private float SeverityChipWidth(AlarmPriority p)
+    {
+        var label = PriorityLabel(p);
+        var size = Roles.Font("caption");
+        using var font = TextFont.Create(label, size, Roles.Weight("strong"));
+        return font.MeasureText(label) + 16f + (SeverityIcon(p, out _) ? size + 4f : 0f);
+    }
+
+    private bool SeverityIcon(AlarmPriority p, out IconGlyph glyph)
+    {
+        glyph = default;
+        var token = p switch { AlarmPriority.Critical => "alarm-critical-icon", AlarmPriority.Major => "alarm-major-icon", _ => "alarm-minor-icon" };
+        return _theme.TryGet(token, out var name) && !string.IsNullOrWhiteSpace(name) && IconFont.TryResolve(name.Trim(), out glyph);
     }
 
     private string PriorityLabel(AlarmPriority p) => p switch

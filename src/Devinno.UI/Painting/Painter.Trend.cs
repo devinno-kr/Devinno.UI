@@ -32,16 +32,9 @@ public sealed partial class Painter
         var visible = spec.Channels.Select(c => (c, pts: Visible(c.Points, start, end))).ToList();
         var values = visible.SelectMany(v => v.pts).Select(p => p.Value).Where(double.IsFinite).ToList();
 
-        // ── Y 범위 (지정값 우선, 없으면 보이는 데이터로 보기 좋은 범위)
-        var auto = values.Count > 0
-            ? TrendScale.Nice(values.Min(), values.Max())
-            : TrendScale.Nice(0, 100);
-        var lo = spec.YMin ?? auto.Lo;
-        var hi = spec.YMax ?? auto.Hi;
-        if (hi <= lo)
-            hi = lo + 1;
+        // ── Y 범위·눈금 (지정값 우선, 없으면 보이는 데이터로) — 눈금 간격은 플롯 높이에 맞춤(위 26 · 아래 20 은 범례·시간 글자)
+        var (lo, hi, yStep) = TrendAxis(spec.YMin, spec.YMax, values, content.Height - 46f);
         // 눈금은 간격의 배수(0 을 지나는 값)에 둔다 — y-min=-120 이어도 -100, -50, 0 … 으로
-        var yStep = spec.YMin is null && spec.YMax is null ? auto.Step : TrendScale.Nice(lo, hi).Step;
         var yTicks = Widgets.ScaleTicks.Values(Math.Ceiling(lo / yStep - 1e-9) * yStep, hi, yStep);
 
         using var axisFont = TextFont.Create("0", Roles.Font("caption"), weight: Roles.Weight("regular"));
@@ -72,9 +65,9 @@ public sealed partial class Painter
                 var firstTicks = (start.Ticks + stepTicks - 1) / stepTicks * stepTicks;
                 for (var ticks = firstTicks; ticks <= end.Ticks; ticks += stepTicks)
                 {
+                    // 시간 눈금은 글자만 — 세로 격자 없음(가로 격자만, 조사 4.2)
                     var t = new DateTime(ticks);
                     var x = X(t);
-                    canvas.DrawLine(x, plot.Top, x, plot.Bottom, gp);
                     canvas.DrawText(TrendScale.TimeLabel(t, step), x, plot.Bottom + 15f, SKTextAlign.Center, axisFont, lp);
                 }
             }
@@ -88,7 +81,10 @@ public sealed partial class Painter
             canvas.DrawText(empty, plot.MidX, plot.MidY, SKTextAlign.Center, ef, ep);
         }
 
-        // ── 채널 곡선
+        // ── 채널 곡선. 영역 채움은 0 부터 — 0 이 범위 밖이거나(하한이 0 이 아닌 채움은 양을 잘못 보여 줌) 채널이 여럿이면(겹침) 생략
+        var withData = visible.Count(v => v.pts.Any(p => double.IsFinite(p.Value)));
+        var fill = spec.Area && withData == 1 && lo <= 0 && hi >= 0;
+        var zeroY = Y(0);
         canvas.Save();
         canvas.ClipRect(new SKRect(plot.Left, plot.Top - 4f, plot.Right + 4f, plot.Bottom));
         foreach (var (ch, pts) in visible)
@@ -98,15 +94,15 @@ public sealed partial class Painter
                 var mapped = run.Select(p => new SKPoint(X(p.Time), Y(p.Value))).ToList();
                 using var path = TrendPath.Build(mapped, spec.Smooth);
 
-                if (spec.Area && mapped.Count > 1)
+                if (fill && mapped.Count > 1)
                 {
                     using var area = new SKPath(path);
-                    area.LineTo(mapped[^1].X, plot.Bottom);
-                    area.LineTo(mapped[0].X, plot.Bottom);
+                    area.LineTo(mapped[^1].X, zeroY);
+                    area.LineTo(mapped[0].X, zeroY);
                     area.Close();
                     // 영역 가장자리는 위에 그리는 선이 덮으므로 AA 생략 — 큰 면적 채움 비용 절감
                     using var ap = new SKPaint { IsAntialias = false };
-                    ap.Shader = SKShader.CreateLinearGradient(new SKPoint(0, plot.Top), new SKPoint(0, plot.Bottom),
+                    ap.Shader = SKShader.CreateLinearGradient(new SKPoint(0, plot.Top), new SKPoint(0, zeroY),
                         new[] { ch.Color.WithAlpha(Roles.Alpha("alpha.dim")), ch.Color.WithAlpha(0x00) }, null, SKShaderTileMode.Clamp);
                     canvas.DrawPath(area, ap);
                 }
@@ -137,26 +133,37 @@ public sealed partial class Painter
 
         canvas.Restore();
 
-        // ── 범례: 색 점 + 이름 + 최신값
+        // ── 범례: 색 점 + 이름(흐림) + 최신값(strong, 고정폭 숫자) + 단위(작게·흐림) — 값 문법 H6
         var lx = plot.Left;
         var ly = content.Top + 10f;
         foreach (var (ch, pts) in visible)
         {
             var name = ch.Label ?? ch.Name;
             var lastVal = pts.LastOrDefault(p => double.IsFinite(p.Value));
-            var val = lastVal.Time.Ticks > 0 ? WithUnit(FormatTick(Math.Round(lastVal.Value, 2)), ch.Unit) : "-";
+            var has = lastVal.Time.Ticks > 0;
+            var val = has ? TrendLegendNumber(lastVal.Value, ch) : "-";
+            var unit = has ? ch.Unit ?? "" : "";
 
             using (var dot = new SKPaint { IsAntialias = true, Color = ch.Color })
                 canvas.DrawCircle(lx + 4f, ly, 4f, dot);
             using var nf = TextFont.Create(name, Roles.Font("meta"), weight: Roles.Weight("regular"));
-            using var vf = TextFont.Create(val, Roles.Font("meta"), weight: Roles.Weight("bold"));
+            using var vf = TextFont.Create(val, Roles.Font("meta"), weight: Roles.Weight("strong"));
             using var np = new SKPaint { IsAntialias = true, Color = muted };
             using var vp = new SKPaint { IsAntialias = true, Color = ink };
             var baseY = ly - (nf.Metrics.Ascent + nf.Metrics.Descent) / 2f;
             canvas.DrawText(name, lx + 13f, baseY, SKTextAlign.Left, nf, np);
-            var nw = nf.MeasureText(name);
-            canvas.DrawText(val, lx + 13f + nw + 6f, baseY, SKTextAlign.Left, vf, vp);
-            lx += 13f + nw + 6f + vf.MeasureText(val) + 18f;
+            var x = lx + 13f + nf.MeasureText(name) + 6f;
+            TextFont.DrawNumber(canvas, val, x, baseY, SKTextAlign.Left, vf, vp);
+            x += TextFont.MeasureNumber(val, vf);
+            if (unit.Length > 0)
+            {
+                // 값에 붙는 단위(%·°)는 바로, 그 밖은 한 칸(WithUnit 과 같은 규칙)
+                x += UnitJoinsValue(unit) ? 1f : 3f;
+                using var uf = TextFont.Create(unit, Roles.Font("caption"), weight: Roles.Weight("regular"));
+                canvas.DrawText(unit, x, baseY, SKTextAlign.Left, uf, np);
+                x += uf.MeasureText(unit);
+            }
+            lx = x + 18f;
         }
     }
 
@@ -197,6 +204,28 @@ public sealed partial class Painter
 
         if (run.Count > 0)
             yield return run;
+    }
+
+    // 범례 최신값 숫자 — 채널 format(공용 규칙)이 있으면 그것, 없거나 쓸 수 없으면 눈금과 같은 규칙
+    internal static string TrendLegendNumber(double v, TrendChannelData ch)
+        => AttrRules.FormatOrNull(v, ch.Format, "DvTrendChannel") ?? FormatTick(Math.Round(v, 2));
+
+    // Y 축 범위·눈금 간격 — 지정값 우선, 없으면 보이는 데이터로 보기 좋은 범위
+    // 눈금 수 = 높이 40px 당 하나(최대 5), 그래도 간격이 28px 보다 좁으면 줄인다(작은 패널에서 눈금 과밀 방지)
+    internal static (double Lo, double Hi, double Step) TrendAxis(double? yMin, double? yMax, IReadOnlyList<double> values, float plotHeight)
+    {
+        const float minGap = 28f;
+        for (var target = Math.Clamp((int)(plotHeight / 40f), 1, 5); ; target--)
+        {
+            var auto = values.Count > 0 ? TrendScale.Nice(values.Min(), values.Max(), target) : TrendScale.Nice(0, 100, target);
+            var lo = yMin ?? auto.Lo;
+            var hi = yMax ?? auto.Hi;
+            if (hi <= lo)
+                hi = lo + 1;
+            var step = yMin is null && yMax is null ? auto.Step : TrendScale.Nice(lo, hi, target).Step;
+            if (target <= 1 || plotHeight * step / (hi - lo) >= minGap)
+                return (lo, hi, step);
+        }
     }
 
     private static string FormatTick(double v)

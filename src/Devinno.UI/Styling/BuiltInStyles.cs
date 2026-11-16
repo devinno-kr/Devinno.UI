@@ -154,4 +154,12 @@ public static class BuiltInStyles
         .treeview-item-on       { background: token(tone-info-soft); color: token(text) }
         .treeview-item-on:hover { background: token(tone-info-soft); color: token(text) }
         """;
+
+    // 질감 스위치 look.texture = flat — 그림자 없음(카드·KPI·다이얼로그·선택 칩). 테마 스타일시트 뒤, 화면 DvStyle 앞
+    internal const string FlatTexture = """
+        .card            { box-shadow: none }
+        .stat            { box-shadow: none }
+        .dialog          { box-shadow: none }
+        .segment-item-on { box-shadow: none }
+        """;
 }

@@ -90,8 +90,7 @@ public static class BuiltInComponents
               <DvParam name="delta"/>
               <DvParam name="tone" default="info"/>
               <DvStack class="stat" gap="none">
-                <DvBox class="stat-accent"
-                       style="background:linear-gradient(90deg, token(tone-{tone}), token(tone-{tone}-fg))"/>
+                <DvBox class="stat-accent" style="background:token(tone-{tone})"/>
                 <DvStack class="stat-body" gap="sm">
                   <DvRow gap="sm">
                     <DvLabel class="label muted" text="{label}"/>
@@ -114,11 +113,10 @@ public static class BuiltInComponents
               <DvParam name="status"/>
               <DvParam name="blink" default="false"/>
               <DvRow class="status-item" gap="md">
-                <DvLamp on="true" state="{state}" blink="{blink}" blink-interval="450" style="width:12; height:12"/>
+                <DvLamp on="true" state="{state}" blink="{blink}" blink-interval="500" style="width:12; height:12"/>
                 <DvLabel class="body" text="{label}"/>
                 <DvSpacer/>
-                <DvLabel class="chip" text="{status}" visible="{status.Length}"
-                         style="color:token(state-{state}-fg); background:token(state-{state}-soft)"/>
+                <DvLabel class="label muted" text="{status}" visible="{status.Length}"/>
               </DvRow>
             </DvComponent>
             """);

@@ -2557,7 +2557,7 @@
             <summary>버튼 색 — primary · secondary · danger · ghost.</summary>
         </member><member name="P:Devinno.UI.Grid.GridColumn.FilterKind" en-hash="7f586d934a7abd97">
             <summary>실제 필터 종류 — auto 는 지금 값 타입으로(항목이 없어 타입을 모르면 text).</summary>
-        </member><member name="P:Devinno.UI.Grid.GridColumn.CellDisabled" en-hash="47ce4c8a8c414358"><summary>버튼 <c>cell-disabled</c> — 항목 bool 속성, true 면 흐린 버튼·무동작.</summary></member><member name="M:Devinno.UI.Grid.GridColumn.IsButtonDisabled(System.Object)" en-hash="a73e2e8c61791ae9"><summary><paramref name="item" /> 의 버튼이 꺼졌는가(<c>cell-disabled</c> 가 <see langword="true" /> 를 읽을 때; 그 밖은 켜짐).</summary></member><member name="P:Devinno.UI.Grid.GridColumn.Mode" en-hash="7ef570edff299b79">
+        </member><member name="P:Devinno.UI.Grid.GridColumn.CellDisabled" en-hash="c20c21f90ea7f524"><summary>버튼 <c>cell-disabled</c> — 항목 bool 속성, true 면 그 행에는 버튼이 없음(그리지 않음, 무동작).</summary></member><member name="M:Devinno.UI.Grid.GridColumn.IsButtonDisabled(System.Object)" en-hash="a73e2e8c61791ae9"><summary><paramref name="item" /> 의 버튼이 꺼졌는가(<c>cell-disabled</c> 가 <see langword="true" /> 를 읽을 때; 그 밖은 켜짐).</summary></member><member name="P:Devinno.UI.Grid.GridColumn.Mode" en-hash="7ef570edff299b79">
             <summary>datetime <c>mode</c> 원문(생략 = 값 타입으로).</summary>
         </member><member name="P:Devinno.UI.Grid.GridColumn.OptionsReader" en-hash="8192e4c2c08ee0e4"><summary>select 항목 원천 — 그리드 VM 문맥에서 DvColumn 노드(DvOption 자식·items·item-*)를 읽는 리더.</summary></member><member name="P:Devinno.UI.Grid.GridColumn.Options" en-hash="aa00c7f63aaf8d04">
             <summary>select 항목 — 값 타입이 정해지면 그 타입 기준으로 한 번 만든다(enum 자동 포함).</summary>
@@ -3362,9 +3362,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <summary><c>DvAlarmBanner</c>·<c>DvAlarmList</c> 의 통신 경보 문구(<c>comm-alarm</c>). 없으면 <see langword="null" />.</summary>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.OnAck" en-hash="78d6324f07d6bccf">
             <summary><c>DvAlarmBanner</c>·<c>DvAlarmList</c> 의 확인(ACK) 명령(<c>onack</c> 속성 원문). 없으면 <see langword="null" />.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.AlarmRowHeight" en-hash="f2e8365c12382911">
-            <summary><c>DvAlarmList</c> 행 높이(px, <c>row-height</c>, 기본값 36). 0 이하는 기본값으로 바뀝니다.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.AlarmShowAck" en-hash="c5ead693d54768e8"><summary>확인(ACK) 버튼 표시 여부. <c>show-ack</c> 를 지정하면 그 값(참/거짓 규칙, 그 밖의 글자는 표시 + 경고), 지정하지 않으면 <see cref="P:Devinno.UI.Layout.LayoutBox.OnAck" /> 이 있을 때만 표시합니다.</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.Process" en-hash="71490b5703ac18a5">
+        </member><member name="P:Devinno.UI.Layout.LayoutBox.AlarmRowHeight" en-hash="0d0eaf32c28e384f"><summary><c>DvAlarmList</c> 행 높이(px, <c>row-height</c>, 기본값 = 테마 <c>row.md</c>, 내장 테마는 40). 0 이하는 기본값으로 바뀝니다.</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.AlarmShowAck" en-hash="c5ead693d54768e8"><summary>확인(ACK) 버튼 표시 여부. <c>show-ack</c> 를 지정하면 그 값(참/거짓 규칙, 그 밖의 글자는 표시 + 경고), 지정하지 않으면 <see cref="P:Devinno.UI.Layout.LayoutBox.OnAck" /> 이 있을 때만 표시합니다.</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.Process" en-hash="71490b5703ac18a5">
             <summary><c>DvProcess</c> 공정도 모델(장비·선·배치 결과). 다른 태그는 <see langword="null" />.</summary>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.Equipment" en-hash="106a96317211e963">
             <summary>공정도 장비 상자의 장비 정보(심볼·상태값·기하). 다른 상자는 <see langword="null" />.</summary>
@@ -5310,7 +5308,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <summary>범례에 보일 이름(<c>label</c>). <see langword="null" /> 이면 범례에 <see cref="P:Devinno.UI.Trends.TrendChannelData.Name" /> 을 보입니다.</summary>
         </member><member name="P:Devinno.UI.Trends.TrendChannelData.Unit" en-hash="6130f6e649248877">
             <summary>범례의 최신값 뒤에 붙일 단위(<c>unit</c>). 없으면 <see langword="null" />.</summary>
-        </member><member name="P:Devinno.UI.Trends.TrendChannelData.Color" en-hash="615a3091345b0cfe">
+        </member><member name="P:Devinno.UI.Trends.TrendChannelData.Format" en-hash="a0e2ce068f85e81f"><summary>범례 최신값의 숫자 형식(<c>format</c>, 다른 위젯의 <c>format</c> 과 같은 규칙: .NET 숫자 형식, InvariantCulture). <see langword="null" /> = 정수는 정수로, 아니면 소수 3자리까지.</summary></member><member name="P:Devinno.UI.Trends.TrendChannelData.Color" en-hash="615a3091345b0cfe">
             <summary>선 색(<c>color</c>, <c>#색</c> 또는 <c>token(이름)</c> 을 테마로 해석). 지정하지 않았거나 해석할 수 없으면 채널 순서대로 테마 토큰 <c>chart-1</c>…<c>chart-6</c>(내장 값: <see cref="F:Devinno.UI.Trends.TrendSpec.Palette" />)입니다.</summary>
         </member><member name="P:Devinno.UI.Trends.TrendChannelData.Points" en-hash="27478eb9c90def20">
             <summary>그릴 샘플들. <c>points</c> 바인딩이 있으면 그 값, 없으면 <c>source</c> 버퍼의 <see cref="M:Devinno.UI.Trends.TrendBuffer.Snapshot(System.String)" />, 둘 다 없으면 빈 배열입니다.</summary>

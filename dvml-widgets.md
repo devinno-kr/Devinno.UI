@@ -18,11 +18,11 @@ Built-in components whose appearance is defined by the theme. You rarely need `s
 | [`DvCard`](#dvcard) | `title` `badge` | Card surface; children stack vertically (gap 12, horizontal stretch) |
 | [`DvBadge`](#dvbadge) | `text` `tone`(neutral) | Small chip |
 | [`DvStat`](#dvstat) | `label` `value` `unit` `delta` `tone`(info) | KPI card with an accent band on top |
-| [`DvStatusItem`](#dvstatusitem) | `label` `state`(off) `status` `blink`(false) | One line of lamp + name + status chip |
+| [`DvStatusItem`](#dvstatusitem) | `label` `state`(off) `status` `blink`(false) | One line of lamp + name + status text |
 | [`DvSwitch`](#dvswitch) | `label` `value` | One line of name + toggle |
 
 - `tone` = `neutral` `info` `success` `warning` `danger`; `state` = `run` `stop` `fault` `warn` `manual` `off` (built-in themes; a theme may add more `tone-*` / `state-*` tokens — [theme tokens](dvml-style.md#theme-tokens)).
-- An unknown `tone` on `DvBadge`/`DvStat` draws magenta (the component builds a token name that does not exist — [magenta](dvml-diagnostics.md#magenta)). An unknown `state` on `DvStatusItem` uses `off` for the lamp and the chip, with one Trace warning.
+- An unknown `tone` on `DvBadge`/`DvStat` draws magenta (the component builds a token name that does not exist — [magenta](dvml-diagnostics.md#magenta)). An unknown `state` on `DvStatusItem` uses `off` for the lamp, with one Trace warning.
 - Presence rule: `title` `subtitle` `badge` `delta` `unit` `status` are shown when their text is non-empty — any text, including `"0"`. A bound number is shown as its text.
 - All parameters are bound (`tone="{StatusTone}"`, `value="{Bind Auto}"`).
 - What else an instance accepts (`style`, `class`, `grow`, `width`, `height`, `visible`, `onclick`, `disabled`) and how it reaches the template: [component instances](dvml-components.md#component-instances).
@@ -142,7 +142,7 @@ A KPI card: label, large value, unit and an optional change chip.
 | `tone` | theme word | `info` | yes | Accent band and `delta` chip color. Unknown word = magenta |
 
 **Behavior**
-- Accent band on top in `tone-{tone}`; label and `delta` on the first row, value + unit below.
+- Accent band on top in `tone-{tone}` (one solid color); label and `delta` on the first row, value + unit below. The card shadow is drawn only when the theme's `look.texture` is `rich`.
 
 **Example**
 ```xml
@@ -154,15 +154,15 @@ See also: [DvBadge](#dvbadge) · [instruments](dvml-instruments.md#instrument-co
 <a id="dvstatusitem"></a>
 ### DvStatusItem
 
-One line of lamp + name + status chip — the usual display for an equipment state.
+One line of lamp + name + status text — the usual display for an equipment state. The lamp is the only color in the line; the status text is muted.
 
 **Attributes**
 
 | attribute | values | default | bound | notes |
 |---|---|---|---|---|
 | `label` | text | empty | yes | Name |
-| `state` | theme word | `off` | yes | Lamp color and chip colors (`state-{state}`, `state-{state}-fg`, `state-{state}-soft`). Unknown word = `off` + one Trace warning |
-| `status` | text | empty | yes | Status chip text. Chip shown only when non-empty |
+| `state` | theme word | `off` | yes | Lamp color (`state-{state}`). Unknown word = `off` + one Trace warning |
+| `status` | text | empty | yes | Status text (muted, right side). Shown only when non-empty |
 | `blink` | bool | `false` | yes | Lamp blinks |
 
 **Behavior**
@@ -459,7 +459,7 @@ A rotary knob for a number.
 | `min` | number | `0` | yes | `min >= max` = 0..100 + warning. Drag and keypad never write a value outside |
 | `max` | number | `100` | yes | As `min` |
 | `step` | number | `1` | yes | `<= 0` = 1 |
-| `unit` | text | empty | yes | Drawn after the value text with one space |
+| `unit` | text | empty | yes | Drawn after the value text: `%` `‰` `°…` join it (`40%`), others follow one space (`3 bar`) |
 | `readonly` | bool | `false` | yes | Read-only also when `value` is one-way or a literal |
 | `input-mode` | `drag` `tap` `both` | `drag` | yes | Unknown = `drag` + warning |
 
@@ -493,7 +493,7 @@ A track + handle for a number.
 | `min` | number | `0` | yes | `min >= max` = 0..100 + warning. Drag never writes a value outside |
 | `max` | number | `100` | yes | As `min` |
 | `step` | number | `1` | yes | `<= 0` = 1 |
-| `unit` | text | empty | yes | After the value text with one space |
+| `unit` | text | empty | yes | After the value text: `%` `‰` `°…` join it (`40%`), others follow one space (`3 bar`) |
 | `readonly` | bool | `false` | yes | Read-only also when `value` is one-way or a literal |
 | `direction` | `right` `left` `up` `down` | `right` | yes | Side where the value increases; `up`/`down` = vertical. Unknown = `right` + warning |
 | `show-value` | bool | `false` | yes | Value text (+ unit) above the handle (right of it when vertical) |

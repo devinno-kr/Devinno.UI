@@ -10,6 +10,7 @@
 ### Added
 
 - `font-variant-numeric: tabular-nums` draws every digit 0–9 at the same width, so live values do not shift.
+- `DvTrendChannel format` — number format of the legend's latest value (same rule as `format` on the other widgets).
 - Custom widgets: `DvWidgetContext.Look`, `TokenNumber(name)` and `StateOverlay(fill)` follow the theme the same way built-in widgets do.
 - Widget parts with the CSS `::part()` selector: `DvGauge::part(value) { font-size: 28 }`, `.hot::part(value) { color: … }` (gauge, ring, knob, tank, progress, slider).
 - Theme role tokens (`weight.*`, `stroke.*`, `font.meta`, `alpha.*`, `overlay.*`, `opacity.disabled`, `control.*`, `row.*`, color roles `selection` `value-input` `value-read` `normal`) and style switches `look.texture` (`flat`|`rich`), `look.normal-color`, `look.selection`. Built-in widgets read these instead of fixed numbers; `look.texture: flat` drops gloss, gradients, shadows and glow on instruments.
@@ -22,6 +23,12 @@
 - Editing or open input, select, date and color boxes show an accent border instead of an outer ring. Check boxes, radios and slider thumbs keep their line width on hover (color only); the slider shows a soft halo. The off toggle knob is muted.
 - Selection switch `look.selection: quiet` (Graphite and Carbon): segment, list and tree selection is a raised chip or soft tint instead of a primary fill.
 - Expand glyphs are chevrons everywhere; the tab divider is a hairline.
+- Alarm priority has one look everywhere: a chip filled with the priority color and contrast text, with the theme's `alarm-*-icon` before the text when set. Unacknowledged chips blink, acknowledged ones keep their color. The alarm list drops the left priority bar, its ACK button is neutral, and its default row height is `row.md` (40, was 36). `DvStatusItem` blinks at 500 ms like the other alarm displays.
+- `DvStatusItem` shows its status as muted text; the lamp is the only color in the line. With `look.normal-color: off` the calm alarm banner is neutral.
+- `DvDataGrid`: header and summary edges are hairlines, header text weight 600, numbers use tabular digits, check cells use `radius.xs`, button cells `radius.sm`; a row whose `cell-disabled` is true has no button (was a dimmed button).
+- `DvTrend`: horizontal grid lines only; the number of value ticks follows the plot height; the area fill starts at 0 and is drawn only for a single channel when 0 is inside the range; the legend is name (muted), value (tabular, weight 600) and unit (smaller, muted).
+- Bar chart bars round only the corners away from the baseline; chart values, the donut total and legend values use tabular digits; the pie legend name is muted. Step bar connectors and the current ring use `stroke.emphasis`.
+- `DvStat` accent band is one solid color. With `look.texture: flat` cards, KPI tiles, dialogs and the selected segment have no shadow.
 - Disabled check boxes, radios, toggles and sliders are dimmed as one group (CSS `opacity`), so a thumb or knob no longer shows the track through it.
 - A unit starting with `%`, `‰` or `°` joins its value without a space (`40%`, `20°C`); other units keep one space (`3 bar`). Applies to gauge, knob, slider, tank, progress, trend legend and soft keyboard range. The slider value sits 8px above the thumb.
 - `font-weight` takes 100–900 and draws the font's real face for that weight (the nearest face the installed font has). Synthetic bold is used only when 600 or more is asked for and the font has no bold face. Bold text looks crisper and slightly wider than before.

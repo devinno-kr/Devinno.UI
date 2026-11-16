@@ -109,7 +109,7 @@ Cell-kind attributes (read only for the named cell kinds):
 | `icon` | icon name | none | yes | button cells |
 | `variant` | `primary` `secondary` `danger` `ghost` | `primary` | yes | button cells |
 | `onclick` | method name | none | no | button cells: `VM.M(Row row)` or `VM.M()` |
-| `cell-disabled` | property path | none | no | button cells: an item bool property; true = that row's button is dimmed and inactive (same direction as the common `disabled`) |
+| `cell-disabled` | property path | none | no | button cells: an item bool property; true = that row's button is not drawn and does nothing (same direction as the common `disabled`) |
 | `min` | number | none | yes | input cells: typed values below are rejected |
 | `max` | number | none | yes | input cells: typed values above are rejected; both given and `min >= max` = 0..100 + warning |
 | `unit` | text | none | interpolation only | input cells: drawn after the value |
@@ -276,7 +276,7 @@ public string? ValueClass => Value > Hi ? "over" : null;
 |---|---|---|
 | `check` | `bool`/`bool?` property. A tap toggles it and **writes directly to the row item**. A property with no public setter is only displayed, dimmed | `onbeforecommit` — without it the value is written directly; a missing method or a signature mismatch = nothing written ([gate rules](dvml-language.md#onbeforecommit)) · `readonly` |
 | `lamp` | Display only. `bool` → on = `on-color` (default `state-run` token). string/enum → the `state-{value}` token; a value the theme has no token for = off, no warning | `on-color` (`#rrggbb` or `token(name)`, bindable; unreadable = `state-run` + warning; unknown token = magenta) · `blink="true"` (a lit lamp blinks) |
-| `button` | `onclick` → `VM.M(Row row)` or `VM.M()` | `text` · `icon` · `variant` (`primary`; otherwise `secondary` `danger` `ghost`) · `cell-disabled` (bool property path on the row item; true = dimmed and inactive, same direction as the common `disabled`) |
+| `button` | `onclick` → `VM.M(Row row)` or `VM.M()` | `text` · `icon` · `variant` (`primary`; otherwise `secondary` `danger` `ghost`) · `cell-disabled` (bool property path on the row item; true = not drawn and inactive, same direction as the common `disabled`) |
 
 - Tapping a check or button cell performs only that action: no selection, no `onrowclick`.
 - Tapping a lamp cell is a normal row tap.
