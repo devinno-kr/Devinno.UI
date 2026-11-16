@@ -56,7 +56,7 @@ public sealed partial class Painter
 
         // 값 텍스트: 채움 위는 흰색, 빈 트랙 위는 본문색 — 경계를 넘어가도 항상 읽힘. 세로 막대는 폭에 들어갈 때만(가로 글자 그대로)
         var text = FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
-        using var font = TextFont.Create(text, MathF.Min(Roles.Font("body"), (vertical ? rect.Width : rect.Height) * 0.62f), weight: Roles.Weight("bold"));
+        using var font = TextFont.Create(text, PartSize(box, "value", MathF.Min(Roles.Font("body"), (vertical ? rect.Width : rect.Height) * 0.62f)), PartWeight(box, "value", Roles.Weight("bold")));
         if (vertical && font.MeasureText(text) > rect.Width - 4f)
             return;
         var baseline = rect.MidY - (font.Metrics.Ascent + font.Metrics.Descent) / 2f;
@@ -139,16 +139,16 @@ public sealed partial class Painter
         if (box.ShowValue) // show-value(기본 참, D2) — 거짓이면 값 글자만 숨기고 label 자리는 그대로
         {
             var text = FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
-            using var font = TextFont.Create(text, MathF.Max(10f, r * 0.42f), weight: Roles.Weight("bold"));
-            using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text") };
+            using var font = TextFont.Create(text, PartSize(box, "value", MathF.Max(10f, r * 0.42f)), PartWeight(box, "value", Roles.Weight("bold")));
+            using var tp = new SKPaint { IsAntialias = true, Color = PartColor(box, "value", ThemeColor("text")) };
             var valueY = cy - (hasLabel ? r * 0.10f : 0f);
             canvas.DrawText(text, cx, valueY - (font.Metrics.Ascent + font.Metrics.Descent) / 2f, SKTextAlign.Center, font, tp);
         }
 
         if (hasLabel)
         {
-            using var lf = TextFont.Create(box.Label!, MathF.Max(9f, r * 0.16f), weight: Roles.Weight("bold"));
-            using var lp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted") };
+            using var lf = TextFont.Create(box.Label!, PartSize(box, "name", MathF.Max(9f, r * 0.16f)), PartWeight(box, "name", Roles.Weight("bold")));
+            using var lp = new SKPaint { IsAntialias = true, Color = PartColor(box, "name", ThemeColor("text-muted")) };
             canvas.DrawText(box.Label!, cx, cy + r * 0.36f, SKTextAlign.Center, lf, lp);
         }
     }

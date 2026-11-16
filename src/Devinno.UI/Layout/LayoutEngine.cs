@@ -356,6 +356,45 @@ public sealed partial class LayoutEngine
         return new InstanceKey(node, nth);
     }
 
+    // 위젯마다 받는 ::part() 이름
+    private static readonly Dictionary<string, string[]> WidgetParts = new(StringComparer.Ordinal)
+    {
+        ["DvGauge"] = ["value", "tick"],
+        ["DvRing"] = ["value", "name"],
+        ["DvKnob"] = ["value"],
+        ["DvTank"] = ["value", "tick"],
+        ["DvProgress"] = ["value"],
+        ["DvSlider"] = ["value"],
+    };
+
+    private static readonly HashSet<string> AnyPart = WidgetParts.Values.SelectMany(p => p).ToHashSet(StringComparer.Ordinal);
+
+    // 태그 ::part → 클래스 ::part(나중 클래스가 이김) 순서로 모은다. 그 위젯에 없는 부분 이름은 경고(화면마다 한 번)
+    private Dictionary<string, PartStyle>? PartsFor(string tag, List<string> classes, object? vm)
+    {
+        Dictionary<string, string>? decls = null;
+        WidgetParts.TryGetValue(tag, out var known);
+        foreach (var owner in classes.Select(c => "." + c).Prepend(tag))
+        {
+            foreach (var (part, d) in _sheet.PartsOf(owner))
+            {
+                var isTag = owner == tag;
+                if ((isTag && (known is null || !known.Contains(part))) || (!isTag && !AnyPart.Contains(part)))
+                {
+                    Interaction.Warnings.Warn($"Devinno.UI: {owner}::part({part}) — {(isTag ? tag : "no widget")} has no part '{part}'"
+                                              + (known is null ? "" : $" (parts: {string.Join(", ", known)})"), key: owner + "::" + part);
+                    continue;
+                }
+                if (known is null || !known.Contains(part))
+                    continue; // 클래스 부분 규칙은 그 부분을 가진 위젯에만
+                decls ??= new Dictionary<string, string>(StringComparer.Ordinal);
+                decls[part] = StyleSheet.Join(decls.GetValueOrDefault(part), d)!;
+            }
+        }
+
+        return decls?.ToDictionary(p => p.Key, p => PartStyle.Parse(ResolveStyle(p.Value, vm) ?? ""), StringComparer.Ordinal);
+    }
+
     private LayoutBox BuildSelf(ElementNode node, object? vm)
     {
         // cascade: 레이아웃 슈가 < 클래스 < 클래스:상태 < content-align 속성 < inline style < inline *-style
@@ -364,7 +403,8 @@ public sealed partial class LayoutEngine
         var control = ControlOf?.Invoke(node);
         var r = new AttrReader(node, vm, control?.AttrOverrides, OverridesOf);
         var sugar = ResolveStyle(LayoutSugar.Decls(r), vm);
-        var rules = Classes(r, _valueOverride).Select(c => _sheet.TryGet(c, out var rule) ? rule : null).OfType<ClassRule>().ToList();
+        var classNames = Classes(r, _valueOverride).ToList();
+        var rules = classNames.Select(c => _sheet.TryGet(c, out var rule) ? rule : null).OfType<ClassRule>().ToList();
         var classBase = ResolveStyle(StyleSheet.Join(rules.Select(rule => rule.Base).ToArray()), vm);
         var attrDecls = TagSchema.Find(node.Tag, "content-align") is not null && AttrRules.Enum(r, "content-align") is { } caValue
             ? "content-align:" + caValue
@@ -378,6 +418,8 @@ public sealed partial class LayoutEngine
             ComponentScope = vm as ComponentScope ?? (vm as ItemScope)?.Outer as ComponentScope,
         };
         _rootItemScope = null;
+        if (_sheet.HasParts)
+            box.Parts = PartsFor(node.Tag, classNames, vm);
         _rootInstance = null;
 
         ComputedStyle? State(Func<ClassRule, string?> pick, string attr)

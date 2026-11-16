@@ -10,6 +10,8 @@
 ### Added
 
 - `font-variant-numeric: tabular-nums` draws every digit 0–9 at the same width, so live values do not shift.
+- Widget parts with the CSS `::part()` selector: `DvGauge::part(value) { font-size: 28 }`, `.hot::part(value) { color: … }` (gauge, ring, knob, tank, progress, slider).
+- Theme role tokens (`weight.*`, `stroke.*`, `font.meta`, `alpha.*`, `overlay.*`, `opacity.disabled`, `control.*`, `row.*`, color roles `selection` `value-input` `value-read` `normal`) and style switches `look.texture` (`flat`|`rich`), `look.normal-color`, `look.selection`. Built-in widgets read these instead of fixed numbers; `look.texture: flat` drops gloss, gradients, shadows and glow on instruments.
 
 ### Changed
 

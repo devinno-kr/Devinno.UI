@@ -316,8 +316,8 @@ public sealed partial class Painter
             if (box.ShowValue) // show-value(기본 참, D2), 값 + unit(한 칸 띄고) — 호 두 끝 사이에 맞춘 크기
             {
                 var label = FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
-                using var font = TextFont.Create(label, WidgetMetrics.GaugeValueFont(gm, label), weight: Roles.Weight("bold"));
-                var valColor = ZoneColorAt(box) ?? needleColor;
+                using var font = TextFont.Create(label, PartSize(box, "value", WidgetMetrics.GaugeValueFont(gm, label)), PartWeight(box, "value", Roles.Weight("bold")));
+                var valColor = PartColor(box, "value", ZoneColorAt(box) ?? needleColor);
                 using var tp = new SKPaint { IsAntialias = true, Color = valColor };
                 canvas.DrawText(label, cx, cy + gm.ValueBaseline, SKTextAlign.Center, font, tp);
             }
@@ -408,7 +408,7 @@ public sealed partial class Painter
                 : new List<(float From, DvColor Color)>();
             // 레이아웃: [벽] 3px 간격 · 6px 눈금 · 4px 간격 · 숫자
             float tickGap = tm.TickGap, tickLen = tm.TickLen, labelGap = tm.LabelGap;
-            using var markFont = TextFont.Create("0", tm.MarkFont, weight: Roles.Weight("regular"));
+            using var markFont = TextFont.Create("0", PartSize(box, "tick", tm.MarkFont), PartWeight(box, "tick", Roles.Weight("regular")));
             var gutter = marks.Count == 0
                 ? 0f
                 : marks.Max(m => markFont.MeasureText(m.From.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)))
@@ -526,8 +526,9 @@ public sealed partial class Painter
 
             // 칩 글씨는 탱크 크기에 비례, 몸통 폭을 넘으면 폭에 맞춰 줄인다(최소 9)
             var chipPad = 16f * tm.Scale;
-            var chipSize = tm.ChipFont;
-            using (var probe = TextFont.Create(label, chipSize, weight: Roles.Weight("bold")))
+            var chipSize = PartSize(box, "value", tm.ChipFont);
+            var chipWeight = PartWeight(box, "value", Roles.Weight("bold"));
+            using (var probe = TextFont.Create(label, chipSize, chipWeight))
             {
                 var need = probe.MeasureText(label) + chipPad;
                 var avail = body.Width - 4f * tm.Scale;
@@ -535,7 +536,7 @@ public sealed partial class Painter
                     chipSize = MathF.Max(9f, chipSize * avail / need);
             }
 
-            using (var font = TextFont.Create(label, chipSize, weight: Roles.Weight("bold")))
+            using (var font = TextFont.Create(label, chipSize, chipWeight))
             {
                 var tw = font.MeasureText(label);
                 var chipW = tw + chipPad * chipSize / tm.ChipFont;
@@ -773,6 +774,11 @@ public sealed partial class Painter
     }
 
     private SKColor ThemeColor(string token) => ThemeResolver.Color(_theme, token);
+
+    // ::part() 덮어쓰기 — 규칙이 정한 값만 바꾼다
+    private static float PartSize(LayoutBox box, string part, float size) => box.Part(part)?.FontSize ?? size;
+    private static int PartWeight(LayoutBox box, string part, int weight) => box.Part(part)?.FontWeight ?? weight;
+    private static SKColor PartColor(LayoutBox box, string part, SKColor color) => box.Part(part)?.Color ?? color;
 
     private static ComputedStyle Effective(LayoutBox box, InteractionState? state)
     {

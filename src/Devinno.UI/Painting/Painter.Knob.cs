@@ -114,8 +114,8 @@ public sealed partial class Painter
         if (!string.IsNullOrEmpty(box.KnobUnit))
             label += " " + box.KnobUnit;
 
-        using var font = TextFont.Create(label, MathF.Max(Roles.Font("caption"), radius * 0.34f), weight: Roles.Weight("bold"));
-        using var tp = new SKPaint { IsAntialias = true, Color = ink };
+        using var font = TextFont.Create(label, PartSize(box, "value", MathF.Max(Roles.Font("caption"), radius * 0.34f)), PartWeight(box, "value", Roles.Weight("bold")));
+        using var tp = new SKPaint { IsAntialias = true, Color = PartColor(box, "value", ink) };
         var baseline = cy - (font.Metrics.Ascent + font.Metrics.Descent) / 2f;
         canvas.DrawText(label, cx, baseline, SKTextAlign.Center, font, tp);
     }

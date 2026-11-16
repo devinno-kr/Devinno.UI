@@ -163,7 +163,27 @@ Define your own classes by placing `<DvStyle>` anywhere in the screen markup.
 </DvStyle>
 ```
 
-- Only the selectors `.name` and `.name:hover` `:press` `:active` (= press) `:disabled` work. Comma lists work (`.a, .b { … }`). `.a.b`, tag and descendant selectors are ignored (Trace warning).
+- Only the selectors `.name` and `.name:hover` `:press` `:active` (= press) `:disabled` work, plus widget parts (below). Comma lists work (`.a, .b { … }`). `.a.b`, plain tag and descendant selectors are ignored (Trace warning).
+- **Widget parts** — the text inside an instrument is styled with the CSS `::part()` selector on the tag (every widget of that kind) or on a class (only widgets with that class). Keys: `font-size`, `font-weight`, `color`. A class part rule wins over the tag part rule.
+
+  ```xml
+  <DvStyle>
+    DvGauge::part(value) { font-size: 28; font-weight: 600 }
+    .hot::part(value)    { color: token(tone-danger) }
+  </DvStyle>
+  <DvGauge class="hot" value="{Pressure}"/>
+  ```
+
+  | Tag | Parts |
+  |---|---|
+  | `DvGauge` | `value` (value and unit), `tick` (scale numbers) |
+  | `DvRing` | `value`, `name` (the `label` text) |
+  | `DvKnob` | `value` |
+  | `DvTank` | `value` (the value chip), `tick` (limit numbers) |
+  | `DvProgress` | `value` |
+  | `DvSlider` | `value` |
+
+  A part name the widget does not have is ignored with a warning.
 - `/* comments */` are allowed.
 - Defining a name identical to a built-in class appends to it and overrides it.
 - A `DvStyle` inside a `DvComponent` definition is applied globally ([components](dvml-components.md#dvcomponent)). For the same class, the `DvStyle` in the screen markup wins.

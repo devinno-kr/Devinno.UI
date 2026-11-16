@@ -45,8 +45,8 @@ public sealed partial class Painter
                     ?? box.KnobValue.ToString("F" + KnobBinder.Decimals(box.KnobStep), System.Globalization.CultureInfo.InvariantCulture);
         if (!string.IsNullOrEmpty(box.KnobUnit))
             label += " " + box.KnobUnit;
-        using var font = TextFont.Create(label, Roles.Font("label"), weight: Roles.Weight("bold"));
-        using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text").WithAlpha(a) };
+        using var font = TextFont.Create(label, PartSize(box, "value", Roles.Font("label")), PartWeight(box, "value", Roles.Weight("bold")));
+        using var tp = new SKPaint { IsAntialias = true, Color = PartColor(box, "value", ThemeColor("text")).WithAlpha(a) };
         var mid = -(font.Metrics.Ascent + font.Metrics.Descent) / 2f;
         if (SliderMetrics.Vertical(box))
         {

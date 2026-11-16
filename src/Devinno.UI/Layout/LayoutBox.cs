@@ -71,6 +71,12 @@ public sealed class LayoutBox
     /// <summary>Text line information (shared by measuring and painting). Created during measuring; painting does not re-split it when the width is the same.</summary>
     internal Devinno.UI.Text.TextLines? TextLines;
 
+    // ::part() 덮어쓰기(부분 이름 → 값). 없으면 null
+    internal Dictionary<string, PartStyle>? Parts;
+
+    /// <summary>The <c>::part()</c> overrides of part <paramref name="name"/>, or <see langword="null"/>.</summary>
+    internal PartStyle? Part(string name) => Parts?.GetValueOrDefault(name);
+
     // ── overflow:scroll — 자식은 내용 좌표로 한 번 배치하고, 스크롤은 페인트·히트테스트에서 오프셋으로만 적용
     /// <summary>Horizontal scroll offset (px): the distance from the left edge of the content to the left edge of the visible area, from 0 to <see cref="MaxScrollX"/>. Changed by <see cref="DvSurface"/> when the user drags or turns the wheel.</summary>
     public float ScrollX { get; internal set; }

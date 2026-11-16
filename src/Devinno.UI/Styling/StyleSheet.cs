@@ -28,6 +28,9 @@ public sealed class ClassRule
 /// <remarks>
 /// <para><b>Syntax</b>: a sequence of <c>셀렉터 { 선언; 선언 }</c> (selector { declaration; declaration }). The only supported selectors are a single class <c>.name</c> and
 /// <c>.name:hover</c>, <c>:press</c>, <c>:active</c> (= press) and <c>:disabled</c> (case-sensitive); several selectors can be listed separated by commas.
+/// Widget parts are styled with the CSS <c>::part()</c> selector on a tag or a class: <c>DvGauge::part(value) { font-size: 40 }</c>, <c>.big::part(value) { color: token(primary) }</c>
+/// (keys <c>font-size</c>, <c>font-weight</c>, <c>color</c>; a class part rule wins over the tag part rule). Parts: <c>DvGauge</c> value, tick · <c>DvRing</c> value, name ·
+/// <c>DvKnob</c> value · <c>DvTank</c> value, tick · <c>DvProgress</c> value · <c>DvSlider</c> value.
 /// Unsupported selectors such as <c>.a.b</c>, tag, descendant or <c>#id</c> selectors are ignored, with a warning (<see cref="Trace"/>) for that selector only.
 /// <c>/* … */</c> comments are removed. Braces cannot be used inside declaration values.</para>
 /// <para><b>Declarations</b>: use the same keys as the inline <c>style</c> (see <see cref="ComputedStyle"/>), and <c>token(...)</c> can be used.</para>
@@ -58,7 +61,25 @@ public sealed class StyleSheet
     private static readonly Regex Selector = new(
         @"^\.([A-Za-z0-9_-]+)(?::(hover|press|active|disabled))?$", RegexOptions.Compiled);
 
+    // 위젯 부분 선택자: DvGauge::part(value) / .big::part(value) — 상태(:hover 등)는 받지 않는다
+    private static readonly Regex PartSelector = new(
+        @"^(?:\.([A-Za-z0-9_-]+)|(Dv[A-Za-z0-9_]+))::part\(\s*([A-Za-z0-9_-]+)\s*\)$", RegexOptions.Compiled);
+
     private readonly Dictionary<string, ClassRule> _rules = new(StringComparer.Ordinal);
+
+    // (주인, 부분) → 선언. 주인 = 태그 이름(DvGauge) 또는 ".클래스"
+    private readonly Dictionary<(string Owner, string Part), string> _parts = new();
+
+    /// <summary>Finds the declarations of a widget part rule: <paramref name="owner"/> is a tag (<c>DvGauge</c>) or <c>.class</c>, <paramref name="part"/> the part name.</summary>
+    internal bool TryGetPart(string owner, string part, out string declarations)
+        => _parts.TryGetValue((owner, part), out declarations!);
+
+    /// <summary>The part rules of one owner (a tag or <c>.class</c>), as (part name, declarations).</summary>
+    internal IEnumerable<(string Part, string Declarations)> PartsOf(string owner)
+        => _parts.Where(p => p.Key.Owner == owner).Select(p => (p.Key.Part, p.Value));
+
+    /// <summary>Whether the stylesheet has any widget part rule.</summary>
+    internal bool HasParts => _parts.Count > 0;
 
     /// <summary>Parses CSS text into a new stylesheet. Equivalent to calling <see cref="Add"/> once on an empty stylesheet.</summary>
     /// <param name="css">Stylesheet text. <see langword="null"/> or whitespace gives an empty stylesheet.</param>
@@ -105,6 +126,14 @@ public sealed class StyleSheet
                 var sel = raw.Trim();
                 if (sel.Length == 0)
                     continue;
+
+                var pm = PartSelector.Match(sel);
+                if (pm.Success)
+                {
+                    var key = (pm.Groups[1].Success ? "." + pm.Groups[1].Value : pm.Groups[2].Value, pm.Groups[3].Value);
+                    _parts[key] = Join(_parts.GetValueOrDefault(key), body)!;
+                    continue;
+                }
 
                 var m = Selector.Match(sel);
                 if (!m.Success)
