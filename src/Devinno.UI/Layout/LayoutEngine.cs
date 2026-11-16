@@ -838,9 +838,9 @@ public sealed partial class LayoutEngine
     private static TextLines LinesOf(LayoutBox box, ComputedStyle st, SKFont font)
     {
         var text = box.ResolvedText ?? "";
-        if (box.TextLines is { } t && t.Matches(text, st.FontSize, st.FontWeight, st.FontFamily))
+        if (box.TextLines is { } t && t.Matches(text, st.FontSize, st.FontWeight, st.FontFamily, st.TabularNums))
             return t;
-        return box.TextLines = new TextLines(text, st.FontSize, st.FontWeight, st.FontFamily, font);
+        return box.TextLines = new TextLines(text, st.FontSize, st.FontWeight, st.FontFamily, font, st.TabularNums);
     }
 
     /// <summary>

@@ -32,6 +32,70 @@ internal static class TextFont
         };
     }
 
+    /// <summary>The width of one digit cell for tabular digits: the widest of 0–9 in <paramref name="font"/>.</summary>
+    internal static float DigitCell(SKFont font)
+    {
+        var cell = 0f;
+        for (var d = '0'; d <= '9'; d++)
+            cell = MathF.Max(cell, font.MeasureText(d.ToString()));
+        return cell;
+    }
+
+    /// <summary>The width of <paramref name="text"/> with tabular digits: every digit 0–9 takes <see cref="DigitCell"/>, other characters keep their own width.</summary>
+    internal static float MeasureNumber(string text, SKFont font)
+    {
+        if (!text.Any(char.IsAsciiDigit))
+            return font.MeasureText(text);
+        var cell = DigitCell(font);
+        var width = 0f;
+        foreach (var (run, digits) in Runs(text))
+            width += digits ? run.Length * cell : font.MeasureText(run);
+        return width;
+    }
+
+    /// <summary>Draws <paramref name="text"/> with tabular digits (each digit centered in its cell), anchored at <paramref name="x"/> by <paramref name="align"/>.</summary>
+    internal static void DrawNumber(SKCanvas canvas, string text, float x, float y, SKTextAlign align, SKFont font, SKPaint paint)
+    {
+        var total = MeasureNumber(text, font);
+        var left = align switch
+        {
+            SKTextAlign.Center => x - total / 2f,
+            SKTextAlign.Right => x - total,
+            _ => x
+        };
+        var cell = DigitCell(font);
+        foreach (var (run, digits) in Runs(text))
+        {
+            if (digits)
+            {
+                foreach (var d in run)
+                {
+                    canvas.DrawText(d.ToString(), left + cell / 2f, y, SKTextAlign.Center, font, paint);
+                    left += cell;
+                }
+            }
+            else
+            {
+                canvas.DrawText(run, left, y, SKTextAlign.Left, font, paint);
+                left += font.MeasureText(run);
+            }
+        }
+    }
+
+    // 숫자(0~9) 묶음과 그 밖의 글자 묶음으로 나눔
+    private static IEnumerable<(string Run, bool Digits)> Runs(string text)
+    {
+        var start = 0;
+        for (var i = 1; i <= text.Length; i++)
+        {
+            if (i == text.Length || char.IsAsciiDigit(text[i]) != char.IsAsciiDigit(text[start]))
+            {
+                yield return (text[start..i], char.IsAsciiDigit(text[start]));
+                start = i;
+            }
+        }
+    }
+
     /// <summary>Synthetic bold is needed when 600 or more is asked for and the chosen face is at least 150 lighter.</summary>
     internal static bool NeedsEmbolden(int requested, int faceWeight) => requested >= 600 && faceWeight <= requested - 150;
 

@@ -206,7 +206,12 @@ public sealed partial class Painter
 
             // 줄마다 text-align 으로 가로 정렬
             for (var i = 0; i < lines.Count; i++)
-                canvas.DrawText(lines[i], tx, baseline + i * font.Spacing, align, font, tp);
+            {
+                if (st.TabularNums)
+                    TextFont.DrawNumber(canvas, lines[i], tx, baseline + i * font.Spacing, align, font, tp);
+                else
+                    canvas.DrawText(lines[i], tx, baseline + i * font.Spacing, align, font, tp);
+            }
         }
 
         if (box.Widget is { } widget)

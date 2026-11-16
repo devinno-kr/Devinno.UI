@@ -130,23 +130,24 @@ internal sealed class TextLines
 {
     private readonly float _size;
     private readonly int _weight;
+    private readonly bool _tabular;
     private readonly string? _family;
 
-    public TextLines(string text, float size, int weight, string? family, SKFont font)
+    public TextLines(string text, float size, int weight, string? family, SKFont font, bool tabular = false)
     {
         Text = text;
-        (_size, _weight, _family) = (size, weight, family);
+        (_size, _weight, _family, _tabular) = (size, weight, family, tabular);
         if (text.Contains('\n'))
         {
             var paras = text.Replace("\r\n", "\n").Split('\n');
             Paras = paras;
             foreach (var p in paras)
-                Width = MathF.Max(Width, font.MeasureText(p));
+                Width = MathF.Max(Width, tabular ? TextFont.MeasureNumber(p, font) : font.MeasureText(p));
         }
         else
         {
             Paras = new[] { text };
-            Width = font.MeasureText(text);
+            Width = tabular ? TextFont.MeasureNumber(text, font) : font.MeasureText(text);
         }
     }
 
@@ -161,8 +162,8 @@ internal sealed class TextLines
     private IReadOnlyList<string>? _wrapped;
     private float _wrapWidth = float.NaN;
 
-    public bool Matches(string text, float size, int weight, string? family)
-        => Text == text && _size == size && _weight == weight && _family == family;
+    public bool Matches(string text, float size, int weight, string? family, bool tabular = false)
+        => Text == text && _size == size && _weight == weight && _family == family && _tabular == tabular;
 
     /// <summary>
     /// Lines to place in the inner width <paramref name="width"/>. If there is no width (<see langword="null"/>) or the widest paragraph fits, the paragraphs as they are;

@@ -4480,7 +4480,10 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <remarks>
             글꼴 가족에 그 굵기의 면이 있으면 그 면으로 그리고(없으면 가장 가까운 면),
             600 이상을 요청했는데 굵은 면이 없을 때만 합성 볼드를 씁니다.
-            </remarks></member><member name="P:Devinno.UI.Styling.ComputedStyle.Bold" en-hash="f4aa7042b40209be"><summary>굵은 글꼴 여부: <see cref="P:Devinno.UI.Styling.ComputedStyle.FontWeight" /> 가 600 이상이면 <see langword="true" />. 읽기 전용이며, 바꿀 때는 <see cref="P:Devinno.UI.Styling.ComputedStyle.FontWeight" /> 를 설정합니다.</summary></member><member name="P:Devinno.UI.Styling.ComputedStyle.TextAlign" en-hash="263b6b58770121fc">
+            </remarks></member><member name="P:Devinno.UI.Styling.ComputedStyle.Bold" en-hash="f4aa7042b40209be"><summary>굵은 글꼴 여부: <see cref="P:Devinno.UI.Styling.ComputedStyle.FontWeight" /> 가 600 이상이면 <see langword="true" />. 읽기 전용이며, 바꿀 때는 <see cref="P:Devinno.UI.Styling.ComputedStyle.FontWeight" /> 를 설정합니다.</summary></member><member name="P:Devinno.UI.Styling.ComputedStyle.TabularNums" en-hash="9acec5b538ee6e82"><summary>
+            숫자를 고정폭으로 그릴지: 스타일 키 <c>font-variant-numeric: tabular-nums</c>(CSS 이름). 켜면 숫자 0~9 가 모두 같은 칸 폭
+            (그 글꼴에서 가장 넓은 숫자)을 써서, 값이 바뀌어도 글자가 흔들리지 않습니다. 다른 글자는 원래 폭. 기본값 <see langword="false" />.
+            </summary></member><member name="P:Devinno.UI.Styling.ComputedStyle.TextAlign" en-hash="263b6b58770121fc">
             <summary>
             글자 가로 정렬. 스타일 키 <c>text-align</c>(<c>left</c>·<c>center</c>·<c>right</c>, 대소문자 구분) 또는 <c>content-align</c> 의 가로 부분.
             한 선언 목록 안에서는 둘 중 뒤에 나온 것이 이깁니다. 기본값 <see cref="F:Devinno.UI.Styling.TextAlign.Left" />.
@@ -5051,7 +5054,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
         </member><member name="M:Devinno.UI.Text.TextFont.Create(System.String,System.Single,System.Int32,System.String)" en-hash="72952b3dabb1ddf9"><summary>
             <paramref name="text" /> 를 <paramref name="weight" />(100–900)로 그리는 글꼴. 가족은 <see cref="M:Devinno.UI.Text.TextFont.ResolveTypeface(System.String,System.String)" /> 와 같이 고르고,
             그 가족에서 굵기가 가장 가까운 면을 씁니다. 합성 볼드는 600 이상을 요청했는데 가족에 굵은 면이 없을 때만 씁니다.
-            </summary></member><member name="M:Devinno.UI.Text.TextFont.ForFace(SkiaSharp.SKTypeface,System.Single,System.Int32)" en-hash="86bd2b39f454e8d8"><summary>이미 고른 가족 면에서, 그 가족의 <paramref name="weight" /> 에 가장 가까운 면으로 만든 글꼴.</summary></member><member name="M:Devinno.UI.Text.TextFont.NeedsEmbolden(System.Int32,System.Int32)" en-hash="923b016499479329"><summary>600 이상을 요청했고 고른 면이 150 이상 가벼우면 합성 볼드가 필요합니다.</summary></member><member name="M:Devinno.UI.Text.TextFont.ResolveTypeface(System.String,System.String)" en-hash="fe35f2177c27f545">
+            </summary></member><member name="M:Devinno.UI.Text.TextFont.ForFace(SkiaSharp.SKTypeface,System.Single,System.Int32)" en-hash="86bd2b39f454e8d8"><summary>이미 고른 가족 면에서, 그 가족의 <paramref name="weight" /> 에 가장 가까운 면으로 만든 글꼴.</summary></member><member name="M:Devinno.UI.Text.TextFont.DigitCell(SkiaSharp.SKFont)" en-hash="06da3db7bbbd63dc"><summary>고정폭 숫자의 숫자 한 칸 폭: <paramref name="font" /> 에서 0~9 중 가장 넓은 폭.</summary></member><member name="M:Devinno.UI.Text.TextFont.MeasureNumber(System.String,SkiaSharp.SKFont)" en-hash="a88cf3714d7e3750"><summary>고정폭 숫자로 잰 <paramref name="text" /> 의 폭: 숫자 0~9 는 모두 <see cref="M:Devinno.UI.Text.TextFont.DigitCell(SkiaSharp.SKFont)" /> 폭, 다른 글자는 원래 폭.</summary></member><member name="M:Devinno.UI.Text.TextFont.DrawNumber(SkiaSharp.SKCanvas,System.String,System.Single,System.Single,SkiaSharp.SKTextAlign,SkiaSharp.SKFont,SkiaSharp.SKPaint)" en-hash="1e4deb8b1e1ed12e"><summary><paramref name="text" /> 를 고정폭 숫자로 그립니다(숫자는 칸 가운데). <paramref name="align" /> 에 따라 <paramref name="x" /> 에 맞춥니다.</summary></member><member name="M:Devinno.UI.Text.TextFont.NeedsEmbolden(System.Int32,System.Int32)" en-hash="923b016499479329"><summary>600 이상을 요청했고 고른 면이 150 이상 가벼우면 합성 볼드가 필요합니다.</summary></member><member name="M:Devinno.UI.Text.TextFont.ResolveTypeface(System.String,System.String)" en-hash="fe35f2177c27f545">
             <summary>
             font-family 목록(쉼표) 중 문자열의 모든 글자를 가진 첫 폰트. 없거나 일부 글자가 빠지면
             기준 폰트(목록의 첫 설치 폰트, 없으면 기본)가 못 그리는 첫 문자로 폴백 폰트를 고른다.

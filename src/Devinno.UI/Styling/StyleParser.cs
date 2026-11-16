@@ -161,6 +161,9 @@ public static class StyleParser
             case "font-family":
                 s.FontFamily = v.Trim();
                 break;
+            case "font-variant-numeric":
+                s.TabularNums = v.Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains("tabular-nums");
+                break;
             case "font-weight":
                 if (v.Equals("bold", StringComparison.OrdinalIgnoreCase))
                     s.FontWeight = 700;

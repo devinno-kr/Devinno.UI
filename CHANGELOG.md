@@ -7,6 +7,10 @@
 - `DvWidgetContext.MeasureText` / `DrawText`: the `bool bold` parameter is now `int weight` (100–900, default 400). Replace `bold: true` with `weight: 700`.
 - `ComputedStyle.Bold` is read-only (`FontWeight >= 600`); set `ComputedStyle.FontWeight` instead.
 
+### Added
+
+- `font-variant-numeric: tabular-nums` draws every digit 0–9 at the same width, so live values do not shift.
+
 ### Changed
 
 - `font-weight` takes 100–900 and draws the font's real face for that weight (the nearest face the installed font has). Synthetic bold is used only when 600 or more is asked for and the font has no bold face. Bold text looks crisper and slightly wider than before.

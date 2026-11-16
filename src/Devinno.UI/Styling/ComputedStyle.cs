@@ -271,6 +271,12 @@ public sealed class ComputedStyle
     public bool Bold => FontWeight >= 600;
 
     /// <summary>
+    /// Whether digits are tabular: style key <c>font-variant-numeric: tabular-nums</c> (CSS name). Every digit 0–9 then takes the same cell width
+    /// (the widest digit of the font), so a changing value does not shift the text. Other characters keep their own width. Default <see langword="false"/>.
+    /// </summary>
+    public bool TabularNums { get; set; }
+
+    /// <summary>
     /// Horizontal text alignment. Style key <c>text-align</c> (<c>left</c>, <c>center</c>, <c>right</c>; case-sensitive) or the horizontal part of <c>content-align</c>.
     /// Within one declaration list, whichever of the two comes later wins. Default <see cref="TextAlign.Left"/>.
     /// </summary>
