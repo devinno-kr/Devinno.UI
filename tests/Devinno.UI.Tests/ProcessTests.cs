@@ -457,13 +457,25 @@ public class ProcessTests(ITestOutputHelper output)
     [InlineData("180", "Right", "Left")]
     [InlineData("270", "Bottom", "Top")]
     public void Rotate_MapsPortSides(string rotate, string inName, string outName)
+        => RotateCase(rotate, inName, outName, "");
+
+    // rich 는 배관 간격(Pitch)이 넓다 — 같은 배치에서 배관이 포개지지 않아야 한다
+    [Theory]
+    [InlineData("0", "Left", "Right")]
+    [InlineData("90", "Top", "Bottom")]
+    [InlineData("180", "Right", "Left")]
+    [InlineData("270", "Bottom", "Top")]
+    public void Rotate_MapsPortSides_Rich(string rotate, string inName, string outName)
+        => RotateCase(rotate, inName, outName, "look=\"rich\"");
+
+    private void RotateCase(string rotate, string inName, string outName, string attrs)
     {
         var inSide = Enum.Parse<PortSide>(inName);
         var outSide = Enum.Parse<PortSide>(outName);
         var (_, d) = Start($"""
             <DvValve name="S"/><DvValve name="V" rotate="{rotate}"/><DvValve name="E"/>
             <DvLine from="S.out" to="V.in"/><DvLine from="V.out" to="E.in"/>
-            """);
+            """, attrs);
         Assert.Equal(inSide, d.Lines[0].G!.To.Out);
         Assert.Equal(outSide, d.Lines[1].G!.From.Out);
         var v = SymAbs(Node(d, "V"));

@@ -1434,6 +1434,7 @@ internal sealed class ProcessGraph
 
     private void RouteAll(List<GraphLine> order)
     {
+        ReserveStubs();
         foreach (var line in order)
         {
             if (line.Via is not null)
@@ -1770,6 +1771,31 @@ internal sealed class ProcessGraph
 
     private static bool Others(Dictionary<int, HashSet<int>> map, int v, int net) =>
         map.TryGetValue(v, out var set) && set.Any(n => n != net);
+
+    // 포트 앞 곧은 끝(포트 → StubEnd)은 길 찾기 밖에서 반드시 그려지는 구간이다 — 먼저 그은 선이 아직 안 그은 선의 곧은 끝 위를
+    // 지나가지 않게, 긋기 전에 모든 선의 곧은 끝을 그 묶음 자리로 잡아 둔다(같은 묶음은 재사용, 다른 묶음은 막힘).
+    // 잡지 않으면 같은 줄에서 마주 보는 두 곧은 끝 쪽으로 다른 선이 들어와 포개질 수 있다(rich 간격·회전 180 에서 재현)
+    private void ReserveStubs()
+    {
+        foreach (var line in Lines.Where(l => l.Via is null))
+        {
+            foreach (var e in new[] { line.From, line.To })
+            {
+                var (p, q) = (e.Point, e.StubEnd);
+                if (MathF.Abs(p.Y - q.Y) < 0.01f && MathF.Abs(p.X - q.X) > 0.01f && Array.BinarySearch(_ys, p.Y) is var j and >= 0)
+                    AddOcc(_hOcc, j, MathF.Min(p.X, q.X), MathF.Max(p.X, q.X), line.Net);
+                else if (MathF.Abs(p.X - q.X) < 0.01f && MathF.Abs(p.Y - q.Y) > 0.01f && Array.BinarySearch(_xs, p.X) is var i and >= 0)
+                    AddOcc(_vOcc, i, MathF.Min(p.Y, q.Y), MathF.Max(p.Y, q.Y), line.Net);
+            }
+        }
+
+        static void AddOcc(Dictionary<int, List<(float, float, int)>> occ, int key, float a, float b, int net)
+        {
+            if (!occ.TryGetValue(key, out var list))
+                occ[key] = list = new();
+            list.Add((a, b, net));
+        }
+    }
 
     private void Occupy(GraphLine line)
     {

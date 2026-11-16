@@ -45,6 +45,10 @@
 - Screen text no longer splits a Latin word: a word wider than its line stays whole and overflows (CSS `overflow-wrap: normal`). Korean, Chinese and Japanese still break between characters, and multi-line `DvInput` still breaks long words.
 - A theme token's value can be another token (`["gauge-track"] = "token(surface-raised)"`); lookups follow it. A missing target or a cycle draws magenta with a warning.
 
+### Fixed
+
+- Process diagrams: a pipe no longer runs over another line's port stub (both pipes overlapped on one row, e.g. with the rich look and a valve rotated 180°). Port stubs are reserved before the pipes are routed.
+
 ## 0.6.0 — 2026-11-10
 
 This release has breaking changes. Build an existing app against it first: most of what you need to change is reported by the build as DVML019 (an attribute the tag does not have, including renamed ones — the message names the new attribute) or DVML020 (a literal value the attribute cannot use).
