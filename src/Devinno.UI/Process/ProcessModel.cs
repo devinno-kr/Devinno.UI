@@ -1099,7 +1099,7 @@ internal static class ProcessBuilder
         else if (n.Terminal)
         {
             var lines = TerminalLines(n);
-            using var f = TextFont.Create(n.Text ?? "", d.Text(12), true, family);
+            using var f = TextFont.Create(n.Text ?? "", d.Text(12), 700, family);
             var tw = lines.Max(l => f.MeasureText(l));
             var more = (lines.Length - 1) * f.Spacing; // 둘째 줄부터 한 줄씩 높아진다
             symSize = d.Vertical ? new SKSize(MathF.Max(d.Text(60), tw + d.Text(20)), d.Text(38) + more) : new SKSize(MathF.Max(d.Text(64), tw + d.Text(34)), d.Text(28) + more);
@@ -1136,7 +1136,7 @@ internal static class ProcessBuilder
         var extras = new List<SKRect>();
         if (!string.IsNullOrEmpty(n.Label) && !n.Terminal && !n.IsVessel)
         {
-            using var f = TextFont.Create(n.Label, d.Text(LabelSize), true, family);
+            using var f = TextFont.Create(n.Label, d.Text(LabelSize), 700, family);
             var lw = f.MeasureText(n.Label);
             var lh = f.Spacing;
             var used = n.Unit is not null ? new HashSet<PortSide> { PortSide.Bottom } : UsedSides(d, n); // 유닛 이름은 제목(위)
@@ -1297,8 +1297,8 @@ internal static class ProcessBuilder
     internal static float BubbleSize(ProcessInstrument inst, string? family)
     {
         var d = inst.Owner;
-        using var tf = TextFont.Create(inst.Letters ?? "", d.Text(LetterSize), true, family);
-        using var nf = TextFont.Create(inst.Number ?? "", d.Text(NumberSize), true, family);
+        using var tf = TextFont.Create(inst.Letters ?? "", d.Text(LetterSize), 700, family);
+        using var nf = TextFont.Create(inst.Number ?? "", d.Text(NumberSize), 700, family);
         return MathF.Max(d.Text(BubbleMin), MathF.Max(tf.MeasureText(inst.Letters ?? ""), nf.MeasureText(inst.Number ?? "")) + d.Text(14));
     }
 
@@ -1309,7 +1309,7 @@ internal static class ProcessBuilder
         SKSize v = SKSize.Empty;
         if (!string.IsNullOrEmpty(inst.Value))
         {
-            using var vf = TextFont.Create(inst.Value, d.Text(ValueSize), false, family);
+            using var vf = TextFont.Create(inst.Value, d.Text(ValueSize), 400, family);
             v = new SKSize(vf.MeasureText(inst.Value), vf.Spacing);
         }
 

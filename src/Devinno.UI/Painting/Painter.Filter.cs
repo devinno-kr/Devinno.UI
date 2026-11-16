@@ -33,7 +33,7 @@ public sealed partial class Painter
                     var key = date ? f == 1 ? "dv.filter.from" : "dv.filter.to" : f == 1 ? "dv.filter.min" : "dv.filter.max";
                     var label = p.LabelRect(f);
                     var s = DvStrings.Builtin(strings, key);
-                    using (var font = TextFont.Create(s, fontSize, false))
+                    using (var font = TextFont.Create(s, fontSize, 400))
                     using (var lp = new SKPaint { IsAntialias = true, Color = muted })
                         canvas.DrawText(s, label.Left, Baseline(label, font), SKTextAlign.Left, font, lp);
 
@@ -54,7 +54,7 @@ public sealed partial class Painter
         {
             var msg = p.FieldEdit.Error!;
             var r = p.ErrorRect;
-            using var font = TextFont.Create(msg, fontSize - 2, false);
+            using var font = TextFont.Create(msg, fontSize - 2, 400);
             using var ep = new SKPaint { IsAntialias = true, Color = PopupChrome.Tok(theme, "state-fault") };
             canvas.DrawText(font.MeasureText(msg) > r.Width ? Ellipsize(msg, r.Width, font) : msg, r.Left, Baseline(r, font), SKTextAlign.Left, font, ep);
         }
@@ -86,7 +86,7 @@ public sealed partial class Painter
         if (s.Length == 0)
             return;
         var area = new SKRect(f.Left + 12f, f.Top, f.Right - 12f, f.Bottom);
-        using var font = TextFont.Create(s, fontSize, false);
+        using var font = TextFont.Create(s, fontSize, 400);
         using var tp = new SKPaint { IsAntialias = true, Color = editing ? PopupChrome.Tok(theme, "text") : ink };
         canvas.Save();
         canvas.ClipRect(area);
@@ -129,7 +129,7 @@ public sealed partial class Painter
         {
             var more = p.MoreText;
             var r = p.MoreRect;
-            using var font = TextFont.Create(more, p.MoreFontSize, false);
+            using var font = TextFont.Create(more, p.MoreFontSize, 400);
             using var mp = new SKPaint { IsAntialias = true, Color = PopupChrome.Tok(theme, "text-muted") };
             canvas.DrawText(font.MeasureText(more) > r.Width ? Ellipsize(more, r.Width, font) : more, r.Left, Baseline(r, font), SKTextAlign.Left, font, mp);
         }
@@ -174,7 +174,7 @@ public sealed partial class Painter
         var avail = row.Right - 12f - x;
         if (label.Length == 0 || avail <= 0)
             return;
-        using var font = TextFont.Create(label, fontSize, bold);
+        using var font = TextFont.Create(label, fontSize, bold ? 700 : 400);
         if (font.MeasureText(label) > avail)
             label = Ellipsize(label, avail, font);
         if (label.Length == 0)

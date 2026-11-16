@@ -162,8 +162,12 @@ public static class StyleParser
                 s.FontFamily = v.Trim();
                 break;
             case "font-weight":
-                s.Bold = v.Equals("bold", StringComparison.OrdinalIgnoreCase) ||
-                         (float.TryParse(v, out var w) && w >= 600);
+                if (v.Equals("bold", StringComparison.OrdinalIgnoreCase))
+                    s.FontWeight = 700;
+                else if (v.Equals("normal", StringComparison.OrdinalIgnoreCase))
+                    s.FontWeight = 400;
+                else if (float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var w) && float.IsFinite(w))
+                    s.FontWeight = (int)Math.Round(Math.Clamp(w, 100f, 900f) / 100f, MidpointRounding.AwayFromZero) * 100;
                 break;
             case "text-align":
                 s.TextAlign = v switch

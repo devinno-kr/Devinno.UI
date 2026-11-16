@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Breaking
+
+- `DvWidgetContext.MeasureText` / `DrawText`: the `bool bold` parameter is now `int weight` (100–900, default 400). Replace `bold: true` with `weight: 700`.
+- `ComputedStyle.Bold` is read-only (`FontWeight >= 600`); set `ComputedStyle.FontWeight` instead.
+
+### Changed
+
+- `font-weight` takes 100–900 and draws the font's real face for that weight (the nearest face the installed font has). Synthetic bold is used only when 600 or more is asked for and the font has no bold face. Bold text looks crisper and slightly wider than before.
+- Text is placed at subpixel positions with unhinted advance widths, so letter spacing is even at every size (before, some sizes showed uneven gaps). Text widths change by fractions of a pixel.
+- Screen text no longer splits a Latin word: a word wider than its line stays whole and overflows (CSS `overflow-wrap: normal`). Korean, Chinese and Japanese still break between characters, and multi-line `DvInput` still breaks long words.
+- A theme token's value can be another token (`["gauge-track"] = "token(surface-raised)"`); lookups follow it. A missing target or a cycle draws magenta with a warning.
+
 ## 0.6.0 — 2026-11-10
 
 This release has breaking changes. Build an existing app against it first: most of what you need to change is reported by the build as DVML019 (an attribute the tag does not have, including renamed ones — the message names the new attribute) or DVML020 (a literal value the attribute cannot use).

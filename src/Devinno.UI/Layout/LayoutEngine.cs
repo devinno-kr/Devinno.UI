@@ -838,9 +838,9 @@ public sealed partial class LayoutEngine
     private static TextLines LinesOf(LayoutBox box, ComputedStyle st, SKFont font)
     {
         var text = box.ResolvedText ?? "";
-        if (box.TextLines is { } t && t.Matches(text, st.FontSize, st.Bold, st.FontFamily))
+        if (box.TextLines is { } t && t.Matches(text, st.FontSize, st.FontWeight, st.FontFamily))
             return t;
-        return box.TextLines = new TextLines(text, st.FontSize, st.Bold, st.FontFamily, font);
+        return box.TextLines = new TextLines(text, st.FontSize, st.FontWeight, st.FontFamily, font);
     }
 
     /// <summary>
@@ -986,7 +986,7 @@ public sealed partial class LayoutEngine
 
         if (box.ResolvedText is not null)
         {
-            using var font = TextFont.Create(box.ResolvedText, st.FontSize, st.Bold, st.FontFamily);
+            using var font = TextFont.Create(box.ResolvedText, st.FontSize, st.FontWeight, st.FontFamily);
             float tw;
             float th;
             if (IconFont.TryResolve(box.Icon, out _))

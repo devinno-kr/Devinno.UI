@@ -1,3 +1,4 @@
+using Devinno.UI;
 using Devinno.UI.Layout;
 using Devinno.UI.Markup;
 using Devinno.UI.Painting;
@@ -21,7 +22,7 @@ public class TextWrapTests
 
     private static LayoutBox Label(LayoutBox root) => LayoutQuery.FindByTag(root, "DvLabel")!;
 
-    private static SKFont Font(string text, float size = 14f) => TextFont.Create(text, size, bold: false);
+    private static SKFont Font(string text, float size = 14f) => TextFont.Create(text, size, weight: 400);
 
     private static int Lines(string text, float width)
     {
@@ -331,6 +332,38 @@ public class TextWrapTests
         Assert.Equal(Spacing(text) + 8, label.Rect.Height, 3);
     }
 
+    // CSS 기본(overflow-wrap: normal) — 화면 글자는 낱말 가운데서 끊지 않는다. 낱말이 칸보다 넓으면 한 줄로 넘친다.
+    // 띄어쓰기 없는 한글·한자·가나는 글자 사이에서 끊을 수 있다(word-break: normal). 여러 줄 입력은 textarea 처럼 긴 낱말도 끊는다.
+    [Fact]
+    public void Screen_text_does_not_break_a_latin_word()
+    {
+        using var f = TextFont.Create("Primary", 16, 700);
+        Assert.Equal(new[] { "Primary" }, TextWrap.Wrap("Primary", f, 56, breakWords: false));
+        Assert.Equal(new[] { "Wash", "recipe" }, TextWrap.Wrap("Wash recipe", f, 56, breakWords: false));
+    }
+
+    [Fact]
+    public void Screen_text_still_breaks_korean_between_syllables()
+    {
+        using var f = Font("가나다라마바사아자차카타파하");
+        Assert.True(TextWrap.Wrap("가나다라마바사아자차카타파하", f, 60, breakWords: false).Count > 1);
+    }
+
+    [Fact]
+    public void Input_text_breaks_a_long_word_like_textarea()
+    {
+        using var f = Font("abcdefghijklmnopqrstuvwxyz");
+        Assert.True(InputDisplay.Wrap("abcdefghijklmnopqrstuvwxyz", f, 50).Count > 1);
+    }
+
+    [Fact]
+    public void Button_with_a_word_wider_than_its_box_stays_one_line()
+    {
+        var narrow = LayoutQuery.FindByTag(Lay("<DvButton variant=\"primary\" size=\"lg\" text=\"Primary\" style=\"width:108\"/>"), "DvButton")!;
+        var wide = LayoutQuery.FindByTag(Lay("<DvButton variant=\"primary\" size=\"lg\" text=\"Primary\" style=\"width:200\"/>"), "DvButton")!;
+        Assert.Equal(wide.Rect.Height, narrow.Rect.Height, 2);
+    }
+
     [Fact]
     public void Label_Nowrap_OneLine()
     {
@@ -460,7 +493,7 @@ public class TextWrapTests
         var root = Lay("<DvBox style=\"width:200; display:flex; flex-direction:column; align-items:stretch\">" +
                        $"<DvLabel text=\"{Long}\" style=\"text-align:center; color:#000000; font-family:Arial\"/></DvBox>", 400, 300);
         var label = Label(root);
-        using var f = TextFont.Create(Long, 14f, bold: false, "Arial");
+        using var f = TextFont.Create(Long, 14f, weight: 400, "Arial");
         var lines = TextWrap.Wrap(Long, f, 200);
         Assert.True(lines.Count >= 2);
         Assert.Equal(lines.Count * f.Spacing, label.Rect.Height, 2);

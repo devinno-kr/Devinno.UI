@@ -54,7 +54,7 @@ public sealed partial class Painter
 
         if (text.Length > 0)
         {
-            using var font = TextFont.Create(text, st.FontSize, st.Bold);
+            using var font = TextFont.Create(text, st.FontSize, st.FontWeight);
             using var tp = new SKPaint { IsAntialias = true, Color = ink };
             canvas.DrawText(text, x, Baseline(content, font), SKTextAlign.Left, font, tp);
         }

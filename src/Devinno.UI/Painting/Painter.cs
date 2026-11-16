@@ -187,7 +187,7 @@ public sealed partial class Painter
         else if (box.ResolvedText is { Length: > 0 } text)
         {
             // 측정과 같은 글꼴(font-family)·같은 줄 — 측정 때 나눈 줄을 쓰고, 그리는 폭이 다르면 그 폭으로 다시 나눈다(높이는 그대로)
-            using var font = TextFont.Create(text, st.FontSize, st.Bold, st.FontFamily);
+            using var font = TextFont.Create(text, st.FontSize, st.FontWeight, st.FontFamily);
             using var tp = new SKPaint { IsAntialias = true, Color = st.Color.ToSK() };
             var lines = LayoutEngine.TextLinesFor(box, st, font, rect.Width - st.Padding.Horizontal);
             var tx = rect.Left + st.Padding.Left;
@@ -308,7 +308,7 @@ public sealed partial class Painter
             if (box.ShowValue) // show-value(기본 참, D2), 값 + unit(한 칸 띄고) — 호 두 끝 사이에 맞춘 크기
             {
                 var label = FormatValue(box.GaugeValue, box.ValueFormat, box.Node.Tag) + (string.IsNullOrEmpty(box.Unit) ? "" : " " + box.Unit);
-                using var font = TextFont.Create(label, WidgetMetrics.GaugeValueFont(gm, label), bold: true);
+                using var font = TextFont.Create(label, WidgetMetrics.GaugeValueFont(gm, label), weight: 700);
                 var valColor = ZoneColorAt(box) ?? needleColor;
                 using var tp = new SKPaint { IsAntialias = true, Color = valColor };
                 canvas.DrawText(label, cx, cy + gm.ValueBaseline, SKTextAlign.Center, font, tp);
@@ -400,7 +400,7 @@ public sealed partial class Painter
                 : new List<(float From, DvColor Color)>();
             // 레이아웃: [벽] 3px 간격 · 6px 눈금 · 4px 간격 · 숫자
             float tickGap = tm.TickGap, tickLen = tm.TickLen, labelGap = tm.LabelGap;
-            using var markFont = TextFont.Create("0", tm.MarkFont, bold: false);
+            using var markFont = TextFont.Create("0", tm.MarkFont, weight: 400);
             var gutter = marks.Count == 0
                 ? 0f
                 : marks.Max(m => markFont.MeasureText(m.From.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)))
@@ -516,7 +516,7 @@ public sealed partial class Painter
             // 칩 글씨는 탱크 크기에 비례, 몸통 폭을 넘으면 폭에 맞춰 줄인다(최소 9)
             var chipPad = 16f * tm.Scale;
             var chipSize = tm.ChipFont;
-            using (var probe = TextFont.Create(label, chipSize, bold: true))
+            using (var probe = TextFont.Create(label, chipSize, weight: 700))
             {
                 var need = probe.MeasureText(label) + chipPad;
                 var avail = body.Width - 4f * tm.Scale;
@@ -524,7 +524,7 @@ public sealed partial class Painter
                     chipSize = MathF.Max(9f, chipSize * avail / need);
             }
 
-            using (var font = TextFont.Create(label, chipSize, bold: true))
+            using (var font = TextFont.Create(label, chipSize, weight: 700))
             {
                 var tw = font.MeasureText(label);
                 var chipW = tw + chipPad * chipSize / tm.ChipFont;
@@ -611,7 +611,7 @@ public sealed partial class Painter
     {
         if (box.VideoError is { Length: > 0 } error)
         {
-            using var font = TextFont.Create(error, 13f, bold: false);
+            using var font = TextFont.Create(error, 13f, weight: 400);
             using var tp = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted") };
             canvas.Save();
             canvas.ClipRect(rect);

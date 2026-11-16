@@ -74,7 +74,7 @@ public sealed partial class Painter
         // 단위(한 줄만) — 오른쪽, 흐린 색
         if (!box.InputMultiline && box.Unit is { Length: > 0 } unit)
         {
-            using var uf = TextFont.Create(unit, st.FontSize, bold: false);
+            using var uf = TextFont.Create(unit, st.FontSize, weight: 400);
             using var up = new SKPaint { IsAntialias = true, Color = ThemeColor("text-muted") };
             canvas.DrawText(unit, content.Right, Baseline(content, uf), SKTextAlign.Right, uf, up);
             content.Right -= uf.MeasureText(unit) + 6f;
@@ -91,7 +91,7 @@ public sealed partial class Painter
         if (text.Length == 0)
             return;
 
-        using var font = TextFont.Create(text, st.FontSize, st.Bold);
+        using var font = TextFont.Create(text, st.FontSize, st.FontWeight);
         using var tp = new SKPaint { IsAntialias = true, Color = placeholder ? muted : st.Color.ToSK() };
 
         canvas.Save();
@@ -121,7 +121,7 @@ public sealed partial class Painter
     {
         var rect = box.Rect;
         var text = box.ResolvedText ?? "";
-        using var font = TextFont.Create(text.Length > 0 ? text : " ", st.FontSize, st.Bold);
+        using var font = TextFont.Create(text.Length > 0 ? text : " ", st.FontSize, st.FontWeight);
         var size = st.FontSize;
         var gap = text.Length > 0 ? LayoutEngine.IconTextGap : 0f;
         var total = size + gap + (text.Length > 0 ? font.MeasureText(text) : 0f);

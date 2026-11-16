@@ -49,7 +49,7 @@ public sealed partial class Painter
 
             // 등급 칩 — 배경을 살짝 어둡게
             var label = PriorityLabel(top.Priority);
-            using var chipFont = TextFont.Create(label, 12f, bold: true);
+            using var chipFont = TextFont.Create(label, 12f, weight: 700);
             var chipW = chipFont.MeasureText(label) + 16f;
             var chipH = MathF.Min(22f, bottom.Height - 8f);
             var chip = SKRect.Create(bottom.Left + 12f, bottom.MidY - chipH / 2f, chipW, chipH);
@@ -60,7 +60,7 @@ public sealed partial class Painter
             // 오른쪽: 미확인 건수 + 시각
             var unacked = box.AlarmItems.Count(a => !a.Acked);
             var right = string.Format(T("dv.alarm.unacked"), unacked) + $"   {top.Time:HH:mm:ss}";
-            using var rf = TextFont.Create(right, 12f, bold: false);
+            using var rf = TextFont.Create(right, 12f, weight: 400);
             var rw = rf.MeasureText(right);
             using (var rp = new SKPaint { IsAntialias = true, Color = fg.WithAlpha(0xd0) })
                 canvas.DrawText(right, bottom.Right - 14f, Baseline(bottom, rf), SKTextAlign.Right, rf, rp);
@@ -94,7 +94,7 @@ public sealed partial class Painter
 
         // 헤더
         var h = layout.Header;
-        using (var hf = TextFont.Create(T("dv.alarm.col.message"), 12f, bold: true))
+        using (var hf = TextFont.Create(T("dv.alarm.col.message"), 12f, weight: 700))
         using (var hp = new SKPaint { IsAntialias = true, Color = muted })
         {
             var hb = Baseline(h, hf);
@@ -111,7 +111,7 @@ public sealed partial class Painter
         if (layout.Rows.Count == 0)
         {
             var emptyText = T("dv.alarm.empty");
-            using var ef = TextFont.Create(emptyText, 13f, bold: false);
+            using var ef = TextFont.Create(emptyText, 13f, weight: 400);
             using var ep = new SKPaint { IsAntialias = true, Color = subtle };
             canvas.DrawText(emptyText, box.Rect.MidX, h.Bottom + 28f, SKTextAlign.Center, ef, ep);
         }
@@ -130,14 +130,14 @@ public sealed partial class Painter
                     canvas.DrawRoundRect(SKRect.Create(rect.Left + 3f, rect.Top + 6f, 4f, rect.Height - 12f), 2f, 2f, bar);
 
             var rowInk = row.Acked ? subtle : text;
-            using (var tf = TextFont.Create("00:00:00", 12f, bold: false))
+            using (var tf = TextFont.Create("00:00:00", 12f, weight: 400))
             using (var tp = new SKPaint { IsAntialias = true, Color = row.Acked ? subtle : muted })
                 canvas.DrawText(row.Time.ToString("HH:mm:ss", CultureInfo.InvariantCulture), colTime, Baseline(rect, tf),
                     SKTextAlign.Left, tf, tp);
 
             // 등급 칩
             var label = PriorityLabel(row.Priority);
-            using (var cf = TextFont.Create(label, 11f, bold: true))
+            using (var cf = TextFont.Create(label, 11f, weight: 700))
             {
                 var cw = cf.MeasureText(label) + 14f;
                 var chip = SKRect.Create(colPrio, rect.MidY - 10f, cw, 20f);
@@ -151,7 +151,7 @@ public sealed partial class Painter
             var msgRight = showAck ? (ack?.Left ?? rect.Right - 12f - AlarmListLayout.AckButtonWidth) - 12f : rect.Right - 12f;
             canvas.Save();
             canvas.ClipRect(new SKRect(colMsg, rect.Top, msgRight, rect.Bottom));
-            using (var mf = TextFont.Create(AlarmText(row), 13f, bold: !row.Acked))
+            using (var mf = TextFont.Create(AlarmText(row), 13f, weight: !row.Acked ? 700 : 400))
             using (var mp = new SKPaint { IsAntialias = true, Color = rowInk })
                 canvas.DrawText(AlarmText(row), colMsg, Baseline(rect, mf), SKTextAlign.Left, mf, mp);
             canvas.Restore();
@@ -163,14 +163,14 @@ public sealed partial class Painter
                 using (var bs = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.2f, Color = prio })
                     canvas.DrawRoundRect(b, 8f, 8f, bs);
                 var ackText = T("dv.alarm.ack");
-                using var af = TextFont.Create(ackText, 12f, bold: true);
+                using var af = TextFont.Create(ackText, 12f, weight: 700);
                 using var ap = new SKPaint { IsAntialias = true, Color = prio };
                 canvas.DrawText(ackText, b.MidX, Baseline(b, af), SKTextAlign.Center, af, ap);
             }
             else if (showAck && row.AckTime is { } at)
             {
                 var ackText = string.Format(T("dv.alarm.acked"), at.ToString("HH:mm", CultureInfo.InvariantCulture));
-                using var af = TextFont.Create(ackText, 11f, bold: false);
+                using var af = TextFont.Create(ackText, 11f, weight: 400);
                 using var ap = new SKPaint { IsAntialias = true, Color = subtle };
                 canvas.DrawText(ackText,
                     rect.Right - 12f - AlarmListLayout.AckButtonWidth / 2f, Baseline(rect, af), SKTextAlign.Center, af, ap);
@@ -203,7 +203,7 @@ public sealed partial class Painter
 
     private static void DrawBannerText(SKCanvas canvas, string text, SKRect area, float x, SKColor color, float size, bool bold)
     {
-        using var font = TextFont.Create(text, size, bold);
+        using var font = TextFont.Create(text, size, bold ? 700 : 400);
         using var p = new SKPaint { IsAntialias = true, Color = color };
         canvas.DrawText(text, x, Baseline(area, font), SKTextAlign.Left, font, p);
     }

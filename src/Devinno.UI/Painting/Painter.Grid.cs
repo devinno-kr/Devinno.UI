@@ -525,7 +525,7 @@ public sealed partial class Painter
             if (k >= 0 && g.Sort.Count > 1)
             {
                 var num = (k + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
-                using var nf = TextFont.Create(num, 10f, bold: true);
+                using var nf = TextFont.Create(num, 10f, weight: 700);
                 var nx = iconX - 9f - nf.MeasureText(num);
                 canvas.DrawText(num, nx, Baseline(cell, nf), SKTextAlign.Left, nf, ip);
                 textRight = nx - 3f;
@@ -585,9 +585,9 @@ public sealed partial class Painter
     {
         public GridFonts(float cellSize, float headerSize)
         {
-            Cell = new Slot(cellSize, bold: false);
-            CellBold = new Slot(cellSize, bold: true);
-            Header = new Slot(headerSize, bold: true);
+            Cell = new Slot(cellSize, weight: 400);
+            CellBold = new Slot(cellSize, weight: 700);
+            Header = new Slot(headerSize, weight: 700);
         }
 
         public Slot Cell { get; }
@@ -605,14 +605,14 @@ public sealed partial class Painter
         internal sealed class Slot : IDisposable
         {
             private readonly float _size;
-            private readonly bool _bold;
+            private readonly int _weight;
             // 서체별 폰트(보통 1~2개: 라틴 기본 + 한글 폴백)
             private readonly List<(SKTypeface Face, SKFont Font)> _fonts = new(2);
 
-            public Slot(float size, bool bold)
+            public Slot(float size, int weight)
             {
                 _size = size;
-                _bold = bold;
+                _weight = weight;
             }
 
             public SKFont For(string text)
@@ -624,7 +624,7 @@ public sealed partial class Painter
                         return font;
                 }
 
-                var made = new SKFont(face, _size) { Embolden = _bold };
+                var made = TextFont.ForFace(face, _size, _weight);
                 _fonts.Add((face, made));
                 return made;
             }

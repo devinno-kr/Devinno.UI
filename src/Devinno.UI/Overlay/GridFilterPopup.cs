@@ -130,7 +130,7 @@ internal sealed class GridFilterPopup : IPopup
     {
         float Measure(string s, float size)
         {
-            using var f = TextFont.Create(s.Length > 0 ? s : " ", size, false);
+            using var f = TextFont.Create(s.Length > 0 ? s : " ", size, 400);
             return f.MeasureText(s);
         }
 

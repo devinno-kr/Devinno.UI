@@ -62,7 +62,7 @@ public sealed class BatteryGauge : DvWidget
             canvas.DrawRoundRect(new SKRect(x, bar.Top, x + w, bar.Bottom), 3, 3, i < lit ? on : off);
         }
 
-        ctx.DrawText(canvas, $"{soc:0}%", bounds.Right, bounds.MidY + 6, 16, ctx.TextColor, SKTextAlign.Right, bold: true);
+        ctx.DrawText(canvas, $"{soc:0}%", bounds.Right, bounds.MidY + 6, 16, ctx.TextColor, SKTextAlign.Right, weight: 700);
     }
 }
 
@@ -93,7 +93,7 @@ public sealed class SetpointTank : DvWidget
         using var line = new SKPaint { IsAntialias = true, StrokeWidth = 3, Color = ctx.Color("tone-warning") };
         canvas.DrawLine(tank.Left - 6, y, tank.Right + 6, y, line);
         canvas.DrawCircle(tank.Right + 10, y, _drag is null ? 8 : 11, line);
-        ctx.DrawText(canvas, $"{sp:0}", tank.Right + 22, y + 5, 14, ctx.TextColor, bold: true);
+        ctx.DrawText(canvas, $"{sp:0}", tank.Right + 22, y + 5, 14, ctx.TextColor, weight: 700);
     }
 
     public override bool OnPointerDown(DvWidgetContext ctx, SKPoint p)

@@ -6,11 +6,19 @@ namespace Devinno.UI.Text;
 internal static class TextWrap
 {
     /// <summary>
-    /// Splits first at line breaks (<c>\n</c>, <c>\r\n</c>); a line wider than the width is broken after the last space that fits (or per character if there is no space).
-    /// Trailing spaces of a broken line are removed; leading spaces of the next line are kept. If not even one character fits, one character is placed per line.
-    /// Surrogate pairs are never split (the only difference from the existing InputDisplay.Wrap).
+    /// Splits first at line breaks (<c>\n</c>, <c>\r\n</c>); a line wider than the width is broken after the last space that fits.
+    /// Trailing spaces of a broken line are removed; leading spaces of the next line are kept. Surrogate pairs are never split.
     /// </summary>
-    public static IReadOnlyList<string> Wrap(string text, SKFont font, float width)
+    /// <param name="text">The text.</param>
+    /// <param name="font">The font the text is measured with.</param>
+    /// <param name="width">The line width (px).</param>
+    /// <param name="breakWords">
+    /// <see langword="true"/> (multi-line input, like a CSS <c>textarea</c>): a word wider than the line is broken per character
+    /// (one character per line if not even one fits).
+    /// <see langword="false"/> (screen text, CSS <c>overflow-wrap: normal</c>): a Latin word is never broken — it stays whole and overflows the line —
+    /// while CJK text (Hangul, Han, Kana) may still break between characters (CSS <c>word-break: normal</c>).
+    /// </param>
+    public static IReadOnlyList<string> Wrap(string text, SKFont font, float width, bool breakWords = true)
     {
         var lines = new List<string>();
         // 첫 추정 글자 수 = 폭 / (글자 크기의 절반) — 이후는 직전 줄 글자 수(줄 길이가 비슷하므로 몇 번 재면 찾는다)
@@ -30,6 +38,12 @@ internal static class TextWrap
                 var space = rest.LastIndexOf(' ', cut - 1);
                 if (space > 0)
                     cut = space + 1;
+                else if (!breakWords)
+                {
+                    cut = NoWordBreakCut(rest, cut);
+                    if (cut >= rest.Length) // 남은 낱말 하나가 줄보다 넓다 — 끊지 않고 이 줄에 둔다
+                        break;
+                }
                 lines.Add(rest[..cut].TrimEnd());
                 rest = rest[cut..];
             }
@@ -39,6 +53,28 @@ internal static class TextWrap
 
         return lines;
     }
+
+    // 낱말 가운데서 끊지 않을 때의 자리: 들어가는 앞부분 안에 CJK 글자 경계가 있으면 그 마지막 경계, 없으면 그 낱말의 끝(다음 공백 직후 또는 끝)
+    private static int NoWordBreakCut(string s, int fit)
+    {
+        for (var i = fit; i > 0; i--)
+        {
+            if (i < s.Length && (IsCjk(s[i - 1]) || IsCjk(s[i])) && !char.IsLowSurrogate(s[i]))
+                return i;
+        }
+
+        var end = s.IndexOf(' ', fit);
+        return end < 0 ? s.Length : end + 1;
+    }
+
+    private static bool IsCjk(char c) =>
+        c is >= '\u1100' and <= '\u11FF'      // 한글 자모
+          or >= '\u3040' and <= '\u30FF'      // 가나
+          or >= '\u3130' and <= '\u318F'      // 한글 호환 자모
+          or >= '\u3400' and <= '\u4DBF'      // 한자 확장 A
+          or >= '\u4E00' and <= '\u9FFF'      // 한자
+          or >= '\uAC00' and <= '\uD7A3'      // 한글 음절
+          or >= '\uF900' and <= '\uFAFF';     // 한자 호환
 
     /// <summary>Width comparison tolerance (px), so that floating-point rounding differences between measured and laid-out width do not split a single-line text.</summary>
     public const float Tolerance = 0.05f;
@@ -93,13 +129,13 @@ internal static class TextWrap
 internal sealed class TextLines
 {
     private readonly float _size;
-    private readonly bool _bold;
+    private readonly int _weight;
     private readonly string? _family;
 
-    public TextLines(string text, float size, bool bold, string? family, SKFont font)
+    public TextLines(string text, float size, int weight, string? family, SKFont font)
     {
         Text = text;
-        (_size, _bold, _family) = (size, bold, family);
+        (_size, _weight, _family) = (size, weight, family);
         if (text.Contains('\n'))
         {
             var paras = text.Replace("\r\n", "\n").Split('\n');
@@ -125,8 +161,8 @@ internal sealed class TextLines
     private IReadOnlyList<string>? _wrapped;
     private float _wrapWidth = float.NaN;
 
-    public bool Matches(string text, float size, bool bold, string? family)
-        => Text == text && _size == size && _bold == bold && _family == family;
+    public bool Matches(string text, float size, int weight, string? family)
+        => Text == text && _size == size && _weight == weight && _family == family;
 
     /// <summary>
     /// Lines to place in the inner width <paramref name="width"/>. If there is no width (<see langword="null"/>) or the widest paragraph fits, the paragraphs as they are;
@@ -139,6 +175,6 @@ internal sealed class TextLines
         if (_wrapped is { } done && MathF.Abs(_wrapWidth - w) <= TextWrap.Tolerance)
             return done;
         _wrapWidth = w;
-        return _wrapped = TextWrap.Wrap(Text, font, w);
+        return _wrapped = TextWrap.Wrap(Text, font, w, breakWords: false);
     }
 }

@@ -145,7 +145,7 @@ public class MessageBoxTests
     private static (IReadOnlyList<string> Lines, float Spacing, SKFont Font) BodyLines(DvApp app)
     {
         var l = Body(app);
-        var font = Devinno.UI.Text.TextFont.Create(l.ResolvedText!, l.Style.FontSize, l.Style.Bold, l.Style.FontFamily);
+        var font = Devinno.UI.Text.TextFont.Create(l.ResolvedText!, l.Style.FontSize, l.Style.FontWeight, l.Style.FontFamily);
         return (Devinno.UI.Text.TextWrap.Wrap(l.ResolvedText!, font, l.Rect.Width - l.Style.Padding.Horizontal), font.Spacing, font);
     }
 

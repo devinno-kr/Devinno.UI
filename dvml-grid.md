@@ -264,7 +264,7 @@ public string? ValueClass => Value > Hi ? "over" : null;
 <DvStyle>.over { background: token(tone-danger); color: #ffffff; font-weight: bold }</DvStyle>
 ```
 
-- Grid classes use **only** `background` (solid color), `background-color`, `color`, `font-weight`.
+- Grid classes use **only** `background` (solid color), `background-color`, `color`, `font-weight` (600 or more = bold, otherwise normal).
 - Background priority: `cell-class` > selection > `row-class` > hover > stripe.
 - Unknown classes are ignored.
 - Classes are read at draw time: call `Repaint()` when the value changes.

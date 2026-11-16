@@ -144,10 +144,10 @@ public sealed class DvWidgetContext
     /// <summary>Measures the width of a single line of text in px (same fonts as built-in text, including the Korean fallback).</summary>
     /// <param name="text">The text.</param>
     /// <param name="size">Font size in px.</param>
-    /// <param name="bold">Whether bold.</param>
-    public float MeasureText(string text, float size, bool bold = false)
+    /// <param name="weight">Font weight 100–900 (400 = regular, 700 = bold), drawn with the font's real face for that weight.</param>
+    public float MeasureText(string text, float size, int weight = 400)
     {
-        using var font = TextFont.Create(text, size, bold, _box.Style.FontFamily);
+        using var font = TextFont.Create(text, size, weight, _box.Style.FontFamily);
         return font.MeasureText(text);
     }
 
@@ -159,10 +159,10 @@ public sealed class DvWidgetContext
     /// <param name="size">Font size in px.</param>
     /// <param name="color">Text color (e.g. <see cref="TextColor"/> or <see cref="Color"/>).</param>
     /// <param name="align">Horizontal anchor.</param>
-    /// <param name="bold">Whether bold.</param>
-    public void DrawText(SKCanvas canvas, string text, float x, float y, float size, SKColor color, SKTextAlign align = SKTextAlign.Left, bool bold = false)
+    /// <param name="weight">Font weight 100–900 (400 = regular, 700 = bold), drawn with the font's real face for that weight.</param>
+    public void DrawText(SKCanvas canvas, string text, float x, float y, float size, SKColor color, SKTextAlign align = SKTextAlign.Left, int weight = 400)
     {
-        using var font = TextFont.Create(text, size, bold, _box.Style.FontFamily);
+        using var font = TextFont.Create(text, size, weight, _box.Style.FontFamily);
         using var paint = new SKPaint { IsAntialias = true, Color = color };
         canvas.DrawText(text, x, y, align, font, paint);
     }

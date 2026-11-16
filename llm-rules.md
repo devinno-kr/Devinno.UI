@@ -104,7 +104,7 @@ public sealed partial class MainPage : DvPage   // the VM of MainPage.dvml; the 
 | Root element | Always fills the window; the root's `width`/`height` are ignored. | |
 | Units | All numbers are px; `16`, `16px`, `16dp` are the same. No `%`, `em`, `rem`, `vw`, `auto` — the only exception is `%` in grid tracks and grid column widths. [lengths](dvml-language.md#value-length) | |
 | Unsupported length | `width:50%`, `width:auto`, `height:2em` become **0, not ignored** — the element disappears. Only `font-size` falls back to 14 when it cannot be parsed. | |
-| Text | Longer than the available width → wraps at spaces (at characters if there are none) and grows in height. `white-space:nowrap` (inherited) forces one line; `\n` always breaks. **`DvRow` children get no wrap width and stay on one line** — give that child `width`/`max-width` to wrap. Buttons and chips with icons are single-line. [text wrap](dvml-layout.md#text-wrap) | In CSS row children shrink and wrap, and `\n` is whitespace |
+| Text | Longer than the available width → wraps at spaces (Korean/Chinese/Japanese also between characters; a Latin word is never split and overflows instead) and grows in height. `white-space:nowrap` (inherited) forces one line; `\n` always breaks. **`DvRow` children get no wrap width and stay on one line** — give that child `width`/`max-width` to wrap. Buttons and chips with icons are single-line. [text wrap](dvml-layout.md#text-wrap) | In CSS row children shrink and wrap, and `\n` is whitespace |
 | Hiding | `visible="false"` removes the element; `display:none` does not hide. | |
 | Spacing | `margin` (and `margin-top` etc.) is **not applied**; use the parent's `gap` and the element's own `padding`. One side only: a single-side key such as `padding-left` (as in CSS). | |
 | Opacity and motion | `opacity` (0–1), `transform` (translate, scale; drawing only), `transition` (CSS syntax). Animate state changes with `transition` — do not step values with a timer. [transition](dvml-style.md#transition) | |
@@ -385,7 +385,7 @@ Then **open the real window** (and, with `fit`, resize it and press something). 
 Assume any tag, attribute or value not in these pages is not supported. The following are known gaps; work around them another way.
 
 - Text: ellipsis (except grid cells), line count limits, `line-height`, `word-break`, hyphenation; automatic wrapping of text children of `DvRow` (giving a width works).
-- Fonts: bundling font files (`font-family` picks from installed fonts); `font-weight` other than normal and bold.
+- Fonts: bundling font files (`font-family` picks from installed fonts).
 - Layout and style: `margin`, `%`/`em`/`auto` sizes (except grid tracks and grid column widths), keyframe animation (`@keyframes`, `animation`), `rotate`/`skew`, hit areas following `transform`, compound selectors (`.a.b`, tag, descendant selectors).
 - Input: keyboard focus navigation and tab order (except Enter/Tab in grid edit cells), drag and drop.
 - Dialogs: closing by pressing outside, drag-moving, open/close animations, a title bar X button, physical keyboard Esc/Enter (the only exception is the edit-completion Enter of built-in input boxes), a multi-select box (`SelectBox` picks only one).

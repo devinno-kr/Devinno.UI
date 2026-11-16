@@ -258,10 +258,17 @@ public sealed class ComputedStyle
     public string? FontFamily { get; set; }
 
     /// <summary>
-    /// Whether the font is bold. <see langword="true"/> when the style key <c>font-weight</c> is <c>bold</c> or a number of 600 or more;
-    /// other values (<c>normal</c>, etc.) are <see langword="false"/>. Default <see langword="false"/>.
+    /// The font weight, 100 to 900 in steps of 100. Style key <c>font-weight</c>: <c>normal</c> = 400, <c>bold</c> = 700, or a number
+    /// (clamped to 100–900 and rounded to the nearest 100). Unknown words are ignored. Default 400.
     /// </summary>
-    public bool Bold { get; set; }
+    /// <remarks>
+    /// Text is drawn with the font's real face for that weight when the family has one (the nearest face otherwise);
+    /// a synthetic bold is used only when 600 or more is asked for and the family has no bold face.
+    /// </remarks>
+    public int FontWeight { get; set; } = 400;
+
+    /// <summary>Whether the font is bold: <see langword="true"/> when <see cref="FontWeight"/> is 600 or more. Read-only; set <see cref="FontWeight"/>.</summary>
+    public bool Bold => FontWeight >= 600;
 
     /// <summary>
     /// Horizontal text alignment. Style key <c>text-align</c> (<c>left</c>, <c>center</c>, <c>right</c>; case-sensitive) or the horizontal part of <c>content-align</c>.

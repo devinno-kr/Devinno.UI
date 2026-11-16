@@ -83,7 +83,7 @@ internal static class WidgetMetrics
         var size = normal;
         for (var i = 0; i < 4; i++)
         {
-            using var font = Text.TextFont.Create(label, size, bold: true);
+            using var font = Text.TextFont.Create(label, size, weight: 700);
             var width = font.MeasureText(label, out var bounds);
             var room = 2f * (GaugeGapHalf(gm, gm.ValueBaseline + bounds.Top, gm.ValueBaseline + bounds.Bottom) - 3f * gm.Scale);
             if (width <= room || size <= min)

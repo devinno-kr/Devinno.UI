@@ -35,7 +35,7 @@ public sealed partial class Painter
             canvas.DrawLine(x0, cy, x1, cy, p);
         }
 
-        using var num = TextFont.Create("0123456789", 13f, bold: true);
+        using var num = TextFont.Create("0123456789", 13f, weight: 700);
         for (var i = 0; i < names.Length; i++)
         {
             var step = i + 1;
@@ -70,7 +70,7 @@ public sealed partial class Painter
 
             // 이름 — 칸 폭에 맞춰 줄임표, 진행 중은 굵게
             var name = names[i];
-            using var font = TextFont.Create(name, 12f, bold: now);
+            using var font = TextFont.Create(name, 12f, weight: now ? 700 : 400);
             var shown = font.MeasureText(name) > cell - 6f ? Ellipsize(name, cell - 6f, font) : name;
             ink.Color = step > current ? muted : text;
             canvas.DrawText(shown, cx, cy + dot / 2f + 8f - font.Metrics.Ascent, SKTextAlign.Center, font, ink);

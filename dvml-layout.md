@@ -235,7 +235,7 @@ For (1), **every parent from the scroll box up to the window must use flex layou
 
 Elements with text (`DvLabel`, button text, …) split into multiple lines when the text is longer than the width they are placed in, and their height grows with the line count (height = line count × font line spacing + `padding`). Text that fits on one line keeps its position and size.
 
-- **Break points**: at spaces first; where there are no spaces (long words, such as Korean text without spaces), per character. There is no hyphenation, no line-breaking rules (kinsoku), no ellipsis (`text-overflow`) and no line-count limit.
+- **Break points**: at spaces. A Latin word is never split: a word wider than the line stays whole and overflows it (CSS `overflow-wrap: normal`). Korean, Chinese and Japanese text may also break between characters (CSS `word-break: normal`). Multi-line `DvInput` breaks a long word per character, like a `textarea`. There is no hyphenation, no line-breaking rules (kinsoku), no ellipsis (`text-overflow`) and no line-count limit.
 - **Alignment**: each line is aligned horizontally by `text-align`; the block of lines is aligned vertically by [`content-align`](dvml-style.md#content-align).
 - **To keep text on one line**, use `white-space:nowrap`. It is inherited, so on a parent it makes all text inside single-line (reset inside with `white-space:normal`).
 - **Write long text as a single label.** Do not create one label per line: when the width changes (window size, theme font size), the engine re-wraps it.

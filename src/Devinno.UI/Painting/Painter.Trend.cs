@@ -44,7 +44,7 @@ public sealed partial class Painter
         var yStep = spec.YMin is null && spec.YMax is null ? auto.Step : TrendScale.Nice(lo, hi).Step;
         var yTicks = Widgets.ScaleTicks.Values(Math.Ceiling(lo / yStep - 1e-9) * yStep, hi, yStep);
 
-        using var axisFont = TextFont.Create("0", 11f, bold: false);
+        using var axisFont = TextFont.Create("0", 11f, weight: 400);
         var labelW = yTicks.Select(v => axisFont.MeasureText(FormatTick(v))).DefaultIfEmpty(0).Max();
         var plot = new SKRect(content.Left + labelW + 8f, content.Top + 26f, content.Right - 6f, content.Bottom - 20f);
         if (plot.Width <= 10 || plot.Height <= 10)
@@ -83,7 +83,7 @@ public sealed partial class Painter
         if (!hasData || values.Count == 0)
         {
             var empty = T("dv.trend.empty");
-            using var ef = TextFont.Create(empty, 13f, bold: false);
+            using var ef = TextFont.Create(empty, 13f, weight: 400);
             using var ep = new SKPaint { IsAntialias = true, Color = muted };
             canvas.DrawText(empty, plot.MidX, plot.MidY, SKTextAlign.Center, ef, ep);
         }
@@ -147,8 +147,8 @@ public sealed partial class Painter
 
             using (var dot = new SKPaint { IsAntialias = true, Color = ch.Color })
                 canvas.DrawCircle(lx + 4f, ly, 4f, dot);
-            using var nf = TextFont.Create(name, 12f, bold: false);
-            using var vf = TextFont.Create(val, 12f, bold: true);
+            using var nf = TextFont.Create(name, 12f, weight: 400);
+            using var vf = TextFont.Create(val, 12f, weight: 700);
             using var np = new SKPaint { IsAntialias = true, Color = muted };
             using var vp = new SKPaint { IsAntialias = true, Color = ink };
             var baseY = ly - (nf.Metrics.Ascent + nf.Metrics.Descent) / 2f;

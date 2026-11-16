@@ -12,12 +12,52 @@ internal static class TextFont
     /// </summary>
     [ThreadStatic] internal static string? AmbientFamily;
 
-    public static SKFont Create(string text, float size, bool bold, string? family = null)
+    /// <summary>
+    /// A font for <paramref name="text"/> at <paramref name="weight"/> (100–900). The family is chosen as in <see cref="ResolveTypeface"/>,
+    /// then its face nearest to the weight is used; synthetic bold only when the request is 600 or more and the family has no bold face.
+    /// </summary>
+    public static SKFont Create(string text, float size, int weight, string? family = null)
+        => ForFace(ResolveTypeface(text, family ?? AmbientFamily), size, weight);
+
+    /// <summary>A font from an already chosen family face, at that family's face nearest to <paramref name="weight"/>.</summary>
+    internal static SKFont ForFace(SKTypeface familyFace, float size, int weight)
     {
-        return new SKFont(ResolveTypeface(text, family ?? AmbientFamily), size)
+        var face = Weighted(familyFace, weight);
+        // 서브픽셀 위치 + 선형 폭: 글자 시작점을 정수 픽셀로 반올림하지 않는다(안 하면 "Latch o n" 처럼 간격이 들쭉날쭉)
+        return new SKFont(face, size)
         {
-            Embolden = bold
+            Embolden = NeedsEmbolden(weight, face.FontWeight),
+            Subpixel = true,
+            LinearMetrics = true
         };
+    }
+
+    /// <summary>Synthetic bold is needed when 600 or more is asked for and the chosen face is at least 150 lighter.</summary>
+    internal static bool NeedsEmbolden(int requested, int faceWeight) => requested >= 600 && faceWeight <= requested - 150;
+
+    // (가족 면, 굵기) → 그 가족에서 가장 가까운 굵기 면. 네이티브 글꼴 질의는 비싸므로 캐시
+    private static readonly Dictionary<(SKTypeface Face, int Weight), SKTypeface> WeightFaces = new();
+
+    private static SKTypeface Weighted(SKTypeface face, int weight)
+    {
+        if (face.FontWeight == weight)
+            return face;
+        lock (WeightFaces)
+        {
+            if (!WeightFaces.TryGetValue((face, weight), out var tf))
+            {
+                var match = SKFontManager.Default.MatchFamily(face.FamilyName, new SKFontStyle(weight, (int)SKFontStyleWidth.Normal, SKFontStyleSlant.Upright));
+                if (match is not null && match.FamilyName == face.FamilyName)
+                    tf = match;
+                else
+                {
+                    match?.Dispose(); // 다른 가족을 돌려준 경우 — 원래 면을 쓴다
+                    tf = face;
+                }
+                WeightFaces[(face, weight)] = tf;
+            }
+            return tf;
+        }
     }
 
     /// <summary>

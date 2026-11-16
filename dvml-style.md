@@ -27,7 +27,7 @@ Any other key is ignored at run time, and the build reports it as warning [DVML0
 | `color` | Color | `#222222` (theme-independent, not inherited) |
 | `font-size` | Number | 14 |
 | `font-family` | Comma list | First installed font that has all the characters; otherwise per-character fallback. **Inherited by children** |
-| `font-weight` | `bold` or a number (600 or more = bold) | Normal |
+| `font-weight` | `normal` (400), `bold` (700) or a number 100–900. Drawn with the font's real face for that weight (the nearest face the installed font has) | 400 |
 | `text-align` | `left` `center` `right` | `left` (per line when multi-line) |
 | `white-space` | `normal` `nowrap` (lowercase only, anything else = `normal`) | `normal` = wrap to fit width, `nowrap` = break only at `\n` ([text wrapping](dvml-layout.md#text-wrap)). **Inherited by children** |
 | `content-align` | 9 positions ([content-align](#content-align)) | Varies by widget |

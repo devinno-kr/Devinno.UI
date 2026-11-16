@@ -85,7 +85,7 @@ internal sealed class DropdownPopup : IPopup
         float w = 0;
         foreach (var o in Options)
         {
-            using var f = TextFont.Create(o.Text.Length > 0 ? o.Text : " ", size, false);
+            using var f = TextFont.Create(o.Text.Length > 0 ? o.Text : " ", size, 400);
             var iw = o.Icon is not null ? size + LayoutEngine.IconTextGap : 0;
             w = Math.Max(w, f.MeasureText(o.Text) + iw);
         }
@@ -171,7 +171,7 @@ internal sealed class DropdownPopup : IPopup
 
             if (o.Text.Length > 0)
             {
-                using var f = TextFont.Create(o.Text, size, bold: selected);
+                using var f = TextFont.Create(o.Text, size, weight: selected ? 700 : 400);
                 canvas.DrawText(o.Text, x, row.MidY - (f.Metrics.Ascent + f.Metrics.Descent) / 2f, SKTextAlign.Left, f, ink);
             }
 

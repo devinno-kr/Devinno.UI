@@ -103,7 +103,7 @@ public sealed class DvEditState
     /// <summary>Gets the font size (px, in canvas units).</summary>
     public float FontSize { get; private set; }
 
-    /// <summary>Gets whether the font is bold (<see langword="true"/> if so).</summary>
+    /// <summary>Gets whether the font is bold: <see langword="true"/> when the element's <c>font-weight</c> is 600 or more. A native edit box shows only normal or bold, so lighter or in-between weights are shown as the nearer of the two.</summary>
     public bool Bold { get; private set; }
 
     /// <summary>Gets the text color.</summary>

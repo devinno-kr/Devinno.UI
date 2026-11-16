@@ -127,7 +127,7 @@ What the library does:
 - When the ratios differ, `fit` leaves margins in the theme `background` color. Change the `background` token with `DvTheme.With` to match your background.
 - `fullscreen: true` opens a borderless window for a kiosk panel. See the `ViewWindow` XML docs. The app must then provide its own way to leave ([understand the request](#image-understand)).
 - The WinForms `ViewControl` has no `fit` ([`ViewControl`](dvml-app.md#viewcontrol)). There, the design size must be the panel's resolution. If the ratio changes, measure the picture again rather than multiplying old coordinates.
-- `font-family` picks from installed fonts, and fonts cannot be bundled ([font keys](dvml-style.md#style-keys)). Among the fonts on the target, render the same text in each candidate and compare its width and height with the picture. `font-weight` gives two weights: normal and bold.
+- `font-family` picks from installed fonts, and fonts cannot be bundled ([font keys](dvml-style.md#style-keys)). Among the fonts on the target, render the same text in each candidate and compare its width and height with the picture. `font-weight` takes 100–900 and draws the nearest face the installed font has (Segoe UI: 400, 600, 700; Malgun Gothic: 400, 700).
 
 <a id="image-files"></a>
 ## Define the image files

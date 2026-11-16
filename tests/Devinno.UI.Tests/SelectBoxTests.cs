@@ -310,7 +310,7 @@ public class SelectBoxTests
 
         var row = Row(app, longText);
         var next = Row(app, "B");
-        using var font = Devinno.UI.Text.TextFont.Create(longText, row.Style.FontSize, row.Style.Bold, row.Style.FontFamily);
+        using var font = Devinno.UI.Text.TextFont.Create(longText, row.Style.FontSize, row.Style.FontWeight, row.Style.FontFamily);
         var lines = Devinno.UI.Text.TextWrap.Wrap(longText, font, row.Rect.Width - row.Style.Padding.Horizontal);
         Assert.True(lines.Count >= 2);
         Assert.True(row.Rect.Height >= lines.Count * font.Spacing - 0.5f, $"row {row.Rect} lines {lines.Count}");
