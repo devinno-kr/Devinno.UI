@@ -363,7 +363,7 @@ public sealed partial class Painter
         fill.IsAntialias = true;
         fill.Color = lit ?? ThemeColor("lamp-off"); // DvLamp 꺼진 색과 같은 토큰
         canvas.DrawCircle(cell.MidX, cell.MidY, radius, fill);
-        if (lit is not null)
+        if (lit is not null && Roles.Look.Texture == LookTexture.Rich) // 램프 광택 — 질감 rich 에서만
         {
             fill.Color = new SKColor(0xff, 0xff, 0xff, 0x66);
             canvas.DrawCircle(cell.MidX - radius * 0.3f, cell.MidY - radius * 0.3f, radius * 0.35f, fill);

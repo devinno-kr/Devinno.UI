@@ -61,6 +61,8 @@ public sealed partial class Painter
             else if (!box.Disabled && state is not null && ReferenceEquals(state.Hover, box))
                 face = Mix(face, SKColors.White, 0.06f);
 
+            var rich = Roles.Look.Texture == LookTexture.Rich; // 그림자·결·지시선 그림자 — 질감 rich 에서만
+            if (rich)
             using (var sh = new SKPaint { IsAntialias = true, Color = new SKColor(0, 0, 0, 0x48) })
             {
                 sh.MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, km.ShadowBlur);
@@ -69,8 +71,9 @@ public sealed partial class Painter
 
             var light = Mix(face, SKColors.White, 0.07f);
             var dark = Mix(face, SKColors.Black, 0.10f);
-            using (var p = new SKPaint { IsAntialias = true })
+            using (var p = new SKPaint { IsAntialias = true, Color = face })
             {
+                if (rich)
                 p.Shader = SKShader.CreateSweepGradient(
                     new SKPoint(cx, cy),
                     new[] { light, dark, light, dark, light, dark, light, dark, light, dark, light },
@@ -97,8 +100,9 @@ public sealed partial class Painter
                 StrokeWidth = MathF.Max(3f * km.Scale, faceR * 0.16f),
                 StrokeCap = SKStrokeCap.Round,
                 Color = fill,
-                ImageFilter = SKImageFilter.CreateDropShadow(0.8f * km.Scale, 0.8f * km.Scale, 1.2f * km.Scale, 1.2f * km.Scale,
-                    new SKColor(0, 0, 0, 0x90))
+                ImageFilter = rich
+                    ? SKImageFilter.CreateDropShadow(0.8f * km.Scale, 0.8f * km.Scale, 1.2f * km.Scale, 1.2f * km.Scale, new SKColor(0, 0, 0, 0x90))
+                    : null
             };
             canvas.DrawLine(
                 cx + MathF.Cos(a) * faceR * 0.52f, cy + MathF.Sin(a) * faceR * 0.52f,

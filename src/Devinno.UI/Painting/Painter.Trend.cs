@@ -123,6 +123,7 @@ public sealed partial class Painter
             if (pts.LastOrDefault(p => double.IsFinite(p.Value)) is { Time.Ticks: > 0 } last)
             {
                 var c = new SKPoint(X(last.Time), Y(last.Value));
+                if (Roles.Look.Texture == LookTexture.Rich) // 마지막 점 글로우 — 질감 rich 에서만
                 using (var glow = new SKPaint { IsAntialias = true, Color = ch.Color.WithAlpha(0x55) })
                 {
                     glow.MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 4);

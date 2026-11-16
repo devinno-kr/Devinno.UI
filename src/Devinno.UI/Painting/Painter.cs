@@ -268,7 +268,7 @@ public sealed partial class Painter
             using var glow = new SKPaint { IsAntialias = true, Color = lit ? onColor : offColor };
             canvas.DrawCircle(cx, cy, radius, glow);
 
-            if (lit)
+            if (lit && Roles.Look.Texture == LookTexture.Rich) // 광택 하이라이트 — 질감 rich 에서만
             {
                 using var hi = new SKPaint
                 {
@@ -426,9 +426,10 @@ public sealed partial class Painter
             canvas.ClipRoundRect(new SKRoundRect(body, bodyR, bodyR), SKClipOperation.Intersect, antialias: true);
 
             // 빈 용기 — 은은한 세로 그라데이션(유리 느낌)
-            using (var empty = new SKPaint { IsAntialias = true })
+            using (var empty = new SKPaint { IsAntialias = true, Color = ThemeColor("tank-empty-bottom") })
             {
-                empty.Shader = SKShader.CreateLinearGradient(
+                if (Roles.Look.Texture == LookTexture.Rich)
+                    empty.Shader = SKShader.CreateLinearGradient(
                     new SKPoint(body.Left, body.Top), new SKPoint(body.Left, body.Bottom),
                     new[]
                     {
@@ -442,9 +443,10 @@ public sealed partial class Painter
             // 액체 — 밝은 윗면→짙은 바닥 그라데이션 + 액면 하이라이트
             if (t > 0f)
             {
-                using (var fill = new SKPaint { IsAntialias = true })
+                using (var fill = new SKPaint { IsAntialias = true, Color = fillColor })
                 {
-                    fill.Shader = SKShader.CreateLinearGradient(
+                    if (Roles.Look.Texture == LookTexture.Rich)
+                        fill.Shader = SKShader.CreateLinearGradient(
                         new SKPoint(body.Left, levelTop), new SKPoint(body.Left, body.Bottom),
                         new[] { Lighten(fillColor, 0.22f), fillColor },
                         null, SKShaderTileMode.Clamp);
@@ -463,7 +465,8 @@ public sealed partial class Painter
                 }
             }
 
-            // 원통 음영 — 가장자리 어둡게, 왼쪽 1/3 하이라이트 (FsCylinderTank 참고)
+            // 원통 음영 — 가장자리 어둡게, 왼쪽 1/3 하이라이트 (FsCylinderTank 참고). 질감 rich 에서만
+            if (Roles.Look.Texture == LookTexture.Rich)
             using (var shade = new SKPaint { IsAntialias = true })
             {
                 shade.Shader = SKShader.CreateLinearGradient(

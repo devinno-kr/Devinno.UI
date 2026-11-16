@@ -42,9 +42,10 @@ public sealed partial class Painter
         {
             canvas.Save();
             canvas.ClipRoundRect(new SKRoundRect(rect, r, r), SKClipOperation.Intersect, antialias: true);
-            using var p = new SKPaint { IsAntialias = true };
-            p.Shader = SKShader.CreateLinearGradient(from, to, new[] { color, Mix(color, SKColors.White, 0.25f) },
-                null, SKShaderTileMode.Clamp);
+            using var p = new SKPaint { IsAntialias = true, Color = color };
+            if (Roles.Look.Texture == LookTexture.Rich) // 끝으로 밝아지는 그라데이션 — 질감 rich 에서만
+                p.Shader = SKShader.CreateLinearGradient(from, to, new[] { color, Mix(color, SKColors.White, 0.25f) },
+                    null, SKShaderTileMode.Clamp);
             canvas.DrawRoundRect(fill, r, r, p);
             canvas.Restore();
         }
@@ -121,12 +122,16 @@ public sealed partial class Painter
                 StrokeCap = SKStrokeCap.Round
             };
             // 로컬 0°(이음매)를 빈 구간 가운데에 두도록 회전 — 채움 시작 모서리에서 색이 튀지 않음
+            p.Color = color;
+            if (Roles.Look.Texture == LookTexture.Rich) // 쓸어 가는 그라데이션 + 글로우 — 질감 rich 에서만
+            {
             p.Shader = SKShader.CreateSweepGradient(new SKPoint(cx, cy),
                 new[] { Mix(color, SKColors.Black, 0.08f), Mix(color, SKColors.White, 0.28f) },
                 new[] { pre / 360f, MathF.Min(1f, (pre + valueSweep) / 360f) },
                 SKShaderTileMode.Clamp, 0f, 360f,
                 SKMatrix.CreateRotationDegrees(start - pre, cx, cy));
             p.ImageFilter = SKImageFilter.CreateDropShadow(0, 0, 3.5f, 3.5f, color.WithAlpha(0x55));
+            }
             canvas.DrawArc(oval, start, valueSweep, false, p);
         }
 
