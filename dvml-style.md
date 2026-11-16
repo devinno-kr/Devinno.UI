@@ -239,6 +239,7 @@ Changes values gradually when the state changes (as CSS). This works both when s
 <a id="theme-tokens"></a>
 ## Theme tokens
 
+- A token's whole value can be another token: `["gauge-track"] = "token(surface-raised)"`. Changing the base token in a copied theme then moves every token that points to it.
 - `token(name)` reads a value of the current theme. `var(--name)` is the same, with dashes instead of dots (`var(--spacing-md)` = `token(spacing.md)`). Names are case-insensitive.
 - An unknown token in a color position becomes magenta `#FF00FF`; in a number position (`padding: token(x)`) the declaration is ignored. Both write a Trace warning, and a literal unknown token is build warning [DVML013](dvml-diagnostics.md#dvml013). Finding the cause of magenta: [magenta](dvml-diagnostics.md#magenta).
 - Built-in widgets draw every part of themselves from these tokens (lamp off color `lamp-off`, tank liquid `tank-fill`, chart colors `chart-1`…`chart-6`, keyboard, grid, …). There are no hidden fallback colors, so a theme made from scratch with `new DvTheme(...)` must define all of them: a missing one shows magenta there, with a Trace warning. Derive custom themes with `DvTheme.Dark.With(...)` / `DvTheme.Light.With(...)` instead.
@@ -262,7 +263,14 @@ Token groups:
 | Spacing | `spacing.xs` 4 · `spacing.sm` 8 · `spacing.md` 12 · `spacing.lg` 16 · `spacing.xl` 24 · `spacing.2xl` 32 |
 | Corner radius | `radius.sm` 6 · `radius.md` 10 · `radius.lg` 16 · `radius.full` 999 |
 | Shadow | `shadow.sm` `shadow.md` `shadow.lg` (a `dx dy blur color` string) |
-| Font size | `font.display` 32 · `font.heading` 21 · `font.title` 15 · `font.body` 14 · `font.label` 13 · `font.caption` 11 · `font.mono` 14 |
+| Font size | `font.display` 32 · `font.heading` 21 · `font.title` 15 · `font.body` 14 · `font.label` 13 · `font.meta` 12 · `font.caption` 11 · `font.mono` 14 |
+| Font weight | `weight.regular` 400 · `weight.medium` 500 · `weight.strong` 600 · `weight.bold` 700 |
+| Line | `stroke.hairline` 1 · `stroke.outline` 1.5 · `stroke.emphasis` 2 · `stroke.focus` 3 (editing ring) · `focus.gap` 2 · `stroke.track` 0.08 (instrument arc, × size) |
+| Control height | `control.sm` 32 · `control.md` 40 · `control.lg` 48 · `row.md` 40 · `row.lg` 48 |
+| Translucency | `overlay.hover` 0.08 · `overlay.press` 0.12 · `opacity.disabled` 0.5 · `alpha.selected` 0.15 · `alpha.soft` 0.2 · `alpha.dim` 0.38 |
+| Color role | `selection` `selection-fg` `value-input` `value-read` `normal` (each points at another token, e.g. `token(primary)`) |
+| Style switch | `look.texture` `flat`/`rich` (gloss, gradients, shadows on instruments) · `look.normal-color` `on`/`off` · `look.selection` `quiet`/`strong` |
+| Alarm icon | `alarm-critical-icon` `alarm-major-icon` `alarm-minor-icon` (icon name; empty = color and text only) |
 | Instrument | `gauge-track` `gauge-needle` `gauge-needle-tip` `gauge-tick` |
 | Lamp | `lamp-off` (the off color of `DvLamp` and grid lamp cells) |
 | Tank | `tank-empty-top` `tank-empty-bottom` `tank-frame` `tank-chip-bg` `tank-chip-fg` `tank-fill` (liquid when no `alarm-zones` zone applies) |
