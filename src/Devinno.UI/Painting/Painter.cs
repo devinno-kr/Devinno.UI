@@ -218,7 +218,7 @@ public sealed partial class Painter
         }
 
         if (box.Widget is { } widget)
-            PaintWidget(canvas, box, widget, rect, st, timestampMs);
+            PaintWidget(canvas, box, widget, rect, st, timestampMs, state);
 
         if (box.Node.Tag == "DvToggle")
         {
@@ -749,7 +749,7 @@ public sealed partial class Painter
     }
 
     // 커스텀 위젯 — 상자로 잘라 내용 영역(패딩 안)을 넘긴다. 예외는 화면에 한 번 알리고(재빌드 전까지) 빨간 테두리로 표시
-    private void PaintWidget(SKCanvas canvas, LayoutBox box, Widgets.DvWidget widget, SKRect rect, ComputedStyle st, long timestampMs)
+    private void PaintWidget(SKCanvas canvas, LayoutBox box, Widgets.DvWidget widget, SKRect rect, ComputedStyle st, long timestampMs, InteractionState? state)
     {
         var pad = st.Padding;
         var content = new SKRect(rect.Left + pad.Left, rect.Top + pad.Top, rect.Right - pad.Right, rect.Bottom - pad.Bottom);
@@ -757,7 +757,7 @@ public sealed partial class Painter
         canvas.ClipRect(rect);
         try
         {
-            widget.Paint(canvas, content, new Widgets.DvWidgetContext(box, _theme, timestampMs));
+            widget.Paint(canvas, content, new Widgets.DvWidgetContext(box, _theme, timestampMs, state: state));
         }
         catch (Exception ex)
         {

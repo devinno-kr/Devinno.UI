@@ -18,10 +18,14 @@ public sealed class DvWidgetContext
     private readonly DvSurface? _owner;
     private readonly object? _vm;
 
-    internal DvWidgetContext(LayoutBox box, DvTheme? theme, long timestampMs, DvSurface? owner = null, object? vm = null)
+    private readonly Interaction.InteractionState? _state;
+
+    internal DvWidgetContext(LayoutBox box, DvTheme? theme, long timestampMs, DvSurface? owner = null, object? vm = null,
+        Interaction.InteractionState? state = null)
     {
         _box = box;
-        _theme = theme ?? DvTheme.Default;
+        _theme = theme ?? Roles.Ambient ?? DvTheme.Default;
+        _state = state;
         TimestampMs = timestampMs;
         _owner = owner;
         _vm = vm;
@@ -140,6 +144,39 @@ public sealed class DvWidgetContext
     /// <param name="fallback">The color for an unknown token.</param>
     public SKColor Color(string token, SKColor? fallback = null) =>
         _theme.TryResolve(token, out var raw) && DvColor.TryParse(raw, out var c) ? c.ToSK() : fallback ?? SKColors.Magenta;
+
+    /// <summary>The theme's style switches (<c>look.texture</c>, <c>look.normal-color</c>, <c>look.selection</c>), so the widget can follow flat or rich themes like the built-in ones.</summary>
+    public ThemeLook Look => ThemeLook.Of(_theme);
+
+    /// <summary>
+    /// The number value of a theme role token — the same names the built-in widgets use (<c>stroke.hairline</c>, <c>stroke.outline</c>, <c>weight.bold</c>, <c>font.meta</c>, <c>alpha.soft</c> …).
+    /// A missing token or a value that is not a number gives 0 with a warning.
+    /// </summary>
+    /// <param name="name">The token name.</param>
+    public float TokenNumber(string name) => ThemeResolver.Number(_theme, name);
+
+    /// <summary>
+    /// <paramref name="fill"/> with the theme's state look applied, the same way built-in controls show it: pressed or hovered = the <c>text</c> color
+    /// laid over by <c>overlay.press</c> / <c>overlay.hover</c>; disabled = the alpha <c>opacity.disabled</c>; otherwise <paramref name="fill"/> unchanged.
+    /// </summary>
+    /// <param name="fill">The color the widget would paint without any state.</param>
+    public SKColor StateOverlay(SKColor fill)
+    {
+        if (_box.Disabled)
+            return fill.WithAlpha((byte)Math.Clamp(MathF.Round(fill.Alpha * ThemeResolver.Number(_theme, "opacity.disabled")), 0f, 255f));
+        var amount = _state is null ? 0f
+            : ReferenceEquals(_state.Press, _box) ? ThemeResolver.Number(_theme, "overlay.press")
+            : ReferenceEquals(_state.Hover, _box) ? ThemeResolver.Number(_theme, "overlay.hover")
+            : 0f;
+        if (amount <= 0f)
+            return fill;
+        var ink = Color("text");
+        return new SKColor(
+            (byte)(fill.Red + (ink.Red - fill.Red) * amount),
+            (byte)(fill.Green + (ink.Green - fill.Green) * amount),
+            (byte)(fill.Blue + (ink.Blue - fill.Blue) * amount),
+            fill.Alpha);
+    }
 
     /// <summary>Measures the width of a single line of text in px (same fonts as built-in text, including the Korean fallback).</summary>
     /// <param name="text">The text.</param>
