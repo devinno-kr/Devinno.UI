@@ -61,13 +61,13 @@ The root of a dialog dvml: background, border, shadow and title drawn by the the
 
 | attribute | values | default | bound | notes |
 |---|---|---|---|---|
-| `title` | text | empty | yes | Title (bold). Absent or empty = no title row at all |
+| `title` | text | empty | yes | Title (`.title`, weight 600). Absent or empty = no title row at all |
 | `subtitle` | text | empty | yes | Dimmed text below the title. Shown only when `title` is present |
 | `width` / `height` in `style` | length | content size | — | Dialog size. Absent = the content size |
 
 **Behavior**
 - Children stack vertically (gap `md` 12); horizontally they fill the dialog width.
-- Appearance = built-in class `.dialog` (background `surface-overlay`, border `border`, radius 12, shadow `shadow.lg`, padding 20). Override it with `style`/`class` ([what an instance accepts](dvml-components.md#component-instances)).
+- Appearance = built-in class `.dialog` (background `surface-overlay`, border `border`, `radius.lg` (16), shadow `shadow.lg` — none with `look.texture: flat` —, padding `spacing.xl` (24)). Override it with `style`/`class` ([what an instance accepts](dvml-components.md#component-instances)).
 - All attributes are bindable (`title="{Caption}"`).
 - Size limit, centering, scrolling long content and showing the dialog: [defining a dialog](dvml-dialogs.md#dialog-define).
 
@@ -163,7 +163,7 @@ One line of lamp + name + status text — the usual display for an equipment sta
 | `label` | text | empty | yes | Name |
 | `state` | theme word | `off` | yes | Lamp color (`state-{state}`). Unknown word = `off` + one Trace warning |
 | `status` | text | empty | yes | Status text (muted, right side). Shown only when non-empty |
-| `blink` | bool | `false` | yes | Lamp blinks |
+| `blink` | bool | `false` | yes | Lamp blinks (500 ms) |
 
 **Behavior**
 - The lamp is always on, colored by `state`.
@@ -243,7 +243,7 @@ A button; with `value` it is a latching (on/off) button.
 | `value` | bool | — | yes | Present = latching button (see Behavior). A handle cannot own it |
 
 **Behavior**
-- Default size: text (+ icon) size + padding.
+- Default size: text (+ icon) size + padding. With `variant` the height is at least `control.md` (40; `size="sm"` `control.sm` 32, `size="lg"` `control.lg` 48), the label stays on one line, weight 600.
 - `variant` gives the themed look including hover, press and disabled looks. Without `variant` it is an unstyled text box (for custom styling).
 - `icon="fa-floppy-disk"`: icon size = `font-size`, color = `color`. An icon alone without text is fine. Icon names: [icons](dvml-app.md#icons).
 - A bound `variant` gives the same look as the literal. A null or empty bound value = no `variant`. Any other word = no `variant` (a latching button keeps `btn btn-secondary`) + Trace warning — `variant="foo"` does not add `.btn-foo`; style your own class with `class`. Changes apply on `Invalidate()`.
@@ -375,7 +375,7 @@ An on/off switch.
 - Default size: 44×24.
 - `value="{Bind X}"` (bool): pressing inverts and writes it. One-way only displays.
 - Reject with `onbeforecommit` = `bool M(bool)`.
-- Colors: the `toggle-on` `toggle-off` `toggle-knob` tokens. Disabled = translucent.
+- Colors: the `toggle-on` `toggle-off` tokens for the track; the knob is `toggle-knob` when on and `text-muted` when off. Disabled = translucent.
 - Read-only (one-way or fixed value, `readonly`, or neither `value` nor a handle) = a dashed border (`border-strong`) around the track.
 
 **Example**
@@ -459,7 +459,7 @@ A rotary knob for a number.
 | `min` | number | `0` | yes | `min >= max` = 0..100 + warning. Drag and keypad never write a value outside |
 | `max` | number | `100` | yes | As `min` |
 | `step` | number | `1` | yes | `<= 0` = 1 |
-| `unit` | text | empty | yes | Drawn after the value text: `%` `‰` `°…` join it (`40%`), others follow one space (`3 bar`) |
+| `unit` | text | empty | yes | Drawn after the value text: `%` `‰` `°…` join it (`40%`), others follow a gap (`3 bar`). Style the texts with `DvKnob::part(value)` / `::part(unit)` ([widget parts](dvml-style.md#dvstyle)) |
 | `readonly` | bool | `false` | yes | Read-only also when `value` is one-way or a literal |
 | `input-mode` | `drag` `tap` `both` | `drag` | yes | Unknown = `drag` + warning |
 
@@ -493,7 +493,7 @@ A track + handle for a number.
 | `min` | number | `0` | yes | `min >= max` = 0..100 + warning. Drag never writes a value outside |
 | `max` | number | `100` | yes | As `min` |
 | `step` | number | `1` | yes | `<= 0` = 1 |
-| `unit` | text | empty | yes | After the value text: `%` `‰` `°…` join it (`40%`), others follow one space (`3 bar`) |
+| `unit` | text | empty | yes | After the value text: `%` `‰` `°…` join it (`40%`), others follow one space (`3 bar`). Style the texts with `DvSlider::part(value)` / `::part(unit)` ([widget parts](dvml-style.md#dvstyle)) |
 | `readonly` | bool | `false` | yes | Read-only also when `value` is one-way or a literal |
 | `direction` | `right` `left` `up` `down` | `right` | yes | Side where the value increases; `up`/`down` = vertical. Unknown = `right` + warning |
 | `show-value` | bool | `false` | yes | Value text (+ unit) above the handle (right of it when vertical) |
@@ -566,8 +566,8 @@ A panel whose content expands and collapses when its header row is pressed (the 
 | `expanded` | bool | — | yes | Two-way `{Bind X}` follows the VM. One-way/literal locks it. Absent = the screen remembers (collapsed) |
 
 **Behavior**
-- Default size: header row 44 (+ content when expanded).
-- Header row = right-arrow (collapsed) / down-arrow (expanded) icon + `title`, height 44. `title` is the group heading (like `DvCard`/`DvPageFrame` `title`), not a tooltip.
+- Default size: header row `row.md` (40) (+ content when expanded).
+- Header row = chevron right (collapsed) / chevron down (expanded) + `title`, height `row.md` (40). `title` is the group heading (like `DvCard`/`DvPageFrame` `title`), not a tooltip.
 - The whole header row is the press target. Collapsed = only the header height; the content is not built (`id` handles in collapsed content have empty `Bounds`). Content stacks vertically (`.expander-body`).
 - `expanded="{Bind X}"` (bool): the VM owns it; pressing flips and writes it. Omitted: the screen remembers it (initially collapsed, kept across redraws; each `DvRepeat` item and component instance separately). One-way or fixed (`expanded="true"`) locks it.
 - From code: the `id` handle's `Expanded`/`ExpandedChanged` ([handles](dvml-code.md#handles)).

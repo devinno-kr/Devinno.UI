@@ -11,7 +11,8 @@ How to read the tables: `bound` = the attribute takes a binding (`{X}`). Every t
 
 - **Value text**: integers as integers, otherwise one decimal place (gauge, ring, progress bar, tank, chart numbers; the slider uses the decimals of `step`). A live value then switches between "6" and "6.2" and the text changes width.
 - **`format`** fixes the digits: a .NET format string (InvariantCulture, bindable) — `format="0.0"` → "6.0". It means the same everywhere a number is shown as text (gauge, ring, progress bar, tank, slider, bar/pie chart numbers, `DvInput`, grid columns, summaries). A format not valid for the value (`X` on a real number) shows the default text + Trace warning.
-- **`unit`** is drawn after the value text on the gauge, ring, progress bar, tank, knob and slider: a unit starting with `%`, `‰` or `°` joins the value (`40%`, `20°C`), any other unit follows one space (`3 bar`). On the gauge, ring, knob and tank the value uses tabular digits and the unit is smaller (value size × the theme's `ratio.unit`) and muted; style it with `::part(unit)` ([widget parts](dvml-style.md#dvstyle)). `DvInput` keeps it at the right edge of the box; trends show it in the legend.
+- **`unit`** is drawn after the value text on the gauge, ring, progress bar, tank, knob and slider: a unit starting with `%`, `‰` or `°` joins the value (`40%`, `20°C`), any other unit follows a gap (`3 bar`). On the gauge, ring, knob and tank the value uses tabular digits and the unit is smaller (value size × the theme's `ratio.unit`) and muted; style it with `::part(unit)` ([widget parts](dvml-style.md#dvstyle)). `DvInput` keeps it at the right edge of the box; trends show it in the legend.
+- **Texture**: with the theme's `look.texture: flat` (`Graphite`, `Carbon`) the ring, progress bar, tank and needle draw without gradients, glow or shadows and lit lamps without gloss; the `DvKnob` face keeps its metal grain. With `rich` (`Light`, `Dark`) the shading is as deep as `texture.depth` ([style switches](dvml-style.md#theme-tokens)).
 - **`show-value`** is honored by every tag that has it: `DvGauge` and `DvRing` show the value by default (`show-value="false"` hides it); `DvProgress`, `DvSlider`, `DvBarChart` and `DvPieChart` hide it by default.
 - **Size scaling**: the internals of gauges, rings, knobs and tanks (arc thickness, needle, value text, chip, zone marks) scale with the widget size (default size = 1×; gauges, rings and knobs use the shorter side; tanks the smaller of width/80 and height/160). Proportions stay right when filling a cell with `grow="1"` or `align="stretch"`.
 - **Range** (`min`/`max` on knob, slider, gauge, ring, progress bar, tank, numeric `DvInput`, grid input cells): user input never produces a value outside — drag and the stepper stop at the bound; a typed or keypad value outside is rejected (error shown). A value from code or the VM is not changed; instruments only draw it clamped.
@@ -41,7 +42,7 @@ A 270° needle instrument.
 
 **Behavior**
 - Default size: 120×120.
-- The value text and the needle tip use the current zone color (no zone = the needle color); the unit follows smaller and muted.
+- The value text and the needle tip use the current zone color; with no zone the value text uses `gauge-needle` and the tip `gauge-needle-tip`. The unit follows smaller and muted.
 - The track is a thin neutral arc (`gauge-track`) that outlines the range; the needle shows the value. `alarm-zones` are a thin band just inside it. Tick lines are drawn under the needle and the scale numbers over it; the needle reaches the start of the ticks.
 - The value text sits in the open bottom of the arc and scales with the gauge, so a larger gauge gives it no more room. It is fitted between the arc ends: a text that does not fit at the normal size (`1480 rpm`, `10000 kPa`) is drawn smaller, down to 60% of the normal size. Up to about 13 characters with the unit (`10000 m3/hour`) fit; a longer text stays at 60% and reaches the arc ends (no ellipsis). With `ticks` the text sits lower and its normal size is smaller. For a longer text, leave `unit` out and put the unit in a `DvLabel` under the gauge, or set `show-value="false"` and show the value in your own label.
 - The gauge has no `tone`, `direction`, `label`, `sweep` or `thickness` (those belong to the ring and progress bar); written on a gauge they are [DVML019](dvml-diagnostics.md#dvml019).
@@ -156,7 +157,7 @@ An indicator lamp.
 - On when `on="{Running}"` is true. With `blink="true"` it blinks while on, every `blink-interval` ms; all blinking on the screen shares the same phase.
 - On-color priority: `color` > `state` (`state-{state}` token — the built-in words, or any `state-*` token of your theme) > `color` in `style`.
 - An unreadable `color`, or a `state` the theme has no `state-*` token for, is ignored + Trace warning (the lamp does not draw magenta).
-- Off color = the `lamp-off` token (dark gray; light gray in `Graphite`).
+- Off color = the `lamp-off` token (mid slate in `Light`, light gray in `Graphite`, dark gray in `Dark` and `Carbon`).
 - **Multi-state lamp** (equipment state number → color, text, blinking): no separate widget. The VM converts the number into a `state` key, a text and a blink flag and binds them (the state table is app data that differs per equipment). Lamp + name + status chip = [DvStatusItem](dvml-widgets.md#dvstatusitem). A color not in the theme: `DvLamp color="{PumpColor}"`.
 
 **Example**
@@ -188,7 +189,7 @@ A cylindrical vessel with a liquid level.
 | `alarm-zones` | zone list | none | yes | Limit marks, and the liquid color per zone when the theme's `look.normal-color` is `on` ([alarm-zones](#alarm-zones)) |
 | `unit` | text | empty | yes | After the value text: `%` `‰` `°…` join it (`40%`), others follow one space (`3 bar`) |
 | `format` | .NET format string | none | yes | Value chip digits. The chip is always drawn (no `show-value`) |
-| `show-zone-marks` | bool | `true` | yes | `false` hides the zone boundary ticks and numbers on the right; zone colors stay |
+| `show-zone-marks` | bool | `true` | yes | `false` hides the zone boundary ticks and numbers on the right and the dashed limit lines; zone colors stay |
 | `medium` | `water` · `steam` · `air` · `gas` · `oil` · `acid` | none | yes | Liquid color = the theme's `process-pipe-{medium}`, the same as a process pipe of that medium ([medium](dvml-process.md#look-flow-medium)). Other word = none + Trace warning |
 | `color` | `#RRGGBB`, `token(name)`, `var(--name)` | none | yes | Liquid color; wins over `medium`. Unknown token = magenta + warning |
 
@@ -348,7 +349,7 @@ One line of a `DvTrend` (child element; takes only these attributes + `id`).
 | `name` | text | `ch0`, `ch1` … | yes | Channel name looked up in the `source` buffer |
 | `label` | text | `name` | yes | Legend name |
 | `unit` | text | empty | yes | Legend only: shown smaller and muted after the latest value (`%`, `‰`, `°…` join the value, others follow a small gap) |
-| `format` | .NET numeric format | none | yes | Legend latest value, same rule as `format` on the other widgets (`0.0`). Absent = integers as integers, otherwise up to 3 decimals after rounding to 2. Unusable format = default + warning |
+| `format` | .NET numeric format | none | yes | Legend latest value, same rule as `format` on the other widgets (`0.0`). Absent = rounded to 2 decimals, trailing zeros dropped (`12`, `12.5`, `12.35`). Unusable format = default + warning |
 | `color` | `#RRGGBB`, `token(name)`, `var(--name)` | `chart-1` … `chart-6` in channel order | yes | Unknown token = magenta + warning. Unparsable = that palette color + warning |
 | `points` | `IEnumerable<TrendPoint>` | none | yes | Wins over `source`. Any other type = from `source` by `name` |
 

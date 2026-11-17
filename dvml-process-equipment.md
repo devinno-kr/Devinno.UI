@@ -67,7 +67,7 @@ Children allowed inside equipment: `DvAttach`, `DvAgitator`, `DvMotor` only ([at
 - **Everything else**: on a **face not used by lines** — the first free face in the order bottom → top → right → left.
   - The actuator side of a control valve is not free (signal lines end there).
   - If all four faces are used: bottom; if it would cover the front of a port there, it shifts along the face to stay at least 12px from the port (the exchanger's label, for example).
-- 4px from the symbol (6px left/right). Font 13 bold (17px tall at `font-size` 14); color is the theme `--text`.
+- 4px from the symbol (6px left/right). Font 13 weight 600 (17px tall at `font-size` 14); color is the theme `--text`.
 - One line only: `&#10;` does not break it and draws a box character.
 - Terminals have no `label`; they use `text` ([`DvTerminal`](#dvterminal)).
 
@@ -419,12 +419,12 @@ registry.Register(CycloneMarkup);   // the same Register as components: a root D
 
 | class | Fill | Used for |
 |---|---|---|
-| `vessel` | Body (no state) — plain gray, rich metal | Vessels, tubes, main bodies |
+| `vessel` | Body (no state) — `process-body`; flat in `plain`, metal in `rich` | Vessels, tubes, main bodies |
 | `state` | Body; running color when the `when` parameter is true | Pump casings, valve bodies, motors |
-| `accent` | Mid gray; a metal gradient in `rich` | Flanges, bases, handles, nozzles, small parts |
+| `accent` | `process-accent`; a metal gradient in `rich` | Flanges, bases, handles, nozzles, small parts |
 | `detail` | Stroke only (1.6px, round caps) | Blades, patterns, axis lines |
 | `dash` | Dashed stroke only | Filter mesh, internal boundaries |
-| `screen` | Display window: light gray in `plain`, near-black in `rich` | Instrument screens |
+| `screen` | Display window: the `process-screen` token in both looks | Instrument screens |
 | `glass` | Light glass | Sight glasses |
 
 - Filled layers (`vessel` `state` `accent` `screen` `glass`) are all drawn with an outline stroke.

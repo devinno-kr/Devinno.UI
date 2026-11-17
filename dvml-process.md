@@ -113,7 +113,7 @@ Booleans, numbers and word values follow the common value rules ([value rules](d
 | What it is | An instrument widget (dashboard gauge) | A P&ID equipment symbol |
 | Where it goes | Anywhere in ordinary dvml | Only directly inside `DvProcess` (or a `DvUnit`) |
 | Value | `value` between `min`·`max` (default 0–100) + `unit` | `level` 0–100 % (fixed range) |
-| Extras | `alarm-zones` (colored bands), value chip, `format` | Pipes connect to its ports; `kind`, `width`·`height` body size |
+| Extras | `alarm-zones` (boundary ticks, numbers and dashed limit lines), value chip, `format` | Pipes connect to its ports; `kind`, `width`·`height` body size |
 | Reference | [`DvTank`](dvml-instruments.md#dvtank) | [`DvVessel`](dvml-process-equipment.md#dvvessel) |
 
 **State words and process booleans.** UI widgets show a state with a **word** that picks a theme color (`state="run|stop|fault|warn|manual|off"`, `DvLamp`, `DvStatusItem`); process equipment is moved by **booleans** that drive the drawing and animation (`running`, `open`, `level`). They are two systems on purpose — link them in the view model, not in markup:
@@ -415,7 +415,7 @@ Groups several pieces of equipment **into one unit.** Use it in two cases:
 |---|---|---|---|---|
 | `name` | text | required | no | Unique within the outer diagram. Outer lines connect with `name.port` |
 | `direction` | `lr` · `tb` | `lr` | yes | Flow direction **inside** the unit, independent of the outer direction |
-| `label` | text | — | yes | Unit title outside the rectangle at its top-left, font 13 bold (theme `--text`); pipes avoid it |
+| `label` | text | — | yes | Unit title outside the rectangle at its top-left, font 13 weight 600 (theme `--text`); pipes avoid it |
 | `row` · `rank` | integer | — | yes | Placement hints in the outer diagram ([hints](dvml-process-layout.md#hints)) |
 | `x` · `y` | px | — | yes | Only when the outer `DvProcess` has `placement="fixed"`: the center of the whole unit frame |
 | `placement` | `auto` | `auto` | — | Read only to warn: the inside of a unit is always placed automatically |
@@ -559,14 +559,14 @@ registry.Register(blenderMarkup); // the <DvComponent name="Blender"> string abo
 |---|---|---|
 | Intent | ISA-101 high-performance HMI — flat fills | Good-looking dashboard — metallic texture |
 | Body (no state) | Flat `process-body` | Metal gradient of `process-body` + shadow |
-| Running / open | Flat `process-body-on` (= the theme's `state-run`: green in `Light`/`Dark`, dark gray in `Graphite`; inner lines `process-detail-on`) | Metal gradient of `process-body-on` |
+| Running / open | Flat `process-body-on` (emerald in `Light`, green in `Dark`, dark gray in `Graphite`, neutral gray in `Carbon`; inner lines `process-detail-on`). `Dark` and `Graphite` point it at `state-run`; `Light` and `Carbon` set their own value, so changing `state-run` alone does not recolor their running equipment | Metal gradient of `process-body-on` |
 | Stopped / closed | Flat `process-body-off` | Metal gradient of `process-body-off` |
 | Liquid | Flat `process-liquid` | Gradient of `process-liquid` + gloss |
 | Pipe | 3px `process-pipe`, corner radius 6 | 11px tube (three layers, center highlight), corner radius 10 |
 | Pipe spacing | 12px | 16px |
 
 - **Default = the theme's `look.texture`**: no `look` → `rich` in `Light`/`Dark`, `plain` in `Graphite`/`Carbon`. Writing `look` overrides it for that diagram (and its units).
-- Colors are the theme's `process-*` tokens in both looks (`process-line` outline, `process-detail`, `process-body*`, `process-accent`, `process-liquid`, `process-glass`, `process-screen`, `process-tag-bg` `-border` `-fg` (name tags, terminals, bubbles), `process-arrow`, `process-pipe` and `process-pipe-{medium}`); `rich` computes its metal shading from the same colors. A copied theme changes them like any token ([theme tokens](dvml-style.md#theme-tokens)). Label text, signal lines and `tap` connection lines use theme `--text`, and a signal line can set its own `color` ([`DvSignal`](#dvsignal)).
+- Colors are the theme's `process-*` tokens in both looks (`process-line` outline, `process-detail`, `process-body*`, `process-accent`, `process-liquid`, `process-glass`, `process-screen`, `process-tag-bg` `-border` `-fg` (name tags, terminals, bubbles), `process-arrow`, `process-pipe` and `process-pipe-{medium}`); `rich` computes its metal shading from the same colors, as deep as the theme's `texture.depth` (0–1; built-in 1, `Light` 0.85; [style switches](dvml-style.md#theme-tokens)). A copied theme changes them like any token ([theme tokens](dvml-style.md#theme-tokens)). Label text, signal lines and `tap` connection lines use theme `--text`, and a signal line can set its own `color` ([`DvSignal`](#dvsignal)).
 - The background is not painted. It follows the app theme's background or the `background` in `style`.
 - The process diagram does not decide alarm colors (red, etc.). Show alarms with `DvLamp`·`DvBadge` inside `DvAttach`, or with alarm widgets.
 - Pipes are not colored by medium **by default** (ISA-101 recommendation). Opt in per line with `medium` (below).
@@ -606,7 +606,7 @@ Automatic decision rules (an inference for display, not a measurement):
 
 Look and cost of the animation:
 
-- A base stripe (a light tint of the theme `primary` in plain, a dark shade in rich) is laid on flowing pipes, and a thick dashed line (`primary`, 4px plain / 5px rich) moves on top. On a pipe with `medium` the stripe and the dashes use darker and lighter tones of that medium's color, so the medium stays visible while it flows. Speed 40px/s.
+- A base stripe (a light tint of the theme `primary` in plain, a dark shade in rich) is laid on flowing pipes, and a thick dashed line (4px plain / 5px rich) moves on top: `primary` in plain, a lighter tint of `primary` in rich. On a pipe with `medium` the same rule uses that medium's color (plain: lighter stripe, dashes in the medium color; rich: darker stripe, lighter dashes), so the medium stays visible while it flows. Speed 40px/s.
 - While at least one pipe flows, it **redraws at 20 frames per second**. With no flow, or `flow-animation` off, it does not redraw.
 - The adapters (OpenTK CPU raster and GPU, WinForms) redraw **only the area containing the process diagram** (`DvSurface.PartialRender`): the cost grows with the area of the flowing diagram, not the whole screen. Measured in a 1600×1080 window, CPU raster: a small diagram covering about 7% of the screen costs about 7% of one core; a page that is mostly process diagram about 50%. `ViewWindow.Gpu` mode on the same small diagram: 3.8% (CPU time).
 - With animation off, flow does not appear in the drawing (only the decision result exists).

@@ -27,7 +27,7 @@ Any other key is ignored at run time, and the build reports it as warning [DVML0
 | `color` | Color | `#222222` (theme-independent, not inherited) |
 | `font-size` | Number | 14 |
 | `font-family` | Comma list | First installed font that has all the characters; otherwise per-character fallback. **Inherited by children** |
-| `font-weight` | `normal` (400), `bold` (700) or a number 100–900. Drawn with the font's real face for that weight (the nearest face the installed font has) | 400 |
+| `font-weight` | `normal` (400), `bold` (700) or a number 100–900 (rounded to the nearest 100). Drawn with the font's real face for that weight (the nearest face the installed font has) | 400 |
 | `font-variant-numeric` | `tabular-nums` or `normal` | `tabular-nums` = every digit 0–9 takes the same width (the font's widest digit), so a changing value does not shift. Other characters keep their width | `normal` |
 | `text-align` | `left` `center` `right` | `left` (per line when multi-line) |
 | `white-space` | `normal` `nowrap` (lowercase only, anything else = `normal`) | `normal` = wrap to fit width, `nowrap` = break only at `\n` ([text wrapping](dvml-layout.md#text-wrap)). **Inherited by children** |
@@ -135,16 +135,16 @@ Sets where the text (and button icon) of `DvLabel`/`DvButton`/`DvCheckBox`/`DvRa
 
 | Category | Classes | Content |
 |---|---|---|
-| Typography | `.display` (32 bold) `.heading` (21 bold) `.title` (15 bold) `.body` (14) `.label` (13) `.caption` (11, dimmed color) `.mono` (14) | Font size + text color `token(text)` |
+| Typography | `.display` (32, weight 600) `.heading` (21, weight 600) `.title` (15, weight 600) `.body` (14) `.label` (13) `.caption` (11, dimmed color) `.mono` (14) | Font size + text color `token(text)` |
 | Text color | `.muted` (`text-muted`) `.subtle` (`text-subtle`) | |
-| Surface | `.page` (background gradient + padding 24) `.card` (surface, border, radius 16, shadow, padding) `.card-flat` (card without shadow) `.dialog` (`DvDialogFrame` frame: `surface-overlay`, border, radius 12, shadow, padding 20) | |
-| Chip | `.chip` | Small bold text + rounded background |
+| Surface | `.page` (background gradient + padding 24) `.card` (surface, border, radius 16, shadow, padding) `.card-flat` (card without shadow) `.dialog` (`DvDialogFrame` frame: `surface-overlay`, border, `radius.lg` 16, shadow, padding `spacing.xl` 24) | |
+| Chip | `.chip` | Small text (weight 500) + rounded background |
 | Button | `.btn` `.btn-primary` `.btn-secondary` `.btn-danger` `.btn-ghost` `.btn-sm` `.btn-lg` | Added automatically by `DvButton` `variant`/`size`. Height = `control.md` (`sm` `control.sm`, `lg` `control.lg`), one line, weight `weight.strong` |
-| Latching / segment | `.btn-on` `.segment` `.segment-item` `.segment-item-on` | `.btn-on` when a latching button is on; the others added automatically to `DvSegment` and its items. A segment is as tall as a button and an input. The chosen item is a raised outlined chip (`look.selection: quiet`, every built-in theme), or filled with `primary` when a theme sets `look.selection: strong` |
+| Latching / segment | `.btn-on` `.segment` `.segment-item` `.segment-item-on` | `.btn-on` when a latching button is on; the others added automatically to `DvSegment` and its items. A segment is as tall as a button and an input. The chosen item is a raised outlined chip with bold `primary` text on a track in the `background` color (`look.selection: quiet`, every built-in theme), or filled with `primary` when a theme sets `look.selection: strong`. Every item is as wide as its text in the chosen item's weight, so moving the choice does not shift the items |
 | Checkbox / radio | `.checkbox` `.radio` | Automatic on `DvCheckBox`/`DvRadio` (box/circle in a 34 left margin, height 40 or more) |
 | List | `.listbox` `.listbox-item` `.listbox-item-on` | Automatic on `DvListBox` and its rows (`row.md` tall). The chosen row has a soft tint (`look.selection: quiet`, every built-in theme), or is filled with `primary` when a theme sets `look.selection: strong` |
 | Expander | `.expander` `.expander-header` `.expander-body` | Automatic on `DvExpander`, its header row and its content |
-| Tree | `.treeview` `.treeview-item` `.treeview-item-on` | Automatic on `DvTreeView` and its rows |
+| Tree | `.treeview` `.treeview-item` `.treeview-item-on` | Automatic on `DvTreeView` and its rows (`row.md` tall). The chosen row is chosen like a list row |
 | Tabs | `.tabs` `.tab-header` `.tab` `.tab-on` `.tab-rule` `.tab-body` | Added automatically to `DvTabs`, the header, the divider and `DvTab` content |
 | Icon | `.icon` | Automatic on `DvIcon` (24, `token(text)`) |
 | Input | `.input` `.input-readonly` | Automatic on input widgets; `.input-readonly` also on a read-only `DvSegment`, `DvListBox`, `DvTreeView` |
@@ -242,8 +242,8 @@ Changes values gradually when the state changes (as CSS). This works both when s
 - A token's whole value can be another token: `["gauge-track"] = "token(surface-raised)"`. Changing the base token in a copied theme then moves every token that points to it.
 - `token(name)` reads a value of the current theme. `var(--name)` is the same, with dashes instead of dots (`var(--spacing-md)` = `token(spacing.md)`). Names are case-insensitive.
 - An unknown token in a color position becomes magenta `#FF00FF`; in a number position (`padding: token(x)`) the declaration is ignored. Both write a Trace warning, and a literal unknown token is build warning [DVML013](dvml-diagnostics.md#dvml013). Finding the cause of magenta: [magenta](dvml-diagnostics.md#magenta).
-- Built-in widgets draw every part of themselves from these tokens (lamp off color `lamp-off`, tank liquid `tank-fill`, chart colors `chart-1`…`chart-6`, keyboard, grid, …). There are no hidden fallback colors, so a theme made from scratch with `new DvTheme(...)` must define all of them: a missing one shows magenta there, with a Trace warning. Derive custom themes with `DvTheme.Dark.With(...)` / `DvTheme.Light.With(...)` instead.
-- The process diagram (`DvProcess`) is the one exception: its symbol colors follow `look`, not the theme ([process look](dvml-process.md#look-flow-medium)).
+- Built-in widgets draw every part of themselves from these tokens (lamp off color `lamp-off`, tank liquid `tank-fill`, chart colors `chart-1`…`chart-6`, keyboard, grid, …). There are no hidden fallback colors, so a theme made from scratch with `new DvTheme(...)` must define all of them: a missing color token shows magenta there and a missing number token reads 0 (text of that size disappears), each with a Trace warning; missing style switches read as `rich`, `on`, `strong`. Derive custom themes with `DvTheme.Dark.With(...)` / `DvTheme.Light.With(...)` instead.
+- The process diagram (`DvProcess`) takes its colors from the `process-*` tokens (`process-line` `process-detail` `process-detail-on` `process-body` `process-body-on` `process-body-off` `process-accent` `process-liquid` `process-glass` `process-screen` `process-tag-bg` `process-tag-border` `process-tag-fg` `process-arrow` `process-pipe` `process-pipe-{water,steam,air,gas,oil,acid}`); without a `look` attribute it follows `look.texture` ([process look](dvml-process.md#look-flow-medium)).
 
 ```xml
 <DvBox style="background: token(surface); border: 1 token(border); padding: token(spacing.lg); border-radius: token(radius.md)"/>
@@ -261,20 +261,21 @@ Token groups:
 | Equipment state (`run` `stop` `fault` `warn` `manual` `off`) | `state-{state}` `state-{state}-fg` `state-{state}-soft` |
 | Alarm | `alarm-critical` `alarm-critical-fg` `alarm-major` `alarm-major-fg` `alarm-minor` `alarm-minor-fg` `comm-alarm` `comm-alarm-fg` |
 | Spacing | `spacing.xs` 4 · `spacing.sm` 8 · `spacing.md` 12 · `spacing.lg` 16 · `spacing.xl` 24 · `spacing.2xl` 32 |
-| Corner radius | `radius.sm` 6 · `radius.md` 10 · `radius.lg` 16 · `radius.full` 999 |
+| Corner radius | `radius.xs` 4 · `radius.sm` 6 · `radius.md` 10 · `radius.lg` 16 · `radius.full` 999 |
 | Shadow | `shadow.sm` `shadow.md` `shadow.lg` (a `dx dy blur color` string) |
 | Font size | `font.display` 32 · `font.heading` 21 · `font.title` 15 · `font.body` 14 · `font.label` 13 · `font.meta` 12 · `font.caption` 11 · `font.mono` 14 |
 | Font weight | `weight.regular` 400 · `weight.medium` 500 · `weight.strong` 600 · `weight.bold` 700 |
-| Line | `stroke.hairline` 1 · `stroke.outline` 1.5 · `stroke.emphasis` 2 · `stroke.focus` 3 · `focus.gap` 2 · `stroke.track` 0.08 (instrument arc, × size) |
-| Control height | `control.sm` 32 · `control.md` 40 · `control.lg` 48 · `row.md` 40 · `row.lg` 48 |
+| Line | `stroke.hairline` 1 · `stroke.outline` 1.5 · `stroke.emphasis` 2 · `stroke.focus` 3 · `focus.gap` 2 · `stroke.track` 0.08 — `stroke.focus`, `focus.gap` and `stroke.track` are for your own styles; built-in widgets do not read them |
+| Control height | `control.sm` 32 · `control.md` 40 · `control.lg` 48 · `row.md` 40 · `row.lg` 48 (`row.lg` for your own styles) |
+| Ratio | `ratio.unit` 0.6 — instrument unit text size = value size × this |
 | Translucency | `overlay.hover` 0.08 · `overlay.press` 0.12 · `opacity.disabled` 0.5 · `alpha.selected` 0.15 · `alpha.soft` 0.2 · `alpha.dim` 0.38 |
 | Color role | `selection` `selection-fg` `value-input` `value-read` `normal` (each points at another token, e.g. `token(primary)`) |
-| Style switch | `look.texture` `flat`/`rich` (gloss, gradients and shadows on instruments; `flat` also removes the shadow of `.card`, `.stat`, `.dialog` and the selected segment; the `DvKnob` face keeps its metal grain and shadow in every theme, as the cue that it turns) · `look.normal-color` `on`/`off` (`off` = the calm alarm banner is neutral instead of green) · `look.selection` `quiet`/`strong` (all four built-in themes are `quiet`) |
+| Style switch | `look.texture` `flat`/`rich` (gloss, gradients and shadows on instruments; `flat` also removes the shadow of `.card`, `.stat`, `.dialog` and the selected segment; the `DvKnob` face keeps its metal grain and shadow in every theme, as the cue that it turns) · `look.normal-color` `on`/`off` (`off` = the calm alarm banner is neutral instead of green, and tank liquid keeps its color in every zone while the value chip text takes the zone color) · `look.selection` `quiet`/`strong` (all four built-in themes are `quiet`) |
 | Texture depth | `texture.depth` 0–1 (built-in: 1, `Light` 0.85) — how deep the rich texture shades: metal and pipe shading on process diagrams, tank cylinder, knob grain and shadow, progress and ring gradients, lamp gloss, needle shadow, trend glow. 0 = rich drawing without shading |
 | Alarm icon | `alarm-critical-icon` `alarm-major-icon` `alarm-minor-icon` (icon name such as `fa-bell`; drawn before the priority text in the severity chip of `DvAlarmBanner` and `DvAlarmList`; empty = color and text only) |
 | Instrument | `gauge-track` `gauge-needle` `gauge-needle-tip` `gauge-tick` |
 | Lamp | `lamp-off` (the off color of `DvLamp` and grid lamp cells) |
-| Tank | `tank-empty-top` `tank-empty-bottom` `tank-frame` `tank-chip-bg` `tank-chip-fg` `tank-fill` (liquid when no `alarm-zones` zone applies) |
+| Tank | `tank-empty-top` `tank-empty-bottom` `tank-frame` `tank-chip-bg` `tank-chip-fg` `tank-fill` (liquid when no zone color, `color` or `medium` applies — [tank liquid](dvml-instruments.md#dvtank)) |
 | Knob | `knob-face` `knob-fill` `knob-indicator` |
 | Toggle | `toggle-on` `toggle-off` `toggle-knob` |
 | Trend | `trend-grid` |
@@ -291,7 +292,7 @@ Also defined, not for new screens: `bg` `bg2` `surface-alt` `muted` `border-warn
 
 - Set the theme with `app.Theme`. If omitted, `DvTheme.Default` (= `DvTheme.Dark`) is used. Style tokens and widget internal colors are all drawn with this theme ([DvApp](dvml-app.md#dvapp)).
 - For a light screen, set `DvTheme.Light` explicitly. For control rooms there are `DvTheme.Graphite` (bright room) and `DvTheme.Carbon` (night room).
-- The built-in themes all have the same tokens and differ only in colors. The spacing, corner radius and font-size scales are shared (values in the token groups table above).
+- The built-in themes all have the same tokens and differ in colors and in the style switches (`look.*`, `texture.depth`, the `normal` role). The spacing, corner radius and font-size scales are shared (values in the token groups table above).
 - To change only some values: `DvTheme.Dark.With(new Dictionary<string,string>{ ["primary"] = "#0ea5e9" })`. The original theme is unchanged.
 
 | Theme | For | Look |
@@ -339,9 +340,9 @@ Every color and shadow token, with its value in each built-in theme (from `DvThe
 | Tone | `tone-danger` | `#dc2626` | `#ef4444` | `#d92d20` | `#e5484d` |
 | Tone | `tone-danger-fg` | `#b91c1c` | `#fca5a5` | `#a8231a` | `#f2898c` |
 | Tone | `tone-danger-soft` | `#fee2e2` | `#ef44441f` | `#f9dad6` | `#e5484d1f` |
-| Equipment state | `state-run` | `#16a34a` | `#10b981` | `#2f3a44` | `#5fa77f` |
-| Equipment state | `state-run-fg` | `#15803d` | `#6ee7b7` | `#2f3a44` | `#8fc4a3` |
-| Equipment state | `state-run-soft` | `#dcfce7` | `#10b9811f` | `#d0d5db` | `#5fa77f1f` |
+| Equipment state | `state-run` | `#16a34a` | `#10b981` | `#2f3a44` | `#9aa0a6` |
+| Equipment state | `state-run-fg` | `#15803d` | `#6ee7b7` | `#2f3a44` | `#c9c5bd` |
+| Equipment state | `state-run-soft` | `#dcfce7` | `#10b9811f` | `#d0d5db` | `#9aa0a61f` |
 | Equipment state | `state-stop` | `#64748b` | `#64748b` | `#9aa1aa` | `#5c5f65` |
 | Equipment state | `state-stop-fg` | `#334155` | `#cbd5e1` | `#4a525c` | `#a8a39a` |
 | Equipment state | `state-stop-soft` | `#e2e8f0` | `#64748b26` | `#eceef0` | `#8e8a8226` |
@@ -361,15 +362,15 @@ Every color and shadow token, with its value in each built-in theme (from `DvThe
 | Alarm | `alarm-critical-fg` | `#ffffff` | `#ffffff` | `#ffffff` | `#ffffff` |
 | Alarm | `alarm-major` | `#f59e0b` | `#f59e0b` | `#c86e00` | `#f5a524` |
 | Alarm | `alarm-major-fg` | `#111827` | `#111827` | `#111111` | `#121314` |
-| Alarm | `alarm-minor` | `#3b82f6` | `#3b82f6` | `#9c8000` | `#7f96ad` |
-| Alarm | `alarm-minor-fg` | `#ffffff` | `#ffffff` | `#111111` | `#121314` |
+| Alarm | `alarm-minor` | `#3b82f6` | `#3b82f6` | `#52708d` | `#7f96ad` |
+| Alarm | `alarm-minor-fg` | `#ffffff` | `#ffffff` | `#ffffff` | `#121314` |
 | Alarm | `comm-alarm` | `#7a1fa2` | `#7a1fa2` | `#6b2c91` | `#7d4a9e` |
 | Alarm | `comm-alarm-fg` | `#ffffff` | `#ffffff` | `#ffffff` | `#ffffff` |
 | Instrument | `gauge-track` | `#e2e8f0` | `#334155` | `#c9ced4` | `#2c2e32` |
 | Instrument | `gauge-needle` | `#0f172a` | `#e2e8f0` | `#1e2329` | `#e8e4dc` |
 | Instrument | `gauge-needle-tip` | `#ef4444` | `#f87171` | `#2f3a44` | `#bda67e` |
 | Instrument | `gauge-tick` | `#94a3b8` | `#64748b` | `#8e959e` | `#5a5750` |
-| Lamp | `lamp-off` | `#3a3f47` | `#3a3f47` | `#b4bac2` | `#3a3c40` |
+| Lamp | `lamp-off` | `#94a3b8` | `#3a3f47` | `#b4bac2` | `#3a3c40` |
 | Tank | `tank-empty-top` | `#f5f8fc` | `#1e293b` | `#eef0f2` | `#202124` |
 | Tank | `tank-empty-bottom` | `#e6ecf3` | `#0f172a` | `#dde0e4` | `#141516` |
 | Tank | `tank-frame` | `#cbd5e1` | `#475569` | `#8e959e` | `#46494e` |
@@ -385,7 +386,7 @@ Every color and shadow token, with its value in each built-in theme (from `DvThe
 | Trend | `trend-grid` | `#e2e8f0` | `#263247` | `#c9ced4` | `#2a2c30` |
 | Chart colors | `chart-1` | `#3b82f6` | `#3b82f6` | `#4a6278` | `#bda67e` |
 | Chart colors | `chart-2` | `#22d3ee` | `#22d3ee` | `#4f8a8b` | `#7fa7a0` |
-| Chart colors | `chart-3` | `#a78bfa` | `#a78bfa` | `#2f3a44` | `#c4876a` |
+| Chart colors | `chart-3` | `#a78bfa` | `#a78bfa` | `#7d8a97` | `#c4876a` |
 | Chart colors | `chart-4` | `#f59e0b` | `#f59e0b` | `#9a8455` | `#9daa7a` |
 | Chart colors | `chart-5` | `#10b981` | `#10b981` | `#7a7396` | `#a58cb8` |
 | Chart colors | `chart-6` | `#ef4444` | `#ef4444` | `#8fa6ba` | `#8fa3b8` |

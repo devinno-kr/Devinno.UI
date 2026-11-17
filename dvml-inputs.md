@@ -11,7 +11,7 @@ How to read the tables: `bound` = the attribute takes a binding (`{X}` / `{Bind 
 
 Rules shared by `DvInput` `DvSelect` `DvSegment` `DvDateTimeInput` `DvColorInput` `DvListBox` `DvTreeView`:
 - Editable with `value="{Bind X}"`; read-only with one-way, literal or `readonly="true"` (dashed border `.input-readonly`) — the full rule and handle ownership: [value widgets](dvml-language.md#value-widgets).
-- Look: the `.input` class (surface background, border, radius 6, padding 8 12); override with `style`.
+- Look: the `.input` class (surface background, `border-strong` border, `radius.md`, padding 8 12); override with `style`.
 - The value is written to the VM **once, when editing ends**. An unchanged value is not written.
 - Rejecting a value so it is not written: [onbeforecommit](dvml-language.md#onbeforecommit).
 
@@ -28,7 +28,7 @@ A text, number or password field.
 | `keyboard-type` | `text` `numeric` `password` | `text` | yes | Unknown = `text` + Trace warning |
 | `multiline` | bool | `false` | yes | Multi-line text |
 | `placeholder` | text | empty | yes | Shown when empty |
-| `content-align` | 9 positions ([content-align](dvml-style.md#content-align)) | left | yes | Only the horizontal part is used: the text stays vertically centered (`multiline`: from the top) |
+| `content-align` | 9 positions ([content-align](dvml-style.md#content-align)) | none (text at the left) | yes | Only the horizontal part is used: the text stays vertically centered (`multiline`: from the top) |
 | `format` | .NET format string | none | yes | Numeric display only. Unusable = raw value + Trace warning |
 | `min` | number | none | yes | Typed values outside are rejected (not clamped). Numeric, both given and `min >= max` = 0..100 + warning |
 | `max` | number | none | yes | As `min` |
@@ -125,7 +125,7 @@ Pick one from a single row of joined buttons (a radio group).
 
 **Behavior**
 - Default size: sum of item text sizes + padding.
-- Items are built like [DvSelect](#dvselect) (`items`/`item-*` > [`DvOption`](#dvoption) children > automatic enum). Pressing writes that item's value (conversion and `onbeforecommit` as in `DvSelect`). The selected item has a `primary` background (`.segment-item-on`).
+- Items are built like [DvSelect](#dvselect) (`items`/`item-*` > [`DvOption`](#dvoption) children > automatic enum). Pressing writes that item's value (conversion and `onbeforecommit` as in `DvSelect`). The selected item (`.segment-item-on`) is a raised chip with bold `primary` text (`look.selection: quiet`, every built-in theme), or a `primary` fill with `strong` ([segment look](dvml-style.md#classes)).
 - One-way `value` or `readonly` only displays (dashed border, `.input-readonly`); `disabled` dims it. Items are created by the library (`.segment-item`) and do not wrap.
 - Its width fits its items, also inside a vertical layout (`DvStack`, `DvCard` — not stretched). When `grow`, `width` or `align-self:stretch` makes it wider, the box takes that space but the background and border are drawn only around the items.
 - `fill="true"`: the items share the extra width equally (each keeps its text width, so longer labels stay wider). In a vertical layout it stretches to the full width.
@@ -236,7 +236,7 @@ An always-open selection list; one or many.
 - **Multi**: `selection-mode="multi"` + `selected-items="{Bind X}"`. Each row press adds or removes it, and every change writes a **new list** (`T[]` `List<T>` `IList<T>` `IReadOnlyList<T>` `IEnumerable<T>`; elements converted to `T`). `onbeforecommit` receives the new list (`bool M(object)` or that list type). Same mode name as [DvDataGrid](dvml-grid.md#grid-selection).
 - Row height 40. Without a height, tall enough for up to 5 rows; more scroll inside (dragging scrolls, does not select; inertia and scrollbar). Hundreds of rows or several columns → `DvDataGrid`.
 - One-way, fixed or `readonly` only displays (dashed `.input-readonly`); `disabled` dims. Only `id` and no `value` (`selected-items` for multi) = the handle holds the choice ([handles](dvml-code.md#handles)); neither = display only.
-- Look `.listbox` (surface, border, rounded, inner padding 4), rows `.listbox-item`, chosen `.listbox-item-on` (`primary`). Row text does not wrap.
+- Look `.listbox` (surface, border, rounded, inner padding 4), rows `.listbox-item`, chosen `.listbox-item-on` (a soft `tone-info-soft` tint with `look.selection: quiet`, every built-in theme; a `primary` fill with `strong`). Row text does not wrap.
 
 **Example**
 ```xml
@@ -271,7 +271,7 @@ Expand and collapse hierarchical data (plant → line → equipment) and pick on
 - Initially all collapsed. The screen remembers expansion per tree instance (each `DvRepeat` item or component instance has its own), keyed by item object (`Equals`), across redraws. Collapsing a branch keeps the expansion below it.
 - Row height 40, indent 20 per depth. Without a height, up to 8 rows; more scroll (dragging scrolls). No lazy loading — child lists are read fully at layout time.
 - Single selection only. Ownership as other value widgets ([handles](dvml-code.md#handles)). A cycle (an ancestor appearing again as a child) skips that branch.
-- Look `.treeview`, rows `.treeview-item`, chosen `.treeview-item-on` (`primary`).
+- Look `.treeview`, rows `.treeview-item`, chosen `.treeview-item-on` (same as `DvListBox`: a soft tint with `quiet`, a `primary` fill with `strong`).
 
 **Example**
 ```xml
