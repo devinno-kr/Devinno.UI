@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.1 — 2026-11-17
+
+No code changes. The AI docs in the package (`llms.txt` and the `dvml-*.md` pages) now match the 0.7.0 look.
+
+### Fixed
+
+- Theme color table: `Carbon` `state-run` (and `-fg`, `-soft`), `Graphite` `alarm-minor`, `alarm-minor-fg` and `chart-3`, `Light` `lamp-off` show the 0.7.0 values.
+- Process diagram colors come from the `process-*` tokens. `Light` and `Carbon` set their own `process-body-on`, so changing `state-run` alone does not recolor running process equipment in those themes (the 0.7.0 notes above say it follows `state-run`; that holds for `Dark` and `Graphite`).
+- A theme built from scratch: a missing number token reads 0 and missing style switches read as `rich`, `on`, `strong`. `radius.xs` and `ratio.unit` are listed; `stroke.track`, `stroke.focus`, `focus.gap` and `row.lg` are marked as not read by built-in widgets.
+- Selection look (segment, list, tree), dialog, expander, input and button sizes, title and process label weights, instrument texture, needle tip, lamp off color, `show-zone-marks`, trend legend default format and `::part()` pointers match the code.
+
 ## 0.7.0 — 2026-11-17
 
 This release changes how every control looks: the theme now decides weights, strokes, heights, texture and selection, not only colors. It has breaking changes for custom widgets and for themes built from a full token dictionary (see Breaking).
