@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.7.0 — 2026-11-17
+
+This release changes how every control looks: the theme now decides weights, strokes, heights, texture and selection, not only colors. It has breaking changes for custom widgets and for themes built from a full token dictionary (see Breaking).
 
 ### Breaking
 
@@ -16,6 +18,7 @@
 - `DvTrendChannel format` — number format of the legend's latest value (same rule as `format` on the other widgets).
 - `DvTank medium` (`water` `steam` `air` `gas` `oil` `acid`, the same colors as process pipes) and `DvTank color` set the liquid color. Order: zone color (only with `look.normal-color: on`), `color`, `medium`, `tank-fill`.
 - Process diagram theme tokens: `process-line` `process-detail` `process-detail-on` `process-body` `process-body-on` `process-body-off` `process-accent` `process-liquid` `process-glass` `process-screen` `process-tag-bg` `process-tag-border` `process-tag-fg` `process-arrow` `process-pipe` `process-pipe-{water,steam,air,gas,oil,acid}`.
+- `ThemeLook` (`Texture`, `NormalColor`, `Selection`), enums `LookTexture` (`Flat`|`Rich`) and `LookSelection` (`Quiet`|`Strong`), and `ThemeLook.Of(theme)` read a theme's style switches from code.
 - Custom widgets: `DvWidgetContext.Look`, `TokenNumber(name)` and `StateOverlay(fill)` follow the theme the same way built-in widgets do.
 - Widget parts with the CSS `::part()` selector: `DvGauge::part(value) { font-size: 28 }`, `.hot::part(value) { color: … }` (gauge, ring, knob, tank, progress, slider).
 - Theme role tokens (`weight.*`, `stroke.*`, `font.meta`, `alpha.*`, `overlay.*`, `opacity.disabled`, `control.*`, `row.*`, color roles `selection` `value-input` `value-read` `normal`) and style switches `look.texture` (`flat`|`rich`), `look.normal-color`, `look.selection`. Built-in widgets read these instead of fixed numbers; `look.texture: flat` drops gloss, gradients, shadows and glow on instruments.
@@ -33,7 +36,8 @@
 - Weights: buttons and titles 600, tabs, segments, chips and expander headers 500 (were bold). The primary button is a solid color (no gradient).
 - Borders are drawn inside the box, as in CSS (crisper 1px edges).
 - Editing or open input, select, date and color boxes show an accent border instead of an outer ring. Check boxes, radios and slider thumbs keep their line width on hover (color only); the slider shows a soft halo. The off toggle knob is muted.
-- Selection switch `look.selection` (`quiet` in all four built-in themes): segment, list and tree selection is a raised chip or soft tint; a theme that sets `strong` fills it with `primary` (the previous look).
+- Selection switch `look.selection` (`quiet` in all four built-in themes): the selected segment is a raised chip with bold `primary` text on a track in the screen `background` color, list and tree selection is a soft tint; a theme that sets `strong` fills it with `primary` (the previous look). Segment items reserve the width of the bold text, so moving the selection does not shift them.
+- `content-align` belongs only to the tags that draw text (`DvLabel`, `DvButton`, `DvCheckBox`, `DvRadio`, and the horizontal part on `DvInput`). On any other tag it never did anything; the build now reports DVML019 there. Run-time behavior is unchanged.
 - Expand glyphs are chevrons everywhere; the tab divider is a hairline.
 - Alarm priority has one look everywhere: a chip filled with the priority color and contrast text, with the theme's `alarm-*-icon` before the text when set. Unacknowledged chips blink, acknowledged ones keep their color. The alarm list drops the left priority bar, its ACK button is neutral, and its default row height is `row.md` (40, was 36). `DvStatusItem` blinks at 500 ms like the other alarm displays.
 - `DvStatusItem` shows its status as muted text; the lamp is the only color in the line. With `look.normal-color: off` the calm alarm banner is neutral.
