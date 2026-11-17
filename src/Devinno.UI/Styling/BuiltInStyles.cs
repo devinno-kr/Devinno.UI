@@ -147,8 +147,9 @@ public static class BuiltInStyles
 
     // 선택 강조 스위치 look.selection = quiet — 테마 스타일시트 뒤, 컴포넌트·화면 DvStyle 앞에 덧붙인다(화면 쪽이 이김)
     internal const string QuietSelection = """
-        .segment-item-on       { background: token(surface-overlay); color: token(text); border: 1 token(border-strong); box-shadow: token(shadow.sm) }
-        .segment-item-on:hover { background: token(surface-overlay); color: token(text) }
+        .segment               { background: token(background) } /* 트랙을 화면 바탕으로 낮춰 선택 칩이 떠 보이게 */
+        .segment-item-on       { background: token(surface-overlay); color: token(primary); font-weight: token(weight.bold); border: 1 token(border-strong); box-shadow: token(shadow.sm) }
+        .segment-item-on:hover { background: token(surface-overlay); color: token(primary) }
         .listbox-item-on       { background: token(tone-info-soft); color: token(text) }
         .listbox-item-on:hover { background: token(tone-info-soft); color: token(text) }
         .treeview-item-on       { background: token(tone-info-soft); color: token(text) }

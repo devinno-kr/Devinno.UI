@@ -177,6 +177,48 @@ public class SelectionLookTests
         Assert.Equal(Devinno.UI.Styling.ThemeResolver.Color(quiet, "surface-overlay"), SelectedSegmentBg(quiet));
     }
 
+    private static Devinno.UI.Layout.LayoutBox Segment(Devinno.UI.Styling.DvTheme theme, string mode) =>
+        new Devinno.UI.Layout.LayoutEngine(theme).Layout(Devinno.UI.Markup.MarkupParser.Parse(
+            "<DvScreen><DvRow align=\"start\"><DvSegment value=\"{Bind Mode}\"><DvOption value=\"a\" text=\"Auto\"/><DvOption value=\"b\" text=\"Manual\"/><DvOption value=\"c\" text=\"Off\"/></DvSegment></DvRow></DvScreen>"),
+            new Vm { Mode = mode }, 600, 200);
+
+    public static TheoryData<string> BuiltIn => new() { "Light", "Dark", "Graphite", "Carbon" };
+    private static Devinno.UI.Styling.DvTheme Named(string n) => n switch
+    {
+        "Light" => Devinno.UI.Styling.DvTheme.Light, "Dark" => Devinno.UI.Styling.DvTheme.Dark,
+        "Graphite" => Devinno.UI.Styling.DvTheme.Graphite, _ => Devinno.UI.Styling.DvTheme.Carbon,
+    };
+
+    // 조용한 선택에서도 선택 칸이 한눈에 읽힌다 — 글자는 primary·굵게, 트랙은 화면 바탕으로 낮춰 칩이 떠 보인다
+    [Theory]
+    [MemberData(nameof(BuiltIn))]
+    public void Quiet_selected_segment_reads_at_a_glance(string name)
+    {
+        var t = Named(name);
+        var root = Segment(t, "a");
+        var on = All(root).First(b => b.ResolvedText == "Auto");
+        var off = All(root).First(b => b.ResolvedText == "Manual");
+        var track = All(root).First(b => b.Node.Tag == "DvSegment");
+        Assert.Equal(Devinno.UI.Styling.ThemeResolver.Color(t, "primary"), on.Style.Color.ToSK());
+        Assert.True(on.Style.FontWeight > off.Style.FontWeight, $"selected {on.Style.FontWeight} vs {off.Style.FontWeight}");
+        Assert.Equal(Devinno.UI.Styling.ThemeResolver.Color(t, "background"), track.Style.Background!.Value.ToSK());
+    }
+
+    // 선택을 옮겨도 항목 자리와 세그먼트 폭이 그대로다(굵은 글자로 옆 항목이 밀리지 않음)
+    [Theory]
+    [MemberData(nameof(BuiltIn))]
+    public void Moving_the_selection_keeps_item_positions(string name)
+    {
+        var t = Named(name);
+        float[] Xs(string mode) => All(Segment(t, mode)).Where(b => b.Node.Tag == "DvSegmentItem")
+            .SelectMany(b => new[] { b.Rect.Left, b.Rect.Right }).ToArray();
+        var a = Xs("a"); var b = Xs("b"); var c = Xs("c");
+        for (int i = 0; i < a.Length; i++)
+        {
+            Assert.True(Math.Abs(a[i] - b[i]) < 0.5f && Math.Abs(a[i] - c[i]) < 0.5f, $"edge {i}: {a[i]} / {b[i]} / {c[i]}");
+        }
+    }
+
     [Theory]
     [InlineData("Graphite")]
     [InlineData("Carbon")]

@@ -462,6 +462,25 @@ public sealed partial class LayoutEngine
             itemBox.SegmentIndex = i;
             box.Children.Add(itemBox);
         }
+        ReserveSelectedWeight(box);
+    }
+
+    // 선택 항목 글자가 더 굵으면(조용한 선택) 모든 항목 폭을 그 굵기로 잡는다 — 선택을 옮겨도 항목 자리가 밀리지 않게
+    private static void ReserveSelectedWeight(LayoutBox segment)
+    {
+        if (segment.Children.Count == 0)
+            return;
+        var heaviest = segment.Children.Max(c => c.Style.FontWeight);
+        foreach (var item in segment.Children)
+        {
+            var st = item.Style;
+            if (st.FontWeight >= heaviest || string.IsNullOrEmpty(item.ResolvedText))
+                continue;
+            using var font = TextFont.Create(item.ResolvedText, st.FontSize, heaviest, st.FontFamily);
+            var icon = IconFont.TryResolve(item.Icon, out _) ? st.FontSize + IconTextGap : 0f;
+            var w = font.MeasureText(item.ResolvedText) + icon + st.Padding.Horizontal;
+            st.MinWidth = MathF.Max(st.MinWidth ?? 0f, w);
+        }
     }
 
     // DvListBox — 선택지마다 행 상자(DvListItem, .listbox-item / 고른 것 .listbox-item-on)를 세로로 쌓는다. 목록 상자는 스크롤 패널(.listbox).
