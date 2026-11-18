@@ -41,18 +41,20 @@ public static class MarkupParser
             throw new ArgumentException("markup is empty", nameof(markup));
 
         var doc = XDocument.Parse(markup);
-        return Convert(doc.Root!);
+        return Convert(doc.Root!, null);
     }
 
-    private static ElementNode Convert(XElement el)
+    // order = 만든 노드를 문서 순서(앞 순회)로 모은다 — MarkupDocument 가 원문 위치와 짝짓는다
+    internal static ElementNode Convert(XElement el, List<ElementNode>? order)
     {
         var node = new ElementNode { Tag = el.Name.LocalName };
+        order?.Add(node);
 
         foreach (var a in el.Attributes())
             node.Attributes[a.Name.LocalName] = a.Value;
 
         foreach (var child in el.Elements())
-            node.Children.Add(Convert(child));
+            node.Children.Add(Convert(child, order));
 
         if (!el.HasElements)
         {

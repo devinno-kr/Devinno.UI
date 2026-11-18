@@ -3575,7 +3575,69 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             요소 안의 텍스트(앞뒤 공백 제거). 자식 요소가 없고 텍스트가 공백뿐이 아닐 때만 채워지며, 그 밖에는 <see langword="null" /> 입니다.
             자식 요소가 하나라도 있으면 사이사이의 텍스트는 버립니다. 예: <c>&lt;DvLabel&gt;안녕&lt;/DvLabel&gt;</c> 의 <c>안녕</c>, <c>DvStyle</c> 의 스타일시트 본문.
             </summary>
-        </member><member name="T:Devinno.UI.Markup.MarkupParser" en-hash="1430feb07df6e50f">
+        </member><member name="T:Devinno.UI.Markup.MarkupSpan" en-hash="103350a9457e390a"><summary>마크업 글 안의 글자 범위. <see cref="P:Devinno.UI.Markup.MarkupSpan.Start" /> 는 첫 글자의 위치, <see cref="P:Devinno.UI.Markup.MarkupSpan.Length" /> 는 글자 수.</summary>
+<param name="Start">첫 글자의 위치(0부터).</param>
+<param name="Length">글자 수.</param></member><member name="M:Devinno.UI.Markup.MarkupSpan.#ctor(System.Int32,System.Int32)" en-hash="103350a9457e390a"><summary>마크업 글 안의 글자 범위. <see cref="P:Devinno.UI.Markup.MarkupSpan.Start" /> 는 첫 글자의 위치, <see cref="P:Devinno.UI.Markup.MarkupSpan.Length" /> 는 글자 수.</summary>
+<param name="Start">첫 글자의 위치(0부터).</param>
+<param name="Length">글자 수.</param></member><member name="P:Devinno.UI.Markup.MarkupSpan.Start" en-hash="209d2426247ed11b"><summary>첫 글자의 위치(0부터).</summary></member><member name="P:Devinno.UI.Markup.MarkupSpan.Length" en-hash="cbc806ac94cc5192"><summary>글자 수.</summary></member><member name="P:Devinno.UI.Markup.MarkupSpan.End" en-hash="989f5494733286f2"><summary>마지막 글자 바로 다음 위치(<see cref="P:Devinno.UI.Markup.MarkupSpan.Start" /> + <see cref="P:Devinno.UI.Markup.MarkupSpan.Length" />).</summary></member><member name="T:Devinno.UI.Markup.MarkupDocument" en-hash="3cedc66504804a8e"><summary>
+마크업 글과 그 요소 트리, 그리고 각 요소·속성이 글의 어디에 있는지. 편집은 꼭 바꿔야 하는 글자만 바꾸므로 주석·들여쓰기·속성 순서·따옴표 등 나머지는 쓴 그대로 남는다.
+</summary>
+<remarks>
+<para><b>언제 쓰나</b>: 글이 아니라 요소 단위로 마크업을 고치는 도구 — 위젯을 옮기고 새 <c>style</c> 을 되쓰는 화면 편집기, 속성 하나를 바꾸는 AI 도구.
+트리에서 글 전체를 다시 쓰면 서식이 바뀌고 diff 가 커지지만, 이 편집은 그렇지 않다.
+화면을 보여줄 때는 평소처럼 글(<see cref="P:Devinno.UI.Markup.MarkupDocument.Text" />)을 <see cref="T:Devinno.UI.DvSurface" />/<see cref="T:Devinno.UI.DvRenderer" /> 에 넘긴다.</para>
+<para><b>바뀌지 않는 객체</b>: 편집마다 새 글을 파싱한 새 문서와 새 <see cref="P:Devinno.UI.Markup.MarkupDocument.Root" /> 트리를 돌려준다. 옛 문서의 노드는 새 문서에 속하지 않으므로(넘기면 예외)
+새 트리에서 요소를 다시 찾는다 — 예: 루트부터의 자식 번호 경로로.</para>
+<para><b>위치</b>: <see cref="M:Devinno.UI.Markup.MarkupDocument.SpanOf(Devinno.UI.Markup.ElementNode)" />, <see cref="M:Devinno.UI.Markup.MarkupDocument.AttributeSpan(Devinno.UI.Markup.ElementNode,System.String)" />, <see cref="M:Devinno.UI.Markup.MarkupDocument.NodeAt(System.Int32)" /> 이 트리와 글을 잇는다 — 예: 코드 편집기에서 선택한 요소를 강조하거나,
+코드 편집기 커서 아래 요소를 선택. 위치는 <see cref="P:Devinno.UI.Markup.MarkupDocument.Text" /> 의 UTF-16 글자 단위.</para>
+<para><see cref="P:Devinno.UI.Markup.MarkupDocument.Root" /> 는 같은 글에 대해 <see cref="M:Devinno.UI.Markup.MarkupParser.Parse(System.String)" /> 가 돌려주는 트리와 같고, 파싱 실패도 똑같다. 공유 상태는 없다.</para>
+</remarks>
+<example>
+<code>
+var doc = MarkupDocument.Parse(File.ReadAllText("Main.dvml"));
+var button = doc.Root.Children[1];
+doc = doc.SetAttribute(button, "style", StyleParser.SetDeclaration(button.Attributes.GetValueOrDefault("style") ?? "", "left", "120"));
+File.WriteAllText("Main.dvml", doc.Text); // only the style value changed in the file
+</code>
+</example></member><member name="P:Devinno.UI.Markup.MarkupDocument.Text" en-hash="579d08c80fc9451e"><summary>마크업 글 — 받은 그대로이거나 마지막 편집이 만든 글.</summary></member><member name="P:Devinno.UI.Markup.MarkupDocument.Root" en-hash="01522a32f95c82ae"><summary><see cref="P:Devinno.UI.Markup.MarkupDocument.Text" /> 의 요소 트리 — <see cref="M:Devinno.UI.Markup.MarkupParser.Parse(System.String)" /> 가 돌려주는 것과 같은 트리. 직접 바꾸지 않는다: 편집은 이 클래스의 메서드로.</summary></member><member name="M:Devinno.UI.Markup.MarkupDocument.Parse(System.String)" en-hash="e747e59427074970"><summary>마크업 글을 파싱하고 각 요소·속성의 위치를 기록한다.</summary>
+<param name="text">루트 요소가 하나인 XML 마크업 문자열.</param>
+<returns>문서.</returns>
+<exception cref="T:System.ArgumentException"><paramref name="text" /> 가 <see langword="null" />, 빈 문자열 또는 공백뿐.</exception>
+<exception cref="T:System.Xml.XmlException">XML 문법 오류(<see cref="M:Devinno.UI.Markup.MarkupParser.Parse(System.String)" /> 와 같은 오류, 줄·칸 포함).</exception></member><member name="M:Devinno.UI.Markup.MarkupDocument.SpanOf(Devinno.UI.Markup.ElementNode)" en-hash="63aedf1b3cc5d8c4"><summary>글 안의 요소 전체: <c>&lt;</c> 부터 끝 태그(또는 <c>/&gt;</c>) 끝까지.</summary>
+<param name="node">이 문서 <see cref="P:Devinno.UI.Markup.MarkupDocument.Root" /> 트리의 요소.</param>
+<returns>요소의 범위.</returns>
+<exception cref="T:System.ArgumentException"><paramref name="node" /> 가 이 문서에 없다.</exception></member><member name="M:Devinno.UI.Markup.MarkupDocument.AttributeSpan(Devinno.UI.Markup.ElementNode,System.String)" en-hash="71c50081069fcd2a"><summary>글 안의 속성 값 — 따옴표 사이 글자, 쓴 그대로(<c>&amp;amp;</c> 같은 엔티티는 풀지 않음).</summary>
+<param name="node">이 문서 <see cref="P:Devinno.UI.Markup.MarkupDocument.Root" /> 트리의 요소.</param>
+<param name="name">속성 이름(<see cref="P:Devinno.UI.Markup.ElementNode.Attributes" /> 의 이름).</param>
+<returns>값 범위. 그 속성이 없으면 <see langword="null" />.</returns>
+<exception cref="T:System.ArgumentException"><paramref name="node" /> 가 이 문서에 없다.</exception></member><member name="M:Devinno.UI.Markup.MarkupDocument.NodeAt(System.Int32)" en-hash="cc8ad0fd5f0dc24f"><summary><paramref name="offset" /> 를 포함하는(<see cref="M:Devinno.UI.Markup.MarkupDocument.SpanOf(Devinno.UI.Markup.ElementNode)" /> 범위) 가장 안쪽 요소.</summary>
+<param name="offset"><see cref="P:Devinno.UI.Markup.MarkupDocument.Text" /> 안의 글자 위치.</param>
+<returns>요소. 위치가 루트 요소 밖(앞의 주석, 글 끝, 범위 밖)이면 <see langword="null" />.</returns></member><member name="M:Devinno.UI.Markup.MarkupDocument.SetAttribute(Devinno.UI.Markup.ElementNode,System.String,System.String)" en-hash="b2e25a7c551776bb"><summary>
+속성을 정한다. 요소에 그 속성이 있으면 값 글자만 바뀌고 원래 따옴표를 유지한다.
+없으면 마지막 속성 뒤에 <c>name="value"</c> 를 붙인다(속성을 한 줄에 하나씩 썼으면 같은 들여쓰기로 새 줄에).
+</summary>
+<param name="node">이 문서 <see cref="P:Devinno.UI.Markup.MarkupDocument.Root" /> 트리의 요소.</param>
+<param name="name">속성 이름.</param>
+<param name="value">새 값, 이스케이프하지 않은 그대로(<c>&amp;</c>, <c>&lt;</c>, 따옴표, 줄바꿈은 글에서 이스케이프된다).</param>
+<returns>새 문서.</returns>
+<exception cref="T:System.ArgumentException"><paramref name="node" /> 가 이 문서에 없거나 <paramref name="name" /> 이 올바른 XML 이름이 아니다.</exception></member><member name="M:Devinno.UI.Markup.MarkupDocument.RemoveAttribute(Devinno.UI.Markup.ElementNode,System.String)" en-hash="a03ef1aa7462e8ad"><summary>속성을 앞의 공백·줄바꿈과 함께 지운다. 그 속성이 없으면 아무것도 하지 않는다.</summary>
+<param name="node">이 문서 <see cref="P:Devinno.UI.Markup.MarkupDocument.Root" /> 트리의 요소.</param>
+<param name="name">속성 이름.</param>
+<returns>새 문서. 지울 것이 없었으면 이 문서.</returns>
+<exception cref="T:System.ArgumentException"><paramref name="node" /> 가 이 문서에 없다.</exception></member><member name="M:Devinno.UI.Markup.MarkupDocument.InsertChild(Devinno.UI.Markup.ElementNode,System.Int32,System.String)" en-hash="a67f40c44101c63e"><summary>
+자식 요소를 넣는다. 새 자식은 형제의 들여쓰기를 따르고, 스스로 닫는 부모나 빈 부모는 열린다
+(<c>&lt;DvBox/&gt;</c> 가 <c>&lt;DvBox&gt;</c> … <c>&lt;/DvBox&gt;</c> 로). 여러 줄 자식은 모든 줄을 들여 쓴다.
+</summary>
+<param name="parent">이 문서 <see cref="P:Devinno.UI.Markup.MarkupDocument.Root" /> 트리의 요소.</param>
+<param name="index">새 요소가 갖는 자식 번호: 0 = 처음, <c>parent.Children.Count</c> = 끝.</param>
+<param name="childMarkup">요소 하나의 마크업. 예: <c>&lt;DvLabel text="New"/&gt;</c>.</param>
+<returns>새 문서.</returns>
+<exception cref="T:System.ArgumentException"><paramref name="parent" /> 가 이 문서에 없다.</exception>
+<exception cref="T:System.ArgumentOutOfRangeException"><paramref name="index" /> 가 0 보다 작거나 자식 수보다 크다.</exception>
+<exception cref="T:System.Xml.XmlException"><paramref name="childMarkup" /> 이 잘 짜인 요소 하나가 아니다.</exception></member><member name="M:Devinno.UI.Markup.MarkupDocument.RemoveElement(Devinno.UI.Markup.ElementNode)" en-hash="76e56c7b62196564"><summary>요소를 지운다. 그 줄에 요소만 있으면 줄째 지운다.</summary>
+<param name="node">이 문서 <see cref="P:Devinno.UI.Markup.MarkupDocument.Root" /> 트리의 요소(루트 제외).</param>
+<returns>새 문서.</returns>
+<exception cref="T:System.ArgumentException"><paramref name="node" /> 가 이 문서에 없거나 루트다.</exception></member><member name="T:Devinno.UI.Markup.MarkupParser" en-hash="1430feb07df6e50f">
              <summary>
              XML 마크업 문자열을 <see cref="T:Devinno.UI.Markup.ElementNode" /> 트리로 바꾸는 파서입니다. 화면을 그리는 첫 단계입니다.
              </summary>
