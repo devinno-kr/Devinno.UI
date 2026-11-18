@@ -16,6 +16,23 @@ public class TagSchemaTests
         Assert.True(bad.Count == 0, string.Join(Environment.NewLine, bad));
     }
 
+    // 편집기 같은 도구가 읽는 공개 표 — 읽기 멤버만 공개, 옛 이름 표·경고는 내부
+    [Fact]
+    public void Schema_IsPublicReadOnlySurface()
+    {
+        Assert.True(typeof(TagSchema).IsPublic);
+        Assert.True(typeof(AttrDef).IsPublic);
+        Assert.True(typeof(AttrKind).IsPublic);
+        var publicMembers = typeof(TagSchema).GetMembers(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.DeclaredOnly)
+            .Select(m => m.Name).Where(n => !n.StartsWith("get_")).Distinct().OrderBy(n => n).ToArray();
+        Assert.Equal(new[] { "ChildTags", "Common", "CommonOf", "ComponentTags", "Find", "IsBuiltInElement", "Tags" }, publicMembers);
+
+        var min = TagSchema.Find("DvGauge", "min")!;
+        Assert.Equal((AttrKind.Number, "0", true), (min.Kind, min.Default, min.Bindable));
+        Assert.Equal(["start", "center", "end", "stretch"], TagSchema.Find("DvGrid", "align")!.Values!);
+        Assert.False(TagSchema.Find("DvButton", "onclick")!.Bindable);
+    }
+
     [Fact]
     public void Common_ContainsCommonAttributes()
     {

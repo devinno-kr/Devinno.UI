@@ -1,7 +1,7 @@
 namespace Devinno.UI.Markup;
 
-/// <summary>How an attribute's value is read.</summary>
-internal enum AttrKind
+/// <summary>How an attribute's value is read. Tools use it to pick a value editor (a number box, a check box, a list of words, a color picker …).</summary>
+public enum AttrKind
 {
     /// <summary>Text (interpolation allowed).</summary>
     Text,
@@ -29,15 +29,32 @@ internal enum AttrKind
 
 /// <summary>
 /// One attribute of a tag: its name, how it is read, its default, whether it may be a binding.
-/// <paramref name="Note"/> records how the build reads it (rules, fallbacks, warnings).
 /// </summary>
-internal sealed record AttrDef(string Name, AttrKind Kind, string? Default = null, bool Bindable = true, string[]? Values = null, string? Note = null);
+/// <param name="Name">The attribute name as written in markup (e.g. <c>min</c>, <c>show-ack</c>).</param>
+/// <param name="Kind">How the value is read.</param>
+/// <param name="Default">The value used when the attribute is absent, as markup text; <see langword="null"/> = no fixed default (the note says what happens).</param>
+/// <param name="Bindable">Whether the value may be a binding such as <c>{Path}</c>. <see langword="false"/> for handler names, item paths and <c>id</c>.</param>
+/// <param name="Values">For <see cref="AttrKind.Enum"/>: the accepted words. Otherwise <see langword="null"/>.</param>
+/// <param name="Note">A short English note on how the build reads the value (rules, fallbacks, warnings); <see langword="null"/> if there is nothing to add.</param>
+public sealed record AttrDef(string Name, AttrKind Kind, string? Default = null, bool Bindable = true, IReadOnlyList<string>? Values = null, string? Note = null);
 
 /// <summary>
-/// The attributes of every built-in tag, in one place. The build code reads only these names, and only through
-/// <see cref="Layout.AttrReader"/> (tests record the reads and compare them with this table).
+/// The attributes of every built-in tag, in one place: the screen build reads exactly these names (tests check it), so this table is the complete list.
 /// </summary>
-internal static class TagSchema
+/// <remarks>
+/// Read-only. Tools such as a screen editor use it to list the tags (a toolbox) and the attributes of the selected element with their kind, default,
+/// accepted words and whether they may be bound (a property panel). User components and custom widgets registered in a
+/// <see cref="Components.ComponentRegistry"/> are not in this table.
+/// </remarks>
+/// <example>
+/// <code>
+/// foreach (var (tag, own) in TagSchema.Tags)
+///     Console.WriteLine($"{tag}: {string.Join(", ", own.Select(a => a.Name))}");
+///
+/// var min = TagSchema.Find("DvGauge", "min"); // Kind = Number, Default = "0"
+/// </code>
+/// </example>
+public static class TagSchema
 {
     /// <summary>Attributes every element accepts.</summary>
     public static readonly IReadOnlyList<AttrDef> Common =
@@ -695,7 +712,7 @@ internal static class TagSchema
     /// Old attribute names and the attribute that replaced each (no aliases: the old name is not read). Key = (tag, old name); <c>Reversed</c> = the new attribute means the opposite (true = disabled).
     /// The generator's <c>AttributeCheck.Renamed</c> is a copy (a test compares them). <c>DvProcess fit="shrink"</c> is a value, not an attribute: the enum warning lists <c>scale-down</c>.
     /// </summary>
-    public static readonly IReadOnlyDictionary<(string Tag, string Old), (string New, bool Reversed)> Renamed = new Dictionary<(string Tag, string Old), (string New, bool Reversed)>
+    internal static readonly IReadOnlyDictionary<(string Tag, string Old), (string New, bool Reversed)> Renamed = new Dictionary<(string Tag, string Old), (string New, bool Reversed)>
     {
         [("DvExpander", "header")] = ("title", false),
         [("DvSummaryRow", "title")] = ("label", false),
@@ -709,7 +726,7 @@ internal static class TagSchema
     /// Warns (<see cref="Interaction.Warnings.Warn"/>, once per surface for each tag and old name) about every element under <paramref name="root"/> that carries a <see cref="Renamed"/> attribute:
     /// the old name is silently not read, so the screen would otherwise just lose it. Looks only at the node's attribute names — it is not a read of the attribute.
     /// </summary>
-    public static void WarnRenamed(ElementNode root)
+    internal static void WarnRenamed(ElementNode root)
     {
         foreach (var name in root.Attributes.Keys)
             if (Renamed.TryGetValue((root.Tag, name), out var now))
