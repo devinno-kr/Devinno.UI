@@ -83,7 +83,7 @@ public sealed partial class DvSurface
         if (_box is null || delta == 0 || blocked)
             return;
 
-        var path = HitTester.HitPath(_box, p);
+        var path = HitTester.Path(_box, p);
         for (var i = path.Count - 1; i >= 0; i--)
         {
             var b = path[i].Box;

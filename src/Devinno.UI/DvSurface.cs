@@ -1355,7 +1355,7 @@ public sealed partial class DvSurface
             return;
 
         _fling = null; // 다시 누르면 관성 정지
-        var path = HitTester.HitPath(_box, p);
+        var path = HitTester.Path(_box, p);
         if (BeginThumbDrag(path, p))
             return;
 

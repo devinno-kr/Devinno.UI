@@ -2859,12 +2859,18 @@
             <param name="p">루트 상자와 같은 좌표계의 점.</param>
             <param name="local">대상 상자의 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 와 같은 좌표계로 옮긴 점(스크롤 상자 안이면 스크롤 오프셋 반영). 대상이 없으면 <paramref name="p" />.</param>
             <returns>대상 상자. 루트에도 닿지 않으면 <see langword="null" />.</returns>
-        </member><member name="M:Devinno.UI.Interaction.HitTester.HitPath(Devinno.UI.Layout.LayoutBox,SkiaSharp.SKPoint)" en-hash="8ee990bdadaa0834">
-            <summary>
-            루트부터 점을 포함하는 박스 경로. <c>Local</c> = 그 박스 Rect 좌표계의 점.
-            스크롤 상자의 자식으로 내려갈 때는 스크롤 오프셋을 더한다(뷰포트 밖 점은 박스 자체가 포함하지 않아 자식에 닿지 않음).
-            </summary>
-        </member><member name="M:Devinno.UI.Interaction.HitTester.ScaleOf(System.Collections.Generic.List{System.ValueTuple{Devinno.UI.Layout.LayoutBox,SkiaSharp.SKPoint}},Devinno.UI.Layout.LayoutBox)" en-hash="2a020d0c18971f01"><summary>히트 경로에서 <paramref name="target" /> 이 그려진 배율(위 상자들의 내용 배율 곱) — 화면 거리 = 상자 거리 × 배율.</summary></member><member name="T:Devinno.UI.Interaction.InteractionState" en-hash="9d85cadb925908c3">
+        </member><member name="M:Devinno.UI.Interaction.HitTester.HitPath(Devinno.UI.Layout.LayoutBox,SkiaSharp.SKPoint,System.Boolean)" en-hash="5bdfdfbd8e134682"><summary>
+점을 포함하는 상자들의 경로 — 루트부터 가장 깊이 맞은 상자까지. 보이는 곳만 맞는 규칙은 <see cref="M:Devinno.UI.Interaction.HitTester.HitTarget(Devinno.UI.Layout.LayoutBox,SkiaSharp.SKPoint)" /> 와 같고, 입력 받는 상자까지 거슬러 올라가지는 않는다.
+</summary>
+<remarks>
+<para>화면 편집기는 이것으로 편집 파일의 어느 요소를 눌렀는지 찾는다: 경로를 끝에서 루트 쪽으로 거슬러 올라가며 <see cref="P:Devinno.UI.Layout.LayoutBox.Origin" /> 가 파일의 요소인 첫 상자를 고른다.
+사용자 컴포넌트 안의 상자는 컴포넌트 템플릿에서 오고, 컴포넌트의 루트 상자는 <see cref="P:Devinno.UI.Layout.LayoutBox.Origin" /> 가 인스턴스 요소다.</para>
+<para>스크롤 상자의 스크롤 위치와 공정도 축소(<c>fit="scale-down"</c>)는 따른다. <c>transform</c> 스타일은 따르지 않는다(그림만 옮김).</para>
+</remarks>
+<param name="root">판정을 시작할 루트 상자.</param>
+<param name="p">루트 상자와 같은 좌표계의 점.</param>
+<param name="wholeBox"><see langword="true" /> 면 모양이 정해진 위젯(노브·토글 등)도 상자 어디서나 맞는다. 기본은 입력처럼 그려진 모양 안만.</param>
+<returns>루트부터 가장 깊이 맞은 상자까지의 상자들. 각 <c>Local</c> = 그 상자 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 좌표계의 점. 루트도 맞지 않으면 빈 목록.</returns></member><member name="M:Devinno.UI.Interaction.HitTester.ScaleOf(System.Collections.Generic.IReadOnlyList{System.ValueTuple{Devinno.UI.Layout.LayoutBox,SkiaSharp.SKPoint}},Devinno.UI.Layout.LayoutBox)" en-hash="2a020d0c18971f01"><summary>히트 경로에서 <paramref name="target" /> 이 그려진 배율(위 상자들의 내용 배율 곱) — 화면 거리 = 상자 거리 × 배율.</summary></member><member name="T:Devinno.UI.Interaction.InteractionState" en-hash="9d85cadb925908c3">
             <summary>현재 포인터가 올라가 있는 상자와 눌린 상자를 담는 상호작용 상태입니다. 페인터가 hover·press 스타일을 고를 때 읽습니다.</summary>
             <remarks>엔진 내부 단계입니다. 보통 앱 코드는 직접 쓰지 않고 마크업 바인딩과 <see cref="T:Devinno.UI.DvSurface" />/<see cref="T:Devinno.UI.DvRenderer" /> 를 씁니다.</remarks>
         </member><member name="P:Devinno.UI.Interaction.InteractionState.Hover" en-hash="d7fcc4438b37ca50">
@@ -3175,11 +3181,10 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             </remarks>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.Node" en-hash="330d0f0106069a21">
             <summary>이 박스를 만든 마크업 요소. 태그 이름과 원문 속성을 여기서 읽을 수 있습니다. 빌드 때 정해집니다.</summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.Origin" en-hash="802d8fe5a15f1323">
-            <summary>
-            이 박스의 원본 화면 요소(핸들 조회 기준). 기본은 <see cref="P:Devinno.UI.Layout.LayoutBox.Node" />. 컴포넌트 인스턴스의 루트 박스는 공유 템플릿 노드 대신 인스턴스 노드를 가리킨다.
-            </summary>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.Style" en-hash="7682dd43248eec8a">
+        </member><member name="P:Devinno.UI.Layout.LayoutBox.Origin" en-hash="7c623d4fa6214213"><summary>
+이 상자가 나타내는 화면 요소: <see cref="P:Devinno.UI.Layout.LayoutBox.Node" />. 단, 사용자 컴포넌트 인스턴스의 루트 상자는 컴포넌트의 공유 템플릿 요소 대신 인스턴스 요소
+(예: 화면 마크업의 <c>&lt;Card/&gt;</c>). 도구는 이것으로 상자를 편집 파일의 요소에 되짚는다.
+</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.Style" en-hash="7682dd43248eec8a">
             <summary>
             상태(hover·press 등)가 없을 때의 계산된 스타일. 빌드 때 정해집니다.
             우선순위(낮음 → 높음): 레이아웃 속성(<c>DvStack</c> 의 <c>gap</c> 등) &lt; <c>class</c> &lt; <c>content-align</c> 속성 &lt; <c>style</c> 속성.

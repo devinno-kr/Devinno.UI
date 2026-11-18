@@ -14,7 +14,7 @@ public static class HitTester
     /// <returns>The hit box, or <see langword="null"/> if even the root is not hit.</returns>
     public static LayoutBox? HitTest(LayoutBox box, SKPoint p)
     {
-        var path = HitPath(box, p);
+        var path = Path(box, p);
         return path.Count == 0 ? null : path[^1].Box;
     }
 
@@ -42,7 +42,7 @@ public static class HitTester
     /// <returns>The target box, or <see langword="null"/> if even the root is not hit.</returns>
     public static LayoutBox? HitTarget(LayoutBox box, SKPoint p, out SKPoint local)
     {
-        var path = HitPath(box, p);
+        var path = Path(box, p);
         local = p;
         if (path.Count == 0)
             return null;
@@ -62,23 +62,35 @@ public static class HitTester
     }
 
     /// <summary>
-    /// The path of boxes containing the point, starting from the root. <c>Local</c> = the point in that box's Rect coordinate system.
-    /// When descending into the children of a scroll box, the scroll offset is added (a point outside the viewport is not contained by the box itself, so it never reaches the children).
+    /// The path of boxes containing the point, from the root down to the deepest hit box. Same visibility rules as <see cref="HitTarget(LayoutBox, SKPoint)"/>, without the walk up to an interactive box.
     /// </summary>
-    internal static List<(LayoutBox Box, SKPoint Local)> HitPath(LayoutBox root, SKPoint p)
+    /// <remarks>
+    /// <para>A screen editor uses it to find which element of the edited file was clicked: walk the path from the end toward the root and take the first box whose
+    /// <see cref="LayoutBox.Origin"/> is an element of the file. Inside a user component the boxes come from the component's template; the component's root box
+    /// has the instance element as its <see cref="LayoutBox.Origin"/>.</para>
+    /// <para>Scroll offsets of scroll boxes and the shrinking of process diagrams (<c>fit="scale-down"</c>) are followed. The <c>transform</c> style is not (it moves the drawing only).</para>
+    /// </remarks>
+    /// <param name="root">The root box to start testing from.</param>
+    /// <param name="p">A point in the same coordinate system as the root box.</param>
+    /// <param name="wholeBox">If <see langword="true"/>, a widget with a fixed drawn shape (knob, toggle, …) is hit anywhere in its box; by default only inside the drawn shape, as for input.</param>
+    /// <returns>The boxes from the root to the deepest hit box, each with <c>Local</c> = the point in that box's <see cref="LayoutBox.Rect"/> coordinate system. Empty if even the root is not hit.</returns>
+    public static IReadOnlyList<(LayoutBox Box, SKPoint Local)> HitPath(LayoutBox root, SKPoint p, bool wholeBox = false) => Path(root, p, wholeBox);
+
+    // 입력용 경로(모양 안만). 스크롤 상자 자식으로 내려갈 때 스크롤 위치를 더한다(뷰포트 밖 점은 그 상자부터 안 맞으므로 자식에 닿지 않는다).
+    internal static List<(LayoutBox Box, SKPoint Local)> Path(LayoutBox root, SKPoint p, bool wholeBox = false)
     {
         var path = new List<(LayoutBox, SKPoint)>();
-        Collect(root, p, path);
+        Collect(root, p, path, wholeBox);
         return path;
     }
 
     // 보이는 곳 = 닿는 곳. 자르는 상자(overflow hidden·scroll, 그리드)는 자기 영역 밖이면 자식도 안 본다(Painter 의 클립과 같은 조건).
     // 자르지 않는 상자는 자기 영역 밖이어도 삐져나와 보이는 자식을 찾는다 — 그 경우 자식에 닿았을 때만 경로에 남는다.
-    private static bool Collect(LayoutBox box, SKPoint p, List<(LayoutBox, SKPoint)> path)
+    private static bool Collect(LayoutBox box, SKPoint p, List<(LayoutBox, SKPoint)> path, bool wholeBox)
     {
         var inside = box.Rect.Contains(p.X, p.Y);
         // 모양이 정해진 위젯(노브·토글 등)은 그려진 모양 안만 닿는다 — 늘어난 상자의 빈 곳을 눌러도 값이 바뀌지 않게
-        if (inside && box.Children.Count == 0)
+        if (inside && box.Children.Count == 0 && !wholeBox)
             inside = Painting.WidgetMetrics.ShapeRect(box).Contains(p.X, p.Y);
         if (!inside && (box.IsScroller || box.Style.Overflow == Overflow.Hidden))
             return false;
@@ -90,7 +102,7 @@ public static class HitTester
             inner = new SKPoint((inner.X - box.ContentOffset.X) / box.ContentScale, (inner.Y - box.ContentOffset.Y) / box.ContentScale); // 줄여 그린 내용(공정도 fit="scale-down")
         for (var i = box.Children.Count - 1; i >= 0; i--)
         {
-            if (Collect(box.Children[i], inner, path))
+            if (Collect(box.Children[i], inner, path, wholeBox))
                 return true;
         }
 
@@ -102,7 +114,7 @@ public static class HitTester
     }
 
     /// <summary>The drawing scale of <paramref name="target"/> on the hit path (product of the content scales of the boxes above it) — screen distance = box distance × scale.</summary>
-    internal static float ScaleOf(List<(LayoutBox Box, SKPoint Local)> path, LayoutBox? target)
+    internal static float ScaleOf(IReadOnlyList<(LayoutBox Box, SKPoint Local)> path, LayoutBox? target)
     {
         var scale = 1f;
         foreach (var (b, _) in path)

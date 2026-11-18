@@ -26,9 +26,10 @@ public sealed class LayoutBox
 
     private ElementNode? _origin;
     /// <summary>
-    /// The original screen element of this box (the key for handle lookup). Defaults to <see cref="Node"/>. For the root box of a component instance, it points to the instance node instead of the shared template node.
+    /// The screen element this box stands for: <see cref="Node"/>, except for the root box of a user component instance, where it is the instance element
+    /// (e.g. <c>&lt;Card/&gt;</c> in the screen markup) instead of the component's shared template element. Tools use it to map a box back to the element of the edited file.
     /// </summary>
-    internal ElementNode Origin { get => _origin ?? Node; set => _origin = value; }
+    public ElementNode Origin { get => _origin ?? Node; internal set => _origin = value; }
     /// <summary>
     /// The computed style with no state (hover, press, etc.). Set at build time.
     /// Precedence (low → high): layout attributes (<c>gap</c> of <c>DvStack</c>, etc.) &lt; <c>class</c> &lt; the <c>content-align</c> attribute &lt; the <c>style</c> attribute.
