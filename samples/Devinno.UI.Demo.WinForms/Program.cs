@@ -5,6 +5,7 @@ using Devinno.UI.WinForms;
 
 // WinForms 어댑터 데모 — 같은 InputPage 화면을 숨긴 TextBox(기본) 또는 가상 키보드(touch)로 편집.
 //   dotnet run --project Devinno.UI.Demo.WinForms [-- touch] [-- light] [-- gpu]
+//   -- editor = 편집 캔버스 시험(EditorDemo.cs)
 internal static class Program
 {
     [STAThread]
@@ -13,6 +14,12 @@ internal static class Program
         ApplicationConfiguration.Initialize();
 
         var theme = args.Contains("light") ? DvTheme.Light : DvTheme.Dark;
+        if (args.Contains("editor"))
+        {
+            Application.Run(EditorDemo.Create(theme));
+            return;
+        }
+
         var app = new DvApp { Theme = theme, Strings = new DvStrings { Language = "en" } }; // 데모 화면이 영어 — 라이브러리 기본 글자도 en
         app.Pages.Add(new InputPage());
         var view = new ViewControl

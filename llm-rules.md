@@ -411,7 +411,7 @@ The `using` lines for the C# types these pages use. Handle fields created by the
 | Types | Namespace | Package |
 |---|---|---|
 | `DvApp`, `DvPage`, `DvBar`, `DvDialog`, `DvDialog<TResult>`, `DialogCollection`, `DvDialogResult`, `DvMessageButtons`, `DvPageTransition` | `Devinno.UI.App` | Devinno.UI |
-| `DvRenderer`, `DvSurface`, `DvHandlerErrorEventArgs`, `Styles`, `Values` | `Devinno.UI` | Devinno.UI |
+| `DvRenderer`, `DvSurface`, `DvHandlerErrorEventArgs`, `Styles`, `Values`, `DvPointerArgs`, `DvPointerButton`, `DvModifiers` | `Devinno.UI` | Devinno.UI |
 | `DvTheme` | `Devinno.UI.Styling` | Devinno.UI |
 | `DvControl` and the value handles (`DvLabel`, `DvButton`, `DvInput`, `DvToggle`, `DvSelect` …), `DvClickEventArgs`, `DvValueChangedEventArgs` | `Devinno.UI.Controls` | Devinno.UI |
 | `AlarmLog`, `AlarmRow`, `AlarmPriority` | `Devinno.UI.Alarms` | Devinno.UI |
@@ -419,6 +419,9 @@ The `using` lines for the C# types these pages use. Handle fields created by the
 | `DvStrings` | `Devinno.UI.Localization` | Devinno.UI |
 | `ComponentRegistry` | `Devinno.UI.Components` | Devinno.UI |
 | `DvWidget`, `DvWidgetContext`, `ImageCache` | `Devinno.UI.Widgets` | Devinno.UI |
+| `MarkupDocument`, `MarkupSpan`, `TagSchema`, `AttrDef`, `AttrKind` (tools that edit markup) | `Devinno.UI.Markup` | Devinno.UI |
+| `StyleParser` (`Get/Set/RemoveDeclaration`) | `Devinno.UI.Styling` | Devinno.UI |
+| `HitTester` (`HitPath`) | `Devinno.UI.Interaction` | Devinno.UI |
 | `FrameSource`, `VideoPlayer`, `IFrameSource` | `Devinno.UI.Video` | Devinno.UI |
 | `ViewWindow` | `Devinno.UI.OpenTK` | Devinno.UI.OpenTK |
 | `ViewControl` | `Devinno.UI.WinForms` | Devinno.UI.WinForms |
