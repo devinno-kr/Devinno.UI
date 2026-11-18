@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.7.2 — 2026-11-18
+
+APIs for screen editors built with Devinno.UI: edit markup and inline styles without losing how the text was written, find the element under a click, and give custom widgets the full mouse (other buttons, modifier keys, click count, hover, leave, wheel). See Breaking before you upgrade: assemblies built against 0.7.1 need a rebuild.
+
+### Breaking
+
+- `DvSurface.PointerDown` / `PointerUp` take optional `DvPointerButton button` and `DvModifiers modifiers`; `PointerMove` and `PointerWheel` take optional `DvModifiers modifiers`. Source compiles unchanged, but assemblies built against 0.7.1 that call these methods must be rebuilt (the method signatures changed).
+- Inline `style`: a `;` inside quotes or parentheses no longer ends a declaration, so `background-image: url('a;b.png')` reads as one value.
+- When the mouse leaves the host control (`ViewControl`, `ViewWindow`), hover styles turn off. Before, the last hovered element kept its hover style.
+
+### Added
+
+- `MarkupDocument` and `MarkupSpan` (`Devinno.UI.Markup`): parse markup and edit it by element — `SetAttribute`, `RemoveAttribute`, `InsertChild`, `RemoveElement` — while the rest of the text (comments, spacing, quotes, attribute order) stays as written. `SpanOf`, `AttributeSpan` and `NodeAt` map between elements and text positions. Each edit returns a new document.
+- `StyleParser.GetDeclaration`, `SetDeclaration`, `RemoveDeclaration`: read or change one declaration of an inline style string and keep the others as written.
+- `TagSchema`, `AttrDef`, `AttrKind` are public: the built-in tags, their attributes, kinds, defaults, allowed values and bindability, for property panels and completion.
+- `HitTester.HitPath(root, point, wholeBox)` returns the boxes under a point from the root down; `LayoutBox.Origin` is public, so a tool maps a click to the markup element (a component instance's root box points to the instance element). `wholeBox: true` hits a widget's whole box, not only its drawn shape.
+- `DvPointerButton`, `DvModifiers`, `DvPointerArgs`. Custom widgets: `OnPointerDown` / `OnPointerMove` / `OnPointerUp(ctx, DvPointerArgs)` overloads (the defaults call the existing `SKPoint` methods for the left button), `OnPointerHover`, `OnPointerLeave`, `OnPointerWheel` (return true to take the wheel instead of scrolling). Right and middle buttons go only to a custom widget under the pointer; they never click, scroll, hold or show press styles.
+- `DvSurface.PointerLeave()`. `ViewControl` and `ViewWindow` pass the button, modifier keys and mouse leave.
+- WinForms demo `-- editor`: a small editor canvas that selects, moves and resizes elements through these APIs.
+
 ## 0.7.1 — 2026-11-17
 
 No code changes. The AI docs in the package (`llms.txt` and the `dvml-*.md` pages) now match the 0.7.0 look.
