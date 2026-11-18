@@ -8,10 +8,12 @@ namespace Devinno.UI.Styling;
 /// <remarks>
 /// <para>This is an internal engine stage. App code usually does not call it directly; it uses <c>style</c>, <c>class</c> and <c>&lt;DvStyle&gt;</c> in markup,
 /// and parsing is handled by <see cref="DvSurface"/>/<see cref="DvRenderer"/>. Supported keys and defaults are described on each property of <see cref="ComputedStyle"/>.</para>
-/// <para>Rules: declarations are split at <c>;</c> and the text before the first <c>:</c> is the key (keys are case-insensitive; value case sensitivity depends on the key).
+/// <para>Rules: declarations are split at <c>;</c> outside quotes and parentheses (so <c>url('a;b.png')</c> stays whole) and the text before the first <c>:</c> is the key (keys are case-insensitive; value case sensitivity depends on the key).
 /// For duplicate keys, the later declaration wins. Unsupported keys are ignored without a warning; invalid values are ignored or set to the default/0, depending on the key.
 /// Only <c>content-align</c> logs a one-time warning (<see cref="System.Diagnostics.Trace"/>) for an invalid value.</para>
 /// <para>Theme tokens (<c>token(...)</c>) and bindings (<c>{Prop}</c>) are not resolved here. They must already be substituted (<see cref="ThemeResolver.ResolveVars"/>).</para>
+/// <para>Tools that change style text (a screen editor moving an element changes only <c>left</c>/<c>top</c>) use <see cref="GetDeclaration"/>, <see cref="SetDeclaration"/> and
+/// <see cref="RemoveDeclaration"/>, which split declarations by the same rules and leave the rest of the text as written.</para>
 /// <para>Threading: there is no shared state, so it can be called from multiple threads (only the warning de-duplication set is protected by a lock).</para>
 /// </remarks>
 /// <example>
@@ -33,8 +35,9 @@ public static class StyleParser
         if (string.IsNullOrWhiteSpace(style))
             return s;
 
-        foreach (var decl in style.Split(';', StringSplitOptions.RemoveEmptyEntries))
+        foreach (var (start, end) in Declarations(style))
         {
+            var decl = style[start..end];
             var idx = decl.IndexOf(':');
             if (idx <= 0)
                 continue;
@@ -49,6 +52,171 @@ public static class StyleParser
             Interaction.Warnings.Warn($"Devinno.UI: background-image-offset is used only with background-size: natural; ignored (style: {style.Trim()})");
 
         return s;
+    }
+
+    /// <summary>
+    /// Returns the value of one declaration in a declaration list: the value of the last declaration with that key (the one that applies), trimmed.
+    /// </summary>
+    /// <param name="style">A declaration list such as the text of a <c>style</c> attribute; <see langword="null"/> or empty is allowed.</param>
+    /// <param name="key">The key, compared ignoring case (e.g. <c>left</c>).</param>
+    /// <returns>The value as written, or <see langword="null"/> if no declaration has the key.</returns>
+    /// <remarks>Declarations are split exactly as <see cref="Parse"/> splits them. The value is the raw text: tokens and bindings are not resolved.</remarks>
+    public static string? GetDeclaration(string? style, string key)
+    {
+        if (string.IsNullOrEmpty(style))
+            return null;
+        return Find(style, key) is { } d ? style[d.ValueStart..d.ValueEnd] : null;
+    }
+
+    /// <summary>
+    /// Sets one declaration in a declaration list and returns the new list. If the key is there, only the characters of its value change
+    /// (of the last declaration with that key, the one that applies); otherwise <c>key:value</c> is appended. The order, spacing and other declarations stay as written.
+    /// </summary>
+    /// <param name="style">A declaration list such as the text of a <c>style</c> attribute; <see langword="null"/> or empty is allowed.</param>
+    /// <param name="key">The key (e.g. <c>left</c>), compared ignoring case. An appended key is written as given.</param>
+    /// <param name="value">The new value (e.g. <c>120</c>).</param>
+    /// <returns>The new declaration list.</returns>
+    /// <exception cref="ArgumentException"><paramref name="key"/> is empty or contains <c>:</c> or <c>;</c>, or <paramref name="value"/> contains a <c>;</c> outside quotes and parentheses (it would split into two declarations).</exception>
+    /// <example>
+    /// <code>
+    /// StyleParser.SetDeclaration("position:absolute; left:10; color:#fff", "left", "120"); // "position:absolute; left:120; color:#fff"
+    /// StyleParser.SetDeclaration("color:#fff", "top", "8");                                // "color:#fff; top:8"
+    /// </code>
+    /// </example>
+    public static string SetDeclaration(string? style, string key, string value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        key = CheckKey(key);
+        value = value.Trim();
+        if (Cuts(value).Count > 0)
+            throw new ArgumentException($"the value '{value}' contains a ';' that would split the declaration", nameof(value));
+
+        style ??= "";
+        if (Find(style, key) is { } d)
+            return string.Concat(style.AsSpan(0, d.ValueStart), value, style.AsSpan(d.ValueEnd));
+
+        var t = style.TrimEnd();
+        if (t.EndsWith(';'))
+            t = t[..^1].TrimEnd();
+        return t.Length == 0 ? $"{key}:{value}" : $"{t}; {key}:{value}";
+    }
+
+    /// <summary>
+    /// Removes every declaration with the key from a declaration list, together with its <c>;</c> separator, and returns the new list. The rest stays as written.
+    /// </summary>
+    /// <param name="style">A declaration list such as the text of a <c>style</c> attribute; <see langword="null"/> or empty is allowed.</param>
+    /// <param name="key">The key, compared ignoring case.</param>
+    /// <returns>The new declaration list (empty if nothing is left; <paramref name="style"/> unchanged if no declaration has the key).</returns>
+    public static string RemoveDeclaration(string? style, string key)
+    {
+        if (string.IsNullOrEmpty(style))
+            return "";
+        var removed = false;
+        while (Find(style, key) is { } d)
+        {
+            removed = true;
+            var from = d.Start;
+            while (from < d.End && char.IsWhiteSpace(style[from]))
+                from++;
+            var to = d.End;
+            if (to < style.Length)
+            {
+                // 뒤에 ; 가 있다 — 그 ; 와 다음 선언 앞 공백까지
+                to++;
+                while (to < style.Length && char.IsWhiteSpace(style[to]))
+                    to++;
+            }
+            else
+            {
+                // 마지막 선언 — 앞의 공백과 ; 까지
+                while (from > 0 && char.IsWhiteSpace(style[from - 1]))
+                    from--;
+                if (from > 0 && style[from - 1] == ';')
+                    from--;
+            }
+
+            style = string.Concat(style.AsSpan(0, from), style.AsSpan(to));
+        }
+
+        return removed ? style.Trim() : style;
+    }
+
+    private static string CheckKey(string key)
+    {
+        var k = key?.Trim() ?? "";
+        if (k.Length == 0 || k.Contains(':') || k.Contains(';'))
+            throw new ArgumentException($"'{key}' is not a style key", nameof(key));
+        return k;
+    }
+
+    // 키가 같은 마지막 선언 — Start..End = 선언(앞뒤 공백 포함, ; 제외), Value = 값(앞뒤 공백 뺀 범위)
+    private static (int Start, int End, int ValueStart, int ValueEnd)? Find(string style, string key)
+    {
+        var k = key.Trim();
+        (int, int, int, int)? found = null;
+        foreach (var (start, end) in Declarations(style))
+        {
+            var colon = style.IndexOf(':', start, end - start);
+            if (colon < 0 || !style.AsSpan(start, colon - start).Trim().Equals(k, StringComparison.OrdinalIgnoreCase))
+                continue;
+            var vs = colon + 1;
+            var ve = end;
+            while (vs < ve && char.IsWhiteSpace(style[vs]))
+                vs++;
+            while (ve > vs && char.IsWhiteSpace(style[ve - 1]))
+                ve--;
+            found = (start, end, vs, ve);
+        }
+
+        return found;
+    }
+
+    // 선언 범위들 — ';' 로 나누되 따옴표·괄호 안의 ';' 는 나누지 않는다. 따옴표·괄호가 닫히지 않으면 단순히 ';' 로 나눈다(뒤 선언을 잃지 않게).
+    // 빈 선언(공백뿐)은 건너뛴다.
+    internal static IEnumerable<(int Start, int End)> Declarations(string style)
+    {
+        var from = 0;
+        foreach (var cut in Cuts(style).Append(style.Length))
+        {
+            if (!string.IsNullOrWhiteSpace(style[from..cut]))
+                yield return (from, cut);
+            from = cut + 1;
+        }
+    }
+
+    // 선언을 나누는 ';' 위치들
+    private static List<int> Cuts(string style)
+    {
+        var cuts = new List<int>();
+        char quote = '\0';
+        var depth = 0;
+        for (var i = 0; i < style.Length; i++)
+        {
+            var c = style[i];
+            if (quote != '\0')
+            {
+                if (c == quote)
+                    quote = '\0';
+            }
+            else if (c is '"' or '\'')
+                quote = c;
+            else if (c == '(')
+                depth++;
+            else if (c == ')' && depth > 0)
+                depth--;
+            else if (c == ';' && depth == 0)
+                cuts.Add(i);
+        }
+
+        if (quote != '\0' || depth != 0)
+        {
+            cuts.Clear();
+            for (var i = 0; i < style.Length; i++)
+                if (style[i] == ';')
+                    cuts.Add(i);
+        }
+
+        return cuts;
     }
 
     private static bool TryNumber(string v, out float f) =>
