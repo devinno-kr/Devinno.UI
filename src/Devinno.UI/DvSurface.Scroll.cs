@@ -59,11 +59,14 @@ public sealed partial class DvSurface
     /// </remarks>
     /// <param name="p">The pointer position (same coordinate system as <see cref="RenderTo(SKCanvas, float, float, long)"/>).</param>
     /// <param name="delta">The number of wheel notches. Positive when rolled up (toward the start of the content). Ignored if 0. Fractions (high-resolution wheels) are allowed.</param>
-    public void PointerWheel(SKPoint p, float delta)
+    /// <param name="modifiers">Modifier keys held now, passed on to custom widgets. A custom widget under the pointer may take the wheel
+    /// (<see cref="Widgets.DvWidget.OnPointerWheel"/>, for example Ctrl+wheel zoom); then nothing scrolls.</param>
+    public void PointerWheel(SKPoint p, float delta, DvModifiers modifiers = DvModifiers.None)
     {
         using var sync = SyncScope.Enter(this); // DvApp 루트면 입력 스레드 동기화 컨텍스트(D15)
         Composer?.NoteInput(); // 무입력 감지 — 루트에만 Composer 가 있다
         var prevRead = HandlerErrors.EnterRead(_reads); // 입력 처리 중 VM 읽기 예외도 이 화면의 HandlerError 로
+        _mods = modifiers;
         try { PointerWheelCore(p, delta); }
         finally { HandlerErrors.ExitRead(prevRead); }
     }
@@ -76,12 +79,20 @@ public sealed partial class DvSurface
         var blocked = Blocked;
         if ((blocked ? ModalSlotAt(p) : SlotAt(p)) is { } slot) // 다이얼로그가 있으면 맨 위 다이얼로그 칸 안만, 밖은 삼킨다
         {
-            slot.Child.PointerWheel(ToChild(p, slot), delta);
+            slot.Child.PointerWheel(ToChild(p, slot), delta, _mods);
             return;
         }
 
         if (_box is null || delta == 0 || blocked)
             return;
+
+        // 점 아래 위젯이 휠을 가져가면(Ctrl+휠 확대 등) 스크롤하지 않는다
+        if (HitTester.HitTarget(_box, p, out var local) is { Widget: not null, Disabled: false } wbox &&
+            WidgetCall(wbox, (w, ctx) => w.OnPointerWheel(ctx, Args(local, DvPointerButton.None), delta)))
+        {
+            _needsRender = true;
+            return;
+        }
 
         var path = HitTester.Path(_box, p);
         for (var i = path.Count - 1; i >= 0; i--)

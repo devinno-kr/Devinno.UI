@@ -583,7 +583,14 @@ public sealed class ViewWindow : GameWindow
     protected override void OnMouseMove(MouseMoveEventArgs e)
     {
         base.OnMouseMove(e);
-        _surface.PointerMove(Logical(e.X, e.Y));
+        _surface.PointerMove(Logical(e.X, e.Y), Mods());
+    }
+
+    /// <summary>Tells the screen the mouse left the window (hover styles off, a hovered custom widget gets its leave call).</summary>
+    protected override void OnMouseLeave()
+    {
+        base.OnMouseLeave();
+        _surface.PointerLeave();
     }
 
     /// <summary>Passes the mouse wheel as scrolling at the current pointer position.</summary>
@@ -591,25 +598,41 @@ public sealed class ViewWindow : GameWindow
     protected override void OnMouseWheel(MouseWheelEventArgs e)
     {
         base.OnMouseWheel(e);
-        _surface.PointerWheel(Logical(MousePosition.X, MousePosition.Y), e.OffsetY);
+        _surface.PointerWheel(Logical(MousePosition.X, MousePosition.Y), e.OffsetY, Mods());
     }
 
-    /// <summary>Passes a left-button press to the screen as a pointer press. Other buttons are ignored.</summary>
+    /// <summary>Passes a press of the left, right or middle button to the screen as a pointer press, with the modifier keys. Other buttons are ignored.</summary>
     /// <param name="e">The button information.</param>
     protected override void OnMouseDown(MouseButtonEventArgs e)
     {
         base.OnMouseDown(e);
-        if (e.Button == MouseButton.Left)
-            _surface.PointerDown(Logical(MousePosition.X, MousePosition.Y));
+        if (Button(e.Button) is var b and not DvPointerButton.None)
+            _surface.PointerDown(Logical(MousePosition.X, MousePosition.Y), b, Mods());
     }
 
-    /// <summary>Passes a left-button release to the screen as a pointer release (click detection). Other buttons are ignored.</summary>
+    /// <summary>Passes a release of the left, right or middle button to the screen as a pointer release (a left release can click). Other buttons are ignored.</summary>
     /// <param name="e">The button information.</param>
     protected override void OnMouseUp(MouseButtonEventArgs e)
     {
         base.OnMouseUp(e);
-        if (e.Button == MouseButton.Left)
-            _surface.PointerUp(Logical(MousePosition.X, MousePosition.Y));
+        if (Button(e.Button) is var b and not DvPointerButton.None)
+            _surface.PointerUp(Logical(MousePosition.X, MousePosition.Y), b, Mods());
+    }
+
+    private static DvPointerButton Button(MouseButton b) => b switch
+    {
+        MouseButton.Left => DvPointerButton.Left,
+        MouseButton.Right => DvPointerButton.Right,
+        MouseButton.Middle => DvPointerButton.Middle,
+        _ => DvPointerButton.None,
+    };
+
+    private DvModifiers Mods()
+    {
+        var k = KeyboardState;
+        return (k.IsKeyDown(Keys.LeftShift) || k.IsKeyDown(Keys.RightShift) ? DvModifiers.Shift : 0) |
+               (k.IsKeyDown(Keys.LeftControl) || k.IsKeyDown(Keys.RightControl) ? DvModifiers.Ctrl : 0) |
+               (k.IsKeyDown(Keys.LeftAlt) || k.IsKeyDown(Keys.RightAlt) ? DvModifiers.Alt : 0);
     }
 
     // 입력 — OpenTK 는 터치 전제라 네이티브 편집기 없이 코어 가상 키보드를 쓴다.

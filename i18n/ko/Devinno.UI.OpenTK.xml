@@ -121,16 +121,12 @@ fit 이면 레이아웃은 설계 크기이고, 같은 비율로 맞춰 가운�
         </member><member name="M:Devinno.UI.OpenTK.ViewWindow.OnMouseMove(OpenTK.Windowing.Common.MouseMoveEventArgs)" en-hash="c3918f38d663a202">
             <summary>마우스 이동을 화면의 포인터 이동(호버·드래그)으로 넘깁니다.</summary>
             <param name="e">마우스 위치 정보.</param>
-        </member><member name="M:Devinno.UI.OpenTK.ViewWindow.OnMouseWheel(OpenTK.Windowing.Common.MouseWheelEventArgs)" en-hash="4d71d16bd12c39ca">
+        </member><member name="M:Devinno.UI.OpenTK.ViewWindow.OnMouseLeave" en-hash="512602b0cc60e211"><summary>마우스가 창을 떠났다고 화면에 알립니다(hover 스타일 꺼짐, hover 중이던 커스텀 위젯은 떠남 호출을 받음).</summary></member><member name="M:Devinno.UI.OpenTK.ViewWindow.OnMouseWheel(OpenTK.Windowing.Common.MouseWheelEventArgs)" en-hash="4d71d16bd12c39ca">
             <summary>마우스 휠을 현재 포인터 위치의 스크롤로 넘깁니다.</summary>
             <param name="e">휠 이동량.</param>
-        </member><member name="M:Devinno.UI.OpenTK.ViewWindow.OnMouseDown(OpenTK.Windowing.Common.MouseButtonEventArgs)" en-hash="6b34fee16d0f1c52">
-            <summary>왼쪽 버튼 누름을 화면의 포인터 누름으로 넘깁니다. 다른 버튼은 무시합니다.</summary>
-            <param name="e">버튼 정보.</param>
-        </member><member name="M:Devinno.UI.OpenTK.ViewWindow.OnMouseUp(OpenTK.Windowing.Common.MouseButtonEventArgs)" en-hash="58f88866d7ed244a">
-            <summary>왼쪽 버튼 뗌을 화면의 포인터 뗌(클릭 판정)으로 넘깁니다. 다른 버튼은 무시합니다.</summary>
-            <param name="e">버튼 정보.</param>
-        </member><member name="M:Devinno.UI.OpenTK.ViewWindow.OnTextInput(OpenTK.Windowing.Common.TextInputEventArgs)" en-hash="e9235aa733cb60d3">
+        </member><member name="M:Devinno.UI.OpenTK.ViewWindow.OnMouseDown(OpenTK.Windowing.Common.MouseButtonEventArgs)" en-hash="2c5e50185c0d080d"><summary>왼쪽·오른쪽·가운데 버튼 누름을 수정키와 함께 화면의 포인터 누름으로 넘깁니다. 다른 버튼은 무시합니다.</summary>
+<param name="e">버튼 정보.</param></member><member name="M:Devinno.UI.OpenTK.ViewWindow.OnMouseUp(OpenTK.Windowing.Common.MouseButtonEventArgs)" en-hash="6bda96630c3957e8"><summary>왼쪽·오른쪽·가운데 버튼 뗌을 화면의 포인터 뗌으로 넘깁니다(왼쪽 뗌은 클릭이 될 수 있음). 다른 버튼은 무시합니다.</summary>
+<param name="e">버튼 정보.</param></member><member name="M:Devinno.UI.OpenTK.ViewWindow.OnTextInput(OpenTK.Windowing.Common.TextInputEventArgs)" en-hash="e9235aa733cb60d3">
             <summary>물리 키보드로 입력된 완성 문자(IME 로 완성한 한글 포함)를 편집 중인 입력 상자로 넘깁니다.</summary>
             <param name="e">입력된 문자.</param>
         </member><member name="M:Devinno.UI.OpenTK.ViewWindow.OnKeyDown(OpenTK.Windowing.Common.KeyboardKeyEventArgs)" en-hash="d5f42235e97ff42e">

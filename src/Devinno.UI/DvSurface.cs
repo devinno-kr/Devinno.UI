@@ -98,6 +98,37 @@ public sealed partial class DvSurface
     private LayoutBox? _widgetDrag; // 누름을 잡은 커스텀 위젯(뗌·취소까지 이동을 받는다)
     private SKPoint _widgetShift;   // 화면 점 → 위젯 상자 좌표(스크롤 보정), 노브의 _knobShift 와 같음
 
+    // 포인터 확장 — 수정키·클릭 횟수(같은 버튼, 500ms·4px 안), 왼쪽 아닌 버튼의 위젯 몸짓, hover 중인 위젯
+    private const long MultiClickMs = 500;
+    private const float MultiClickSlop = 4f;
+    private DvModifiers _mods;
+    private int _clicks;
+    private long _lastDownAt = long.MinValue / 2;
+    private SKPoint _lastDownPoint;
+    private DvPointerButton _lastDownButton;
+    private LayoutBox? _otherDrag;          // 오른쪽·가운데 버튼 몸짓을 잡은 위젯
+    private DvPointerButton _otherButton;
+    private SKPoint _otherShift;
+    private DvSurface? _otherCapture;       // 오른쪽·가운데 누름을 받은 칸의 자식 — 떼기까지
+    private LayoutBox? _hoverWidget;        // OnPointerHover 를 받고 있는 위젯
+
+    /// <summary>The current press target box (null if none), for tests.</summary>
+    internal LayoutBox? PressBox => _state.Press;
+
+    private DvPointerArgs Args(SKPoint p, DvPointerButton button) =>
+        new(p, button, _mods, button == DvPointerButton.None ? 0 : _clicks);
+
+    // 누름마다 클릭 횟수를 센다 — 같은 버튼이 시간·거리 안에서 이어지면 +1
+    private void CountClick(SKPoint p, DvPointerButton button)
+    {
+        var now = Clock();
+        var near = MathF.Abs(p.X - _lastDownPoint.X) <= MultiClickSlop && MathF.Abs(p.Y - _lastDownPoint.Y) <= MultiClickSlop;
+        _clicks = button == _lastDownButton && now - _lastDownAt <= MultiClickMs && near ? _clicks + 1 : 1;
+        _lastDownAt = now;
+        _lastDownPoint = p;
+        _lastDownButton = button;
+    }
+
     // 커스텀 위젯 포인터 메서드 호출 — 예외는 알리고 false(잡기 끝)
     private bool WidgetCall(LayoutBox box, Func<Widgets.DvWidget, Widgets.DvWidgetContext, bool> call)
     {
@@ -115,7 +146,10 @@ public sealed partial class DvSurface
     // 잡고 있던 위젯의 몸짓을 취소로 끝낸다(사라짐·다이얼로그로 입력을 잃음)
     private void CancelWidgetDrag(LayoutBox box)
     {
-        _widgetDrag = null;
+        if (ReferenceEquals(box, _otherDrag))
+            _otherDrag = null;
+        else
+            _widgetDrag = null;
         WidgetCall(box, (w, ctx) => { w.OnPointerCancel(ctx); return false; });
         _needsRender = true;
     }
@@ -887,6 +921,10 @@ public sealed partial class DvSurface
         }
         if (_widgetDrag is { } wd)
             CancelWidgetDrag(wd);
+        if (_otherDrag is { } od)
+            CancelWidgetDrag(od);
+        _otherCapture?.CancelPress();
+        _otherCapture = null;
         _scroll = null;
         _thumb = null;
         ClearHover();
@@ -915,6 +953,17 @@ public sealed partial class DvSurface
                 else
                     CancelWidgetDrag(wd); // 사라졌거나 다른 요소가 그 자리에
             }
+
+            if (_otherDrag is { } od)
+            {
+                if (Counterpart(old, _box, od) is { Widget: not null } nw && ReferenceEquals(nw.Widget, od.Widget))
+                    _otherDrag = nw;
+                else
+                    CancelWidgetDrag(od);
+            }
+
+            if (_hoverWidget is { } hw)
+                _hoverWidget = Counterpart(old, _box, hw) is { Widget: not null } nh && ReferenceEquals(nh.Widget, hw.Widget) ? nh : hw; // 사라졌으면 다음 이동 때 leave
 
             _pressOrigin = _pressOrigin is null ? null : Counterpart(old, _box, _pressOrigin);
             _holdBox = _holdBox is null ? null : Counterpart(old, _box, _holdBox);
@@ -1200,17 +1249,47 @@ public sealed partial class DvSurface
     /// Disabled boxes do not draw hover styles, and no hover occurs on clipped invisible parts or outside a scroll viewport. Call it on the UI thread.
     /// </remarks>
     /// <param name="p">Pointer position (same coordinate system as <see cref="RenderTo(SKCanvas, float, float, long)"/>, top-left origin).</param>
-    public void PointerMove(SKPoint p)
+    /// <param name="modifiers">Modifier keys held now, passed on to custom widgets (<see cref="DvPointerArgs.Modifiers"/>). Hosts that have no keyboard leave the default.</param>
+    public void PointerMove(SKPoint p, DvModifiers modifiers = DvModifiers.None)
     {
         using var sync = SyncScope.Enter(this); // DvApp 루트면 입력 스레드 동기화 컨텍스트(D15)
         Composer?.NoteInput(); // 무입력 감지 — 루트에만 Composer 가 있다
         var prevRead = HandlerErrors.EnterRead(_reads); // 입력 처리 중 VM 읽기 예외도 이 화면의 HandlerError 로
+        _mods = modifiers;
         try { PointerMoveCore(p); }
+        finally { HandlerErrors.ExitRead(prevRead); }
+    }
+
+    /// <summary>
+    /// Tells the screen that the pointer left it (the mouse left the host control). Hover styles turn off and a hovered custom widget gets
+    /// <see cref="Widgets.DvWidget.OnPointerLeave"/>. A press in progress is not affected. Call it on the UI thread.
+    /// </summary>
+    public void PointerLeave()
+    {
+        using var sync = SyncScope.Enter(this);
+        var prevRead = HandlerErrors.EnterRead(_reads);
+        try { ClearHover(); }
         finally { HandlerErrors.ExitRead(prevRead); }
     }
 
     private void PointerMoveCore(SKPoint p)
     {
+        if (_otherCapture is { } oc)
+        {
+            if (SlotOf(oc) is { } os)
+                oc.PointerMove(ToChild(p, os), _mods); // 오른쪽·가운데 누름을 받은 칸이 떼기까지 받는다
+            return;
+        }
+
+        if (_otherDrag is { } od)
+        {
+            var at = p + _otherShift;
+            if (!WidgetCall(od, (w, ctx) => { w.OnPointerMove(ctx, Args(at, _otherButton)); return true; }))
+                _otherDrag = null;
+            _needsRender = true;
+            return;
+        }
+
         if (KeyboardPointerMove(p) || PopupPointerMove(p))
         {
             ClearHover(); // 키보드·팝업이 가린 아래 화면에는 hover 가 남지 않는다
@@ -1230,7 +1309,7 @@ public sealed partial class DvSurface
         if (_widgetDrag is { } wd)
         {
             var at = DragPoint(p, _widgetShift);
-            if (!WidgetCall(wd, (w, ctx) => { w.OnPointerMove(ctx, at); return true; }))
+            if (!WidgetCall(wd, (w, ctx) => { w.OnPointerMove(ctx, Args(at, DvPointerButton.Left)); return true; }))
                 _widgetDrag = null; // 예외 — 몸짓 끝
             _needsRender = true; // 위젯이 필드에 든 미리보기를 다시 그린다
             return;
@@ -1250,7 +1329,7 @@ public sealed partial class DvSurface
                 if (!ReferenceEquals(s.Child, slot.Child))
                     s.Child.ClearHover(); // 다른 칸에서 넘어옴
             }
-            slot.Child.PointerMove(ToChild(p, slot));
+            slot.Child.PointerMove(ToChild(p, slot), _mods);
             return;
         }
 
@@ -1271,6 +1350,7 @@ public sealed partial class DvSurface
             return;
 
         var hover = HitTester.HitTarget(_box, p, out var hoverLocal);
+        WidgetHover(hover, hoverLocal);
         if (GridHover(hover, hoverLocal))
             _needsRender = true;
         if (ReferenceEquals(hover, _state.Hover))
@@ -1282,12 +1362,35 @@ public sealed partial class DvSurface
         _state.Hover = hover;
     }
 
+    // hover 대상이 위젯이면 OnPointerHover, 그 위젯을 떠나면 OnPointerLeave(같은 위젯은 인스턴스로 비교 — 재빌드에도 같다)
+    private void WidgetHover(LayoutBox? target, SKPoint local)
+    {
+        var w = target is { Widget: not null, Disabled: false } ? target : null;
+        if (_hoverWidget is { } old && (w is null || !ReferenceEquals(old.Widget, w.Widget)))
+            WidgetLeave();
+        if (w is null)
+            return;
+        _hoverWidget = w;
+        if (WidgetCall(w, (x, ctx) => x.OnPointerHover(ctx, Args(local, DvPointerButton.None))))
+            _needsRender = true;
+    }
+
+    private void WidgetLeave()
+    {
+        if (_hoverWidget is not { } old)
+            return;
+        _hoverWidget = null;
+        WidgetCall(old, (x, ctx) => { x.OnPointerLeave(ctx); return false; });
+        _needsRender = true;
+    }
+
     /// <summary>The current hover target box (null if none), for tests.</summary>
     internal LayoutBox? HoverBox => _state.Hover;
 
     /// <summary>Clears hover (the pointer left this screen or it is covered). For body, also clears hover on the slot screens.</summary>
     internal void ClearHover(bool body = true)
     {
+        WidgetLeave();
         if (GridHover(null, default))
             _needsRender = true;
         if (HoverVisible(_state.Hover))
@@ -1312,15 +1415,63 @@ public sealed partial class DvSurface
     /// Pressing on a knob starts a rotation drag; pressing inside a scroll box starts a scroll gesture. Any inertial scroll in progress stops.</para>
     /// <para>While editing, pressing somewhere other than the edit target commits the edit with <see cref="DvEditExit.FocusLost"/> before the press is handled.
     /// If the virtual keyboard is open, a press outside it cancels the edit and is not passed below. If a popup is open, a press outside it only closes the popup.</para>
+    /// <para>Buttons other than <see cref="DvPointerButton.Left"/> go only to a custom widget under the pointer (<see cref="Widgets.DvWidget.OnPointerDown(Widgets.DvWidgetContext, DvPointerArgs)"/>):
+    /// they never click, scroll, hold, show press styles or close popups, and are ignored while another press is in progress or the virtual keyboard or a popup is open.</para>
     /// </remarks>
     /// <param name="p">Pointer position (same coordinate system as <see cref="RenderTo(SKCanvas, float, float, long)"/>).</param>
-    public void PointerDown(SKPoint p)
+    /// <param name="button">The pressed button. Touch is <see cref="DvPointerButton.Left"/>.</param>
+    /// <param name="modifiers">Modifier keys held now, passed on to custom widgets. Hosts that have no keyboard leave the default.</param>
+    public void PointerDown(SKPoint p, DvPointerButton button = DvPointerButton.Left, DvModifiers modifiers = DvModifiers.None)
     {
         using var sync = SyncScope.Enter(this); // DvApp 루트면 입력 스레드 동기화 컨텍스트(D15)
         Composer?.NoteInput(); // 무입력 감지 — 루트에만 Composer 가 있다
         var prevRead = HandlerErrors.EnterRead(_reads); // 입력 처리 중 VM 읽기 예외도 이 화면의 HandlerError 로
-        try { PointerDownCore(p); }
+        _mods = modifiers;
+        try
+        {
+            if (button == DvPointerButton.None)
+                return;
+            CountClick(p, button);
+            if (button == DvPointerButton.Left)
+            {
+                // 오른쪽·가운데 몸짓 중 왼쪽 누름 — 왼쪽이 이긴다(남은 몸짓은 취소)
+                if (_otherDrag is { } od)
+                    CancelWidgetDrag(od);
+                _otherCapture?.CancelPress();
+                _otherCapture = null;
+                PointerDownCore(p);
+            }
+            else
+                OtherDownCore(p, button);
+        }
         finally { HandlerErrors.ExitRead(prevRead); }
+    }
+
+    // 오른쪽·가운데 누름 — 위젯에만. 다른 누름이 진행 중이거나 키보드·팝업이 떠 있으면 무시
+    private void OtherDownCore(SKPoint p, DvPointerButton button)
+    {
+        if (_otherDrag is not null || _otherCapture is not null || _pressOrigin is not null || _widgetDrag is not null || _knobDrag is not null || _capture is not null ||
+            IsKbModal || _popups.Count > 0)
+            return;
+
+        var blocked = Blocked;
+        if ((blocked ? ModalSlotAt(p) : SlotAt(p)) is { } slot)
+        {
+            _otherCapture = slot.Child;
+            slot.Child.PointerDown(ToChild(p, slot), button, _mods);
+            return;
+        }
+
+        if (_box is null || blocked)
+            return;
+        if (HitTester.HitTarget(_box, p, out var local) is { Widget: not null, Disabled: false } wbox &&
+            WidgetCall(wbox, (w, ctx) => w.OnPointerDown(ctx, Args(local, button))))
+        {
+            _otherDrag = wbox;
+            _otherButton = button;
+            _otherShift = local - p;
+            _needsRender = true;
+        }
     }
 
     private void PointerDownCore(SKPoint p)
@@ -1347,7 +1498,7 @@ public sealed partial class DvSurface
         if (target is { } slot)
         {
             _capture = slot.Child; // 떼기까지 이 칸이 받는다
-            slot.Child.PointerDown(ToChild(p, slot));
+            slot.Child.PointerDown(ToChild(p, slot), DvPointerButton.Left, _mods);
             return;
         }
 
@@ -1367,7 +1518,7 @@ public sealed partial class DvSurface
         if (PressVisible(_pressOrigin))
             _needsRender = true;
 
-        if (_pressOrigin is { Widget: not null, Disabled: false } wbox && WidgetCall(wbox, (w, ctx) => w.OnPointerDown(ctx, local)))
+        if (_pressOrigin is { Widget: not null, Disabled: false } wbox && WidgetCall(wbox, (w, ctx) => w.OnPointerDown(ctx, Args(local, DvPointerButton.Left))))
         {
             // 위젯이 몸짓을 잡음 — 스크롤·길게 누르기·클릭 없이 이동·뗌을 위젯이 받는다
             _widgetDrag = wbox;
@@ -1404,15 +1555,43 @@ public sealed partial class DvSurface
     /// When a click occurs, <see cref="Invalidate"/> is called automatically, so VM values changed inside the handler are reflected on the next frame.</para>
     /// <para>Exceptions thrown by app code in handlers or property setters do not escape this method. A Trace error is logged and reported via <see cref="HandlerError"/>.</para>
     /// <para>A knob drag is committed to the VM once here. A scroll drag ends without a click, and a fast release continues with inertial scrolling.</para>
+    /// <para>A release of another button ends that button's custom-widget gesture (<see cref="Widgets.DvWidget.OnPointerUp(Widgets.DvWidgetContext, DvPointerArgs)"/>) and does nothing else.</para>
     /// </remarks>
     /// <param name="p">Pointer position (same coordinate system as <see cref="RenderTo(SKCanvas, float, float, long)"/>).</param>
-    public void PointerUp(SKPoint p)
+    /// <param name="button">The released button. Touch is <see cref="DvPointerButton.Left"/>.</param>
+    /// <param name="modifiers">Modifier keys held now, passed on to custom widgets.</param>
+    public void PointerUp(SKPoint p, DvPointerButton button = DvPointerButton.Left, DvModifiers modifiers = DvModifiers.None)
     {
         using var sync = SyncScope.Enter(this); // DvApp 루트면 입력 스레드 동기화 컨텍스트(D15)
         Composer?.NoteInput(); // 무입력 감지 — 루트에만 Composer 가 있다
         var prevRead = HandlerErrors.EnterRead(_reads); // 입력 처리 중 VM 읽기 예외도 이 화면의 HandlerError 로
-        try { PointerUpCore(p); }
+        _mods = modifiers;
+        try
+        {
+            if (button == DvPointerButton.Left)
+                PointerUpCore(p);
+            else if (button != DvPointerButton.None)
+                OtherUpCore(p, button);
+        }
         finally { HandlerErrors.ExitRead(prevRead); }
+    }
+
+    private void OtherUpCore(SKPoint p, DvPointerButton button)
+    {
+        if (_otherCapture is { } oc)
+        {
+            _otherCapture = null;
+            if (SlotOf(oc) is { } os)
+                oc.PointerUp(ToChild(p, os), button, _mods);
+            return;
+        }
+
+        if (_otherDrag is not { } od || button != _otherButton)
+            return;
+        _otherDrag = null;
+        var at = p + _otherShift;
+        WidgetCall(od, (w, ctx) => { w.OnPointerUp(ctx, Args(at, button)); return true; });
+        Invalidate();
     }
 
     private void PointerUpCore(SKPoint p)
@@ -1434,7 +1613,7 @@ public sealed partial class DvSurface
         {
             _widgetDrag = null;
             var at = DragPoint(p, _widgetShift);
-            WidgetCall(wdrag, (w, ctx) => { w.OnPointerUp(ctx, at); return true; });
+            WidgetCall(wdrag, (w, ctx) => { w.OnPointerUp(ctx, Args(at, DvPointerButton.Left)); return true; });
             Invalidate(); // 쓴 값(또는 거절된 값)을 VM 에서 다시 빌드
             _state.Press = null;
             _pressOrigin = null;
@@ -1462,7 +1641,7 @@ public sealed partial class DvSurface
 
         if (slot is { } s)
         {
-            s.Child.PointerUp(ToChild(p, s));
+            s.Child.PointerUp(ToChild(p, s), DvPointerButton.Left, _mods);
             _dirty = true; // 이 화면만 — 칸의 화면은 자기 클릭을 스스로 반영한다
             _state.Press = null;
             _pressOrigin = null;

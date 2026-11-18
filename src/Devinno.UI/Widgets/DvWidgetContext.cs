@@ -52,7 +52,7 @@ public sealed class DvWidgetContext
     /// </summary>
     /// <param name="value">The new value.</param>
     /// <returns><see langword="true"/> if written; <see langword="false"/> if <see cref="CanCommit"/> is false, the gate refused, or the property setter failed (reported through <see cref="DvSurface.HandlerError"/>).</returns>
-    /// <remarks>Only works inside pointer methods (<see cref="DvWidget.OnPointerDown"/> … <see cref="DvWidget.OnPointerUp"/>); elsewhere it returns <see langword="false"/>.</remarks>
+    /// <remarks>Only works inside pointer methods (<see cref="DvWidget.OnPointerDown(DvWidgetContext, SkiaSharp.SKPoint)"/> … <see cref="DvWidget.OnPointerUp(DvWidgetContext, SkiaSharp.SKPoint)"/> and their <see cref="DvPointerArgs"/> overloads); elsewhere it returns <see langword="false"/>.</remarks>
     public bool Commit(object? value)
     {
         if (!CanCommit)

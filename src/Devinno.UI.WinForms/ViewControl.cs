@@ -127,12 +127,17 @@ public sealed class ViewControl : UserControl
             canvas = cpu;
         }
 
-        canvas.MouseDown += (_, e) => Pointer(e, s => s.PointerDown(Pt(e)), focus: true);
-        canvas.MouseMove += (_, e) => Pointer(e, s => s.PointerMove(Pt(e)), any: true);
-        canvas.MouseUp += (_, e) => Pointer(e, s => s.PointerUp(Pt(e)));
+        canvas.MouseDown += (_, e) => Pointer(e, s => s.PointerDown(Pt(e), Button(e), Mods()), focus: e.Button == MouseButtons.Left);
+        canvas.MouseMove += (_, e) => Pointer(e, s => s.PointerMove(Pt(e), Mods()), any: true);
+        canvas.MouseUp += (_, e) => Pointer(e, s => s.PointerUp(Pt(e), Button(e), Mods()));
+        canvas.MouseLeave += (_, _) =>
+        {
+            _surface?.PointerLeave();
+            RenderIfNeeded();
+        };
         canvas.MouseWheel += (_, e) =>
         {
-            _surface?.PointerWheel(Pt(e), e.Delta / 120f);
+            _surface?.PointerWheel(Pt(e), e.Delta / 120f, Mods());
             RenderIfNeeded();
         };
         canvas.PreviewKeyDown += (_, e) => e.IsInputKey = e.KeyCode is Keys.Tab or Keys.Enter or Keys.Escape;
@@ -442,6 +447,20 @@ public sealed class ViewControl : UserControl
 
     private SKPoint Pt(MouseEventArgs e) => new(e.X / UiScale, e.Y / UiScale);
 
+    private static DvPointerButton Button(MouseEventArgs e) => e.Button switch
+    {
+        MouseButtons.Left => DvPointerButton.Left,
+        MouseButtons.Right => DvPointerButton.Right,
+        MouseButtons.Middle => DvPointerButton.Middle,
+        _ => DvPointerButton.None, // 뒤로·앞으로 버튼은 넘기지 않는다
+    };
+
+    private static DvModifiers Mods()
+    {
+        var k = ModifierKeys;
+        return (k.HasFlag(Keys.Shift) ? DvModifiers.Shift : 0) | (k.HasFlag(Keys.Control) ? DvModifiers.Ctrl : 0) | (k.HasFlag(Keys.Alt) ? DvModifiers.Alt : 0);
+    }
+
     /// <summary>For testing: paints at this scale instead of the monitor scale (DeviceDpi). If null, DeviceDpi / 96.</summary>
     internal float? ScaleOverride = null;
 
@@ -474,7 +493,7 @@ public sealed class ViewControl : UserControl
 
     private void Pointer(MouseEventArgs e, Action<DvSurface> act, bool focus = false, bool any = false)
     {
-        if (_surface is null || (!any && e.Button != MouseButtons.Left))
+        if (_surface is null || (!any && Button(e) == DvPointerButton.None))
             return;
         if (focus && !_editor.Focused)
             _canvas.Focus(); // 편집 중이면 TextBox 포커스가 빠지며 먼저 커밋된다(FocusLost)
