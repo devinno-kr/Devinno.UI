@@ -4,13 +4,13 @@ using SkiaSharp;
 
 namespace Devinno.UI.Scene3D;
 
-public enum AlphaBlend { Opaque, Mask, Blend }
+internal enum AlphaBlend { Opaque, Mask, Blend }
 
 /// <summary>
-/// glTF 파일을 그리기와 무관한 데이터로 읽는다: 노드 트리(기본 자세), 노드별 메시, 재질, 텍스처, 카메라, 애니메이션.
-/// 메시 정점은 노드 자기 좌표계 그대로 두어, 노드 자세를 바꾸면 따라 움직이게 한다.
+/// Reads a glTF file into data independent of drawing: node tree (exported pose), meshes per node, materials, textures, cameras, animations.
+/// Mesh vertices stay in their node's own space, so a changed node pose moves them.
 /// </summary>
-public sealed class SceneModel
+internal sealed class SceneModel
 {
     public sealed class Node
     {
@@ -27,12 +27,12 @@ public sealed class SceneModel
             Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateFromQuaternion(Rotation) * Matrix4x4.CreateTranslation(Translation);
     }
 
-    /// <summary>정점은 위치 3, 법선 3, UV 2 를 이어 붙인 배열이다.</summary>
+    /// <summary>Vertices are interleaved position (3), normal (3), UV (2).</summary>
     public sealed record Part(int Node, float[] Vertices, uint[] Indices, int Material);
 
     public sealed record MaterialInfo(string Name, Vector4 BaseColor, int Texture, bool DoubleSided, AlphaBlend Alpha, float AlphaCutoff);
 
-    /// <summary>RGBA 8비트, 위 행부터. 색 공간은 sRGB.</summary>
+    /// <summary>RGBA 8-bit, top row first, sRGB.</summary>
     public sealed record TextureImage(int Width, int Height, byte[] Rgba);
 
     public sealed record CameraInfo(string Name, int Node, float VerticalFov);
@@ -49,7 +49,7 @@ public sealed class SceneModel
     public List<Clip> Clips { get; } = new();
     public Dictionary<string, int> NodeByName { get; } = new(StringComparer.Ordinal);
 
-    /// <summary>부모가 자식보다 먼저 오는 순서.</summary>
+    /// <summary>Node indices with every parent before its children.</summary>
     public int[] Order { get; private set; } = Array.Empty<int>();
 
     public Vector3 Center { get; private set; }

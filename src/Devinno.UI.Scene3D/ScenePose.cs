@@ -3,8 +3,8 @@ using System.Numerics;
 
 namespace Devinno.UI.Scene3D;
 
-/// <summary>기본 자세 + 애니메이션 + 덮어쓴 값으로 노드별 월드 행렬을 계산한다. GL 을 쓰지 않는다.</summary>
-public static class ScenePose
+/// <summary>Computes each node's world matrix from the exported pose, animation clips and written values. Uses no GL.</summary>
+internal static class ScenePose
 {
     private static readonly HashSet<string> Warned = new(StringComparer.Ordinal);
 

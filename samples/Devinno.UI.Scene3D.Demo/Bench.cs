@@ -22,8 +22,7 @@ internal static unsafe class Bench
 
     public static int Run()
     {
-        var registry = new ComponentRegistry();
-        registry.RegisterWidget<SceneView>("SceneView");
+        var registry = new ComponentRegistry().UseScene3D();
         var page = new BenchPage();
         var app = new DvApp { Theme = DvTheme.Dark, Registry = registry };
         app.Pages.Add(page);
@@ -165,7 +164,50 @@ internal static unsafe class Bench
 
         var share = differ * 100.0 / (w * h);
         Console.WriteLine($"{(share < 0.5 ? "OK  " : "FAIL")} CPU and GPU canvases match: {share:0.000}% pixels differ by more than 8 (worst {worst})");
-        return share < 0.5 ? 0 : 1;
+        var failed = share < 0.5 ? 0 : 1;
+
+        double Diff(SKBitmap x, SKBitmap y)
+        {
+            var n = 0;
+            for (var yy = 0; yy < h; yy++)
+                for (var xx = 0; xx < w; xx++)
+                {
+                    SKColor a = x.GetPixel(xx, yy), b = y.GetPixel(xx, yy);
+                    if (Math.Max(Math.Max(Math.Abs(a.Red - b.Red), Math.Abs(a.Green - b.Green)), Math.Abs(a.Blue - b.Blue)) > 8)
+                        n++;
+                }
+            return n * 100.0 / (w * h);
+        }
+
+        // 아래 둘은 피킹으로 GearA 가 선택된 화면이다 — 같은 상태의 CPU 그림과 비교한다
+        using var selected = Shot(cpuSurface, "bench_cpu_selected.png");
+
+        // 오래 안 보여서 대상이 정리된 뒤 다시 보이면 새로 그린다
+        Shot(gpuSurface, "bench_gpu_selected.png").Dispose();
+        SceneView.LastTarget!.Release();
+        using (var again = Shot(gpuSurface, "bench_gpu_released.png"))
+        {
+            var d = Diff(selected, again);
+            Console.WriteLine($"{(d < 0.5 ? "OK  " : "FAIL")} a released target is drawn again: {d:0.000}% differ");
+            failed += d < 0.5 ? 0 : 1;
+        }
+
+        // 호스트가 GPU 모드를 끄고 다시 켬: 옛 GRContext 를 버리고 새것으로 그린다
+        gpuSurface.Dispose();
+        gr.Dispose();
+        using var gli2 = GRGlInterface.Create(name => GLFW.GetProcAddress(name));
+        using var gr2 = GRContext.CreateGl(gli2);
+        using var gpuSurface2 = SKSurface.Create(gr2, true, info);
+        app.Surface.Layout(w, h);
+        app.Surface.RenderTo(gpuSurface2.Canvas, w, h, 0);
+        gr2.Flush(true, true);
+        var toggled = new SKBitmap(info);
+        gpuSurface2.ReadPixels(info, toggled.GetPixels(), info.RowBytes, 0, 0);
+        var dt = Diff(selected, toggled);
+        Console.WriteLine($"{(dt < 0.5 ? "OK  " : "FAIL")} after a new GRContext the GPU canvas still matches CPU: {dt:0.000}% differ");
+        failed += dt < 0.5 ? 0 : 1;
+        toggled.Dispose();
+        return failed;
     }
 
     private static double P(List<double> values, int percent)

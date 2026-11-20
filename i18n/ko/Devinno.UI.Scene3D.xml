@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doc><assembly><name>Devinno.UI.Scene3D</name></assembly><members><member name="T:Devinno.UI.Scene3D.MarkupPose" en-hash="65103625c3e90e47"><summary>
+SceneView 의 정의(자식 요소)를 자세·색·클립 값으로 바꾼다.
+<code>
+&lt;Rotate node="Turret" axis="y" value="{Turret}"/&gt;                     도, value × scale + offset
+&lt;Rotate node="GearB"  axis="y" follow="GearA" ratio="-2"/&gt;            따라가는 부품: GearA 의 같은 종류 양 × ratio
+&lt;Move   node="LiftRod" axis="y" value="{Lift}" scale="0.001"/&gt;         미터
+&lt;Color  node="PumpLamp" value="{LampColor}" amount="1"/&gt;              #RRGGBB(AA) 또는 테마 토큰, 빈 값 = 모델 색
+&lt;Clip   name="CrankCycle" value="{Crank}" min="0" max="360"/&gt;          value min..max = 클립 처음..끝
+</code>
+axis 는 x, y, z, -x, -y, -z 또는 "0 1 0" 같은 벡터. disabled 가 참인 정의는 건너뛴다.
+SceneState 로 쓴 값은 같은 노드의 같은 종류 마크업 값을 대신한다.
+</summary></member><member name="M:Devinno.UI.Scene3D.MarkupPose.Build(Devinno.UI.Scene3D.SceneModel,System.Collections.Generic.IReadOnlyList{Devinno.UI.Widgets.DvDefinition},Devinno.UI.Scene3D.PoseSnapshot,System.Func{System.String,System.Nullable{SkiaSharp.SKColor}})" en-hash="9d07a989f9565ee4"><summary>마크업 값과 코드에서 쓴 값을 합친다(코드가 우선). Hash 는 마크업 값이 바뀌면 바뀐다.</summary></member><member name="T:Devinno.UI.Scene3D.OrbitCamera" en-hash="e367095fe8fa53a1"><summary>대상 주위를 도는 카메라. glTF 카메라 시점으로 짧게 옮겨 갈 수 있다.</summary></member><member name="P:Devinno.UI.Scene3D.OrbitCamera.Version" en-hash="7b5a4c27f18bc2cb"><summary>바뀔 때마다 늘어난다(다시 그릴지 판단용).</summary></member><member name="M:Devinno.UI.Scene3D.OrbitCamera.Home(Devinno.UI.Scene3D.SceneModel)" en-hash="3b0c99263064a20f"><summary>모델 전체가 보이는 기본 시점.</summary></member><member name="M:Devinno.UI.Scene3D.OrbitCamera.Preset(Devinno.UI.Scene3D.SceneModel,System.String)" en-hash="b472cd132f7121a9"><summary>그 이름의 glTF 카메라 시점. 모델에 그 이름이 없으면 기본 시점.</summary></member><member name="M:Devinno.UI.Scene3D.OrbitCamera.MoveTo(System.ValueTuple{System.Numerics.Vector3,System.Single,System.Single,System.Single,System.Single})" en-hash="2d7abd38287ae66f"><summary>다음 프레임부터 그 시점으로 짧게 옮겨 간다.</summary></member><member name="T:Devinno.UI.Scene3D.Scene3DExtensions" en-hash="97b9d00f09d5340e"><summary><see cref="T:Devinno.UI.Components.ComponentRegistry" /> 에 3D 뷰 태그를 등록한다.</summary></member><member name="M:Devinno.UI.Scene3D.Scene3DExtensions.UseScene3D(Devinno.UI.Components.ComponentRegistry)" en-hash="1221ce99f2ece185"><summary>
+<see cref="T:Devinno.UI.Scene3D.SceneView" /> 를 태그 <c>SceneView</c> 로 등록한다. 시작할 때 첫 화면을 만들기 전에 한 번 부르고, 그 레지스트리를 <c>DvApp</c> 에 넣는다.
+</summary>
+<param name="registry">앱이 쓰는 레지스트리.</param>
+<returns>같은 레지스트리(이어서 부를 수 있게).</returns>
+<example>
+<code>
+var registry = new ComponentRegistry().UseScene3D();
+var app = new DvApp { Registry = registry };
+</code>
+</example></member><member name="T:Devinno.UI.Scene3D.SceneModel" en-hash="ea244b2e9f4be707"><summary>
+glTF 파일을 그리기와 무관한 데이터로 읽는다: 노드 트리(내보낸 자세), 노드별 메시, 재질, 텍스처, 카메라, 애니메이션.
+메시 정점은 노드 자기 좌표계 그대로 두어, 노드 자세를 바꾸면 따라 움직인다.
+</summary></member><member name="T:Devinno.UI.Scene3D.SceneModel.Part" en-hash="f2305096a7b5565b"><summary>정점은 위치(3), 법선(3), UV(2) 를 이어 붙인 배열이다.</summary></member><member name="M:Devinno.UI.Scene3D.SceneModel.Part.#ctor(System.Int32,System.Single[],System.UInt32[],System.Int32)" en-hash="f2305096a7b5565b"><summary>정점은 위치(3), 법선(3), UV(2) 를 이어 붙인 배열이다.</summary></member><member name="T:Devinno.UI.Scene3D.SceneModel.TextureImage" en-hash="eb73c702a4686e99"><summary>RGBA 8비트, 위 행부터, sRGB.</summary></member><member name="M:Devinno.UI.Scene3D.SceneModel.TextureImage.#ctor(System.Int32,System.Int32,System.Byte[])" en-hash="eb73c702a4686e99"><summary>RGBA 8비트, 위 행부터, sRGB.</summary></member><member name="P:Devinno.UI.Scene3D.SceneModel.Order" en-hash="70e1e41faa0c9801"><summary>부모가 자식보다 먼저 오는 노드 번호 순서.</summary></member><member name="T:Devinno.UI.Scene3D.ScenePose" en-hash="955a2d24580d16c5"><summary>내보낸 자세, 애니메이션 클립, 쓴 값으로 노드마다 월드 행렬을 계산한다. GL 을 쓰지 않는다.</summary></member><member name="T:Devinno.UI.Scene3D.SceneRenderer" en-hash="47d6847600293cd5"><summary>
+장면을 OpenGL 3.3 으로 그린다. 길은 두 가지이고 뷰마다 캔버스를 보고 고른다(<see cref="T:Devinno.UI.Scene3D.SceneTarget" />).
+<list type="bullet">
+<item>GPU 캔버스(호스트가 GPU 모드, 데스크톱 GL): 호스트 컨텍스트에서 뷰의 텍스처에 그리고 Skia 이미지로 감싼다. 픽셀을 읽지 않는다.
+직접 GL 을 부른 뒤에는 Skia 에 상태가 바뀌었음을 알린다(<see cref="M:SkiaSharp.GRContext.ResetContext(SkiaSharp.GRGlBackendState)" />).</item>
+<item>그 밖(CPU 캔버스, 창 없이 실행): 숨은 GLFW 창의 컨텍스트에서 위아래를 뒤집어 그리고, 픽셀을 뷰의 비트맵으로 바로 읽는다(복사 없음).</item>
+</list>
+GL 자원(셰이더, 모델, 멀티샘플 대상)은 컨텍스트마다 따로 둔다. GLFW 규칙대로 UI(메인) 스레드에서만 쓴다.
+</summary></member><member name="T:Devinno.UI.Scene3D.SceneRenderer.GlResources" en-hash="eabd4480bbd2fd79"><summary>한 GL 컨텍스트 안의 자원. 그 컨텍스트의 뷰들이 멀티샘플 대상을 함께 쓴다(그린 즉시 뷰의 대상으로 옮기므로).</summary></member><member name="P:Devinno.UI.Scene3D.SceneRenderer.Shared" en-hash="54761e21bb26bdef"><summary>모든 3D 뷰가 함께 쓰는 렌더러. 처음 쓸 때 만든다.</summary></member><member name="P:Devinno.UI.Scene3D.SceneRenderer.Profile" en-hash="c7c4a9543cf2c622"><summary>측정용: 켜면 단계 사이에 GL.Finish 를 넣어 단계별 시간을 <see cref="P:Devinno.UI.Scene3D.SceneRenderer.LastStats" /> 에 남긴다(느려진다).</summary></member><member name="P:Devinno.UI.Scene3D.SceneRenderer.LastStats" en-hash="2e5986fbf8448f88"><summary>측정용: 마지막 그리기의 단계별 시간(ms). Profile 이 켜져 있을 때만 채운다. GPU 길에서는 Read·Convert 가 0.</summary></member><member name="M:Devinno.UI.Scene3D.SceneRenderer.SharedBytes(Devinno.UI.Scene3D.SceneTarget)" en-hash="2ccdb8112a9de8b4"><summary>측정용: 대상이 속한 컨텍스트의 멀티샘플·피킹 대상 바이트 수(뷰 자신의 대상은 <see cref="P:Devinno.UI.Scene3D.SceneTarget.GpuBytes" />).</summary></member><member name="M:Devinno.UI.Scene3D.SceneRenderer.Render(Devinno.UI.Scene3D.SceneTarget,SkiaSharp.SKCanvas,Devinno.UI.Scene3D.SceneModel,System.Numerics.Matrix4x4[],System.Numerics.Vector4[],System.Numerics.Matrix4x4,System.Numerics.Matrix4x4,System.Numerics.Vector3,System.Int32,System.Int32)" en-hash="30eada8d49f3951f"><summary>
+장면을 뷰의 대상에 그린다. GPU(데스크톱 GL) 캔버스면 호스트 컨텍스트에서, 아니면 숨은 컨텍스트에서 그리고 픽셀을 읽는다.
+그 뒤 <see cref="M:Devinno.UI.Scene3D.SceneTarget.Draw(SkiaSharp.SKCanvas,SkiaSharp.SKRect,SkiaSharp.SKPaint)" /> 로 캔버스에 놓는다. tint 는 노드별 색(rgb 선형, a = 양), 노드마다 하나.
+</summary></member><member name="M:Devinno.UI.Scene3D.SceneRenderer.Pick(Devinno.UI.Scene3D.SceneTarget,Devinno.UI.Scene3D.SceneModel,System.Numerics.Matrix4x4[],System.Numerics.Matrix4x4,System.Numerics.Matrix4x4,System.Int32,System.Int32)" en-hash="86be728ae14d6fe9"><summary>뷰 픽셀 (x, y)(위에서부터)에 보이는 노드 번호. 없으면 -1. 뷰가 마지막으로 그린 컨텍스트에서 1×1 대상에 그려 한 픽셀을 읽는다.</summary></member><member name="M:Devinno.UI.Scene3D.SceneRenderer.ResetSkia(SkiaSharp.GRContext)" en-hash="af17f7b29db156f2"><summary>직접 GL 을 부른 뒤 Skia 에 상태가 바뀌었음을 알린다. 이미 버려진 GRContext(호스트가 GPU 모드를 끔)는 건드리지 않는다.</summary></member><member name="M:Devinno.UI.Scene3D.SceneRenderer.Delete(OpenTK.Windowing.GraphicsLibraryFramework.Window*,System.Int32,System.Int32,System.Int32)" en-hash="ef9e055af30319c3"><summary>뷰 대상의 GL 객체를 그 컨텍스트에서 지운다.</summary></member><member name="M:Devinno.UI.Scene3D.SceneRenderer.CreateTarget(System.Boolean,System.Int32,System.Int32)" en-hash="57e6f5e1cfc7044e"><summary>현재 컨텍스트에 뷰의 대상(해상도 맞춘 색)을 만든다. GPU 길은 텍스처(Skia 가 감쌈), CPU 길은 렌더버퍼.</summary></member><member name="T:Devinno.UI.Scene3D.SceneState" en-hash="27dd4f5658400769"><summary>
+코드(통신 스레드, 시뮬레이션, UI)에서 <see cref="T:Devinno.UI.Scene3D.SceneView" /> 에 쓰는 값. 뷰의 <c>state</c> 속성에 바인딩한다.
+</summary>
+<remarks>
+<para><b>스레드</b>: 모든 메서드는 어느 스레드에서나 부를 수 있다. 쓴 뒤 앱 화면의 <c>Repaint()</c> 를 부르면 화면을 다시 만들지 않고
+뷰만 다시 그린다. 다음 프레임 전에 여러 번 써도 한 번 그린다.</para>
+<para><b>우선순위</b>: 여기서 쓴 값은 <see cref="M:Devinno.UI.Scene3D.SceneState.Reset(System.String)" /> 할 때까지 같은 노드의 같은 종류(회전, 이동, 색, 클립) 마크업 값을 대신한다.
+그 노드의 다른 종류는 계속 마크업을 따른다.</para>
+<para><b>축</b>: 회전과 이동은 노드 자기 축 기준이고, 모델을 내보낸 자세에 더해진다.</para>
+</remarks></member><member name="P:Devinno.UI.Scene3D.SceneState.Selected" en-hash="f6340df800710a2a"><summary>클릭으로 마지막에 선택된 부품 이름(클릭 단위, 뷰의 <c>pick</c> 참고). UI 스레드에서 바뀐다.</summary></member><member name="E:Devinno.UI.Scene3D.SceneState.PartClicked" en-hash="ed9bd572506e3a1d"><summary>부품을 클릭하면 UI 스레드에서 클릭 단위 이름과 함께 발생한다.</summary></member><member name="M:Devinno.UI.Scene3D.SceneState.Rotate(System.String,System.Numerics.Vector3,System.Double)" en-hash="d53967a595b2793c"><summary>노드를 내보낸 자세에서 자기 축으로 돌린다. 같은 노드에 다시 부르면 앞의 회전을 바꿔 쓴다.</summary>
+<param name="node">glTF 노드 이름.</param>
+<param name="axis">노드 자기 축 기준의 축(여기서 정규화).</param>
+<param name="degrees">각도(도), 오른손 법칙.</param></member><member name="M:Devinno.UI.Scene3D.SceneState.Move(System.String,System.Numerics.Vector3,System.Double)" en-hash="63abe0a681ef6906"><summary>노드를 내보낸 위치에서 자기 축 방향으로 옮긴다. 같은 노드에 다시 부르면 앞의 이동을 바꿔 쓴다.</summary>
+<param name="node">glTF 노드 이름.</param>
+<param name="axis">노드 자기 축 기준의 방향(여기서 정규화).</param>
+<param name="meters">거리(미터).</param></member><member name="M:Devinno.UI.Scene3D.SceneState.SetWorldPose(System.String,System.Numerics.Vector3,System.Numerics.Quaternion)" en-hash="4b7c1a1f91eecfd7"><summary>
+노드의 월드 위치와 회전을 부모와 무관하게 정한다 — 물리 시뮬레이션이 계산한 자세용. 자식은 이 노드를 따라간다.
+노드는 내보낸 크기를 유지한다.
+</summary>
+<param name="node">glTF 노드 이름.</param>
+<param name="position">월드 위치(미터, glTF 축: +Y 위).</param>
+<param name="rotation">월드 회전.</param></member><member name="M:Devinno.UI.Scene3D.SceneState.Color(System.String,System.Nullable{SkiaSharp.SKColor},System.Single)" en-hash="f9ed9e2eda2caeac"><summary>노드와 그 아래 부품의 색을 <paramref name="color" /> 쪽으로 섞는다. <see langword="null" /> 이면 여기서 쓴 색을 지운다.</summary>
+<param name="node">glTF 노드 이름.</param>
+<param name="color">색, 또는 <see langword="null" />.</param>
+<param name="amount">0–1. 1 이면 그 색만 보인다.</param></member><member name="M:Devinno.UI.Scene3D.SceneState.SetClipTime(System.String,System.Double)" en-hash="353a2e413abc4982"><summary>glTF 애니메이션 클립의 그 시각 자세로 모델을 둔다.</summary>
+<param name="clip">클립 이름(Blender 액션 이름).</param>
+<param name="seconds">클립 처음부터의 시간(초). 클립 길이 안으로 자른다.</param></member><member name="M:Devinno.UI.Scene3D.SceneState.ClearClip(System.String)" en-hash="0ef213bf5da26917"><summary>여기서 쓴 클립 시각을 지운다.</summary>
+<param name="clip">클립 이름.</param></member><member name="M:Devinno.UI.Scene3D.SceneState.Batch(System.Action{Devinno.UI.Scene3D.SceneState})" en-hash="5bcdce655fdc92cc"><summary>여러 값을 한 번의 변경으로 쓴다: 뷰는 그중 일부만 바뀐 프레임을 그리지 않는다(함께 움직여야 하는 부품용).</summary>
+<param name="change">이 상태에 대한 호출들.</param></member><member name="M:Devinno.UI.Scene3D.SceneState.Reset(System.String)" en-hash="37bae96d0427d48e"><summary>노드에 여기서 쓴 회전·이동·월드 자세·색을 지운다. 마크업 값이 다시 적용된다.</summary>
+<param name="node">glTF 노드 이름.</param></member><member name="T:Devinno.UI.Scene3D.PoseSnapshot" en-hash="3ed98663d12b60cf"><summary>한 번 그릴 때 쓰는 값 한 벌. 만든 뒤에는 바뀌지 않는다.</summary></member><member name="M:Devinno.UI.Scene3D.PoseSnapshot.#ctor(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Numerics.Quaternion},System.Collections.Generic.IReadOnlyDictionary{System.String,System.Numerics.Vector3},System.Collections.Generic.IReadOnlyDictionary{System.String,System.ValueTuple{System.Numerics.Vector3,System.Numerics.Quaternion}},System.Collections.Generic.IReadOnlyDictionary{System.String,System.ValueTuple{SkiaSharp.SKColor,System.Single}},System.Collections.Generic.IReadOnlyDictionary{System.String,System.Single})" en-hash="3ed98663d12b60cf"><summary>한 번 그릴 때 쓰는 값 한 벌. 만든 뒤에는 바뀌지 않는다.</summary></member><member name="T:Devinno.UI.Scene3D.SceneTarget" en-hash="2d4d3897fce572e6"><summary>
+뷰 하나가 그린 결과. 뷰마다 따로 둔다 — GPU 길에서는 Skia 가 프레임 끝에 텍스처를 읽으므로 뷰끼리 함께 쓸 수 없다.
+<list type="bullet">
+<item>GPU 길: 호스트 컨텍스트의 텍스처와 그것을 감싼 <see cref="T:SkiaSharp.SKImage" />(복사 없음).</item>
+<item>CPU 길: 숨은 컨텍스트의 렌더버퍼와 픽셀을 받는 <see cref="T:SkiaSharp.SKBitmap" />(크기가 같으면 다시 쓴다).</item>
+</list>
+</summary></member><member name="P:Devinno.UI.Scene3D.SceneTarget.Context" en-hash="532f8d2f874eac62"><summary>그린 컨텍스트(GLFW 창). 처음 그리기 전에는 null.</summary></member><member name="P:Devinno.UI.Scene3D.SceneTarget.Gr" en-hash="4cbc013be20a7bdf"><summary>GPU 길이면 호스트의 GRContext.</summary></member><member name="P:Devinno.UI.Scene3D.SceneTarget.Bitmap" en-hash="063bf80b4293fa75"><summary>CPU 길의 픽셀(렌더러가 위아래를 뒤집어 그리므로 위 행부터).</summary></member><member name="P:Devinno.UI.Scene3D.SceneTarget.GpuBytes" en-hash="be7ef747688e295d"><summary>측정용: 이 뷰의 GPU 대상 바이트 수.</summary></member><member name="P:Devinno.UI.Scene3D.SceneTarget.CpuBytes" en-hash="838b02b1491dc9c7"><summary>측정용: 이 뷰의 CPU 버퍼 바이트 수.</summary></member><member name="M:Devinno.UI.Scene3D.SceneTarget.Prepare(OpenTK.Windowing.GraphicsLibraryFramework.Window*,SkiaSharp.GRContext,System.Int32,System.Int32)" en-hash="ef873f7b30e7b229"><summary>
+이번 그리기에 맞는 대상을 준비한다. 컨텍스트·GRContext·크기가 바뀌었으면 다시 만든다. <paramref name="context" /> 가 현재 컨텍스트여야 한다.
+</summary></member><member name="M:Devinno.UI.Scene3D.SceneTarget.Draw(SkiaSharp.SKCanvas,SkiaSharp.SKRect,SkiaSharp.SKPaint)" en-hash="cae0846a8dc721d9"><summary>마지막으로 그린 결과를 캔버스의 <paramref name="bounds" /> 에 놓는다.</summary></member><member name="M:Devinno.UI.Scene3D.SceneTarget.PixelsChanged" en-hash="e0374df458fbc184"><summary>CPU 길: 비트맵에 새 픽셀을 읽었다.</summary></member><member name="P:Devinno.UI.Scene3D.SceneTarget.LastUsed" en-hash="0334313f273c7950"><summary>렌더러가 마지막으로 이 대상에 그린 시각(Environment.TickCount64).</summary></member><member name="M:Devinno.UI.Scene3D.SceneTarget.Release" en-hash="9c2fd216e05a1cff"><summary>GL 객체와 비트맵을 돌려준다. 다음 그리기에서 새로 만든다.</summary></member><member name="T:Devinno.UI.Scene3D.SceneView" en-hash="de89c05d9ea2e1ad"><summary>
+화면 안에 glTF 모델(<c>.glb</c>)을 보여 주고, 바인딩한 값으로 부품을 움직이고 색을 바꾸고 클릭으로 고르게 한다. 태그는
+<see cref="M:Devinno.UI.Scene3D.Scene3DExtensions.UseScene3D(Devinno.UI.Components.ComponentRegistry)" /> 로 등록하고 마크업에서 <c>&lt;SceneView&gt;</c> 로 쓴다.
+</summary>
+<remarks>
+<para><b><c>SceneView</c> 의 속성</b>:</para>
+<list type="bullet">
+<item><c>src</c> — <c>.glb</c> 파일 경로. 상대 경로는 작업 폴더 기준. 모델은 경로마다 한 번 읽어 둔다.</item>
+<item><c>camera</c> — 모델 안 카메라 이름(Blender 카메라 오브젝트). 이름이 바뀌면 300 ms 동안 그 시점으로 옮겨 간다.
+모델에 없는 이름(예: <c>Free</c>)이면 모델 전체가 보이는 시점.</item>
+<item><c>value</c> — 선택된 부품 이름. 양방향 바인딩(<c>{Bind Selected}</c>)이면 클릭할 때 부품 이름을 쓴다.</item>
+<item><c>pick</c> — 클릭 단위 노드 이름(쉼표 구분). 단위 아래 어느 부품을 눌러도 그 단위가 선택된다. 없으면 루트 노드 하나하나가 단위.</item>
+<item><c>state</c> — 코드에서 값을 쓰는 <see cref="T:Devinno.UI.Scene3D.SceneState" />. 없으면 마크업만 부품을 움직인다.</item>
+</list>
+<para><b>자식 요소</b>(정의 — 설정으로 읽고 그리지 않는다): 각각 모델의 노드를 glTF 이름(Blender 오브젝트 이름)으로 가리킨다.
+<c>disabled</c> 가 참인 정의는 건너뛴다. 값은 다른 바인딩 속성처럼 화면을 다시 만들 때(<c>Invalidate</c>) 읽는다.</para>
+<list type="bullet">
+<item><c>&lt;Rotate node axis value scale offset follow ratio/&gt;</c> — 노드를 자기 원점에서 <c>value × scale + offset</c> 도 돌린다.</item>
+<item><c>&lt;Move node axis value scale offset follow ratio/&gt;</c> — 노드를 자기 축 방향으로 <c>value × scale + offset</c> 미터 옮긴다.</item>
+<item><c>&lt;Color node value amount/&gt;</c> — 노드와 그 아래 부품의 색을 <c>value</c>(<c>#RRGGBB(AA)</c> 또는 테마 토큰) 쪽으로 <c>amount</c> 만큼 섞는다
+(0–1, 기본 1. 1 이면 그 색만 보이고 텍스처는 가려진다). 빈 값이면 모델 색.</item>
+<item><c>&lt;Clip name value min max/&gt;</c> — glTF 애니메이션의 한 시점 자세로 둔다: <c>value</c> 가 <c>min</c>~<c>max</c> 이면 클립 처음~끝
+(기본 <c>min</c> 0, <c>max</c> = 클립 길이(초)).</item>
+</list>
+<para><c>axis</c> 는 <c>x</c>, <c>y</c>, <c>z</c>, <c>-x</c>, <c>-y</c>, <c>-z</c> 또는 숫자 세 개(<c>"0 1 0"</c>)이고, 내보낸 노드 자기 축 기준이다.
+<c>follow</c> 는 그 이름 노드의 같은 종류 정의의 양에 <c>ratio</c> 를 곱해 쓴다(맞물린 기어, 마주 보는 손가락).
+이때 <c>value</c>, <c>scale</c>, <c>offset</c> 은 쓰지 않는다. 한 노드의 <c>Rotate</c> 여러 개는 더해진다. 자식 노드는 부모를 따라간다.</para>
+<para><b>입력</b>: 끌면 대상 주위로 돌고, 휠은 확대·축소, 클릭(6 px 미만 이동)은 선택, 마우스를 올리면 클릭 단위를 강조한다.</para>
+<para><b>그리기</b>: 데스크톱 OpenGL 3.3 이 필요하다. 호스트 캔버스가 GPU 면 호스트의 GL 컨텍스트에서 텍스처에 바로 그리고,
+CPU 캔버스면 숨은 GL 컨텍스트에서 그려 비트맵으로 읽는다. 값, 카메라, 크기, 선택, 강조가 바뀔 때만 다시 그린다.
+OpenGL ES 를 쓰는 창(<c>gles: true</c>)에서는 대신 뷰 안에 안내 글자를 표시한다.</para>
+<para><b>오류</b>: 파일을 읽을 수 없거나 OpenGL 3.3 이 없으면 뷰 안에 이유를 표시한다. 모델이나 태그가 모르는 노드·클립·속성 이름,
+읽을 수 없는 axis, 따라갈 대상이 없는 <c>follow</c> 는 각각 한 번 Trace 경고를 남기고 건너뛴다 — 마크업을 쓰는 동안 Trace 출력을 확인한다.</para>
+</remarks>
+<example>
+<code>
+&lt;SceneView src="Models/cell.glb" camera="{Camera}" value="{Bind Selected}" pick="Robot,Pump1" grow="1"&gt;
+&lt;Rotate node="Turret" axis="y" value="{TurretDeg}"/&gt;
+&lt;Move   node="LiftRod" axis="y" value="{LiftMm}" scale="0.001"/&gt;
+&lt;Rotate node="GearB" axis="y" follow="GearA" ratio="-2"/&gt;
+&lt;Color  node="PumpLamp" value="{LampColor}"/&gt;
+&lt;/SceneView&gt;
+</code>
+</example></member><member name="P:Devinno.UI.Scene3D.SceneView.DefinitionTags" en-hash="ea9e8bfa2314d9ae"><inheritdoc /></member><member name="P:Devinno.UI.Scene3D.SceneView.LastRenderMs" en-hash="471d7a07e184670a"><summary>시험용 측정값.</summary></member><member name="P:Devinno.UI.Scene3D.SceneView.LastBounds" en-hash="f057adb6c87e8b09"><summary>시험용: 마지막 그림의 위젯 영역, 카메라 행렬, 노드 월드 행렬.</summary></member><member name="M:Devinno.UI.Scene3D.SceneView.Measure(Devinno.UI.Widgets.DvWidgetContext,System.Nullable{System.Single})" en-hash="ea9e8bfa2314d9ae"><inheritdoc /></member><member name="M:Devinno.UI.Scene3D.SceneView.FrameInterval(Devinno.UI.Widgets.DvWidgetContext)" en-hash="ea9e8bfa2314d9ae"><inheritdoc /></member><member name="M:Devinno.UI.Scene3D.SceneView.Paint(SkiaSharp.SKCanvas,SkiaSharp.SKRect,Devinno.UI.Widgets.DvWidgetContext)" en-hash="ea9e8bfa2314d9ae"><inheritdoc /></member><member name="M:Devinno.UI.Scene3D.SceneView.OnPointerDown(Devinno.UI.Widgets.DvWidgetContext,SkiaSharp.SKPoint)" en-hash="ea9e8bfa2314d9ae"><inheritdoc /></member><member name="M:Devinno.UI.Scene3D.SceneView.OnPointerMove(Devinno.UI.Widgets.DvWidgetContext,SkiaSharp.SKPoint)" en-hash="ea9e8bfa2314d9ae"><inheritdoc /></member><member name="M:Devinno.UI.Scene3D.SceneView.OnPointerUp(Devinno.UI.Widgets.DvWidgetContext,SkiaSharp.SKPoint)" en-hash="ea9e8bfa2314d9ae"><inheritdoc /></member><member name="M:Devinno.UI.Scene3D.SceneView.OnPointerCancel(Devinno.UI.Widgets.DvWidgetContext)" en-hash="ea9e8bfa2314d9ae"><inheritdoc /></member><member name="M:Devinno.UI.Scene3D.SceneView.OnPointerHover(Devinno.UI.Widgets.DvWidgetContext,Devinno.UI.DvPointerArgs)" en-hash="ea9e8bfa2314d9ae"><inheritdoc /></member><member name="M:Devinno.UI.Scene3D.SceneView.OnPointerLeave(Devinno.UI.Widgets.DvWidgetContext)" en-hash="ea9e8bfa2314d9ae"><inheritdoc /></member><member name="M:Devinno.UI.Scene3D.SceneView.OnPointerWheel(Devinno.UI.Widgets.DvWidgetContext,Devinno.UI.DvPointerArgs,System.Single)" en-hash="ea9e8bfa2314d9ae"><inheritdoc /></member></members></doc>

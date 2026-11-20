@@ -8,13 +8,13 @@ using SkiaSharp;
 namespace Devinno.UI.Scene3D;
 
 /// <summary>
-/// 장면을 OpenGL 3.3 으로 그린다. 길은 두 가지이고 뷰마다 캔버스를 보고 고른다(<see cref="SceneTarget"/>).
+/// Draws a scene with OpenGL 3.3, on one of two paths chosen per view from its canvas (<see cref="SceneTarget"/>).
 /// <list type="bullet">
-/// <item>GPU 캔버스(호스트가 GPU 모드, 데스크톱 GL): 호스트 컨텍스트에서 뷰의 텍스처에 그리고 Skia 이미지로 감싼다. 픽셀을 읽지 않는다.
-/// 직접 GL 을 부른 뒤에는 <see cref="GRContext.ResetContext(GRGlBackendState)"/> 로 Skia 에 상태가 바뀌었음을 알린다.</item>
-/// <item>그 밖(CPU 캔버스, 창 없이 실행): 숨은 GLFW 창의 컨텍스트에서 위아래를 뒤집어 그리고, 픽셀을 뷰의 비트맵으로 바로 읽는다(복사 없음).</item>
+/// <item>GPU canvas (host in GPU mode, desktop GL): draws in the host context into the view's texture and wraps it as a Skia image; no pixels are read.
+/// After its own GL calls it tells Skia the state changed (<see cref="GRContext.ResetContext(GRGlBackendState)"/>).</item>
+/// <item>Otherwise (CPU canvas, no window): draws upside down in a hidden GLFW window's context and reads the pixels straight into the view's bitmap (no copies).</item>
 /// </list>
-/// GL 자원(셰이더, 모델, 멀티샘플 대상)은 컨텍스트마다 따로 둔다. GLFW 규칙대로 UI(메인) 스레드에서만 쓴다.
+/// GL resources (shaders, models, multisample target) are kept per context. UI (main) thread only, as GLFW requires.
 /// </summary>
 internal sealed unsafe class SceneRenderer
 {
@@ -87,7 +87,7 @@ internal sealed unsafe class SceneRenderer
 
     private sealed record GpuPart(int Vao, int Count, int Node, SceneModel.MaterialInfo Material, int Texture);
 
-    /// <summary>한 GL 컨텍스트 안의 자원. 멀티샘플 대상은 그 컨텍스트의 뷰들이 함께 쓴다(그린 즉시 뷰의 대상으로 옮기므로).</summary>
+    /// <summary>Resources in one GL context. Its views share the multisample target (each view resolves into its own target right after drawing).</summary>
     private sealed class GlResources
     {
         public int ColorProgram, PickProgram;
@@ -99,19 +99,25 @@ internal sealed unsafe class SceneRenderer
 
     private static SceneRenderer? _shared;
 
-    /// <summary>모든 3D 뷰가 함께 쓰는 렌더러. 처음 쓸 때 만든다.</summary>
+    /// <summary>The renderer all 3D views share, created on first use.</summary>
     public static SceneRenderer Shared => _shared ??= new SceneRenderer();
 
     private readonly Dictionary<nint, GlResources> _contexts = new();
+    private readonly Dictionary<nint, bool> _gles = new();
+    private readonly List<SceneTarget> _live = new();
+    private long _lastSweep;
     private Window* _hidden;
 
-    /// <summary>측정용: 켜면 단계 사이에 GL.Finish 를 넣어 단계별 시간을 <see cref="LastStats"/> 에 남긴다(느려진다).</summary>
+    // 이만큼 그리지 않은 뷰의 대상은 GL 자원을 돌려준다(위젯에는 화면에서 빠졌다는 신호가 없다). 다시 보이면 새로 만든다
+    private const long ReleaseAfterMs = 30_000, SweepEveryMs = 2_000;
+
+    /// <summary>Measurement: when on, GL.Finish between steps records step times in <see cref="LastStats"/> (slower).</summary>
     internal static bool Profile { get; set; }
 
-    /// <summary>측정용: 마지막 그리기의 단계별 시간(ms). Profile 이 켜져 있을 때만 채운다. GPU 길은 Read·Convert 가 0.</summary>
+    /// <summary>Measurement: step times (ms) of the last draw, filled only while Profile is on. Read and Convert are 0 on the GPU path.</summary>
     internal static (double Draw, double Read, double Convert) LastStats { get; private set; }
 
-    /// <summary>측정용: 모든 컨텍스트의 멀티샘플·피킹 대상 바이트 수(뷰의 대상은 <see cref="SceneTarget.GpuBytes"/>).</summary>
+    /// <summary>Measurement: bytes of the multisample and pick targets in the target's context (the view's own target: <see cref="SceneTarget.GpuBytes"/>).</summary>
     internal long SharedBytes(SceneTarget target) =>
         target.Context != null && _contexts.TryGetValue((nint)target.Context, out var g) ? (long)g.MsWidth * g.MsHeight * g.MsSamples * 8 + 8 : 0;
 
@@ -120,14 +126,17 @@ internal sealed unsafe class SceneRenderer
     }
 
     /// <summary>
-    /// 장면을 뷰의 대상에 그린다. 캔버스가 GPU(데스크톱 GL)면 호스트 컨텍스트에서, 아니면 숨은 컨텍스트에서 그리고 픽셀을 읽는다.
-    /// 그 뒤 <see cref="SceneTarget.Draw"/> 로 캔버스에 놓는다.
+    /// Draws the scene into the view's target: in the host context on a GPU (desktop GL) canvas, otherwise in the hidden context with a pixel read.
+    /// Then <see cref="SceneTarget.Draw"/> puts it on the canvas. tint is the color per node (rgb linear, a = amount), one per node.
     /// </summary>
-    /// <param name="tint">노드별 색 덮기(rgb 선형, a = 양). 길이는 노드 수.</param>
     public void Render(SceneTarget target, SKCanvas canvas, SceneModel model, Matrix4x4[] world, Vector4[] tint,
         Matrix4x4 view, Matrix4x4 proj, Vector3 eye, int w, int h)
     {
         var previous = GLFW.GetCurrentContext();
+        Sweep(target);
+        // 호스트가 OpenGL ES 면(임베디드 보드) 데스크톱 GL 컨텍스트를 만들지 않는다 — 장치에 따라 프로세스가 죽는다
+        if (previous != null && IsGles(previous))
+            throw new NotSupportedException("The 3D view needs desktop OpenGL 3.3; this window uses OpenGL ES.");
         var gr = HostGr(canvas, previous);
         var context = gr is not null ? previous : Hidden();
         if (context != previous)
@@ -136,6 +145,9 @@ internal sealed unsafe class SceneRenderer
         {
             var g = Resources(context);
             target.Prepare(context, gr, w, h);
+            target.LastUsed = Environment.TickCount64;
+            if (!_live.Contains(target))
+                _live.Add(target);
             var clock = Profile ? Stopwatch.StartNew() : null;
 
             ResetState();
@@ -206,13 +218,13 @@ internal sealed unsafe class SceneRenderer
         }
         finally
         {
-            gr?.ResetContext(GRGlBackendState.All);
+            ResetSkia(gr);
             if (context != previous)
                 GLFW.MakeContextCurrent(previous);
         }
     }
 
-    /// <summary>뷰 픽셀 (x, y)(위에서부터)에 보이는 노드 번호. 없으면 -1. 마지막으로 그린 컨텍스트에서 1×1 대상에 그려 한 픽셀을 읽는다.</summary>
+    /// <summary>The node seen at view pixel (x, y) (from the top), or -1. Draws a 1×1 target in the context the view last drew in and reads one pixel.</summary>
     public int Pick(SceneTarget target, SceneModel model, Matrix4x4[] world, Matrix4x4 view, Matrix4x4 proj, int x, int y)
     {
         int w = target.Width, h = target.Height;
@@ -267,13 +279,20 @@ internal sealed unsafe class SceneRenderer
         }
         finally
         {
-            target.Gr?.ResetContext(GRGlBackendState.All);
+            ResetSkia(target.Gr);
             if (context != previous)
                 GLFW.MakeContextCurrent(previous);
         }
     }
 
-    /// <summary>뷰의 대상 GL 자원을 그 컨텍스트에서 지운다.</summary>
+    /// <summary>Tells Skia the GL state changed after our own GL calls. A disposed GRContext (the host left GPU mode) is left alone.</summary>
+    internal static void ResetSkia(GRContext? gr)
+    {
+        if (gr is not null && gr.Handle != IntPtr.Zero)
+            gr.ResetContext(GRGlBackendState.All);
+    }
+
+    /// <summary>Deletes a view target's GL objects in their context.</summary>
     internal static void Delete(Window* context, int fbo, int texture, int renderbuffer)
     {
         var previous = GLFW.GetCurrentContext();
@@ -294,6 +313,30 @@ internal sealed unsafe class SceneRenderer
         }
     }
 
+    // 오래 그리지 않은 뷰의 대상을 정리한다(지금 그리는 뷰는 빼고)
+    private void Sweep(SceneTarget current)
+    {
+        var now = Environment.TickCount64;
+        if (now - _lastSweep < SweepEveryMs)
+            return;
+        _lastSweep = now;
+        for (var i = _live.Count - 1; i >= 0; i--)
+        {
+            var t = _live[i];
+            if (t == current || now - t.LastUsed < ReleaseAfterMs)
+                continue;
+            t.Release();
+            _live.RemoveAt(i);
+        }
+    }
+
+    private bool IsGles(Window* context)
+    {
+        if (!_gles.TryGetValue((nint)context, out var gles))
+            _gles[(nint)context] = gles = (GL.GetString(StringName.Version) ?? "").StartsWith("OpenGL ES", StringComparison.Ordinal);
+        return gles;
+    }
+
     // GPU 길을 쓸 수 있으면 호스트의 GRContext: 캔버스가 GL GRContext 이고, GL 컨텍스트가 현재이며, 그 컨텍스트에서 셰이더를 만들 수 있을 때
     private GRContext? HostGr(SKCanvas canvas, Window* current)
     {
@@ -302,25 +345,16 @@ internal sealed unsafe class SceneRenderer
         if (!_contexts.TryGetValue((nint)current, out var g))
         {
             g = new GlResources();
-            var version = GL.GetString(StringName.Version) ?? "";
-            if (version.StartsWith("OpenGL ES", StringComparison.Ordinal))
+            try
+            {
+                Create(g);
+            }
+            catch (Exception e)
             {
                 g.Unusable = true;
-                Trace.TraceWarning("Scene3D: the host uses OpenGL ES; the 3D view draws in its own OpenGL 3.3 context and reads the pixels back.");
+                Trace.TraceWarning($"Scene3D: the host GL context cannot run the 3D shaders ({e.Message}); the 3D view draws in its own context and reads the pixels back.");
             }
-            else
-            {
-                try
-                {
-                    Create(g);
-                }
-                catch (Exception e)
-                {
-                    g.Unusable = true;
-                    Trace.TraceWarning($"Scene3D: the host GL context cannot run the 3D shaders ({e.Message}); the 3D view draws in its own context and reads the pixels back.");
-                }
-                gr.ResetContext(GRGlBackendState.All);
-            }
+            gr.ResetContext(GRGlBackendState.All);
             _contexts[(nint)current] = g;
         }
         return g.Unusable ? null : gr;
@@ -506,7 +540,7 @@ internal sealed unsafe class SceneRenderer
         Complete();
     }
 
-    /// <summary>현재 컨텍스트에 뷰의 대상(해상도 맞춘 색)을 만든다. GPU 길은 텍스처(Skia 가 감쌀 것), CPU 길은 렌더버퍼.</summary>
+    /// <summary>Creates a view target (resolved color) in the current context: a texture for the GPU path (Skia wraps it), a renderbuffer for the CPU path.</summary>
     internal static (int Fbo, int Texture, int Renderbuffer) CreateTarget(bool texture, int w, int h)
     {
         var fbo = GL.GenFramebuffer();

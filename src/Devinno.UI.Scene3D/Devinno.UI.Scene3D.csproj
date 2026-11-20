@@ -15,6 +15,11 @@
     <InternalsVisibleTo Include="Devinno.UI.Scene3D.Demo" />
   </ItemGroup>
 
+  <!-- 패키지 문서: llms.txt(../Directory.Build.props 가 docs/ 로) + 사용법 페이지 -->
+  <ItemGroup>
+    <None Include="scene3d.md" Pack="true" PackagePath="docs\" />
+  </ItemGroup>
+
   <PropertyGroup>
     <PackageId>Devinno.UI.Scene3D</PackageId>
     <Description>3D view for Devinno.UI: shows a glTF model and moves, colors and picks its parts from bound values.</Description>
@@ -23,9 +28,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks> <!-- GLFW 창 포인터, 픽셀 읽기 -->
-    <!-- 임시: 공개 API 이름·영어 XML 설명은 이후 단계. 그 전에는 패키지로 내지 않는다 -->
-    <IsPackable>false</IsPackable>
-    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
+    <IsPackable>false</IsPackable> <!-- 게시 준비(버전·publish.yml) 때 켠다 -->
   </PropertyGroup>
 
 </Project>

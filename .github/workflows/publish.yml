@@ -30,11 +30,11 @@ jobs:
           "VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       # 태그 버전으로 한 번만 빌드하고, 테스트한 그 바이너리를 그대로 pack 한다(--no-build)
-      # XmlDocI18nTests reads the English XML of all three packages, so build them (and the tests) first
+      # XmlDocI18nTests reads the English XML of every package (Devinno.UI.Scene3D is built but not packed yet), so build them (and the tests) first
       - name: Build
         shell: pwsh
         run: |
-          foreach ($p in 'src/Devinno.UI', 'src/Devinno.UI.OpenTK', 'src/Devinno.UI.WinForms', 'tests/Devinno.UI.Tests') {
+          foreach ($p in 'src/Devinno.UI', 'src/Devinno.UI.OpenTK', 'src/Devinno.UI.WinForms', 'src/Devinno.UI.Scene3D', 'tests/Devinno.UI.Tests') {
             dotnet build $p -c Release -p:Version=$env:VERSION
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }

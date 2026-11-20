@@ -7,16 +7,16 @@ using SkiaSharp;
 namespace Devinno.UI.Scene3D;
 
 /// <summary>
-/// SceneView 의 정의 자식(마크업)을 자세·색·클립 값으로 바꾼다.
+/// Turns the definitions (child elements) of a SceneView into pose, color and clip values.
 /// <code>
-/// &lt;Rotate node="Turret" axis="y" value="{Turret}"/&gt;                     도, value × scale + offset
-/// &lt;Rotate node="GearB"  axis="y" follow="GearA" ratio="-2"/&gt;            따라가는 부품: 같은 종류 정의의 값 × ratio
-/// &lt;Move   node="LiftRod" axis="y" value="{Lift}" scale="0.001"/&gt;         미터
-/// &lt;Color  node="PumpLamp" value="{LampColor}" amount="1"/&gt;              #RRGGBB(AA) 또는 테마 토큰, 빈 값 = 원래 색
-/// &lt;Clip   name="CrankCycle" value="{Crank}" min="0" max="360"/&gt;          value 가 min~max 이면 클립 처음~끝
+/// &lt;Rotate node="Turret" axis="y" value="{Turret}"/&gt;                     degrees, value × scale + offset
+/// &lt;Rotate node="GearB"  axis="y" follow="GearA" ratio="-2"/&gt;            follower: amount of the same kind on GearA × ratio
+/// &lt;Move   node="LiftRod" axis="y" value="{Lift}" scale="0.001"/&gt;         meters
+/// &lt;Color  node="PumpLamp" value="{LampColor}" amount="1"/&gt;              #RRGGBB(AA) or a theme token, empty = model color
+/// &lt;Clip   name="CrankCycle" value="{Crank}" min="0" max="360"/&gt;          value min..max = clip start..end
 /// </code>
-/// axis 는 x, y, z, -x, -y, -z 또는 "0 1 0" 같은 벡터. 모든 정의는 disabled="{X}" 가 참이면 건너뛴다.
-/// 코드에서 SceneState 로 쓴 값은 같은 노드의 마크업 값을 덮는다.
+/// axis is x, y, z, -x, -y, -z or a vector such as "0 1 0". A definition with disabled true is skipped.
+/// Values written through SceneState replace the markup value of the same kind on the same node.
 /// </summary>
 internal static class MarkupPose
 {
@@ -32,7 +32,7 @@ internal static class MarkupPose
 
     private static readonly HashSet<string> Warned = new(StringComparer.Ordinal);
 
-    /// <summary>마크업 값에 코드(SceneState) 값을 덮어 한 벌로 만든다. Hash 는 마크업 쪽 값이 바뀌었는지 보는 용도.</summary>
+    /// <summary>Merges the markup values with the values written from code (code wins). Hash changes when a markup value changes.</summary>
     public static (PoseSnapshot Pose, int Hash) Build(SceneModel model, IReadOnlyList<DvDefinition> defs, PoseSnapshot state,
         Func<string, SKColor?> color)
     {

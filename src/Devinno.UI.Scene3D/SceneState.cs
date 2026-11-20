@@ -4,9 +4,15 @@ using SkiaSharp;
 namespace Devinno.UI.Scene3D;
 
 /// <summary>
-/// 3D 뷰에 보낼 값 저장소. 통신 스레드, 시뮬레이션 스레드, UI 어디서 써도 된다.
-/// 값을 쓴 뒤 <c>App.Surface.Repaint()</c> 를 부르면 화면을 다시 만들지 않고 다시 그린다.
+/// Values for a <see cref="SceneView"/> written from code — a communication thread, a simulation or the UI. Bind it to the view's <c>state</c> attribute.
 /// </summary>
+/// <remarks>
+/// <para><b>Threads</b>: every method can be called from any thread. After writing, call <c>Repaint()</c> on the app's surface: the view draws again
+/// without rebuilding the screen. Several writes before the next frame are drawn once.</para>
+/// <para><b>Priority</b>: a value written here replaces the markup value of the same kind (rotation, offset, color, clip) on the same node until <see cref="Reset"/>;
+/// other kinds on that node still follow the markup.</para>
+/// <para><b>Axes</b>: rotations and moves are in the node's own axes, added to the pose the model was exported with.</para>
+/// </remarks>
 public sealed class SceneState
 {
     private readonly object _gate = new();
@@ -18,25 +24,40 @@ public sealed class SceneState
     private int _version;
     private PoseSnapshot? _snapshot;
 
-    /// <summary>클릭으로 선택된 부품 이름 (UI 스레드에서 바뀜).</summary>
+    /// <summary>Gets the name of the part last selected by a click (the click unit, see the view's <c>pick</c>). Set on the UI thread.</summary>
     public string? Selected { get; private set; }
 
-    /// <summary>부품을 클릭하면 UI 스레드에서 발생한다.</summary>
+    /// <summary>Occurs on the UI thread when a part is clicked, with the name of its click unit.</summary>
     public event Action<string>? PartClicked;
 
-    /// <summary>노드를 기본 자세에서 자기 축 기준으로 돌린다. 같은 노드에 다시 쓰면 바꿔 쓴다.</summary>
+    /// <summary>Turns a node from its exported pose about its own axis. A new call for the same node replaces the previous rotation.</summary>
+    /// <param name="node">glTF node name.</param>
+    /// <param name="axis">Axis in the node's own axes (normalized here).</param>
+    /// <param name="degrees">Angle in degrees, right-handed.</param>
     public void Rotate(string node, Vector3 axis, double degrees) =>
         Write(() => _rotation[node] = Quaternion.CreateFromAxisAngle(Vector3.Normalize(axis), (float)(degrees * Math.PI / 180)));
 
-    /// <summary>노드를 기본 위치에서 자기 축 방향으로 옮긴다(미터).</summary>
+    /// <summary>Moves a node from its exported position along its own axis. A new call for the same node replaces the previous offset.</summary>
+    /// <param name="node">glTF node name.</param>
+    /// <param name="axis">Direction in the node's own axes (normalized here).</param>
+    /// <param name="meters">Distance in meters.</param>
     public void Move(string node, Vector3 axis, double meters) =>
         Write(() => _offset[node] = Vector3.Normalize(axis) * (float)meters);
 
-    /// <summary>노드의 월드 자세를 통째로 정한다 (시뮬레이션 결과용). 자식은 이 자세를 따라간다.</summary>
+    /// <summary>
+    /// Sets the world position and rotation of a node, ignoring its parent — for poses computed by a physics simulation. Its children follow it.
+    /// The node keeps its exported scale.
+    /// </summary>
+    /// <param name="node">glTF node name.</param>
+    /// <param name="position">World position in meters (glTF axes: +Y up).</param>
+    /// <param name="rotation">World rotation.</param>
     public void SetWorldPose(string node, Vector3 position, Quaternion rotation) =>
         Write(() => _world[node] = (position, rotation));
 
-    /// <summary>노드와 그 아래 부품 색을 amount(0~1)만큼 바꾼다. null 이면 원래 색.</summary>
+    /// <summary>Mixes the color of a node and its children toward <paramref name="color"/>. <see langword="null"/> removes the color written here.</summary>
+    /// <param name="node">glTF node name.</param>
+    /// <param name="color">The color, or <see langword="null"/>.</param>
+    /// <param name="amount">0–1; at 1 the part is that color only.</param>
     public void Color(string node, SKColor? color, float amount = 1) =>
         Write(() =>
         {
@@ -46,19 +67,25 @@ public sealed class SceneState
                 _color.Remove(node);
         });
 
-    /// <summary>glTF 애니메이션 클립을 그 시점(초)의 자세로 고정한다.</summary>
+    /// <summary>Poses the model at a time of a glTF animation clip.</summary>
+    /// <param name="clip">Clip name (the Blender action name).</param>
+    /// <param name="seconds">Time from the start of the clip, clamped to its length.</param>
     public void SetClipTime(string clip, double seconds) => Write(() => _clip[clip] = (float)seconds);
 
+    /// <summary>Removes the clip time written here.</summary>
+    /// <param name="clip">Clip name.</param>
     public void ClearClip(string clip) => Write(() => _clip.Remove(clip));
 
-    /// <summary>여러 값을 한 번에 바꾼다. 그리는 쪽은 바뀌는 도중의 값을 보지 않는다 (맞물린 부품용).</summary>
+    /// <summary>Writes several values as one change: the view never draws a frame with only some of them (parts that must move together).</summary>
+    /// <param name="change">Calls on this state.</param>
     public void Batch(Action<SceneState> change)
     {
         lock (_gate)
             change(this);
     }
 
-    /// <summary>노드에 쓴 회전·이동·월드 자세·색을 지운다.</summary>
+    /// <summary>Removes the rotation, offset, world pose and color written here for a node; the markup values apply again.</summary>
+    /// <param name="node">glTF node name.</param>
     public void Reset(string node) =>
         Write(() =>
         {
@@ -68,7 +95,7 @@ public sealed class SceneState
             _color.Remove(node);
         });
 
-    public PoseSnapshot Snapshot()
+    internal PoseSnapshot Snapshot()
     {
         lock (_gate)
         {
@@ -99,8 +126,8 @@ public sealed class SceneState
     }
 }
 
-/// <summary>그릴 때 쓰는 한 벌의 값. 만든 뒤에는 바뀌지 않는다.</summary>
-public sealed record PoseSnapshot(
+/// <summary>One set of values used for a draw. Never changes after it is made.</summary>
+internal sealed record PoseSnapshot(
     int Version,
     IReadOnlyDictionary<string, Quaternion> Rotation,
     IReadOnlyDictionary<string, Vector3> Offset,

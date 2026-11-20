@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace Devinno.UI.Scene3D;
 
-/// <summary>대상 주위를 도는 카메라. glTF 카메라 시점으로 짧게 옮겨 갈 수 있다.</summary>
+/// <summary>A camera that orbits a target. It can move to a glTF camera over a short transition.</summary>
 internal sealed class OrbitCamera
 {
     private const float TransitionMs = 300;
@@ -17,7 +17,7 @@ internal sealed class OrbitCamera
     public float Distance { get; private set; } = 5;
     public float Fov { get; private set; } = 40;
 
-    /// <summary>바뀔 때마다 늘어난다 (다시 그릴지 판단용).</summary>
+    /// <summary>Grows on every change (used to decide whether to draw again).</summary>
     public int Version { get; private set; }
 
     public bool Animating => _pending || _start is not null;
@@ -36,14 +36,14 @@ internal sealed class OrbitCamera
     public Matrix4x4 Projection(float aspect) =>
         Matrix4x4.CreatePerspectiveFieldOfView(Fov * MathF.PI / 180, aspect, Distance / 200, Distance * 20);
 
-    /// <summary>모델 전체가 보이는 기본 시점.</summary>
+    /// <summary>The default view that shows the whole model.</summary>
     public (Vector3, float, float, float, float) Home(SceneModel model)
     {
         const float fov = 40;
         return (model.Center, 35, 25, model.Radius / MathF.Sin(fov * MathF.PI / 360) * 1.05f, fov);
     }
 
-    /// <summary>glTF 카메라 이름의 시점. 없으면 기본 시점.</summary>
+    /// <summary>The view of the named glTF camera, or the default view if the model has none by that name.</summary>
     public (Vector3, float, float, float, float) Preset(SceneModel model, string? name)
     {
         var cam = model.Cameras.FirstOrDefault(c => c.Name == name);
@@ -69,7 +69,7 @@ internal sealed class OrbitCamera
         Version++;
     }
 
-    /// <summary>다음 프레임부터 짧게 옮겨 간다.</summary>
+    /// <summary>Moves to the view over a short transition starting on the next frame.</summary>
     public void MoveTo((Vector3 Target, float Yaw, float Pitch, float Distance, float Fov) v)
     {
         _from = (Target, Yaw, Pitch, Distance, Fov);

@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
 
-// AI 문서 묶음(llms.txt·어댑터 llms.txt·llm-rules.md·루트 dvml-*.md)을 지키는 테스트 —
+// AI 문서 묶음(llms.txt·패키지별 llms.txt 와 src 아래 .md 페이지·llm-rules.md·루트 dvml-*.md)을 지키는 테스트 —
 // 링크·앵커, 번호 참조·이력 낱말·한글 금지(본문만, 코드 블록·백틱 밖), TagSchema 태그·속성이 그 태그 절에 있는지, 진단 ID, 최소 예제.
 public class AiDocsTests
 {
@@ -28,7 +28,8 @@ public class AiDocsTests
         var root = Root();
         var list = new List<string> { "llms.txt", "llm-rules.md" };
         list.AddRange(Directory.EnumerateFiles(root, "dvml-*.md").Select(Path.GetFileName).OfType<string>().Order(StringComparer.Ordinal));
-        list.AddRange(Directory.EnumerateFiles(Path.Combine(root, "src"), "llms.txt", SearchOption.AllDirectories)
+        list.AddRange(Directory.EnumerateFiles(Path.Combine(root, "src"), "*.*", SearchOption.AllDirectories)
+            .Where(f => Path.GetFileName(f) == "llms.txt" || Path.GetExtension(f) == ".md")
             .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
             .Select(f => Path.GetRelativePath(root, f).Replace('\\', '/')).Order(StringComparer.Ordinal));
         return list;

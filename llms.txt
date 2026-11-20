@@ -39,6 +39,10 @@ To show screens, an app also references one host adapter package; each has its o
 - **Devinno.UI.OpenTK** (`ViewWindow`): the app in its own window. For kiosk panels (`fullscreen: true`), boards without desktop OpenGL 3.3 such as Raspberry Pi (`gles: true`), and scaling a fixed design size to the window (`fit: true`).
 - **Devinno.UI.WinForms** (`ViewControl`): the app inside a WinForms form, Windows only. The app must target `net9.0-windows10.0.19041.0` or later.
 
+## Optional packages
+
+- **Devinno.UI.Scene3D** (`<SceneView>`): a glTF 3D model (for example from Blender) in a screen, with parts turned, moved and colored by bound values. Desktop OpenGL 3.3. Its own `llms.txt` describes it.
+
 ## C# API
 
 Devinno.UI.xml (`lib/net9.0/` in the package; the same folder as this file in `.devinno/Devinno.UI/`): C# API reference (XML doc comments, the same text IntelliSense shows). Detailed usage of DvApp, DvPage, DvBar, DvDialog, DvSurface, DvRenderer, DvTheme, AlarmLog, TrendBuffer, DvStrings, ComponentRegistry, DvWidget (custom widgets drawn in C#), FrameSource and VideoPlayer (frames, and video files with sound, for `DvVideo`), and for tools that edit screens: MarkupDocument (change markup by element, keeping the rest of the text as written), TagSchema (every built-in tag and attribute), StyleParser.SetDeclaration and HitTester.HitPath, and others. The namespace of each type (the `using` lines): [llm-rules.md#namespaces](llm-rules.md#namespaces).

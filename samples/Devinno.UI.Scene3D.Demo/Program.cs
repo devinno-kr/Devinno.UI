@@ -16,8 +16,7 @@ Environment.CurrentDirectory = AppContext.BaseDirectory;
 if (args.Contains("--bench"))
     return Bench.Run();
 
-var registry = new ComponentRegistry();
-registry.RegisterWidget<SceneView>("SceneView");
+var registry = new ComponentRegistry().UseScene3D();
 var page = new MainPage();
 var app = new DvApp { Theme = DvTheme.Dark, Registry = registry };
 app.Pages.Add(page);

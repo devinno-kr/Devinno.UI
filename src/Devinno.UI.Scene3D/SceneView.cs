@@ -7,24 +7,52 @@ using SkiaSharp;
 namespace Devinno.UI.Scene3D;
 
 /// <summary>
-/// glTF 장면을 보여 주는 위젯. 마크업:
+/// Shows a glTF model (<c>.glb</c>) in a screen and moves, colors and picks its parts from bound values. Register the tag with
+/// <see cref="Scene3DExtensions.UseScene3D"/> and use <c>&lt;SceneView&gt;</c> in markup.
+/// </summary>
+/// <remarks>
+/// <para><b>Attributes of <c>SceneView</c></b>:</para>
+/// <list type="bullet">
+/// <item><c>src</c> — path of the <c>.glb</c> file; a relative path starts at the working directory. A model is read once per path and kept.</item>
+/// <item><c>camera</c> — name of a camera in the model (a Blender camera object). The view moves to it in 300 ms when the name changes.
+/// A name the model does not have (for example <c>Free</c>) shows the whole model.</item>
+/// <item><c>value</c> — name of the selected part. With a two-way binding (<c>{Bind Selected}</c>) a click writes the part name.</item>
+/// <item><c>pick</c> — node names that are click units, comma-separated. A click on any part below a unit selects the unit. Without it, each root node is a unit.</item>
+/// <item><c>state</c> — a <see cref="SceneState"/> for values written from code. Without it, only the markup moves parts.</item>
+/// </list>
+/// <para><b>Child elements</b> (definitions, read as settings — they are not drawn): each names a node of the model by its glTF name (the Blender object name).
+/// Every definition skips itself when <c>disabled</c> is true. Values are read when the screen is rebuilt (<c>Invalidate</c>), like other bound attributes.</para>
+/// <list type="bullet">
+/// <item><c>&lt;Rotate node axis value scale offset follow ratio/&gt;</c> — turns the node about its own origin by <c>value × scale + offset</c> degrees.</item>
+/// <item><c>&lt;Move node axis value scale offset follow ratio/&gt;</c> — moves the node along its own axis by <c>value × scale + offset</c> meters.</item>
+/// <item><c>&lt;Color node value amount/&gt;</c> — mixes the color of the node and its children toward <c>value</c> (<c>#RRGGBB(AA)</c> or a theme token) by <c>amount</c>
+/// (0–1, default 1; at 1 the part is that color only, its texture hidden). An empty value keeps the model's color.</item>
+/// <item><c>&lt;Clip name value min max/&gt;</c> — poses the model at a point of a glTF animation: <c>value</c> from <c>min</c> to <c>max</c> maps to the start and end of the clip
+/// (defaults <c>min</c> 0, <c>max</c> = clip length in seconds).</item>
+/// </list>
+/// <para><c>axis</c> is <c>x</c>, <c>y</c>, <c>z</c>, <c>-x</c>, <c>-y</c>, <c>-z</c> or three numbers (<c>"0 1 0"</c>), in the node's own axes as exported.
+/// <c>follow</c> takes the amount of another definition of the same kind on the named node and multiplies it by <c>ratio</c> (meshed gears, mirrored fingers);
+/// <c>value</c>, <c>scale</c> and <c>offset</c> are then not used. Several <c>Rotate</c>s on one node add up. Children follow their parent node.</para>
+/// <para><b>Input</b>: drag turns the view around its target, the wheel zooms, a click (moving less than 6 px) selects, hovering highlights the click unit.</para>
+/// <para><b>Drawing</b>: needs desktop OpenGL 3.3. On a GPU host canvas the scene is drawn in the host's GL context straight into a texture;
+/// on a CPU canvas it is drawn in a hidden GL context and read into a bitmap. The scene is drawn again only when a value, the camera, the size,
+/// the selection or the highlight changes. A window that uses OpenGL ES (<c>gles: true</c>) shows a message in the view instead.</para>
+/// <para><b>Errors</b>: a file that cannot be read, or no OpenGL 3.3, shows the reason inside the view. A node, clip or attribute name the model or the tag does not know,
+/// an axis that cannot be read and a <c>follow</c> without its source are skipped with a Trace warning, once each — check the Trace output while writing markup.</para>
+/// </remarks>
+/// <example>
 /// <code>
-/// &lt;SceneView src="model.glb" camera="{Camera}" value="{Bind Selected}" pick="A,B"&gt;
-///   &lt;Rotate node="Turret" axis="y" value="{Turret}"/&gt;
-///   &lt;Move node="LiftRod" axis="y" value="{Lift}" scale="0.001"/&gt;
+/// &lt;SceneView src="Models/cell.glb" camera="{Camera}" value="{Bind Selected}" pick="Robot,Pump1" grow="1"&gt;
+///   &lt;Rotate node="Turret" axis="y" value="{TurretDeg}"/&gt;
+///   &lt;Move   node="LiftRod" axis="y" value="{LiftMm}" scale="0.001"/&gt;
+///   &lt;Rotate node="GearB" axis="y" follow="GearA" ratio="-2"/&gt;
+///   &lt;Color  node="PumpLamp" value="{LampColor}"/&gt;
 /// &lt;/SceneView&gt;
 /// </code>
-/// <list type="bullet">
-/// <item>자식 <c>Rotate</c> <c>Move</c> <c>Color</c> <c>Clip</c>: 부품을 어떤 값으로 움직일지 정의한다(<see cref="MarkupPose"/>). 화면을 다시 만들 때 값이 바뀐다.</item>
-/// <item><c>state</c>: <see cref="SceneState"/> 객체(선택). 코드에서 직접 쓰는 값은 같은 노드의 마크업 값을 덮고, Repaint 만으로 반영된다.</item>
-/// <item><c>camera</c>: glTF 카메라 이름. 바뀌면 그 시점으로 옮겨 간다. 모델에 없는 이름이면 기본 시점.</item>
-/// <item><c>value</c>: 선택된 부품 이름. 양방향 바인딩이면 클릭할 때 쓴다.</item>
-/// <item><c>pick</c>: 클릭 단위 노드 이름(쉼표 구분). 없으면 루트 노드가 단위.</item>
-/// </list>
-/// 드래그는 회전, 휠은 확대·축소, 클릭은 선택, 마우스를 올리면 강조한다.
-/// </summary>
+/// </example>
 public sealed class SceneView : DvDefinitionWidget
 {
+    /// <inheritdoc/>
     public override IReadOnlyCollection<string> DefinitionTags => MarkupPose.Tags;
 
     private static readonly Dictionary<string, SceneModel> Models = new(StringComparer.OrdinalIgnoreCase);
@@ -49,22 +77,25 @@ public sealed class SceneView : DvDefinitionWidget
     private int _hover = -1;
     private long _lastHoverPick;
 
-    /// <summary>시험용 측정값.</summary>
-    public static double LastRenderMs { get; private set; }
-    public static double LastPickMs { get; private set; }
-    public static int RenderCount { get; private set; }
+    /// <summary>Test measurements.</summary>
+    internal static double LastRenderMs { get; private set; }
+    internal static double LastPickMs { get; private set; }
+    internal static int RenderCount { get; private set; }
 
-    /// <summary>시험용: 마지막 그림의 위젯 영역, 카메라 행렬, 노드 월드 행렬.</summary>
-    public static SKRect LastBounds { get; private set; }
-    public static Matrix4x4 LastViewProj { get; private set; }
-    public static Matrix4x4[] LastWorld { get; private set; } = Array.Empty<Matrix4x4>();
-    public static SceneModel? LastModel { get; private set; }
+    /// <summary>Test values: widget area, camera matrix and node world matrices of the last draw.</summary>
+    internal static SKRect LastBounds { get; private set; }
+    internal static Matrix4x4 LastViewProj { get; private set; }
+    internal static Matrix4x4[] LastWorld { get; private set; } = Array.Empty<Matrix4x4>();
+    internal static SceneModel? LastModel { get; private set; }
     internal static SceneTarget? LastTarget { get; private set; }
 
+    /// <inheritdoc/>
     public override SKSize Measure(DvWidgetContext ctx, float? availableWidth) => new(640, 480);
 
+    /// <inheritdoc/>
     public override int? FrameInterval(DvWidgetContext ctx) => _camera.Animating ? 16 : null;
 
+    /// <inheritdoc/>
     public override void Paint(SKCanvas canvas, SKRect bounds, DvWidgetContext ctx)
     {
         _bounds = bounds;
@@ -119,7 +150,8 @@ public sealed class SceneView : DvDefinitionWidget
 
         // 캔버스(GRContext 또는 래스터)가 바뀌면 그리는 길이 바뀌므로 다시 그린다 (호스트가 GPU 모드를 켜고 끔)
         var key = (statePose.Version, markup, _camera.Version, w, h, selectedNode, _hover, model, canvas.Context);
-        if (!_drawn || !Equals(key, _rendered))
+        // 대상이 정리되었으면(오래 안 보였던 뷰) 다시 그린다
+        if (!_drawn || _target.Fbo == 0 || !Equals(key, _rendered))
         {
             try
             {
@@ -151,6 +183,7 @@ public sealed class SceneView : DvDefinitionWidget
         _target.Draw(canvas, bounds, paint);
     }
 
+    /// <inheritdoc/>
     public override bool OnPointerDown(DvWidgetContext ctx, SKPoint point)
     {
         _pressed = true;
@@ -159,6 +192,7 @@ public sealed class SceneView : DvDefinitionWidget
         return true;
     }
 
+    /// <inheritdoc/>
     public override void OnPointerMove(DvWidgetContext ctx, SKPoint point)
     {
         if (!_pressed)
@@ -170,6 +204,7 @@ public sealed class SceneView : DvDefinitionWidget
         _last = point;
     }
 
+    /// <inheritdoc/>
     public override void OnPointerUp(DvWidgetContext ctx, SKPoint point)
     {
         if (!_pressed)
@@ -189,8 +224,10 @@ public sealed class SceneView : DvDefinitionWidget
         (ctx.Value("state") as SceneState)?.NotifyClicked(name);
     }
 
+    /// <inheritdoc/>
     public override void OnPointerCancel(DvWidgetContext ctx) => _pressed = _dragging = false;
 
+    /// <inheritdoc/>
     public override bool OnPointerHover(DvWidgetContext ctx, DvPointerArgs e)
     {
         var now = Environment.TickCount64;
@@ -205,8 +242,10 @@ public sealed class SceneView : DvDefinitionWidget
         return true;
     }
 
+    /// <inheritdoc/>
     public override void OnPointerLeave(DvWidgetContext ctx) => _hover = -1;
 
+    /// <inheritdoc/>
     public override bool OnPointerWheel(DvWidgetContext ctx, DvPointerArgs e, float delta)
     {
         _camera.Zoom(delta);

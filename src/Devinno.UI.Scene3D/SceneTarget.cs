@@ -5,10 +5,10 @@ using SkiaSharp;
 namespace Devinno.UI.Scene3D;
 
 /// <summary>
-/// 뷰 하나가 그린 결과. 뷰마다 따로 둔다 — GPU 길에서는 Skia 가 프레임 끝에 이 텍스처를 읽으므로 뷰끼리 함께 쓸 수 없다.
+/// What one view drew. One per view: on the GPU path Skia reads the texture at the end of the frame, so views cannot share it.
 /// <list type="bullet">
-/// <item>GPU 길: 호스트 컨텍스트의 텍스처 + 그것을 감싼 <see cref="SKImage"/>(복사 없음).</item>
-/// <item>CPU 길: 숨은 컨텍스트의 렌더버퍼 + 픽셀을 받는 <see cref="SKBitmap"/>(크기가 같으면 다시 쓴다).</item>
+/// <item>GPU path: a texture in the host context and the <see cref="SKImage"/> that wraps it (no copy).</item>
+/// <item>CPU path: a renderbuffer in the hidden context and the <see cref="SKBitmap"/> that receives its pixels (kept while the size is the same).</item>
 /// </list>
 /// </summary>
 internal sealed unsafe class SceneTarget
@@ -19,27 +19,27 @@ internal sealed unsafe class SceneTarget
     private SKImage? _image;
     private SKImage? _pixels;
 
-    /// <summary>그린 컨텍스트(GLFW 창). 아직 그리지 않았으면 null.</summary>
+    /// <summary>The context (GLFW window) drawn in; null before the first draw.</summary>
     public Window* Context { get; private set; }
 
-    /// <summary>GPU 길이면 호스트의 GRContext.</summary>
+    /// <summary>The host GRContext on the GPU path.</summary>
     public GRContext? Gr { get; private set; }
 
     public int Fbo { get; private set; }
     public int Width { get; private set; }
     public int Height { get; private set; }
 
-    /// <summary>CPU 길의 픽셀 (렌더러가 위아래를 뒤집어 그리므로 위 줄부터).</summary>
+    /// <summary>Pixels on the CPU path (top row first: the renderer draws upside down).</summary>
     public SKBitmap? Bitmap { get; private set; }
 
-    /// <summary>측정용: 이 뷰가 잡은 GPU 대상 바이트 수.</summary>
+    /// <summary>Measurement: bytes of this view's GPU target.</summary>
     public long GpuBytes => (long)Width * Height * 4;
 
-    /// <summary>측정용: 이 뷰가 잡은 CPU 버퍼 바이트 수.</summary>
+    /// <summary>Measurement: bytes of this view's CPU buffer.</summary>
     public long CpuBytes => Bitmap is null ? 0 : (long)Width * Height * 4;
 
     /// <summary>
-    /// 이번 그리기에 맞는 대상을 준비한다. 컨텍스트·GRContext·크기가 바뀌었으면 다시 만든다. <paramref name="context"/> 가 현재 컨텍스트여야 한다.
+    /// Prepares the target for this draw, making it again when the context, the GRContext or the size changed. <paramref name="context"/> must be current.
     /// </summary>
     public void Prepare(Window* context, GRContext? gr, int w, int h)
     {
@@ -70,7 +70,7 @@ internal sealed unsafe class SceneTarget
         }
     }
 
-    /// <summary>마지막으로 그린 결과를 캔버스의 <paramref name="bounds"/> 에 놓는다.</summary>
+    /// <summary>Puts the last drawn result on the canvas at <paramref name="bounds"/>.</summary>
     public void Draw(SKCanvas canvas, SKRect bounds, SKPaint paint)
     {
         var sampling = new SKSamplingOptions(SKFilterMode.Linear);
@@ -86,14 +86,18 @@ internal sealed unsafe class SceneTarget
         }
     }
 
-    /// <summary>CPU 길: 비트맵에 새 픽셀을 읽었다.</summary>
+    /// <summary>CPU path: new pixels were read into the bitmap.</summary>
     public void PixelsChanged()
     {
         _pixels?.Dispose();
         _pixels = null;
     }
 
-    private void Release()
+    /// <summary>When the renderer last drew into this target (Environment.TickCount64).</summary>
+    public long LastUsed { get; set; }
+
+    /// <summary>Frees the GL objects and the bitmap; the next draw makes them again.</summary>
+    public void Release()
     {
         PixelsChanged();
         _image?.Dispose();
@@ -101,7 +105,10 @@ internal sealed unsafe class SceneTarget
         Bitmap?.Dispose();
         Bitmap = null;
         if (Fbo != 0 && Context != null)
+        {
             SceneRenderer.Delete(Context, Fbo, _texture, _renderbuffer);
+            SceneRenderer.ResetSkia(Gr); // 지운 텍스처가 묶여 있었을 수 있다
+        }
         Fbo = _texture = _renderbuffer = 0;
         Context = null;
         Gr = null;
