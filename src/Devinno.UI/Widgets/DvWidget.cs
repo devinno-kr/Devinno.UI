@@ -9,7 +9,8 @@ namespace Devinno.UI.Widgets;
 /// <remarks>
 /// <para><b>What the class does</b>: measuring and painting its own area, and optionally handling pointer gestures (<see cref="OnPointerDown(DvWidgetContext, SKPoint)"/>; for other buttons, modifier keys, double presses, hover and the wheel the overloads that take <see cref="DvPointerArgs"/>) and writing its <c>value</c> (<see cref="DvWidgetContext.Commit"/>). Everything else comes from the markup as for built-in elements:
 /// attributes and bindings (read them through <see cref="DvWidgetContext"/>), <c>class</c>, <c>style</c> (background, border, padding, size),
-/// <c>onclick</c>, <c>hold</c>, <c>disabled</c>, <c>visible</c> and <c>id</c> (a plain <see cref="Controls.DvControl"/> handle). Child elements are not used.</para>
+/// <c>onclick</c>, <c>hold</c>, <c>disabled</c>, <c>visible</c> and <c>id</c> (a plain <see cref="Controls.DvControl"/> handle). Child elements are not used;
+/// a widget that reads its child elements as settings derives from <see cref="DvDefinitionWidget"/>.</para>
 /// <para><b>Instances</b>: one instance per element on screen, created with the parameterless constructor. The same instance is kept when the screen is rebuilt
 /// (binding updates, <c>Invalidate</c>), so fields may hold state such as animation progress. Inside <c>DvRepeat</c> each item has its own instance,
 /// matched by position. Do not cache attribute values in fields — read them from the context on every call.</para>

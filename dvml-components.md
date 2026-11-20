@@ -1,6 +1,6 @@
 # DVML repeats, components and custom widgets
 
-Covers: `DvRepeat` (one template per item), user components (`DvComponent`, `DvParam`, `DvSlot`, instance rules, component names), and custom widgets drawn in C# (`DvWidget`).
+Covers: `DvRepeat` (one template per item), user components (`DvComponent`, `DvParam`, `DvSlot`, instance rules, component names), and custom widgets drawn in C# (`DvWidget`, and `DvDefinitionWidget` for one that reads child elements as settings).
 Read first: [markup basics](dvml-language.md#markup-basics) · [binding syntax](dvml-language.md#binding) · [click rules](dvml-language.md#click)
 Not here: [built-in components such as `DvCard`, `DvStat`, `DvSwitch`](dvml-widgets.md#semantic-components) · [a table with selection, sorting and virtualization (`DvDataGrid`)](dvml-grid.md#dvdatagrid) · [process diagram units built from components](dvml-process.md#units) · [process symbols (`DvSymbol`)](dvml-process-equipment.md#dvsymbol) · [which widgets write two-way](dvml-language.md#two-way) · [`HandlerError` kinds](dvml-language.md#handler-error) · [style priority](dvml-style.md#priority)
 
@@ -179,7 +179,7 @@ The markup side works like any element: `class`, `style` (background, border, `p
 
 ### Behavior
 
-- Child elements of a custom widget are not used (Trace warning).
+- Child elements of a custom widget are not used (Trace warning). A widget that reads child elements as settings derives from `DvDefinitionWidget` ([definitions](#widget-definitions)).
 - **Size**: `Measure` returns the content size (inside `padding`); the default is 120×80. Style `width`/`height` win.
 - **Painting**: `Paint` gets the content area; the canvas is clipped to the element. Use theme tokens through `ctx.Color("…")` (the same names as `token(…)`) so the widget follows light and dark themes.
 - `ctx.TextColor`, `ctx.DrawText` and `ctx.MeasureText` draw text with the library's fonts (Korean included). Their `weight` argument is a font weight 100–900 (400 regular, 700 bold) drawn with the font's real face.
@@ -265,6 +265,48 @@ public sealed class SetpointBar : DvWidget
 
 ```xml
 <SetpointBar value="{Bind Setpoint}" onbeforecommit="ConfirmSetpoint"/>
+```
+
+<a id="widget-definitions"></a>
+### Definitions (child elements as settings)
+
+When a widget needs a list of settings that markup should write (which part moves with which value, one entry per channel …), derive from `DvDefinitionWidget` instead of `DvWidget` and name the child tags it reads in `DefinitionTags`. Read them with `ctx.Definitions`.
+
+- **Not a container**: definitions get no box, size or position, are not painted and receive no input. The widget alone paints and handles the pointer, as any `DvWidget`.
+- **Tags**: the names in `DefinitionTags` belong to that widget only (like `DvOption` inside `DvSegment`). They are not registered and may repeat across widgets. Matching is case-sensitive.
+- A child with a tag not in `DefinitionTags` is skipped (Trace warning). Children of a definition are not used (Trace warning).
+- **Values**: each `DvDefinition` reads its attributes with the same rules as the widget's own: `d.Tag`, `d.Names`, `d.Has`, `d.Value`, `d.Text`, `d.Number`, `d.Flag`. Bindings resolve in the widget's context (the screen VM, a `DvRepeat` item, component parameters).
+- Values are a snapshot taken when the screen is built. A VM change reaches them on the next rebuild (`Invalidate`), as for built-in elements. Bindings in definitions are one-way; only the widget's own `value` can be written (`ctx.Commit`).
+- No attribute of a definition has a meaning of its own: `id`, `visible`, `style` … are values like any other.
+- Definitions are kept in markup order. Read `ctx.Definitions` on every call; do not keep the list.
+
+```csharp
+using Devinno.UI.Widgets;
+using SkiaSharp;
+
+public sealed class Rig : DvDefinitionWidget
+{
+    public override IReadOnlyCollection<string> DefinitionTags { get; } = ["Rotate"];
+
+    public override void Paint(SKCanvas canvas, SKRect bounds, DvWidgetContext ctx)
+    {
+        foreach (var d in ctx.Definitions)
+        {
+            var node = d.Text("node");
+            var degrees = d.Number("value");
+            // … turn that part by degrees and paint
+        }
+    }
+}
+
+registry.RegisterWidget<Rig>("Rig");
+```
+
+```xml
+<Rig src="robot.glb" grow="1">
+  <Rotate node="Turret" value="{Turret}"/>
+  <Rotate node="Arm" value="{Arm}"/>
+</Rig>
 ```
 
 ### See also

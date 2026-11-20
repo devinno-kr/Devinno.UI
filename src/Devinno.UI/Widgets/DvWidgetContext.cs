@@ -90,43 +90,20 @@ public sealed class DvWidgetContext
 
     /// <summary>Gets whether the element has the attribute (literal or binding).</summary>
     /// <param name="attr">The attribute name.</param>
-    public bool Has(string attr) => _box.WidgetValues?.ContainsKey(attr) == true;
+    public bool Has(string attr) => WidgetValues.Has(_box.WidgetValues, attr);
 
     /// <summary>Gets an attribute's resolved value as the original object (a list, a number, a model object …). <see langword="null"/> if missing.</summary>
     /// <param name="attr">The attribute name.</param>
-    public object? Value(string attr) => _box.WidgetValues?.GetValueOrDefault(attr).Value;
+    public object? Value(string attr) => WidgetValues.Value(_box.WidgetValues, attr);
 
     /// <summary>Gets an attribute as text (bindings resolved, <c>format</c> of the binding applied). <see langword="null"/> if missing.</summary>
     /// <param name="attr">The attribute name.</param>
-    public string? Text(string attr) =>
-        _box.WidgetValues is { } values && values.TryGetValue(attr, out var v) ? BindingResolver.ToText(v.Value, v.Raw) : null;
+    public string? Text(string attr) => WidgetValues.Text(_box.WidgetValues, attr);
 
     /// <summary>Gets an attribute as a number. Returns <paramref name="fallback"/> if it is missing or not a number.</summary>
     /// <param name="attr">The attribute name.</param>
     /// <param name="fallback">The value to use when there is no number.</param>
-    public double Number(string attr, double fallback = 0) => Value(attr) switch
-    {
-        null => fallback,
-        double d => d,
-        float f => f,
-        int i => i,
-        long l => l,
-        decimal m => (double)m,
-        IConvertible c when c is not string => TryConvert(c, fallback),
-        var o => double.TryParse(Text(attr) ?? o.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var p) ? p : fallback,
-    };
-
-    private static double TryConvert(IConvertible c, double fallback)
-    {
-        try
-        {
-            return c.ToDouble(CultureInfo.InvariantCulture);
-        }
-        catch (Exception e) when (e is FormatException or InvalidCastException or OverflowException)
-        {
-            return fallback;
-        }
-    }
+    public double Number(string attr, double fallback = 0) => WidgetValues.Number(_box.WidgetValues, attr, fallback);
 
     /// <summary>
     /// Gets an attribute as a flag, with the same rule as built-in attributes: <c>true</c>, a non-zero number or a bool <see langword="true"/> binding is on;
@@ -134,7 +111,13 @@ public sealed class DvWidgetContext
     /// </summary>
     /// <param name="attr">The attribute name.</param>
     /// <param name="fallback">The value to use when the attribute is missing or not a flag.</param>
-    public bool Flag(string attr, bool fallback = false) => Value(attr) is { } v ? Layout.AttrRules.ParseBool(v) ?? fallback : fallback;
+    public bool Flag(string attr, bool fallback = false) => WidgetValues.Flag(_box.WidgetValues, attr, fallback);
+
+    /// <summary>
+    /// Gets the definitions (child elements) of a <see cref="DvDefinitionWidget"/> in markup order, with bindings resolved when the screen was built.
+    /// Empty for other widgets and for a definition widget without children.
+    /// </summary>
+    public IReadOnlyList<DvDefinition> Definitions => _box.WidgetDefinitions ?? (IReadOnlyList<DvDefinition>)Array.Empty<DvDefinition>();
 
     /// <summary>
     /// Gets a theme color token (<c>primary</c>, <c>text</c>, <c>tone-danger</c>, <c>gauge-track</c>, <c>state-run</c> …) as a color — the same tokens as <c>token(…)</c> in styles,

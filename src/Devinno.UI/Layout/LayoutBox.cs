@@ -269,6 +269,8 @@ public sealed class LayoutBox
     internal Widgets.DvWidget? Widget { get; set; }
     /// <summary>A custom widget's attributes at build time: resolved value + the raw attribute (for text formatting).</summary>
     internal Dictionary<string, (object? Value, string? Raw)>? WidgetValues { get; set; }
+    /// <summary>The definitions (child elements) of a <see cref="Widgets.DvDefinitionWidget"/> at build time, in markup order. <see langword="null"/> for other boxes.</summary>
+    internal List<Widgets.DvDefinition>? WidgetDefinitions { get; set; }
     /// <summary>Instrument information of a process diagram instrument box (<c>DvInstrument</c>). <see langword="null"/> for other boxes.</summary>
     internal Process.ProcessInstrument? Instrument { get; set; }
     /// <summary>Settings and channel data of a <c>DvTrend</c> (a snapshot copied at build time). <see langword="null"/> for other tags.</summary>

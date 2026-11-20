@@ -295,16 +295,44 @@ public sealed partial class LayoutEngine
 
     private InstanceStore<Video.VideoPlayer> _videos = null!;
 
-    // 커스텀 위젯 — 상자(스타일·onclick 등은 보통 요소와 같음) + 인스턴스(재빌드에도 같은 것) + 모든 속성을 바인딩 푼 값. 자식은 쓰지 않는다
+    // 커스텀 위젯 — 상자(스타일·onclick 등은 보통 요소와 같음) + 인스턴스(재빌드에도 같은 것) + 모든 속성을 바인딩 푼 값.
+    // 자식은 상자로 만들지 않는다: DvDefinitionWidget 이면 정의(속성 묶음)로 넘기고, 아니면 버린다
     private LayoutBox BuildWidget(ElementNode node, object? vm, Func<Widgets.DvWidget> create)
     {
         var box = BuildSelf(node, vm);
         box.Widget = _widgets.Get(box.Instance, create);
         box.ValueBindExpr = _valueOverride ?? node.Attributes.GetValueOrDefault("value"); // ctx.Commit 이 쓰는 경로(컴포넌트 양방향 파라미터면 바깥 경로)
-        box.WidgetValues = node.Attributes.ToDictionary(a => a.Key, a => (BindingResolver.ResolveValueOrLiteral(vm, a.Value), (string?)a.Value), StringComparer.Ordinal);
-        if (node.Children.Count > 0)
-            Warnings.Warn($"Devinno.UI: <{node.Tag}> is a custom widget; its child elements are not used ({string.Join(", ", node.Children.Select(c => c.Tag).Distinct())})");
+        box.WidgetValues = ResolveAll(node, vm);
+        if (box.Widget is Widgets.DvDefinitionWidget defining)
+            box.WidgetDefinitions = Definitions(node, vm, defining);
+        else if (node.Children.Count > 0)
+            Warnings.Warn($"Devinno.UI: <{node.Tag}> is a custom widget; its child elements are not used ({string.Join(", ", node.Children.Select(c => c.Tag).Distinct())}). " +
+                          "A widget that reads child elements derives from DvDefinitionWidget");
         return box;
+    }
+
+    private static Dictionary<string, (object? Value, string? Raw)> ResolveAll(ElementNode node, object? vm) =>
+        node.Attributes.ToDictionary(a => a.Key, a => (BindingResolver.ResolveValueOrLiteral(vm, a.Value), (string?)a.Value), StringComparer.Ordinal);
+
+    // 정의 자식: 위젯이 읽겠다고 한 태그만, 마크업 순서대로. 속성은 위젯 자신의 속성과 같은 문맥(VM·반복 항목·컴포넌트 파라미터)으로 푼다
+    private static List<Widgets.DvDefinition> Definitions(ElementNode node, object? vm, Widgets.DvDefinitionWidget widget)
+    {
+        var tags = widget.DefinitionTags ?? Array.Empty<string>();
+        var list = new List<Widgets.DvDefinition>(node.Children.Count);
+        foreach (var child in node.Children)
+        {
+            if (!tags.Contains(child.Tag, StringComparer.Ordinal))
+            {
+                Warnings.Warn($"Devinno.UI: <{node.Tag}> does not read <{child.Tag}>; skipped (its definition tags: {string.Join(", ", tags)})",
+                    key: $"definition tag {node.Tag} {child.Tag}");
+                continue;
+            }
+            if (child.Children.Count > 0)
+                Warnings.Warn($"Devinno.UI: <{child.Tag}> inside <{node.Tag}> is a definition; its child elements are not used",
+                    key: $"definition children {node.Tag} {child.Tag}");
+            list.Add(new Widgets.DvDefinition(child.Tag, ResolveAll(child, vm)));
+        }
+        return list;
     }
 
     // 공정도가 장비·유닛·붙은 칸 상자를 만들 때 쓰는 방법 — 문맥(화면 VM 또는 유닛 컴포넌트 파라미터 범위)을 받는다

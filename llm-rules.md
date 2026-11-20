@@ -418,7 +418,7 @@ The `using` lines for the C# types these pages use. Handle fields created by the
 | `TrendBuffer`, `TrendPoint` | `Devinno.UI.Trends` | Devinno.UI |
 | `DvStrings` | `Devinno.UI.Localization` | Devinno.UI |
 | `ComponentRegistry` | `Devinno.UI.Components` | Devinno.UI |
-| `DvWidget`, `DvWidgetContext`, `ImageCache` | `Devinno.UI.Widgets` | Devinno.UI |
+| `DvWidget`, `DvDefinitionWidget`, `DvDefinition`, `DvWidgetContext`, `ImageCache` | `Devinno.UI.Widgets` | Devinno.UI |
 | `MarkupDocument`, `MarkupSpan`, `TagSchema`, `AttrDef`, `AttrKind` (tools that edit markup) | `Devinno.UI.Markup` | Devinno.UI |
 | `StyleParser` (`Get/Set/RemoveDeclaration`) | `Devinno.UI.Styling` | Devinno.UI |
 | `HitTester` (`HitPath`) | `Devinno.UI.Interaction` | Devinno.UI |
