@@ -199,6 +199,8 @@ An app project needs three things: the `Devinno.UI` library, one host package to
 
 - The `Devinno.UI` package attaches the generator and adds every `*.dvml` under the project folder (except `bin`, `obj` and the other default excluded folders) as `AdditionalFiles`. Write nothing else for the generator.
 - The WinForms host (`Devinno.UI.WinForms`) needs `<TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>` or later ([choose a host](llms.txt)).
+- Output size: SkiaSharp brings native files for every Windows CPU (x64, x86, arm64) and macOS. In Release builds and `dotnet publish` the package leaves out their debug symbols (`libSkiaSharp.pdb`, 84 MB per CPU); Debug builds keep them. To keep them in Release too, set `<DevinnoNativePdb>true</DevinnoNativePdb>`.
+- For an app that ships to one kind of machine, also set `<RuntimeIdentifier>win-x64</RuntimeIdentifier>` (or `linux-arm64` …) with `<SelfContained>false</SelfContained>`: only that machine's native files are copied. The build output then goes to a `win-x64` subfolder, and the program runs only on that OS and CPU.
 
 **Building from source (`ProjectReference`).** The package's build files do not apply to a project reference, so the csproj wires the generator as an analyzer and lists the dvml files itself. Paths are relative to your csproj; here the library repository sits next to the app:
 

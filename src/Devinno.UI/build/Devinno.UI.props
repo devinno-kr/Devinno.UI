@@ -3,4 +3,14 @@
   <ItemGroup>
     <AdditionalFiles Include="**/*.dvml" Exclude="$(DefaultItemExcludes)" />
   </ItemGroup>
+
+  <!-- Release 빌드·게시에서는 패키지에 든 네이티브 디버그 심볼(libSkiaSharp.pdb 는 아키텍처마다 84MB)을 출력에 복사하지 않는다.
+       원본은 NuGet 캐시에 남는다. Debug 빌드는 그대로. 남기려면 <DevinnoNativePdb>true</DevinnoNativePdb>. -->
+  <Target Name="_DevinnoDropNativePdb" AfterTargets="ResolvePackageAssets"
+          Condition="'$(Configuration)' == 'Release' and '$(DevinnoNativePdb)' != 'true'">
+    <ItemGroup>
+      <NativeCopyLocalItems Remove="@(NativeCopyLocalItems)" Condition="'%(Extension)' == '.pdb'" />
+      <RuntimeTargetsCopyLocalItems Remove="@(RuntimeTargetsCopyLocalItems)" Condition="'%(Extension)' == '.pdb'" />
+    </ItemGroup>
+  </Target>
 </Project>
