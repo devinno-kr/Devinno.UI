@@ -28,7 +28,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks> <!-- GLFW 창 포인터, 픽셀 읽기 -->
-    <IsPackable>false</IsPackable> <!-- 게시 준비(버전·publish.yml) 때 켠다 -->
   </PropertyGroup>
 
 </Project>

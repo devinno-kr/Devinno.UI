@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.0 — 2026-11-20
+
+A new package, Devinno.UI.Scene3D, shows a glTF 3D model in a screen and moves its parts from bound values. For it, custom widgets can read their child elements as settings. Release builds of apps get much smaller.
+
+### Added
+
+- `DvDefinitionWidget` and `DvDefinition` (`Devinno.UI.Widgets`): a custom widget that names the child tags it reads (`DefinitionTags`) gets them through `DvWidgetContext.Definitions`, in markup order, with attributes read like the widget's own (bindings, `DvRepeat` items, component parameters). Definitions are settings: they get no box and are not drawn. Unknown tags and children of a definition are skipped with a Trace warning.
+- Package **Devinno.UI.Scene3D**: `<SceneView>` shows a `.glb` model (for example from Blender). Child elements `Rotate`, `Move`, `Color` and `Clip` turn, move and color parts or pose an animation from bound values (`follow` / `ratio` for meshed parts); `camera` switches to a camera in the model, `value` / `pick` select parts by click, `SceneState` takes values from code on any thread. Register with `registry.UseScene3D()`. Needs desktop OpenGL 3.3; on a GPU host the scene is drawn straight into a texture, on a CPU host in a hidden context. Docs: `docs/llms.txt` and `docs/scene3d.md` in the package.
+
+### Changed
+
+- Release builds and `dotnet publish` of an app that references Devinno.UI no longer copy the native debug symbols of SkiaSharp (`libSkiaSharp.pdb`, 84 MB for each Windows CPU). Debug builds keep them; `<DevinnoNativePdb>true</DevinnoNativePdb>` keeps them in Release. `dvml-code.md` also recommends `RuntimeIdentifier` for apps that ship to one kind of machine.
+
 ## 0.7.2 — 2026-11-18
 
 APIs for screen editors built with Devinno.UI: edit markup and inline styles without losing how the text was written, find the element under a click, and give custom widgets the full mouse (other buttons, modifier keys, click count, hover, leave, wheel). See Breaking before you upgrade: assemblies built against 0.7.1 need a rebuild.

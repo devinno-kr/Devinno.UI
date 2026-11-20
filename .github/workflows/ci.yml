@@ -17,7 +17,7 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      # XmlDocI18nTests reads the English XML of every package (Devinno.UI.Scene3D is built but not packed yet), so build them (and the tests) first
+      # XmlDocI18nTests reads the English XML of every package, so build them (and the tests) first
       - name: Build
         shell: pwsh
         run: |
@@ -32,7 +32,7 @@ jobs:
       - name: Pack
         shell: pwsh
         run: |
-          foreach ($p in 'src/Devinno.UI', 'src/Devinno.UI.OpenTK', 'src/Devinno.UI.WinForms') {
+          foreach ($p in 'src/Devinno.UI', 'src/Devinno.UI.OpenTK', 'src/Devinno.UI.WinForms', 'src/Devinno.UI.Scene3D') {
             dotnet pack $p -c Release --no-build -o out
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }

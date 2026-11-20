@@ -1,4 +1,4 @@
-# 태그(v1.2.3)를 올리면 테스트 → 패키지 3개(Devinno.UI · Devinno.UI.OpenTK · Devinno.UI.WinForms)를 그 버전으로 만들어 nuget.org 에 게시한다.
+# 태그(v1.2.3)를 올리면 테스트 → 패키지 4개(Devinno.UI · Devinno.UI.OpenTK · Devinno.UI.WinForms · Devinno.UI.Scene3D)를 그 버전으로 만들어 nuget.org 에 게시한다.
 # 게시는 nuget.org Trusted Publishing(OIDC) — 오래 가는 API 키를 저장하지 않고, 실행마다 1시간짜리 임시 키를 받는다.
 # 준비: ① nuget.org > 사용자 이름 > Trusted Publishing 에 정책 추가(Owner devinno-kr, Repository Devinno.UI, Workflow File publish.yml)
 #       ② GitHub 저장소 시크릿 NUGET_USER = nuget.org 사용자 이름(프로필 이름, 이메일 아님)
@@ -30,7 +30,7 @@ jobs:
           "VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       # 태그 버전으로 한 번만 빌드하고, 테스트한 그 바이너리를 그대로 pack 한다(--no-build)
-      # XmlDocI18nTests reads the English XML of every package (Devinno.UI.Scene3D is built but not packed yet), so build them (and the tests) first
+      # XmlDocI18nTests reads the English XML of every package, so build them (and the tests) first
       - name: Build
         shell: pwsh
         run: |
@@ -45,7 +45,7 @@ jobs:
       - name: Pack
         shell: pwsh
         run: |
-          foreach ($p in 'src/Devinno.UI', 'src/Devinno.UI.OpenTK', 'src/Devinno.UI.WinForms') {
+          foreach ($p in 'src/Devinno.UI', 'src/Devinno.UI.OpenTK', 'src/Devinno.UI.WinForms', 'src/Devinno.UI.Scene3D') {
             dotnet pack $p -c Release --no-build -p:Version=$env:VERSION -o out
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
@@ -62,7 +62,7 @@ jobs:
         # 파일마다 push — Windows 의 dotnet nuget push 는 "out/*.nupkg"(슬래시) 와일드카드를 풀지 못한다("File does not exist")
         run: |
           $pkgs = Get-ChildItem out -Filter *.nupkg
-          if ($pkgs.Count -ne 3) { throw "nupkg 가 3개가 아닙니다: $($pkgs.Name -join ', ')" }
+          if ($pkgs.Count -ne 4) { throw "nupkg 가 4개가 아닙니다: $($pkgs.Name -join ', ')" }
           foreach ($f in $pkgs) {
             dotnet nuget push $f.FullName --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
