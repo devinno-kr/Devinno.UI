@@ -1,0 +1,82 @@
+<DvPageFrame vm="Devinno.UI.Scene3D.Demo.MainPage" title="Scene3D - C# driven" subtitle="C# computes the equipment values; the markup says which part moves with which value. Drag to rotate, wheel to zoom, click to select">
+  <DvRow grow="1" style="align-items:stretch">
+    <DvCard title="Model" grow="1">
+      <SceneView src="Assets/scene3d_test.glb" camera="{Camera}" value="{Bind Selected}"
+                 pick="RobotBase,LiftBody,GearA,GearB,FanHub,PumpBody,DoorFrame,Crank,Piston" grow="1">
+        <Rotate node="Turret"  axis="y" value="{Turret}"/>
+        <Rotate node="Arm1"    axis="z" value="{Arm1}"/>
+        <Rotate node="Arm2"    axis="z" value="{Arm2}"/>
+        <Move   node="FingerL" axis="z" value="{Grip}" scale="-0.00062" offset="0.012"/>
+        <Move   node="FingerR" axis="z" follow="FingerL" ratio="-1"/>
+        <Move   node="LiftRod" axis="y" value="{Lift}" scale="0.001"/>
+        <Rotate node="Door"    axis="y" value="{Door}"/>
+        <Rotate node="GearA"   axis="y" value="{GearAngle}"/>
+        <Rotate node="GearB"   axis="y" follow="GearA" ratio="-2"/>
+        <Rotate node="FanHub"  axis="x" value="{FanAngle}"/>
+        <!-- 크랭크: C# 공식 값 또는 Blender 클립 중 하나 -->
+        <Rotate node="Crank"         axis="z" value="{CrankAngle}" disabled="{UseClip}"/>
+        <Move   node="Piston"        axis="x" value="{PistonOffset}" scale="0.001" disabled="{UseClip}"/>
+        <Rotate node="ConnectingRod" axis="z" value="{RodAngle}" disabled="{UseClip}"/>
+        <Clip   name="CrankCycle" value="{CrankAngle}" min="0" max="360" disabled="{UseFormula}"/>
+        <Color  node="PumpLamp" value="{LampColor}"/>
+      </SceneView>
+      <DvLabel class="caption muted" text="{ActualText}"/>
+      <DvLabel class="caption muted" text="{StatusText}"/>
+    </DvCard>
+
+    <DvStack gap="sm" style="width:340; overflow:scroll">
+      <DvCard title="View">
+        <DvSegment value="{Bind Camera}" fill="true">
+          <DvOption value="CamFront" text="Front"/>
+          <DvOption value="CamSide" text="Side"/>
+          <DvOption value="CamTop" text="Top"/>
+          <DvOption value="Free" text="Free"/>
+        </DvSegment>
+        <DvLabel class="caption" text="{SelectedText}"/>
+      </DvCard>
+
+      <DvCard title="Setpoints">
+        <DvRow>
+          <DvLabel class="body" text="Auto (simulated PLC)" grow="1"/>
+          <DvToggle value="{Bind Auto}"/>
+        </DvRow>
+        <DvLabel class="caption muted" text="On: a 50 Hz loop writes changing values. Off: the sliders are the setpoints."/>
+
+        <DvLabel class="label" text="Turret"/>
+        <DvSlider value="{Bind TurretSet}" min="-180" max="180" step="1" unit="°" show-value="true" readonly="{Auto}" style="align-self:stretch"/>
+        <DvLabel class="label" text="Arm 1"/>
+        <DvSlider value="{Bind Arm1Set}" min="-60" max="60" step="1" unit="°" show-value="true" readonly="{Auto}" style="align-self:stretch"/>
+        <DvLabel class="label" text="Arm 2"/>
+        <DvSlider value="{Bind Arm2Set}" min="-90" max="90" step="1" unit="°" show-value="true" readonly="{Auto}" style="align-self:stretch"/>
+        <DvLabel class="label" text="Gripper open"/>
+        <DvSlider value="{Bind GripSet}" min="0" max="100" step="1" unit="%" show-value="true" readonly="{Auto}" style="align-self:stretch"/>
+        <DvLabel class="label" text="Lift rod"/>
+        <DvSlider value="{Bind LiftSet}" min="-200" max="150" step="5" unit="mm" show-value="true" readonly="{Auto}" style="align-self:stretch"/>
+        <DvLabel class="label" text="Door"/>
+        <DvSlider value="{Bind DoorSet}" min="0" max="90" step="1" unit="°" show-value="true" readonly="{Auto}" style="align-self:stretch"/>
+      </DvCard>
+
+      <DvCard title="Speeds">
+        <DvLabel class="label" text="Gear A (Gear B follows -2 x A)"/>
+        <DvSlider value="{Bind GearRpm}" min="-60" max="60" step="1" unit="rpm" show-value="true" style="align-self:stretch"/>
+        <DvLabel class="label" text="Fan"/>
+        <DvSlider value="{Bind FanRpm}" min="0" max="120" step="1" unit="rpm" show-value="true" style="align-self:stretch"/>
+        <DvLabel class="label" text="Crank"/>
+        <DvSlider value="{Bind CrankRpm}" min="0" max="60" step="1" unit="rpm" show-value="true" style="align-self:stretch"/>
+        <DvLabel class="label" text="Piston and rod from"/>
+        <DvSegment value="{Bind CrankMode}" fill="true">
+          <DvOption value="formula" text="Formula (C#)"/>
+          <DvOption value="clip" text="Blender clip"/>
+        </DvSegment>
+      </DvCard>
+
+      <DvCard title="Pump lamp">
+        <DvSegment value="{Bind Lamp}" fill="true">
+          <DvOption value="run" text="Run"/>
+          <DvOption value="stop" text="Stop"/>
+          <DvOption value="alarm" text="Alarm"/>
+        </DvSegment>
+      </DvCard>
+    </DvStack>
+  </DvRow>
+</DvPageFrame>

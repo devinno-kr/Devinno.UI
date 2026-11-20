@@ -1,0 +1,3 @@
+<DvScreen vm="Devinno.UI.Scene3D.Demo.BenchPage" style="padding:0; display:flex; flex-direction:column; align-items:stretch">
+  <SceneView src="Assets/scene3d_test.glb" state="{State}" camera="CamFront" grow="1"/>
+</DvScreen>

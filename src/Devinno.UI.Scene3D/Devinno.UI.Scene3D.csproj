@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Devinno.UI\Devinno.UI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 호스트 패키지(Devinno.UI.OpenTK)가 아니라 OpenTK 를 직접: 숨은 GLFW 컨텍스트와 GL 호출만 쓴다. 두 호스트 모두 이미 같은 OpenTK 를 받는다 -->
+    <PackageReference Include="OpenTK" Version="4.8.2" />
+    <PackageReference Include="SharpGLTF.Core" Version="1.0.7" />
+    <PackageReference Include="SkiaSharp" Version="3.119.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Devinno.UI.Scene3D.Demo" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <PackageId>Devinno.UI.Scene3D</PackageId>
+    <Description>3D view for Devinno.UI: shows a glTF model and moves, colors and picks its parts from bound values.</Description>
+    <PackageTags>ui;hmi;skiasharp;opengl;gltf;3d;dvml</PackageTags>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks> <!-- GLFW 창 포인터, 픽셀 읽기 -->
+    <!-- 임시: 공개 API 이름·영어 XML 설명은 이후 단계. 그 전에는 패키지로 내지 않는다 -->
+    <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
+  </PropertyGroup>
+
+</Project>
