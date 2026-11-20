@@ -158,7 +158,9 @@ public class AppSyncContextTests
         Assert.Same(before, SynchronizationContext.Current);
         root.Layout(W, H);
         Assert.Same(before, SynchronizationContext.Current);
-        root.RenderTo(new SKCanvas(new SKBitmap(8, 8)), W, H);
+        using var bitmap = new SKBitmap(8, 8);
+        using var canvas = new SKCanvas(bitmap);
+        root.RenderTo(canvas, W, H);
         Assert.Same(before, SynchronizationContext.Current);
         root.PointerMove(new SKPoint(1, 1));
         root.PointerWheel(new SKPoint(1, 1), 1);

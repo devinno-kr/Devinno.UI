@@ -132,7 +132,9 @@ public class EditLifecycleTests
         var s = Begin(vm, Scroller, 50, 20); // i0
         s.SetEditText(s.Edit.SessionId, "스크롤 전");
         s.PointerWheel(new SKPoint(50, 50), -1f); // 48 → i0 = -48~-8, 완전히 밖
-        s.RenderTo(new SKCanvas(new SKBitmap(400, 300)), 400, 300);
+        using var bitmap = new SKBitmap(400, 300);
+        using var canvas = new SKCanvas(bitmap);
+        s.RenderTo(canvas, 400, 300);
 
         Assert.False(s.Edit.IsEditing);
         Assert.Equal("스크롤 전", vm.Name);

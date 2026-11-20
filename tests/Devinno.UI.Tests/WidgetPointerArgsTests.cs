@@ -69,7 +69,8 @@ public class WidgetPointerArgsTests
         r.RegisterWidget<OldStyle>("OldStyle");
         var s = new DvSurface($"<DvScreen><DvStack align=\"start\">{body}</DvStack></DvScreen>", vm, DvTheme.Light, r) { Clock = () => _now };
         s.Layout(800, 600);
-        s.RenderTo(SKSurface.Create(new SKImageInfo(800, 600)).Canvas, 800, 600, _now);
+        using var surface = SKSurface.Create(new SKImageInfo(800, 600)); // 캔버스는 서피스가 소유한다 — 서피스를 붙잡아 두지 않으면 그리는 도중 GC 가 해제할 수 있다
+        s.RenderTo(surface.Canvas, 800, 600, _now);
         return s;
     }
 
@@ -151,7 +152,8 @@ public class WidgetPointerArgsTests
         var box = Find(s, "Canvas");
         ((Canvas)box.Widget!).HoverRepaint = false;
         s.PointerMove(Mid(box));
-        s.RenderTo(SKSurface.Create(new SKImageInfo(800, 600)).Canvas, 800, 600, _now);
+        using var surface = SKSurface.Create(new SKImageInfo(800, 600)); // 캔버스는 서피스가 소유한다 — 서피스를 붙잡아 두지 않으면 그리는 도중 GC 가 해제할 수 있다
+        s.RenderTo(surface.Canvas, 800, 600, _now);
         s.PointerMove(Mid(box) + new SKPoint(1, 0));
         Assert.False(s.NeedsRender);
     }

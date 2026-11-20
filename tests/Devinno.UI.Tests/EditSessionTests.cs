@@ -159,7 +159,9 @@ public class EditSessionTests
         Assert.Equal(s.Edit.Rect, s.Edit.Clip); // 전부 보임
 
         s.PointerWheel(new SKPoint(50, 50), -1f); // 48 아래로 → 상자 40~80 이 -8~32
-        s.RenderTo(new SKCanvas(new SKBitmap(400, 300)), 400, 300);
+        using var bitmap = new SKBitmap(400, 300);
+        using var canvas = new SKCanvas(bitmap);
+        s.RenderTo(canvas, 400, 300);
 
         Assert.Equal(before.Top - 48, s.Edit.Rect.Top);
         Assert.True(s.Edit.Version > v);
