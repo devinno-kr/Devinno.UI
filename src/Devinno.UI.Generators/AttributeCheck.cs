@@ -311,6 +311,29 @@ internal static class AttributeCheck
         }
 
         Walk(root, true, report, reportFrame);
+
+        // DVML022 — 빈 표시 형식({Temp:}) — 모든 속성 값과 요소 글자(DvLabel 내용 등)
+        foreach (var x in root.DescendantsAndSelf())
+        {
+            foreach (var a in x.Attributes())
+            {
+                if (!a.IsNamespaceDeclaration)
+                    EmptyFormat(a, a.Value, report);
+            }
+            foreach (var t in x.Nodes().OfType<XText>())
+                EmptyFormat(t, t.Value, report);
+        }
+    }
+
+    // 라이브러리 BindingResolver 와 같은 자르기 — 첫 ':' 뒤가 비었거나 공백뿐
+    private static readonly System.Text.RegularExpressions.Regex EmptyFormatRegex = new(@"\{[^{}:]*:\s*\}");
+
+    private static void EmptyFormat(XObject at, string value, Action<DiagnosticDescriptor, XObject, object[]> report)
+    {
+        if (value.IndexOf(':') < 0)
+            return;
+        foreach (System.Text.RegularExpressions.Match m in EmptyFormatRegex.Matches(value))
+            report(Diagnostics.EmptyBindingFormat, at, new object[] { m.Value });
     }
 
     private static void Walk(XElement e, bool isRoot, Action<DiagnosticDescriptor, XObject, object[]> report, Action<string, DiagnosticDescriptor, XObject, object[]> reportFrame)

@@ -2,7 +2,7 @@
 
 Covers: the shape of a screen, core principles, choosing the built-in widget for the job, layout differences from CSS, symptom → cause → fix, code-side MUST/NEVER rules (handles, dialogs), which redraw call to make, how to verify a screen (build, PNG, driving the app without a window), what is not supported, where the C# API is and which namespace each type is in. This is the page to read first when building screens; it is for both humans and AI.
 Read first: [the document map in llms.txt](llms.txt) — then this page, then [markup basics, values and binding](dvml-language.md#markup-basics).
-Not here: [style keys](dvml-style.md#style-keys) · [theme tokens](dvml-style.md#theme-tokens) · [widget reference](dvml-widgets.md#semantic-components) · [input widget reference](dvml-inputs.md#input-common) · [build diagnostics DVML001–021](dvml-diagnostics.md#build-diagnostics) · [thread contract](dvml-app.md#threads) · [dialog reference](dvml-dialogs.md#dialog-flow) · [process diagrams](dvml-process.md#process-overview) · [screens from a picture](dvml-image.md#image-method)
+Not here: [style keys](dvml-style.md#style-keys) · [theme tokens](dvml-style.md#theme-tokens) · [widget reference](dvml-widgets.md#semantic-components) · [input widget reference](dvml-inputs.md#input-common) · [build diagnostics DVML001–022](dvml-diagnostics.md#build-diagnostics) · [thread contract](dvml-app.md#threads) · [dialog reference](dvml-dialogs.md#dialog-flow) · [process diagrams](dvml-process.md#process-overview) · [screens from a picture](dvml-image.md#image-method)
 
 Devinno.UI is a .NET 9 UI library that draws directly with SkiaSharp. Screens are written as XML markup with a CSS-like inline `style` and bound to a C# view model (VM). It is not a browser: **even where it looks like HTML/CSS, it is not the same engine.** Knowing the differences below avoids most mistakes.
 
@@ -49,6 +49,7 @@ public sealed partial class MainPage : DvPage   // the VM of MainPage.dvml; the 
 
 - `vm` is the full class name including the namespace (`vm="MyApp.Pages.MainPage"`); the samples declare classes without a namespace, so they use the bare name.
 - `{X}` reads a VM property; `{Bind X}` on a value widget also writes user input back; `onclick` names a public VM method. Details: [binding](dvml-language.md#binding), [click](dvml-language.md#click).
+- Format a number inside text with `{X:format}` (`text="{Temp:0.0} ℃"`, .NET format, invariant culture) — do not add a VM string property only for formatting. A widget's own value text uses its `format` attribute; value attributes and `{Bind X}` take no `:format` ([display format](dvml-language.md#binding-format)).
 - The csproj and the source generator: [project setup](dvml-code.md#project-setup). A full app with bars and a dialog: [app example](dvml-app.md#app-example). Choosing the host package: [llms.txt](llms.txt) and [hosts](dvml-app.md#hosts).
 
 <a id="principles"></a>
@@ -134,6 +135,7 @@ Knowing how mistakes show up finds the cause quickly when you look at the result
 | Alignment ignored | Unsupported value (`justify-content:space-around`, `align-items:baseline`, `text-align:justify`) is treated as the default (start / left) | — | Use a listed value |
 | `padding` ignored | 5 or more values; only 1–4 work (3 = top, left/right, bottom — as in CSS) | — | [value formats](dvml-style.md#style-values) |
 | Bound text is blank | Property path not on the VM (`{Temprature}`) gives an empty value (null) | — | Fix the path — [binding](dvml-language.md#binding) |
+| A number shows too many decimals | `{Temp}` writes the full value | — | Add a display format: `{Temp:0.0}` — [display format](dvml-language.md#binding-format) |
 | Icon missing | Unknown icon name: not drawn (one Trace warning) | — | [icons](dvml-app.md#icons) |
 | Picture missing | `DvImage src` or `background-image: url(…)` file missing: empty box / no picture | — | Check the file path |
 | Video box shows a one-line reason | `DvVideo src` file missing or unreadable, or FFmpeg 8 shared libraries not found (one Trace warning); FFmpeg is not in the package | — | [DvVideo](dvml-widgets.md#dvvideo) |

@@ -68,7 +68,7 @@ Devinno.UI assumes that screens will be written with AI (LLM) coding tools. It t
 
 **Mistakes you can see**
 In UI code, the usual failure is a mistake that does nothing: no error, no warning, just a screen that is slightly wrong. Devinno.UI reports these in three places.
-- The build reports diagnostics DVML001 to DVML021 at the line and column in the dvml file. They cover unknown style properties, theme tokens and classes, values that are not allowed or not of the attribute's kind, handler methods the VM does not have, attributes a built-in tag does not have, components named like a built-in tag, broken process diagram connections and duplicate `id`s.
+- The build reports diagnostics DVML001 to DVML022 at the line and column in the dvml file. They cover unknown style properties, theme tokens and classes, values that are not allowed or not of the attribute's kind, handler methods the VM does not have, attributes a built-in tag does not have, components named like a built-in tag, empty binding formats, broken process diagram connections and duplicate `id`s.
 - The compiler catches misspelled names in code. When an element has an `id`, the source generator adds a typed handle field to the VM.
 - At run time, a bad color token that got past the build is drawn in magenta (`#FF00FF`), so it is hard to miss.
 
@@ -155,7 +155,7 @@ These documents ship in the package's `docs/` folder (after a build they are als
 - `dvml-layout.md`, `dvml-style.md`: layout boxes, sizes and scrolling; style keys, classes and theme tokens.
 - `dvml-widgets.md`, `dvml-inputs.md`, `dvml-instruments.md`, `dvml-grid.md`: one section per built-in tag with its attributes and an example.
 - `dvml-components.md`, `dvml-app.md`, `dvml-code.md`, `dvml-dialogs.md`: user components and custom widgets; app, pages, bars, threads and hosts; controls from code; dialogs.
-- `dvml-diagnostics.md`: build diagnostics DVML001–021 and runtime Trace warnings.
+- `dvml-diagnostics.md`: build diagnostics DVML001–022 and runtime Trace warnings.
 - `dvml-process.md`, `dvml-process-equipment.md`, `dvml-process-layout.md`, `dvml-process-examples.md`: process diagrams (P&ID) with `DvProcess`: equipment, connections, layout rules, user symbols and complete examples.
 - `dvml-image.md`: guide to building a screen from a picture (a mockup or design to reproduce): deciding how to build each part, image files, touch areas, verification.
 - `llms.txt`: entry point for AI tools (reading order of the files above)

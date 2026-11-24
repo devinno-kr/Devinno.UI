@@ -973,6 +973,24 @@ public class DvmlGeneratorTests
         Assert.Empty(r.Ids("DVML020"));
     }
 
+    // DVML022 — 빈 바인딩 형식({Temp:}) — 속성 값과 요소 글자 모두. 형식이 있으면(HH:mm 포함) 알리지 않는다
+    [Fact]
+    public void Binding_EmptyFormat_IsAWarning()
+    {
+        var r = Run("public partial class P { }", ("P.dvml", """
+            <DvScreen>
+              <DvLabel text="T {Temp:} ℃"/>
+              <DvLabel>{Level: }</DvLabel>
+              <DvLabel text="{Temp:0.0} {At:HH:mm} {Bind Set:}"/>
+            </DvScreen>
+            """));
+        var d = r.Ids("DVML022");
+        Assert.Equal(3, d.Count());
+        Assert.All(d, x => Assert.Equal(DiagnosticSeverity.Warning, x.Severity));
+        Assert.Contains("{Temp:}", d.First().GetMessage(Invariant));
+        Assert.Contains("비어", d.First().GetMessage(new System.Globalization.CultureInfo("ko-KR")));
+    }
+
     // 3단계 D4 — 내장 태그 이름의 컴포넌트는 빌드 오류(DVML021). 내장 컴포넌트(DvCard·DvPageFrame…)를 바꾸는 것은 된다
     [Fact]
     public void Component_BuiltInTagName_IsAnError()

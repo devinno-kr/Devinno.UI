@@ -13,7 +13,9 @@ namespace Devinno.UI.Binding;
 /// <para><b>Path rules</b>: a dot-separated (<c>.</c>) path of public instance properties. A leading <c>Bind </c> (two-way marker) and the <c>Data.</c> prefix are stripped before resolving.
 /// If an intermediate value is <see langword="null"/> or a property does not exist, the result is <see langword="null"/> without an exception.
 /// If a property getter (view model code) throws, the exception is not propagated; the value is treated as <see langword="null"/>, a Trace error is written, and during layout or drawing it is reported through that screen's <see cref="DvSurface.HandlerError"/> (<c>Kind</c> = <c>"getter"</c>).
-/// In interpolation (<see cref="ResolveInline"/>), if a value's <c>ToString</c> throws, that spot becomes an empty string (<c>"format"</c>). In a repeated-item context, <c>Item</c>, <c>Item.X</c> and <c>Index</c> are available;
+/// In interpolation (<see cref="ResolveInline"/>), if a value's <c>ToString</c> throws, that spot becomes an empty string (<c>"format"</c>).
+/// <b>Display format</b>: <c>{Path:format}</c> (cut at the first <c>:</c>) formats the value when it becomes text — interpolation and text attributes — with the .NET format string and the invariant culture,
+/// by the same rule as the widget <c>format</c> attribute. Reading the value (<see cref="Resolve"/>, value attributes, two-way bindings) ignores the format. In a repeated-item context, <c>Item</c>, <c>Item.X</c> and <c>Index</c> are available;
 /// inside a component template, parameter names are the first segment of the path.</para>
 /// <para><b>Localization</b>: <c>{L10n.key}</c> and <c>@key</c> are replaced with translated strings only during layout (while the screen's localization table is set). Called outside of that, <c>{L10n.key}</c> is <see langword="null"/> and <c>@key</c> is returned literally.</para>
 /// <para>Property read functions are cached per type and path; the cache is thread-safe.</para>
@@ -52,18 +54,43 @@ public static class BindingResolver
     }
 
     /// <summary>
-    /// Strips the braces and the <c>Bind </c>/<c>Data.</c> prefixes from a binding expression and returns only the property path. Example: <c>{Bind Data.Pump.Run}</c> → <c>Pump.Run</c>.
+    /// Strips the braces, the <c>Bind </c>/<c>Data.</c> prefixes and a display format (<c>:0.0</c>) from a binding expression and returns only the property path. Example: <c>{Bind Data.Pump.Run}</c> → <c>Pump.Run</c>, <c>{Temp:0.0}</c> → <c>Temp</c>.
     /// </summary>
     /// <param name="expr">Binding expression including braces (at least 2 characters). The format is not checked, so pass a value verified with <see cref="IsBinding"/> or similar.</param>
     /// <returns>The property path.</returns>
-    public static string ExtractPath(string expr)
+    public static string ExtractPath(string expr) => Split(expr).Path;
+
+    // {[Bind ][Data.]경로[:형식]} — 형식은 첫 ':' 에서 자른다(형식 안의 ':' — HH:mm — 는 형식 쪽). 경로·형식 앞뒤 공백 무시. 다국어 키는 형식 없음, 빈 형식 = 없음
+    private static (string Path, string? Format, bool TwoWay) Split(string expr)
     {
         var inner = expr[1..^1].Trim();
-        if (inner.StartsWith("Bind ", StringComparison.Ordinal))
+        var twoWay = inner.StartsWith("Bind ", StringComparison.Ordinal);
+        if (twoWay)
             inner = inner[5..].Trim();
+        string? format = null;
+        if (!inner.StartsWith(L10nPrefix, StringComparison.Ordinal) && inner.IndexOf(':') is var colon and >= 0)
+        {
+            format = inner[(colon + 1)..].Trim() is { Length: > 0 } f ? f : null;
+            inner = inner[..colon].TrimEnd();
+        }
         if (inner.StartsWith("Data.", StringComparison.Ordinal))
             inner = inner[5..];
-        return inner;
+        return (inner, format, twoWay);
+    }
+
+    /// <summary>
+    /// The display format of a single binding (<c>{Temp:0.0}</c> → <c>0.0</c>), or <see langword="null"/> when it has none or <paramref name="expr"/> is not a single binding.
+    /// A two-way binding takes no format: <c>{Bind X:0.0}</c> gives <see langword="null"/> with a warning (the value is written to <c>X</c> as usual).
+    /// </summary>
+    internal static string? FormatOf(string? expr)
+    {
+        if (expr is null || !IsBinding(expr))
+            return null;
+        var (_, format, twoWay) = Split(expr);
+        if (format is null || !twoWay)
+            return format;
+        Warnings.Warn($"Devinno.UI: binding '{expr}' is two-way; a two-way binding takes no format, so ':{format}' is ignored (use the widget's format attribute)", key: "\u001fbind-format\u001f" + expr);
+        return null;
     }
 
     /// <summary>
@@ -94,6 +121,7 @@ public static class BindingResolver
 
     /// <summary>
     /// Replaces every <c>{…}</c> binding in the text with the string of its value (an empty string if the value is <see langword="null"/>). Example: <c>"온도 {Temp} ℃"</c> ("Temperature {Temp} ℃").
+    /// Values are written with the invariant culture; a binding may carry a display format after the first <c>:</c>, as in C# string interpolation: <c>"{Temp:0.0} ℃"</c> → <c>24.6 ℃</c>, <c>{At:HH:mm}</c>.
     /// </summary>
     /// <param name="ctx">Binding context. If <see langword="null"/>, only <c>{L10n.…}</c> is replaced and other bindings are left as written.</param>
     /// <param name="raw">String to resolve. Returned as-is if <see langword="null"/> or whitespace.</param>
@@ -111,14 +139,29 @@ public static class BindingResolver
     /// <summary>String form of the <see cref="ResolveValueOrLiteral"/> result. If the value's ToString throws, reports it and returns <see langword="null"/> (empty).</summary>
     internal static string? ResolveText(object? ctx, string? raw) => ToText(ResolveValueOrLiteral(ctx, raw), raw);
 
-    /// <summary>String form of a value — a ToString exception is reported and gives <see langword="null"/>. <paramref name="expr"/> is used only as the report's Member (the path, if it is a binding).</summary>
+    /// <summary>
+    /// String form of a value — numbers, dates and other <see cref="IFormattable"/> values with the invariant culture (<c>24.5</c>, never <c>24,5</c>).
+    /// When <paramref name="expr"/> is a single binding with a format (<c>{Temp:0.0}</c>), the value is formatted with it by the widget <c>format</c> rule
+    /// (<see cref="Layout.AttrRules.FormatOrNull"/>): a format that is not valid for the value, or a value that is not <see cref="IFormattable"/>, gives the default text with a warning.
+    /// A ToString exception is reported and gives <see langword="null"/>. Otherwise <paramref name="expr"/> is used only as the report's Member (the path, if it is a binding).
+    /// </summary>
     internal static string? ToText(object? value, string? expr)
     {
-        if (value is null or string)
-            return (string?)value;
+        if (value is null)
+            return null;
+        var format = FormatOf(expr);
+        if (format is null && value is string s)
+            return s;
         try
         {
-            return value.ToString();
+            if (format is not null)
+            {
+                if (value is IFormattable f)
+                    return Layout.AttrRules.FormatOrNull(f, format, "binding '" + expr + "'") ?? f.ToString(null, CultureInfo.InvariantCulture);
+                Warnings.Warn($"Devinno.UI: binding '{expr}' has a format, but its value is a {value.GetType().Name}, which takes no format; using the default text", key: "\u001fbind-format\u001f" + expr);
+            }
+
+            return value is IFormattable plain ? plain.ToString(null, CultureInfo.InvariantCulture) : value.ToString();
         }
         catch (Exception ex)
         {
@@ -144,10 +187,7 @@ public static class BindingResolver
         if (ctx is null)
             return null;
 
-        if (path.StartsWith("Bind ", StringComparison.Ordinal))
-            path = path[5..].Trim();
-        if (path.StartsWith("Data.", StringComparison.Ordinal))
-            path = path[5..];
+        path = Split(expr).Path; // 형식(:0.0)은 값을 읽을 때 쓰지 않는다 — 글자로 바꿀 때(ToText)만
 
         try
         {

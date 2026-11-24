@@ -196,6 +196,7 @@ Every attribute value is read by one of these rules, on every tag. "Literal" = w
 | `text="{Motor.Speed}"` | Dot path. Empty if an intermediate value is null |
 | `{Data.X}` | Same as `{X}`: the `Data.` prefix is stripped (do not write it). So a VM property named `Data` cannot be reached this way: `{Data.X}` reads `X` on the VM itself and shows nothing, with no warning. Give such a property another name (for a snapshot object: `Live`, bound as `{Live.Temp}`) |
 | `text="Pump #{No} - {State}"` | Interpolation inside text. Braces are always interpreted as bindings |
+| `text="{Temp:0.0} ℃"` | Display format after the first `:`, as in C# `$"{x:0.0}"` ([display format](#binding-format)) |
 | `style="color:{StatusColor}"` | Interpolation inside a style |
 | `style="color: token(tone-{Tone}-fg)"` | The binding is resolved first, then the token |
 | `value="{Bind AutoMode}"` | Two-way: writes user input to the VM ([two-way](#two-way)) |
@@ -204,6 +205,18 @@ Every attribute value is read by one of these rules, on every tag. "Literal" = w
 - Bindings read **public instance properties** only (not fields). A missing path becomes null and shows as blank.
 - If the whole attribute value is a single binding (`"{X}"`), the value's type is preserved (number, bool, list). Mixed text becomes a string.
 - Bindings are read once at layout. Computed properties (`public string StatusText => …`) are recomputed on the next `Invalidate()`. After changing the VM from a timer or another thread, call `Invalidate()`: [updates and threads](llm-rules.md#updates-threads).
+- A value turned into text (interpolation, a text attribute) is written with the invariant culture: `24.5`, `1234.5`, dates as `11/24/2026 13:05:09`, on any PC language setting. Give dates a format (`{At:yyyy-MM-dd HH:mm}`).
+
+<a id="binding-format"></a>
+### Display format
+
+- `{Path:format}` formats the value with a .NET format string and the invariant culture, by the same rule as the widget `format` attribute ([value rules](#value-rules)). The path ends at the first `:`; every later `:` belongs to the format (`{At:HH:mm}`). Spaces around the path and the format are ignored.
+- Examples: `{Temp:0.0}` → `24.6`, `{Temp:F2}` → `24.57`, `{Count:#,0}` → `1,234`, `{Ratio:0%}` → `43%`, `{At:yyyy-MM-dd}` → `2026-11-24`, `{Item.Rpm:0}` inside a repeat.
+- Used where the value becomes text: interpolation (`text="T {Temp:0.0} ℃"`, element text, `style`) and text attributes (`text`, `label`, `title`, `header`, `unit` …), including a single binding (`text="{Temp:0.0}"`).
+- A format the value type cannot use (`{Level:D2}` on a double) or a value that takes no format (bool, string) shows the default text and writes a Trace warning. A missing value is blank, without a warning.
+- Not used on value attributes (`DvGauge value="{Level:0.0}"`): the value keeps its type and full precision, and a Trace warning says the format is ignored. Format a widget's own value text with its `format` attribute.
+- Not used on two-way bindings: `{Bind X:0.0}` writes to `X` as usual, ignores the format and writes a Trace warning.
+- An empty format (`{Temp:}`) is the same as none and is build warning [DVML022](dvml-diagnostics.md#dvml022).
 
 <a id="two-way"></a>
 ### Two-way binding

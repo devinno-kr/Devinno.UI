@@ -145,6 +145,12 @@
   <data name="DVML021_Message" xml:space="preserve">
     <value>&lt;DvComponent name='{0}'&gt;: '{0}' 은(는) 내장 태그입니다 — 컴포넌트는 내장 태그 이름을 쓸 수 없습니다(ComponentRegistry.Register 가 예외). 다른 이름을 쓰세요</value>
   </data>
+  <data name="DVML022_Title" xml:space="preserve">
+    <value>바인딩 표시 형식이 비어 있음</value>
+  </data>
+  <data name="DVML022_Message" xml:space="preserve">
+    <value>'{0}': ':' 뒤의 형식이 비어 있습니다 — 값은 형식 없이 표시됩니다. .NET 형식을 쓰거나({{Temp:0.0}}) ':' 를 지우세요</value>
+  </data>
   <data name="DVML018_Title" xml:space="preserve">
     <value>핸들러 메서드를 찾을 수 없음</value>
   </data>

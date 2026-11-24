@@ -56,4 +56,7 @@ internal static class Diagnostics
 
     // DVML021 — <DvComponent name> 이 내장 태그 이름(TagSchema, 내장 컴포넌트 제외) — ComponentRegistry.Register 가 예외를 던진다(3단계 D4)
     public static readonly DiagnosticDescriptor ComponentBuiltInName = D("DVML021", DiagnosticSeverity.Error);
+
+    // DVML022 — 바인딩 표시 형식이 비었다({Temp:}) — 실행 때는 형식 없는 것과 같다(조용히). 값 형식과 맞는지는 VM 값이 실행 때 정해져 실행 경고만
+    public static readonly DiagnosticDescriptor EmptyBindingFormat = D("DVML022", DiagnosticSeverity.Warning);
 }

@@ -1,6 +1,6 @@
 # DVML diagnostics
 
-Covers: build diagnostics DVML001–021 (severity, meaning, what is checked, how to fix), the runtime Trace warning index (message form → cause → page that owns the rule), and when the screen draws magenta.
+Covers: build diagnostics DVML001–022 (severity, meaning, what is checked, how to fix), the runtime Trace warning index (message form → cause → page that owns the rule), and when the screen draws magenta.
 Read first: [markup basics](dvml-language.md#markup-basics) · [build, then check the output](llm-rules.md#verify-build)
 Not here: [process diagram runtime messages in full](dvml-process-layout.md#process-diagnostics) · [handler exceptions and `HandlerError` kinds](dvml-language.md#handler-error) · [symptom → cause → fix table](llm-rules.md#symptoms) · [theme token list](dvml-style.md#theme-tokens) · [project setup and the generator](dvml-code.md#project-setup)
 
@@ -32,6 +32,7 @@ The source generator reports problems in each `*.dvml` file at compile time. The
 | [DVML019](#dvml019) | Warning | Unknown attribute | every dvml |
 | [DVML020](#dvml020) | Warning | Attribute value is not valid for its kind | every dvml |
 | [DVML021](#dvml021) | Error | Component name is a built-in tag | every dvml |
+| [DVML022](#dvml022) | Warning | Empty binding format | every dvml |
 
 Scope rules:
 - "every dvml" includes dvml files without `vm`.
@@ -202,6 +203,13 @@ What to do after every markup edit: build, then fix every error and every DVML01
 - Built-in components (`DvCard`, `DvPageFrame`, `DvSwitch` …) may be replaced by a component of the same name; that is not this error.
 - Fix: choose another name ([component name rules](dvml-components.md#component-names)).
 
+<a id="dvml022"></a>
+### DVML022 — Empty binding format (Warning)
+
+- Meaning: a binding with nothing after its `:` (`{Temp:}`, `{Temp: }`). At run time it is the same as no format.
+- Checked in every attribute value and element text. Whether a format suits the value type is not checked at build time (the VM value is known only at run time); that is a Trace warning ([display format](dvml-language.md#binding-format)).
+- Fix: write a .NET format (`{Temp:0.0}`) or remove the `:`.
+
 <a id="trace-warnings"></a>
 ## Runtime Trace warnings
 
@@ -221,6 +229,8 @@ Some problems are reported only at run time through `System.Diagnostics.Trace`. 
 | `{tag} {attr}='…' uses a token the theme does not have; drawing #FF00FF (magenta)` | Unknown token in a color attribute | [magenta](#magenta) |
 | `unresolved token '…'; drawing #FF00FF (magenta)` · `token '…' is not a color` | Theme lacks a token a built-in part draws with, or the token value is not a color | [magenta](#magenta) |
 | `{tag} format='…' is not a .NET format for …; using the default display` | `format` not usable for the value type | [value rules](dvml-language.md#value-rules) |
+| `binding '{…}' format='…' is not a .NET format for …` · `binding '{…}' has a format, but its value is a … which takes no format` | Binding display format (`{Level:D2}`) not usable for the value | [display format](dvml-language.md#binding-format) |
+| `{tag} {attr}='{…:…}' is not a text attribute; the format … is ignored` · `binding '{Bind …:…}' is two-way; … ignored` | Binding format on a value attribute or a two-way binding | [display format](dvml-language.md#binding-format) |
 | `{tag} min='…' is not below max='…'; using 0..100` | `min >= max` | [value rules](dvml-language.md#value-rules) |
 | `{tag} alarm-zones zone '…' is not valid (…); the zone is ignored` | Unreadable `alarm-zones` zone (only that zone is dropped) | [alarm zones](dvml-instruments.md#alarm-zones) |
 | `unknown icon '…'; not drawn` | Unknown icon name | [icons](dvml-app.md#icons) |

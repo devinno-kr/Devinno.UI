@@ -145,6 +145,12 @@
   <data name="DVML021_Message" xml:space="preserve">
     <value>&lt;DvComponent name='{0}'&gt;: '{0}' is a built-in tag — a component cannot use a built-in tag name (ComponentRegistry.Register throws); choose another name</value>
   </data>
+  <data name="DVML022_Title" xml:space="preserve">
+    <value>Empty binding format</value>
+  </data>
+  <data name="DVML022_Message" xml:space="preserve">
+    <value>'{0}': the format after ':' is empty — the value is shown without a format; write a .NET format ({{Temp:0.0}}) or remove the ':'</value>
+  </data>
   <data name="DVML018_Title" xml:space="preserve">
     <value>Handler method not found</value>
   </data>

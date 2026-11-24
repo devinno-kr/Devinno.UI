@@ -43,9 +43,20 @@ internal readonly struct AttrReader(ElementNode node, object? ctx, IReadOnlyDict
         return node.Attributes.GetValueOrDefault(name);
     }
 
-    /// <summary>The value: the code override, otherwise the markup value resolved (a single binding keeps its type). <see langword="null"/> if absent.</summary>
-    public object? Value(string name) =>
-        overrides is not null && overrides.TryGetValue(name, out var v) ? Seen(name, v) : BindingResolver.ResolveValueOrLiteral(ctx, Raw(name));
+    /// <summary>
+    /// The value: the code override, otherwise the markup value resolved (a single binding keeps its type). <see langword="null"/> if absent.
+    /// A display format on a single binding (<c>{Temp:0.0}</c>) applies only to text (<see cref="Text"/>); here it is ignored with a warning.
+    /// </summary>
+    public object? Value(string name)
+    {
+        if (overrides is not null && overrides.TryGetValue(name, out var v))
+            return Seen(name, v);
+        var raw = Raw(name);
+        if (BindingResolver.FormatOf(raw) is { } format)
+            Interaction.Warnings.Warn($"Devinno.UI: {node.Tag} {name}='{raw}' is not a text attribute; the format ':{format}' is ignored (a binding format applies only to text — use the widget's format attribute)",
+                key: string.Concat(node.Tag, "\u001f", name, "\u001f", raw));
+        return BindingResolver.ResolveValueOrLiteral(ctx, raw);
+    }
 
     /// <summary>The value as text (see <see cref="Value"/>).</summary>
     public string? Text(string name) =>

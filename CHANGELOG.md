@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.1 — 2026-11-24
+
+Bindings take a display format, as in C# string interpolation: `text="{Temp:0.0} ℃"`. Numbers in text no longer depend on the PC's language setting.
+
+### Added
+
+- Binding display format `{Path:format}` (`dvml-language.md` → Display format): a .NET format string with the invariant culture, by the same rule as the widget `format` attribute. The path ends at the first `:`, so `{At:HH:mm}` works. It applies wherever the value becomes text — interpolation, element text, `style` and text attributes, including a single binding (`text="{Temp:0.0}"`). A format the value cannot use shows the default text with a Trace warning. Value attributes (`DvGauge value="{Level:0.0}"`) and two-way bindings (`{Bind X:0.0}`) keep the value as is and warn that the format is ignored.
+- Build warning DVML022: an empty binding format (`{Temp:}`).
+
+### Changed
+
+- A bound value turned into text is written with the invariant culture: `24.5` on a German or French PC too (it was `24,5`), and dates as `11/24/2026 13:05:09`. Give dates a format (`{At:yyyy-MM-dd HH:mm}`) to choose how they look.
+
 ## 0.8.0 — 2026-11-20
 
 A new package, Devinno.UI.Scene3D, shows a glTF 3D model in a screen and moves its parts from bound values. For it, custom widgets can read their child elements as settings. Release builds of apps get much smaller.
