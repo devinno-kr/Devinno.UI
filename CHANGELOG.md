@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Painting skips boxes that cannot reach the visible area: rows of a long `DvRepeat` scrolled out of view, content outside a clipping box, and everything outside the region being redrawn. A 1,000-row scrolling list paints in about 2 ms instead of 16 ms. The picture is the same: the area a box may paint into includes its shadows, text that overflows a fixed size, children placed outside it and the `transform` of every state style. Custom widgets, process diagrams, shrunk content and videos are always painted. Building the boxes is unchanged — a long list is still built in full, so use `DvDataGrid` for thousands of rows.
+
 ## 0.9.0 — 2026-11-25
 
 For screen editors and data-entry screens: a view model hears the values the screen wrote, input fields move with Tab, and editor tools read process ports, drawn positions and intrinsic sizes without reflection. See Changed before you upgrade: Tab now moves to the next input, and pointer widgets take their own presses.

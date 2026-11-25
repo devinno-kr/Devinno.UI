@@ -86,6 +86,7 @@ public sealed partial class Painter
     // key = 트리 경로 열쇠(부모 열쇠·자식 번호) — 전환 상태를 프레임 사이에 같은 상자로 잇는다
     private void PaintAt(SKCanvas canvas, LayoutBox box, object? vm, InteractionState? state, long timestampMs, long key)
     {
+        PaintedBoxes++;
         var st = Effective(box, state);
         if (MotionState is { } motion && MotionStore.Wants(box))
             st = motion.Apply(key, box, st, timestampMs);
@@ -601,8 +602,14 @@ public sealed partial class Painter
         }
 
         var content = BeginContent(canvas, box);
+        // 컬링 — 지금 클립(스크롤 상자·부분 다시 그리기·창)에 닿지 않는 자식은 그리지 않는다(긴 스크롤 목록에서 화면 밖 상자를 훑지 않게)
+        var visible = box.Children.Count > 1 && !NoCulling ? canvas.LocalClipBounds : Unbounded;
         for (var i = 0; i < box.Children.Count; i++)
-            PaintAt(canvas, box.Children[i], vm, state, timestampMs, unchecked(key * 31 + i + 1));
+        {
+            var child = box.Children[i];
+            if (PaintBoundsOf(child).IntersectsWith(visible))
+                PaintAt(canvas, child, vm, state, timestampMs, unchecked(key * 31 + i + 1));
+        }
         EndContent(canvas, content);
 
         if (clip)
@@ -719,6 +726,124 @@ public sealed partial class Painter
     {
         if (saved >= 0)
             canvas.RestoreToCount(saved);
+    }
+
+    private static readonly SKRect Unbounded = new(-1e9f, -1e9f, 1e9f, 1e9f);
+
+    /// <summary>Test hook: paints every box (no culling) on this thread, to compare against culled painting.</summary>
+    [ThreadStatic] internal static bool NoCulling;
+
+    /// <summary>Test hook: the number of boxes painted on this thread.</summary>
+    [ThreadStatic] internal static int PaintedBoxes;
+
+    // 상자 밖으로 조금 나가 그려지는 것(안티에일리어싱·테두리 선·읽기 전용 점선·노브 그림자 등)의 여유
+    private const float PaintSlack = 24f;
+
+    /// <summary>
+    /// The area <paramref name="box"/> and its children may paint into (culling): its rect, widened by content that does not fit (text wider or taller than the box),
+    /// by shadows of any state style and by <see cref="PaintSlack"/>, plus the children's areas unless the box clips them,
+    /// then moved by the transform of every state style (a transition between them stays inside their union).
+    /// Unbounded (never culled) when the box or a child draws in ways the rect does not tell: a content scale, a custom widget, a process diagram, a video.
+    /// Cached until any box's rect changes (<see cref="LayoutBox.RectVersion"/>).
+    /// </summary>
+    internal static SKRect PaintBoundsOf(LayoutBox box)
+    {
+        var version = LayoutBox.RectVersion;
+        if (box.PaintBoundsAt == version)
+            return box.PaintBounds;
+
+        var bounds = OwnPaintBounds(box);
+        if (bounds != Unbounded && !(box.Style.Overflow is Overflow.Hidden or Overflow.Scroll))
+        {
+            foreach (var c in box.Children)
+            {
+                var cb = PaintBoundsOf(c);
+                if (cb == Unbounded)
+                {
+                    bounds = Unbounded;
+                    break;
+                }
+                bounds.Union(cb);
+            }
+        }
+
+        if (bounds != Unbounded)
+        {
+            var still = bounds;
+            Transformed(ref bounds, still, box.Rect, box.Style);
+            Transformed(ref bounds, still, box.Rect, box.StyleHover);
+            Transformed(ref bounds, still, box.Rect, box.StylePress);
+            Transformed(ref bounds, still, box.Rect, box.StyleDisabled);
+        }
+
+        box.PaintBounds = bounds;
+        box.PaintBoundsAt = LayoutBox.RectVersion == version ? version : null; // 계산 중에 다른 스레드가 배치했으면 다음에 다시
+        return bounds;
+    }
+
+    private static SKRect OwnPaintBounds(LayoutBox box)
+    {
+        if (box.Widget is not null || box.Process is not null || box.HasContentTransform || box.Node.Tag == "DvVideo")
+            return Unbounded;
+
+        var rect = box.Rect;
+        // 내용이 상자보다 크면(긴 낱말, 줄바꿈된 글이 줄 높이를 넘김) 정렬에 따라 어느 쪽으로든 넘칠 수 있다 — 양쪽으로 넓힌다.
+        // 자식을 자르는 상자는 넘친 내용이 잘려 안 보이므로 넓히지 않는다
+        float overW = 0, overH = 0;
+        if (box.Style.Overflow is not (Overflow.Hidden or Overflow.Scroll))
+        {
+            if (box.MeasureCache is var (mw, mh))
+                (overW, overH) = (MathF.Max(overW, mw - rect.Width), MathF.Max(overH, mh - rect.Height));
+            if (box.MeasureCacheAt is var (aw, ah))
+                (overW, overH) = (MathF.Max(overW, aw - rect.Width), MathF.Max(overH, ah - rect.Height));
+        }
+        // 글 — 고정 크기 상자에서도 넘쳐 그려진다(측정 캐시는 스타일 크기를 따름). 가장 넓은 문단 폭과 줄 수 × 글자 크기의 2배(줄 간격보다 넉넉히)로
+        if (box.ResolvedText is { Length: > 0 } text)
+        {
+            var st = box.Style;
+            var size = MathF.Max(st.FontSize, MathF.Max(box.StyleHover?.FontSize ?? 0, MathF.Max(box.StylePress?.FontSize ?? 0, box.StyleDisabled?.FontSize ?? 0)));
+            var innerW = rect.Width - st.Padding.Horizontal;
+            var lines = TextLineCount(box, st, text, innerW);
+            overW = MathF.Max(overW, (box.TextLines?.Width ?? size * text.Length) * size / MathF.Max(st.FontSize, 1f) - innerW);
+            overH = MathF.Max(overH, lines * size * 2f - (rect.Height - st.Padding.Vertical));
+        }
+        var bounds = SKRect.Inflate(rect, overW + PaintSlack, overH + PaintSlack);
+        AddShadow(ref bounds, rect, box.Style);
+        AddShadow(ref bounds, rect, box.StyleHover);
+        AddShadow(ref bounds, rect, box.StylePress);
+        AddShadow(ref bounds, rect, box.StyleDisabled);
+        return bounds;
+    }
+
+    // 그리는 줄 수 — 측정 때 나눈 줄이 있으면 그대로, 없으면 그리기와 같은 방법으로 나눈다(TextLinesFor)
+    private static int TextLineCount(LayoutBox box, ComputedStyle st, string text, float innerW)
+    {
+        var width = st.NoWrap == true ? (float?)null : innerW;
+        if (box.TextLines is { } known && known.CountAt(width) is { } n)
+            return n;
+        using var font = TextFont.Create(text, st.FontSize, st.FontWeight, st.FontFamily);
+        return LayoutEngine.TextLinesFor(box, st, font, innerW).Count;
+    }
+
+    // transform 이 그리는 자리 — 상자 가운데 기준 배율 뒤 이동(PaintAt 과 같은 순서). 전환 중 값은 변환 없음·각 상태 값 사이(끝점의 합집합 안)
+    private static void Transformed(ref SKRect bounds, SKRect still, SKRect rect, ComputedStyle? st)
+    {
+        if (st is null || st.Transform.IsIdentity)
+            return;
+        var xf = st.Transform;
+        float X(float x) => rect.MidX + xf.Tx + (x - rect.MidX) * xf.Sx;
+        float Y(float y) => rect.MidY + xf.Ty + (y - rect.MidY) * xf.Sy;
+        var (l, r) = (X(still.Left), X(still.Right));
+        var (t, b) = (Y(still.Top), Y(still.Bottom));
+        bounds.Union(new SKRect(MathF.Min(l, r), MathF.Min(t, b), MathF.Max(l, r), MathF.Max(t, b)));
+    }
+
+    private static void AddShadow(ref SKRect bounds, SKRect rect, ComputedStyle? st)
+    {
+        if (st?.Shadow is not { } sh)
+            return;
+        var s = new SKRect(rect.Left + sh.Dx, rect.Top + sh.Dy, rect.Right + sh.Dx, rect.Bottom + sh.Dy);
+        bounds.Union(SKRect.Inflate(s, sh.Blur + PaintSlack, sh.Blur + PaintSlack));
     }
 
     // DvSegment(fill 아님) — 상자가 grow·stretch 로 넓어져도 배경·테두리·그림자는 항목까지만(뒤에 빈 배경이 남지 않게)

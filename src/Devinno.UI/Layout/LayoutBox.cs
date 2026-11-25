@@ -39,7 +39,26 @@ public sealed class LayoutBox
     /// The outer area of the box (px, coordinates relative to the top-left of the screen). Filled in the arrange stage.
     /// Children inside a scroll box use unscrolled content coordinates; their actual screen position is offset by the parent's <see cref="ScrollX"/>/<see cref="ScrollY"/>.
     /// </summary>
-    public SKRect Rect { get; set; }
+    public SKRect Rect
+    {
+        get => _rect;
+        set
+        {
+            _rect = value;
+            unchecked { RectVersion++; } // 그리기 범위 캐시(PaintBounds)를 무효로 — 배치든 도구가 직접 옮기든
+        }
+    }
+
+    private SKRect _rect;
+
+    /// <summary>Rises whenever any box's <see cref="Rect"/> is set (all trees). <see cref="PaintBounds"/> is valid only while it has not changed since it was computed.</summary>
+    internal static int RectVersion; // int — 32비트 ARM 에서도 읽기·쓰기가 한 번에(바뀜 감지만 하므로 경합으로 빠진 증가는 상관없음)
+
+    /// <summary>Painter culling: the area this box and its children may paint into (own coordinates, children unscrolled), computed when first needed — see <c>Painter.PaintBoundsOf</c>.</summary>
+    internal SKRect PaintBounds;
+
+    /// <summary>The <see cref="RectVersion"/> <see cref="PaintBounds"/> was computed at; <see langword="null"/> = not yet.</summary>
+    internal int? PaintBoundsAt;
 
     /// <summary>
     /// Cache of the natural size measured without an available width (style width and max-width are applied). It depends only on content and style, so it is measured only once while the tree lives

@@ -3275,7 +3275,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             박스의 바깥 영역(px, 화면 왼쪽 위 기준 좌표). 배치 단계에서 채워집니다.
             스크롤 상자 안의 자식은 스크롤하지 않은 내용 좌표이며, 실제 화면 위치는 부모의 <see cref="P:Devinno.UI.Layout.LayoutBox.ScrollX" />·<see cref="P:Devinno.UI.Layout.LayoutBox.ScrollY" /> 만큼 어긋납니다.
             </summary>
-        </member><member name="F:Devinno.UI.Layout.LayoutBox.MeasureCache" en-hash="315af82b114fec3c">
+        </member><member name="F:Devinno.UI.Layout.LayoutBox.RectVersion" en-hash="7b0c883560766812"><summary>어느 상자든(모든 트리) <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 를 정할 때마다 오른다. <see cref="F:Devinno.UI.Layout.LayoutBox.PaintBounds" /> 는 계산한 뒤 이 값이 바뀌지 않은 동안만 유효하다.</summary></member><member name="F:Devinno.UI.Layout.LayoutBox.PaintBounds" en-hash="98f40e03f72eb2cc"><summary>그리기 컬링: 이 상자와 자식이 그릴 수 있는 범위(자기 좌표, 자식은 스크롤 전 좌표). 처음 필요할 때 계산한다 — <c>Painter.PaintBoundsOf</c> 참고.</summary></member><member name="F:Devinno.UI.Layout.LayoutBox.PaintBoundsAt" en-hash="b79c6359a1e48116"><summary><see cref="F:Devinno.UI.Layout.LayoutBox.PaintBounds" /> 를 계산한 때의 <see cref="F:Devinno.UI.Layout.LayoutBox.RectVersion" />. <see langword="null" /> = 아직 안 함.</summary></member><member name="F:Devinno.UI.Layout.LayoutBox.MeasureCache" en-hash="315af82b114fec3c">
             <summary>
             가용 폭 없이 잰 자연 크기 캐시(스타일 width·max-width 는 반영). 내용·스타일로만 정해지므로 트리가 유지되는 동안 한 번만 잰다
             (트리는 Invalidate 때 새로 만들어진다).
@@ -3941,7 +3941,13 @@ var min = TagSchema.Find("DvGauge", "min"); // Kind = Number, Default = "0"
             <param name="state">hover·press 대상 박스. <see langword="null" /> 이면 상태 스타일 없이 그립니다.</param>
             <param name="timestampMs">그리기 시각(ms). 램프·경보의 점멸 위상을 정하는 데만 씁니다. 같은 시각이면 같은 그림이 나오므로 화면 캡처·테스트에서는 고정값을 주면 됩니다.</param></member><member name="P:Devinno.UI.Painting.Painter.MotionState" en-hash="0972376f5fdbe965">
             <summary>CSS <c>transition</c> 상태(화면이 프레임 사이에 들고 있는 것). null 이면 전환 없이 고른 스타일 그대로.</summary>
-        </member><member name="T:Devinno.UI.Painting.Painter.GridFonts" en-hash="b0190364bd3f372a">
+        </member><member name="F:Devinno.UI.Painting.Painter.NoCulling" en-hash="a1d8454d88cf3624"><summary>테스트 고리: 이 스레드에서 모든 상자를 그린다(컬링 없음). 컬링한 그림과 비교할 때 쓴다.</summary></member><member name="F:Devinno.UI.Painting.Painter.PaintedBoxes" en-hash="3f28ae6329a94357"><summary>테스트 고리: 이 스레드에서 그린 상자 수.</summary></member><member name="M:Devinno.UI.Painting.Painter.PaintBoundsOf(Devinno.UI.Layout.LayoutBox)" en-hash="49be6f224167ce62"><summary>
+<paramref name="box" /> 와 그 자식이 그릴 수 있는 범위(컬링용): 상자 영역을, 들어가지 않는 내용(상자보다 넓거나 높은 글), 모든 상태 스타일의 그림자,
+<see cref="F:Devinno.UI.Painting.Painter.PaintSlack" /> 만큼 넓히고, 상자가 자식을 자르지 않으면 자식의 범위를 더한 뒤,
+모든 상태 스타일의 transform 으로 옮긴 자리까지 넓힌다(그 사이의 전환은 그 합집합 안에 있다).
+상자나 자식이 영역으로 알 수 없게 그리면 무한(컬링 안 함): 내용 배율, 커스텀 위젯, 공정도, 비디오.
+어느 상자든 영역이 바뀔 때까지 캐시한다(<see cref="F:Devinno.UI.Layout.LayoutBox.RectVersion" />).
+</summary></member><member name="T:Devinno.UI.Painting.Painter.GridFonts" en-hash="b0190364bd3f372a">
             <summary>
             한 번의 그리드 그리기 동안 쓰는 폰트 — 셀마다 새로 만들지 않고 서체(한글 폴백 등)가 바뀔 때만 만든다.
             </summary>
@@ -5287,7 +5293,7 @@ StyleParser.SetDeclaration("color:#fff", "top", "8");                           
             <summary>줄바꿈 문자로만 나눈 줄(나누지 않으면 원래 글자 하나).</summary>
         </member><member name="P:Devinno.UI.Text.TextLines.Width" en-hash="04e4870278ec8945">
             <summary>가장 긴 문단의 한 줄 폭(px).</summary>
-        </member><member name="M:Devinno.UI.Text.TextLines.At(System.Nullable{System.Single},SkiaSharp.SKFont)" en-hash="4c7c7cbb4d298bb7">
+        </member><member name="M:Devinno.UI.Text.TextLines.CountAt(System.Nullable{System.Single})" en-hash="a80316239fb9ece1"><summary><paramref name="width" /> 에서 <see cref="M:Devinno.UI.Text.TextLines.At(System.Nullable{System.Single},SkiaSharp.SKFont)" /> 가 줄 줄 수를 다시 나누지 않고 알 수 있으면 그 수, 아니면 <see langword="null" />.</summary></member><member name="M:Devinno.UI.Text.TextLines.At(System.Nullable{System.Single},SkiaSharp.SKFont)" en-hash="4c7c7cbb4d298bb7">
             <summary>
             안쪽 폭 <paramref name="width" /> 에 놓을 줄. 폭이 없거나(<see langword="null" />) 가장 긴 문단이 들어가면 문단 그대로,
             아니면 그 폭으로 나눈 줄(직전과 같은 폭이면 다시 나누지 않음).

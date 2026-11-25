@@ -165,6 +165,14 @@ internal sealed class TextLines
     public bool Matches(string text, float size, int weight, string? family, bool tabular = false)
         => Text == text && _size == size && _weight == weight && _family == family && _tabular == tabular;
 
+    /// <summary>The number of lines <see cref="At"/> gives for <paramref name="width"/> when it is known without wrapping again; otherwise <see langword="null"/>.</summary>
+    public int? CountAt(float? width)
+    {
+        if (width is not { } w || Width <= w + TextWrap.Tolerance)
+            return Paras.Count;
+        return _wrapped is { } done && MathF.Abs(_wrapWidth - w) <= TextWrap.Tolerance ? done.Count : null;
+    }
+
     /// <summary>
     /// Lines to place in the inner width <paramref name="width"/>. If there is no width (<see langword="null"/>) or the widest paragraph fits, the paragraphs as they are;
     /// otherwise the lines wrapped to that width (not re-wrapped if the width equals the previous one).
