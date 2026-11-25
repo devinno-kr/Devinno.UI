@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.9.0 — 2026-11-25
+
+For screen editors and data-entry screens: a view model hears the values the screen wrote, input fields move with Tab, and editor tools read process ports, drawn positions and intrinsic sizes without reflection. See Changed before you upgrade: Tab now moves to the next input, and pointer widgets take their own presses.
 
 ### Added
 
