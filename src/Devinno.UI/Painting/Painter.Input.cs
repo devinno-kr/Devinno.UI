@@ -97,11 +97,18 @@ public sealed partial class Painter
         if (box.InputMultiline)
         {
             var lineH = font.Spacing;
-            var y = content.Top - font.Metrics.Ascent;
-            foreach (var line in InputDisplay.Wrap(text, font, content.Width))
+            var lines = InputDisplay.Wrap(text, font, content.Width);
+            var scroll = Math.Clamp(box.InputScrollY, 0f, Math.Max(0f, lines.Count * lineH - content.Height)); // 휠로 내린 만큼(글이 줄면 끝에 맞춤)
+            var y = content.Top - font.Metrics.Ascent - scroll;
+            foreach (var line in lines)
             {
                 if (y + font.Metrics.Ascent > content.Bottom)
                     break;
+                if (y + font.Metrics.Descent < content.Top)
+                {
+                    y += lineH; // 위로 밀려난 줄
+                    continue;
+                }
                 canvas.DrawText(line, AlignX(content, st.TextAlign), y, ToSk(st.TextAlign), font, tp);
                 y += lineH;
             }

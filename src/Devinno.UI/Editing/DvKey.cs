@@ -11,10 +11,10 @@ public enum DvKey
     Enter,
     /// <summary>Backspace. Deletes the last character (the last jamo while composing Korean with the Korean IME).</summary>
     Backspace,
-    /// <summary>Esc. Cancels editing (does not write to the VM).</summary>
+    /// <summary>Esc. Cancels editing without writing to the VM, or writes the typed text for a <c>DvInput</c> with <c>escape="commit"</c>.</summary>
     Escape,
-    /// <summary>Tab. Commits with the <see cref="DvEditExit.Tab"/> reason.</summary>
+    /// <summary>Tab. Commits with the <see cref="DvEditExit.Tab"/> reason and edits the next field.</summary>
     Tab,
-    /// <summary>Shift+Tab. Commits with the <see cref="DvEditExit.ShiftTab"/> reason.</summary>
+    /// <summary>Shift+Tab. Commits with the <see cref="DvEditExit.ShiftTab"/> reason and edits the previous field.</summary>
     ShiftTab
 }

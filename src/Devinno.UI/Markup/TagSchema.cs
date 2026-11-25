@@ -213,6 +213,8 @@ public static class TagSchema
             OwnedValue("text or a number (keyboard-type numeric)"),
             new("keyboard-type", AttrKind.Enum, "text", Values: ["text", "numeric", "password"], Note: EnumRule + "; the handle resolves it against the screen VM"),
             new("multiline", AttrKind.Bool, "false"),
+            new("select-on-focus", AttrKind.Bool, "false", Note: "pressing the box to start editing selects the whole text instead of putting the caret at the end (Tab and Shift+Tab always select it); " + BoolRule),
+            new("escape", AttrKind.Enum, "cancel", Values: ["cancel", "commit"], Note: "the Esc key while editing: cancel = drop the typed text, commit = keep it (written like Enter; useful for multiline); " + EnumRule),
             Placeholder(),
             ContentAlign("horizontal part only; the text stays vertically centered (multiline: from the top)"),
             new("format", AttrKind.Text, Note: "numeric display; " + FormatRule),

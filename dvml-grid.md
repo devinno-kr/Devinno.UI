@@ -300,8 +300,8 @@ public string? ValueClass => Value > Hi ? "over" : null;
 - Editing follows the row (`row-key`, otherwise the item reference) and survives sorting, `Invalidate()` and `Repaint()`.
 - Row scrolled fully off screen: `input` commits, popups close. Row disappears: editing closes without writing.
 - Header tap during `input` editing commits first; with the virtual keyboard it cancels (the keyboard is modal). A header tap while a popup is open only closes the popup.
-- Only with the native editor (WinForms `ViewControl` with `TouchMode` off): Enter = next row in the same column; Tab / Shift+Tab = next/previous input column in the row (non-editable cells skipped, scrolls into view, ends at the last row/column, stops on a rejected value).
-- With the virtual keyboard, committing ends editing.
+- Tab / Shift+Tab = next/previous input column in the row; with the native editor (WinForms `ViewControl` with `TouchMode` off) also Enter = next row in the same column. Non-editable cells are skipped, the cell scrolls into view, editing ends at the last row/column and stops on a rejected value; the new cell's text starts selected.
+- With the virtual keyboard, Done (Enter) ends editing.
 
 <a id="grid-filters"></a>
 ## Filters

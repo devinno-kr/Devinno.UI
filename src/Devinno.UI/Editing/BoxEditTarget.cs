@@ -107,7 +107,27 @@ internal sealed class BoxEditTarget : IEditTarget
 
     public bool Hits(LayoutBox? hitBox, SKPoint p) => ReferenceEquals(hitBox, Box);
 
-    public IEditTarget? Next(DvEditExit exit) => null; // 연속 입력 없음
+    // Tab·Shift+Tab = 이 화면의 다음·이전 입력 칸(문서 순서, 편집할 수 있는 DvInput). 없으면 커밋만
+    public IEditTarget? Next(DvEditExit exit)
+    {
+        if (exit is not (DvEditExit.Tab or DvEditExit.ShiftTab) || _s.Root is not { } root)
+            return null;
+        var inputs = new List<LayoutBox>();
+        Collect(root, inputs);
+        var at = inputs.FindIndex(b => ReferenceEquals(b, Box));
+        if (at < 0)
+            return null;
+        var to = at + (exit == DvEditExit.Tab ? 1 : -1);
+        return to >= 0 && to < inputs.Count ? new BoxEditTarget(_s, inputs[to]) : null;
+    }
+
+    private static void Collect(LayoutBox b, List<LayoutBox> into)
+    {
+        if (b.Node.Tag == "DvInput" && (InputDisplay.IsEditable(b) || b.Editing))
+            into.Add(b);
+        foreach (var c in b.Children)
+            Collect(c, into);
+    }
 
     public void Ended()
     {

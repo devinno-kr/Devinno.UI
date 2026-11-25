@@ -61,6 +61,9 @@ internal sealed class SoftKeyboard
     public bool ShiftOn => _shift;
     public string Text => Mode == KbMode.Numeric ? _num : _composer.Text;
 
+    // 처음 글 전체가 선택된 상태(DvEditState.SelectAll) — 다음 글자는 전체를 바꾸고, 지우기는 전체를 지운다
+    public bool Selected { get; private set; }
+
     // koreanFirst = 화면 언어가 ko — 텍스트 입력을 한글 자판으로 연다(그 밖에는 영문 자판, 한/영 키는 항상 있다)
     public void Open(DvEditState e, long now, bool koreanFirst)
     {
@@ -71,6 +74,7 @@ internal sealed class SoftKeyboard
         Kind = e.Kind;
         Numeric = e.Numeric;
         _shift = false;
+        Selected = e.SelectAll && e.InitialText.Length > 0;
         if (e.Kind == DvEditKind.Numeric)
         {
             Mode = KbMode.Numeric;
@@ -247,8 +251,10 @@ internal sealed class SoftKeyboard
                 return Type(' ');
             case Clear:
                 _num = "";
+                Selected = false;
                 return KbResult.TextChanged;
             case Sign:
+                Selected = false; // 부호는 선택된 값에 붙인다
                 _num = _num.StartsWith('-') ? _num[1..] : "-" + _num;
                 return KbResult.TextChanged;
             case Dot:
@@ -263,6 +269,8 @@ internal sealed class SoftKeyboard
     {
         if (Mode == KbMode.Numeric)
         {
+            if (Selected && (char.IsDigit(c) || c == '.'))
+                ClearSelected();
             if (char.IsDigit(c) || (c == '.' && !(Numeric?.IsInteger ?? false) && !_num.Contains('.')))
             {
                 _num += c;
@@ -274,13 +282,28 @@ internal sealed class SoftKeyboard
             return KbResult.None;
         }
 
+        if (Selected)
+            ClearSelected();
         _composer.Type(c);
         _shift = false; // Shift 는 한 글자만(대문자·쌍자음)
         return KbResult.TextChanged;
     }
 
+    private void ClearSelected()
+    {
+        Selected = false;
+        _num = "";
+        _composer.Reset("");
+    }
+
     public void Backspace()
     {
+        if (Selected)
+        {
+            ClearSelected();
+            return;
+        }
+
         if (Mode == KbMode.Numeric)
         {
             if (_num.Length > 0)
@@ -349,6 +372,11 @@ internal sealed class SoftKeyboard
             var tw = shown.Length > 0 ? tf.MeasureText(shown) : 0f;
             var x = Math.Min(textArea.Left, textArea.Right - 4f - tw); // 넘치면 끝이 보이게
             using var tp = new SKPaint { IsAntialias = true, Color = placeholder is null ? keyFg : subtle };
+            if (Selected && shown.Length > 0)
+            {
+                using var sp = new SKPaint { IsAntialias = true, Color = primary.WithAlpha(0x40) };
+                canvas.DrawRect(new SKRect(x - 1f, pv.MidY - 13f, x + tw + 1f, pv.MidY + 13f), sp);
+            }
             if (drawText.Length > 0)
                 canvas.DrawText(drawText, x, Baseline(pv, tf), SKTextAlign.Left, tf, tp);
             using var cp = new SKPaint { Color = primary, StrokeWidth = Roles.Stroke("emphasis") };

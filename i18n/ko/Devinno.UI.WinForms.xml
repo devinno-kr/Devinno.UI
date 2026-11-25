@@ -3,7 +3,7 @@
     <assembly>
         <name>Devinno.UI.WinForms</name>
     </assembly>
-    <members><member name="T:Devinno.UI.WinForms.ViewControl" en-hash="5e529dbc3ba16d07">
+    <members><member name="T:Devinno.UI.WinForms.ViewControl" en-hash="708dae8080dc70f3">
              <summary>
              Devinno 앱(<see cref="T:Devinno.UI.App.DvApp" />)을 WinForms 폼에 붙이는 컨트롤입니다. <see cref="P:Devinno.UI.WinForms.ViewControl.App" /> 에 앱을 넣으면 그 앱의 화면을 그리고
              마우스·키보드 입력을 넘깁니다. 기존 WinForms 앱의 일부 영역에 Devinno 앱을 넣을 때 씁니다.
@@ -18,7 +18,8 @@
              <para><b>문자 입력(기본)</b>: 입력 상자를 누르면 숨겨 둔 <see cref="T:System.Windows.Forms.TextBox" /> 하나가 그 상자의 글자 영역 위에 나타나 편집을 맡습니다. 그래서 OS 의 한글 IME·여러 줄 입력·
              복사/붙여넣기를 그대로 쓸 수 있습니다. 상자의 배경·테두리·포커스 링은 캔버스가 그리고, TextBox 는 테두리 없이 배경색·글자색·글꼴·정렬을 상자에 맞춥니다
              (WinForms TextBox 는 투명하게 만들 수 없음). 스크롤로 상자가 잘리면 TextBox 도 같이 잘립니다.
-             Enter(여러 줄이면 Ctrl+Enter)·Tab·Shift+Tab·위/아래 화살표(한 줄일 때)는 값을 확정하고, Esc 는 취소하며, 다른 곳을 눌러 포커스가 빠져도 확정합니다.
+             Enter(여러 줄이면 Ctrl+Enter)·Tab·Shift+Tab·위/아래 화살표(한 줄일 때)는 값을 확정하고 — Tab·Shift+Tab 은 이어서 다음·이전 입력 칸을 글 전체가 선택된 채로 편집합니다 —,
+             Esc 는 취소하며(<c>escape="commit"</c> 이면 확정), 다른 곳을 눌러 포커스가 빠져도 확정합니다. 세 번 누르면 글 전체를 선택하고, Ctrl+Z 는 친 글을 되돌립니다(TextBox 자체 되돌리기).
              숫자 상자는 숫자·<c>+</c>·<c>-</c>·<c>.</c> 외의 문자를 받지 않습니다(최종 검증은 라이브러리가 함). 비밀번호 상자는 시스템 비밀번호 문자로 가립니다.</para>
              <para><b>터치 모드</b>: <see cref="P:Devinno.UI.WinForms.ViewControl.TouchMode" /> 를 켜면 TextBox 대신 라이브러리 내장 가상 키보드를 씁니다(패널 PC·터치 전용). 이때 물리 키보드의 문자와
              Enter·Backspace·Esc·Tab·Shift+Tab 은 가상 키보드 쪽으로 넘어갑니다.</para>

@@ -27,6 +27,8 @@ A text, number or password field.
 | `value` | text or number | — | yes | `{Bind X}` = VM. Absent + a handle = the handle owns it. One-way/literal = read-only |
 | `keyboard-type` | `text` `numeric` `password` | `text` | yes | Unknown = `text` + Trace warning |
 | `multiline` | bool | `false` | yes | Multi-line text |
+| `select-on-focus` | bool | `false` | yes | Pressing the box selects the whole text, so typing replaces it (otherwise the caret goes to the end) |
+| `escape` | `cancel` `commit` | `cancel` | yes | Esc while editing: `cancel` drops the typed text, `commit` writes it (like Enter). Useful for `multiline` |
 | `placeholder` | text | empty | yes | Shown when empty |
 | `content-align` | 9 positions ([content-align](dvml-style.md#content-align)) | none (text at the left) | yes | Only the horizontal part is used: the text stays vertically centered (`multiline`: from the top) |
 | `format` | .NET format string | none | yes | Numeric display only. Unusable = raw value + Trace warning |
@@ -39,7 +41,10 @@ A text, number or password field.
 
 **Behavior**
 - Default size: 200×40 (multiline 200×96).
-- Pressing starts editing. Enter / Tab / Done / pressing elsewhere = commit; Esc / Cancel = discard. Typing changes only the edit buffer.
+- Pressing starts editing. Enter / Tab / Done / pressing elsewhere = commit; Esc / Cancel = discard (`escape="commit"`: Esc commits). Typing changes only the edit buffer.
+- **Tab / Shift+Tab** commit and start editing the next / previous editable `DvInput` of the same screen, in markup order (read-only and disabled ones are skipped), with its whole text selected. On the last one, Tab only commits. Works with the native editor and the virtual keyboard.
+- Three clicks select the whole text (WinForms). `select-on-focus="true"` selects it on the first press. While the whole text is selected on the virtual keyboard, the first key replaces it and Backspace clears it.
+- `multiline` text longer than the box scrolls with the mouse wheel over the box, also when not editing (three lines a notch; at the end the wheel goes on to the enclosing scroll box). The position survives rebuilds.
 - **numeric**: integer vs. real and sign come from the **bound property's type** (`int` signed integer, `uint`/`byte` unsigned, `double`/`decimal` real, `int?` allowed). Decimal point `.` (InvariantCulture).
 - Out of `min`/`max` = **rejected**: error border + reason, editing continues. Clearing a nullable number is rejected.
 - **password**: starts empty; committing it empty does not change the value.
@@ -48,7 +53,7 @@ A text, number or password field.
 - A − or + press rejected by `onbeforecommit` (or by a throwing setter) leaves the value unchanged and **shows nothing on the widget**: no error text, no edit mode. The screen is rebuilt after every press, so a reason label bound to a VM property that the method sets shows at once ([commit confirmation](dvml-language.md#onbeforecommit)).
 - While editing, the text being edited wins over VM changes (`Invalidate()` polling).
 - Editor by host: OpenTK and `ViewControl.TouchMode` = built-in virtual keyboard (QWERTY Korean/English, Shift, symbols, 2-set Korean (Dubeolsik), numeric keypad). Text input opens in the English layout, or Korean when `DvStrings.Language` is `ko`; the Korean/English key is always there. It slides up and pushes the screen so the box stays visible; pressing outside cancels; single line only.
-- WinForms `ViewControl` = a hidden TextBox over the box (OS IME, multiple lines, clipboard; pressing outside commits). Hosts: [hosts](dvml-app.md#hosts).
+- WinForms `ViewControl` = a hidden TextBox over the box (OS IME, multiple lines, clipboard, Ctrl+Z undo; pressing outside commits). Hosts: [hosts](dvml-app.md#hosts).
 
 **Example**
 ```xml

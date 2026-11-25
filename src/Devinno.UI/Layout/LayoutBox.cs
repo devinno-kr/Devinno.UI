@@ -334,6 +334,11 @@ public sealed class LayoutBox
     public DvEditKind InputKind { get; set; }
     /// <summary>Whether a <c>DvInput</c> is multiline (<c>multiline</c>).</summary>
     public bool InputMultiline { get; set; }
+    // select-on-focus — 눌러서 편집을 시작하면 글 전체 선택. escape="commit" — Esc 가 친 글을 쓴다(취소 대신)
+    internal bool InputSelectOnFocus { get; set; }
+    internal bool InputEscapeCommits { get; set; }
+    // 여러 줄 칸 글자의 세로 스크롤(편집 중이 아닐 때 휠) — 화면이 인스턴스마다 기억해 재빌드에도 유지
+    internal float InputScrollY { get; set; }
     /// <summary>Hint text shown when the value is empty (<c>placeholder</c>). Used by <c>DvInput</c>, <c>DvSelect</c>, <c>DvDateTimeInput</c> and <c>DvColorInput</c>.</summary>
     public string? InputPlaceholder { get; set; }
     /// <summary>Display format string of a <c>DvInput</c> (<c>format</c>). Used to display the value for numeric input.</summary>

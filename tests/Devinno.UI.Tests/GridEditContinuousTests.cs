@@ -4,7 +4,7 @@ using SkiaSharp;
 using Xunit;
 using static GridEditFixture;
 
-// 3d-1 연속 입력 — 네이티브 편집기만 Enter 아래·Tab 오른쪽·ShiftTab 왼쪽, 건너뜀·끝·스크롤·거절
+// 3d-1 연속 입력 — Enter 아래(네이티브 편집기만)·Tab 오른쪽·ShiftTab 왼쪽(두 모드), 건너뜀·끝·스크롤·거절
 public class GridEditContinuousTests
 {
     private static void Type(DvSurface s, string text) => s.SetEditText(s.Edit.SessionId, text);
@@ -109,14 +109,17 @@ public class GridEditContinuousTests
     }
 
     [Fact]
-    public void Soft_keyboard_tab_commits_and_ends()
+    public void Soft_keyboard_tab_continues_in_the_next_input_column()
     {
         // 새 서피스 — 앞 세션의 키보드가 내려가는 동안(모달)에는 누름이 삼켜지므로 따로
-        var s = Surface(new EditVm(), native: false);
-        Tap(s, Cell(0, 1));
+        var s = Surface(new EditVm(), TabCols, native: false);
+        Tap(s, Cell(0, 0));
         Assert.True(s.Edit.IsEditing);
+        Assert.False(s.Edit.SelectAll);
         s.KeyInput(DvKey.Tab);
-        Assert.False(s.Edit.IsEditing);
+        Assert.True(s.Edit.IsEditing);
+        Assert.Equal(3, EditColumn(s)); // 설정값 — 가상 키보드도 Tab 은 이어 간다
+        Assert.True(s.Edit.SelectAll);
     }
 
     [Fact]

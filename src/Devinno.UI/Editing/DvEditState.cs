@@ -13,9 +13,9 @@ public enum DvEditExit
 {
     /// <summary>Confirmed with the Enter key (or the virtual keyboard's Done key). For a grid input cell in native editor mode, editing continues in the same column of the row below.</summary>
     Enter,
-    /// <summary>Confirmed with the Tab key. For a grid input cell in native editor mode, editing continues in the next input column of the same row.</summary>
+    /// <summary>Confirmed with the Tab key. Editing continues in the next field: the next editable <c>DvInput</c> of the screen, or the next input column of a grid row.</summary>
     Tab,
-    /// <summary>Confirmed with Shift+Tab. For a grid input cell in native editor mode, editing continues in the previous input column of the same row.</summary>
+    /// <summary>Confirmed with Shift+Tab. Editing continues in the previous field: the previous editable <c>DvInput</c> of the screen, or the previous input column of a grid row.</summary>
     ShiftTab,
     /// <summary>Confirmed with the Up arrow key (single-line editor). Commits only; does not move to another cell.</summary>
     Up,
@@ -25,7 +25,9 @@ public enum DvEditExit
     /// The editor lost focus (a press elsewhere, a screen change, the edit target scrolled completely out of view, etc.).
     /// If the value is valid it is written; if rejected, it is not written and the session closes with the original value.
     /// </summary>
-    FocusLost
+    FocusLost,
+    /// <summary>The Esc key on a <c>DvInput</c> with <c>escape="commit"</c> (<see cref="DvSurface.EscapeEdit"/>): the typed text is written. Does not move to another field.</summary>
+    Escape
 }
 
 /// <summary>
@@ -130,11 +132,19 @@ public sealed class DvEditState
     /// </summary>
     public string? Error { get; private set; }
 
-    internal void Begin(int sessionId, string initialText)
+    /// <summary>
+    /// Gets whether the host selects the whole <see cref="InitialText"/> when the session starts, instead of putting the caret at the end — so the first key typed replaces the value.
+    /// <see langword="true"/> for a field reached with Tab, Shift+Tab or a grid's Enter, and for a <c>DvInput</c> with <c>select-on-focus="true"</c> started by a press.
+    /// Read it with <see cref="InitialText"/> when <see cref="SessionId"/> changes. The built-in virtual keyboard follows it by itself.
+    /// </summary>
+    public bool SelectAll { get; private set; }
+
+    internal void Begin(int sessionId, string initialText, bool selectAll = false)
     {
         IsEditing = true;
         SessionId = sessionId;
         InitialText = initialText;
+        SelectAll = selectAll;
         Version++;
     }
 

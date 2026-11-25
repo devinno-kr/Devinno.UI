@@ -98,6 +98,18 @@ public sealed partial class DvSurface
         for (var i = path.Count - 1; i >= 0; i--)
         {
             var b = path[i].Box;
+            if (b is { Node.Tag: "DvInput", InputMultiline: true, EditHideText: false })
+            {
+                // 여러 줄 칸 — 넘치는 글을 칸 안에서 내린다(한 칸 = 세 줄). 끝이면 바깥 스크롤 상자에 기회
+                var shown = b.EditText ?? InputDisplay.Text(b);
+                var (max, line) = InputDisplay.MultilineOverflow(b, shown);
+                var to = Math.Clamp(Math.Min(b.InputScrollY, max) - delta * line * 3f, 0f, max);
+                if (to == b.InputScrollY)
+                    continue;
+                b.InputScrollY = to;
+                _needsRender = true;
+                return;
+            }
             if (!b.IsScroller || b.MaxScrollY <= 0)
                 continue;
             var next = Math.Clamp(b.ScrollY - delta * WheelStep, 0, b.MaxScrollY);
@@ -281,6 +293,8 @@ public sealed partial class DvSurface
 
         void CopyOffsets(LayoutBox b)
         {
+            if (b.InputScrollY != 0 && Counterpart(old, now, b) is { } ni)
+                ni.InputScrollY = b.InputScrollY;
             if (b.IsScroller && (b.ScrollX != 0 || b.ScrollY != 0) && Counterpart(old, now, b) is { } nb)
             {
                 nb.ScrollX = b.ScrollX;

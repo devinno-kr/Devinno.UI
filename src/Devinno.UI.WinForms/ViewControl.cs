@@ -19,7 +19,8 @@ namespace Devinno.UI.WinForms;
 /// <para><b>Text input (default)</b>: when an input box is pressed, a single hidden <see cref="TextBox"/> appears over the box's text area and handles editing. This lets the OS Korean IME, multiline input and
 /// copy/paste work as usual. The canvas paints the box's background, border and focus ring; the TextBox has no border and matches the box's background color, text color, font and alignment
 /// (a WinForms TextBox cannot be made transparent). When the box is clipped by scrolling, the TextBox is clipped too.
-/// Enter (Ctrl+Enter for multiline), Tab, Shift+Tab and the Up/Down arrows (single line only) commit the value, Esc cancels, and losing focus by pressing elsewhere also commits.
+/// Enter (Ctrl+Enter for multiline), Tab, Shift+Tab and the Up/Down arrows (single line only) commit the value — Tab and Shift+Tab then edit the next or previous input with its text selected —,
+/// Esc cancels (or commits for <c>escape="commit"</c>), and losing focus by pressing elsewhere also commits. Three clicks select the whole text; Ctrl+Z undoes typing (the TextBox's own undo).
 /// A numeric box rejects characters other than digits, <c>+</c>, <c>-</c> and <c>.</c> (the library does the final validation). A password box masks text with the system password character.</para>
 /// <para><b>Touch mode</b>: when <see cref="TouchMode"/> is on, the library's built-in virtual keyboard is used instead of the TextBox (panel PCs, touch-only screens). Characters from the physical keyboard and
 /// Enter, Backspace, Esc, Tab and Shift+Tab are then routed to the virtual keyboard.</para>
@@ -80,6 +81,25 @@ public sealed class ViewControl : UserControl
     private Font? _font;
     private (string Family, float Size, bool Bold) _fontKey;
 
+    // 왼쪽 누름 횟수 — 캔버스(편집 시작)와 편집 상자를 이어서 센다(세 번 = 전체 선택)
+    private int _clicks;
+    private long _clickAt;
+    private Point _clickPos;
+
+    private void CountClick(MouseButtons button, Point screen)
+    {
+        if (button != MouseButtons.Left)
+        {
+            _clicks = 0;
+            return;
+        }
+        var now = Environment.TickCount64;
+        var size = SystemInformation.DoubleClickSize;
+        var near = Math.Abs(screen.X - _clickPos.X) <= size.Width && Math.Abs(screen.Y - _clickPos.Y) <= size.Height;
+        _clicks = near && now - _clickAt <= SystemInformation.DoubleClickTime ? _clicks + 1 : 1;
+        (_clickAt, _clickPos) = (now, screen);
+    }
+
     /// <summary>Creates an empty control. Until <see cref="App"/> is set, it paints only a white background.</summary>
     public ViewControl()
     {
@@ -91,6 +111,12 @@ public sealed class ViewControl : UserControl
         _editor.KeyDown += OnEditorKeyDown;
         _editor.KeyPress += OnEditorKeyPress;
         _editor.LostFocus += OnEditorLostFocus;
+        _editor.MouseDown += (_, e) => CountClick(e.Button, _editor.PointToScreen(e.Location));
+        _editor.MouseUp += (_, e) =>
+        {
+            if (e.Button == MouseButtons.Left && _clicks >= 3)
+                _editor.SelectAll(); // 세 번 누름 = 전체 선택(편집을 연 캔버스 누름부터 센다)
+        };
 
         _animTimer.Tick += (_, _) =>
         {
@@ -127,7 +153,11 @@ public sealed class ViewControl : UserControl
             canvas = cpu;
         }
 
-        canvas.MouseDown += (_, e) => Pointer(e, s => s.PointerDown(Pt(e), Button(e), Mods()), focus: e.Button == MouseButtons.Left);
+        canvas.MouseDown += (_, e) =>
+        {
+            CountClick(e.Button, canvas.PointToScreen(e.Location));
+            Pointer(e, s => s.PointerDown(Pt(e), Button(e), Mods()), focus: e.Button == MouseButtons.Left);
+        };
         canvas.MouseMove += (_, e) => Pointer(e, s => s.PointerMove(Pt(e), Mods()), any: true);
         canvas.MouseUp += (_, e) => Pointer(e, s => s.PointerUp(Pt(e), Button(e), Mods()));
         canvas.MouseLeave += (_, _) =>
@@ -646,7 +676,10 @@ public sealed class ViewControl : UserControl
                 Place(e);
                 _editor.Visible = true;
                 _editor.Focus();
-                _editor.SelectionStart = _editor.TextLength;
+                if (e.SelectAll)
+                    _editor.SelectAll(); // Tab 으로 옮겨 온 칸, select-on-focus
+                else
+                    _editor.SelectionStart = _editor.TextLength;
             }
             else if (e.Version != _version)
             {
@@ -751,7 +784,8 @@ public sealed class ViewControl : UserControl
 
         if (e.KeyCode == Keys.Escape)
         {
-            _surface.CancelEdit(_sessionId);
+            _surface.SetEditText(_sessionId, EditorText);
+            _surface.EscapeEdit(_sessionId); // 취소, 또는 escape="commit" 이면 친 글을 쓴다
             e.SuppressKeyPress = true;
         }
         else if (exit is { } x)

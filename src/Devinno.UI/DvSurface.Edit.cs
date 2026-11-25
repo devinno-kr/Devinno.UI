@@ -46,8 +46,8 @@ public sealed partial class DvSurface
     /// <remarks>
     /// <para>When <see langword="true"/>, the virtual keyboard is not shown and the text being typed is not drawn inside the edit box (because the native editor is shown on top of it).
     /// The host must read <see cref="Edit"/> to place the editor and return results with <see cref="SetEditText"/>, <see cref="CommitEdit"/> and <see cref="CancelEdit"/>.</para>
-    /// <para>Continuous entry in grid input cells (Enter = next row down, Tab/Shift+Tab = continue editing in the adjacent input column) works only when this is <see langword="true"/>.
-    /// In virtual keyboard mode, committing ends editing.</para>
+    /// <para>Tab/Shift+Tab continue editing in the next/previous field in both modes (a <c>DvInput</c>: the next editable <c>DvInput</c> of the screen; a grid input cell: the adjacent input column).
+    /// Enter continuing in a grid's next row down works only when this is <see langword="true"/>; in virtual keyboard mode, Enter (Done) ends editing.</para>
     /// <para>The same value is passed to cell surfaces (DvApp bars and pages) on layout. Change it on the UI thread while not editing.</para>
     /// </remarks>
     public bool UseNativeEditor { get; set; }
@@ -97,9 +97,10 @@ public sealed partial class DvSurface
     /// A write failure where the VM property's setter throws is the same as a rejection (reason = the <c>dv.input.write-failed</c> text; the exception is reported through <see cref="HandlerError"/>).
     /// In that case, if <paramref name="exit"/> is <see cref="DvEditExit.FocusLost"/>, the session closes without writing to the VM; for any other reason the session stays open and
     /// <see cref="DvEditState.Error"/> is filled with the rejection reason (an error border is drawn on the edit box).</para>
-    /// <para>On success the session closes and <see cref="DvEditState.IsEditing"/> becomes <see langword="false"/>. However, for a grid input cell in native editor mode,
-    /// if the exit is <see cref="DvEditExit.Enter"/>, <see cref="DvEditExit.Tab"/> or <see cref="DvEditExit.ShiftTab"/> and there is a next input cell to edit, a new session (with a new <see cref="DvEditState.SessionId"/>) opens in that cell right away.
-    /// <see cref="DvEditExit.Up"/> and <see cref="DvEditExit.Down"/> only commit without moving the cell.</para>
+    /// <para>On success the session closes and <see cref="DvEditState.IsEditing"/> becomes <see langword="false"/>. However, if the exit is <see cref="DvEditExit.Tab"/> or <see cref="DvEditExit.ShiftTab"/>
+    /// and there is a next field to edit (the next or previous editable <c>DvInput</c> of this screen in markup order, or the adjacent input column of a grid row), a new session
+    /// (with a new <see cref="DvEditState.SessionId"/> and <see cref="DvEditState.SelectAll"/> set) opens there right away. A grid input cell in native editor mode also continues on <see cref="DvEditExit.Enter"/> (next row down).
+    /// <see cref="DvEditExit.Up"/> and <see cref="DvEditExit.Down"/> only commit without moving.</para>
     /// </remarks>
     /// <param name="sessionId">The <see cref="DvEditState.SessionId"/> read when editing started.</param>
     /// <param name="exit">The reason editing ended (the key pressed, or focus lost).</param>
@@ -124,7 +125,7 @@ public sealed partial class DvSurface
     }
 
     /// <summary>
-    /// Cancels editing and closes the session. Does not write to the VM (Esc key, etc.).
+    /// Cancels editing and closes the session. Does not write to the VM. Send the Esc key to <see cref="EscapeEdit"/>, which follows the field's <c>escape</c> attribute.
     /// </summary>
     /// <param name="sessionId">The <see cref="DvEditState.SessionId"/> read when editing started. Does nothing if it differs from the current session.</param>
     public void CancelEdit(int sessionId)
@@ -143,6 +144,34 @@ public sealed partial class DvSurface
 
         if (owner != this)
             owner.CancelEdit(inner);
+        else
+            EndEdit();
+        PublishEdit();
+    }
+
+    /// <summary>
+    /// The Esc key while editing: cancels like <see cref="CancelEdit"/>, or — for a <c>DvInput</c> with <c>escape="commit"</c> — commits the typed text
+    /// (<see cref="DvEditExit.Escape"/>; a rejected value keeps the session open with the reason, like Enter). Hosts send Esc here rather than to <see cref="CancelEdit"/>.
+    /// </summary>
+    /// <param name="sessionId">The <see cref="DvEditState.SessionId"/> read when editing started. Does nothing if it differs from the current session.</param>
+    public void EscapeEdit(int sessionId)
+    {
+        using var sync = SyncScope.Enter(this); // DvApp 루트면 입력 스레드 동기화 컨텍스트(D15)
+        Composer?.NoteInput(); // 무입력 감지 — 루트에만 Composer 가 있다
+        var prevRead = HandlerErrors.EnterRead(_reads); // 입력 처리 중 VM 읽기 예외도 이 화면의 HandlerError 로
+        try { EscapeEditCore(sessionId); }
+        finally { HandlerErrors.ExitRead(prevRead); }
+    }
+
+    private void EscapeEditCore(int sessionId)
+    {
+        if (!Route(sessionId, out var owner, out var inner))
+            return;
+
+        if (owner != this)
+            owner.EscapeEdit(inner);
+        else if (_editTarget is BoxEditTarget { Box.InputEscapeCommits: true })
+            CommitCurrent(DvEditExit.Escape);
         else
             EndEdit();
         PublishEdit();
@@ -193,7 +222,7 @@ public sealed partial class DvSurface
         {
             _pubOwner = owner;
             _pubInnerId = src.SessionId;
-            Edit.Begin(++_pubCounter, src.InitialText);
+            Edit.Begin(++_pubCounter, src.InitialText, src.SelectAll);
         }
 
         var snap = src.ToSnapshot();
@@ -260,10 +289,11 @@ public sealed partial class DvSurface
     {
         if (_editTarget is BoxEditTarget { Box: var cur } && ReferenceEquals(box, cur))
             return;
-        BeginEdit(new BoxEditTarget(this, box));
+        BeginEdit(new BoxEditTarget(this, box), box.InputSelectOnFocus);
     }
 
-    private void BeginEdit(IEditTarget target)
+    // selectAll = 호스트가 처음 글 전체를 선택한다(select-on-focus, 키로 옮겨 온 칸)
+    private void BeginEdit(IEditTarget target, bool selectAll = false)
     {
         if (_editTarget is { } cur && cur.SameAs(target))
             return; // 같은 대상 재누름 — 세션 유지
@@ -273,7 +303,7 @@ public sealed partial class DvSurface
 
         _editTarget = target;
         _editError = null;
-        _local.Begin(++_editSessionCounter, target.InitialText);
+        _local.Begin(++_editSessionCounter, target.InitialText, selectAll);
         _editText = _local.InitialText;
         target.Reveal();
         SyncEditState();
@@ -288,13 +318,13 @@ public sealed partial class DvSurface
         if (t.TryWrite(_editText, out var error))
         {
             var rebuild = t.RebuildAfterWrite;
-            // 연속 입력 — 네이티브 편집기만(가상 키보드·터치 = 커밋 후 종료, spec 3d-1 §4)
-            var next = UseNativeEditor ? t.Next(exit) : null;
+            // 연속 입력 — Tab·Shift+Tab 은 어느 모드든, 그리드 Enter 는 네이티브 편집기만(가상 키보드 완료 = 커밋 후 종료, spec 3d-1 §4)
+            var next = UseNativeEditor || exit is DvEditExit.Tab or DvEditExit.ShiftTab ? t.Next(exit) : null;
             EndEdit();
             if (rebuild)
                 Invalidate(); // 쓴 값으로 다시 빌드
             if (next is not null)
-                BeginEdit(next); // 화면 밖이면 Reveal 이 스크롤
+                BeginEdit(next, selectAll: true); // 키로 옮겨 온 칸 = 전체 선택(Windows 표준). 화면 밖이면 Reveal 이 스크롤
             EditCommitted?.Invoke(exit);
             return true;
         }

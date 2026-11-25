@@ -213,6 +213,8 @@ public sealed partial class LayoutEngine
             _ => DvEditKind.Text
         };
         box.InputMultiline = AttrRules.Bool(r, "multiline");
+        box.InputSelectOnFocus = AttrRules.Bool(r, "select-on-focus");
+        box.InputEscapeCommits = AttrRules.Enum(r, "escape") == "commit";
         box.InputPlaceholder = Attr("placeholder");
         box.InputFormat = Attr("format");
         (box.InputMin, box.InputMax) = (Num("min"), Num("max"));

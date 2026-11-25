@@ -12,8 +12,8 @@ namespace Devinno.UI;
 /// <para>Not called for: writes from code, values written through a control handle (<c>Checked</c>, <c>Value</c> … in code), a write that was
 /// rejected by <c>onbeforecommit</c> or failed (setter exception, conversion failure — reported as <c>"setter"</c>), and the values a <c>DvVideo</c>
 /// keeps up to date (<c>position</c>, <c>duration</c>).</para>
-/// <para>The object told is the one the binding path starts from: the screen view model for <c>{Bind Motor.Speed}</c> (<paramref name="path"/> =
-/// <c>"Motor.Speed"</c>), the item for <c>{Bind Item.Speed}</c> in a <c>DvRepeat</c> and for a grid cell (<paramref name="path"/> = <c>"Speed"</c>,
+/// <para>The object told is the one the binding path starts from: the screen view model for <c>{Bind Motor.Speed}</c> (<c>path</c> =
+/// <c>"Motor.Speed"</c>), the item for <c>{Bind Item.Speed}</c> in a <c>DvRepeat</c> and for a grid cell (<c>path</c> = <c>"Speed"</c>,
 /// the column path) — implement the interface on the item type to hear those.</para>
 /// <para>An exception thrown here is reported through <see cref="DvSurface.HandlerError"/> with <c>Kind</c> = <c>"committed"</c>; the value stays written.</para>
 /// </remarks>

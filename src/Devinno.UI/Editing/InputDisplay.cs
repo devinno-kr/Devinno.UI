@@ -81,4 +81,17 @@ internal static class InputDisplay
     /// Shared implementation with label wrapping (<see cref="global::Devinno.UI.Text.TextWrap.Wrap"/>).
     /// </summary>
     public static IReadOnlyList<string> Wrap(string text, SKFont font, float width) => global::Devinno.UI.Text.TextWrap.Wrap(text, font, width);
+
+    // 여러 줄 칸 글자가 칸보다 길게 넘치는 양(휠로 내릴 수 있는 끝)과 한 줄 높이. 그리기(Painter)와 같은 글자·줄바꿈
+    internal static (float Max, float Line) MultilineOverflow(LayoutBox box, string text)
+    {
+        var st = box.Style;
+        var pad = st.Padding;
+        var content = new SKRect(box.Rect.Left + pad.Left, box.Rect.Top + pad.Top, box.Rect.Right - pad.Right, box.Rect.Bottom - pad.Bottom);
+        if (text.Length == 0 || content.Width <= 0 || content.Height <= 0)
+            return (0f, 0f);
+        using var font = global::Devinno.UI.Text.TextFont.Create(text, st.FontSize, st.FontWeight);
+        var lines = Wrap(text, font, content.Width).Count;
+        return (Math.Max(0f, lines * font.Spacing - content.Height), font.Spacing);
+    }
 }

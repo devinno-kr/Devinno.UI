@@ -126,7 +126,7 @@ public sealed partial class DvSurface
     /// </summary>
     /// <remarks>
     /// <para>Handling: <see cref="DvKey.Enter"/> = Done key (commits; if rejected, the session and keyboard stay open), <see cref="DvKey.Backspace"/> = deletes one character (one jamo while composing),
-    /// <see cref="DvKey.Escape"/> = cancels the edit, <see cref="DvKey.Tab"/>/<see cref="DvKey.ShiftTab"/> = commits with the matching reason.</para>
+    /// <see cref="DvKey.Escape"/> = cancels the edit (commits for <c>escape="commit"</c>, <see cref="EscapeEdit"/>), <see cref="DvKey.Tab"/>/<see cref="DvKey.ShiftTab"/> = commits and edits the next/previous field.</para>
     /// <para>Works only while the virtual keyboard is open and an edit is in progress. Ignored if <see cref="UseNativeEditor"/> is <see langword="true"/> or no edit is in progress.
     /// In native editor mode, call <see cref="CommitEdit"/>/<see cref="CancelEdit"/> directly instead of this method. Call on the UI thread.</para>
     /// </remarks>
@@ -156,7 +156,7 @@ public sealed partial class DvSurface
                 Apply(_kb.Press(SoftKeyboard.Back));
                 break;
             case DvKey.Escape:
-                CancelEdit(id);
+                EscapeEdit(id);
                 SyncKeyboard();
                 break;
             case DvKey.Tab or DvKey.ShiftTab:

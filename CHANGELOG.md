@@ -5,6 +5,14 @@
 ### Added
 
 - `IDvValueCommitted` (`Devinno.UI`): a view model that implements `OnValueCommitted(string path, object? value)` hears every value the screen wrote, right after the write succeeded — every two-way widget, grid cells and row selection, custom widgets. Code writes, handle writes, rejected or failed writes and `DvVideo position`/`duration` are not reported, so a value polled from a device is not echoed back. `path` starts at the told object: the screen VM, or the item for `{Bind Item.X}` and grid cells. A handler exception is reported as `HandlerError` kind `"committed"` (`dvml-language.md` → After the screen wrote a value).
+- `DvInput select-on-focus="true"`: pressing the box selects the whole text, so typing replaces it. Hosts read `DvEditState.SelectAll` when a session starts; the virtual keyboard replaces the selected text on the first key and clears it on Backspace.
+- `DvInput escape="commit"`: Esc writes the typed text instead of dropping it (useful for `multiline`). Hosts send Esc to the new `DvSurface.EscapeEdit(sessionId)`, which cancels or commits by the field (`DvEditExit.Escape`). `ViewControl` and the virtual keyboard do.
+- `multiline` text longer than its `DvInput` scrolls with the mouse wheel over the box, also when not editing; the position survives rebuilds.
+- `ViewControl`: three clicks select the whole text of the edit box.
+
+### Changed
+
+- Tab / Shift+Tab in a `DvInput` commit and start editing the next / previous editable `DvInput` of the screen (markup order; read-only and disabled ones skipped) with its text selected. Before, they only committed. With the virtual keyboard they now continue too, in grid input cells as well; a field reached with Tab, Shift+Tab or a grid's Enter starts with its text selected.
 
 ### Fixed
 
