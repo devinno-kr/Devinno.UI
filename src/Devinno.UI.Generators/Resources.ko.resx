@@ -211,4 +211,16 @@
   <data name="Widget_ListSingleItems" xml:space="preserve">
     <value>한 개 고르기 DvListBox 의 selected-items — 여럿 고르기면 selection-mode="multi" 를 주고, 한 개면 value 에 바인딩합니다</value>
   </data>
+  <data name="DVML023_Title" xml:space="preserve">
+    <value>static 바인딩 대상을 찾지 못함</value>
+  </data>
+  <data name="DVML023_NoProperty" xml:space="preserve">
+    <value>'{0}': '{1}' 에 public static 속성 '{2}' 이(가) 없습니다 — 실행 때 값이 비게 됩니다. 속성 이름을 확인하거나 public static 으로 만드세요</value>
+  </data>
+  <data name="DVML023_Ambiguous" xml:space="preserve">
+    <value>'{0}': '{1}' 이(가) 그 static 속성을 가진 여러 형식에 맞습니다({2}) — 실행 때 값이 비게 됩니다. 네임스페이스를 붙여 쓰세요({{Static {3}}})</value>
+  </data>
+  <data name="DVML023_NotFound" xml:space="preserve">
+    <value>'{0}': 이 프로젝트에 '{1}' 형식이 없습니다 — 실행 때 값이 비게 됩니다. 다른 어셈블리의 형식은 네임스페이스를 붙여 쓰세요({{Static System.DateTime.Now}})</value>
+  </data>
 </root>

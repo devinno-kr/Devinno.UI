@@ -70,6 +70,8 @@ public sealed class DvApp : ISurfaceComposer
 
     // 무입력 감지 — _gate 아래
     private long _idleTimeoutMs;
+    private long _autoRefreshMs, _nextRefreshMs; // _gate 아래. 0 = 끔
+    private bool _autoRefreshApplied;            // 입력 스레드 — 화면들에 기록을 켠 상태
     private long _lastInputMs;
     private bool _idleRaised;
 
@@ -407,6 +409,38 @@ public sealed class DvApp : ISurfaceComposer
     }
 
     /// <summary>
+    /// Gets or sets how often the screen checks its bound values by itself: every period, the current page, the bars and the open dialogs re-read the bindings their last build read,
+    /// and a screen is rebuilt only when a value differs — so values changed by a timer or a communication thread appear without <see cref="Invalidate"/>.
+    /// <see cref="TimeSpan.Zero"/> (default) turns it off. Can be changed from any thread.
+    /// </summary>
+    /// <remarks>
+    /// <para>Set it once, for example to 200 ms. Each check reads every binding of the visible screens once (about 0.1 µs each) and rebuilds nothing when no value changed;
+    /// the host is woken at each period, like for blinking. A changed value appears at most one period later.</para>
+    /// <para>Values are compared with <see cref="object.Equals(object, object)"/>. A list is the same while it is the same object, so items added to or changed in a list that stays the same object
+    /// still need <see cref="Invalidate"/> (or assign a new list). A property that returns a new object on every read (<c>=&gt; _rows.ToList()</c>) counts as changed at every check.
+    /// Data grids are repainted at every check, because their cells are read while painting. Trend and alarm data still need <see cref="Invalidate"/> after <c>Add</c>/<c>Raise</c>.
+    /// Static bindings (<c>{Static A.ABC}</c>) are checked like the others. Hidden pages are not checked; they re-read when shown.</para>
+    /// <para>Values are read on the input thread while another thread may be writing them, exactly as in a rebuild; keep values that change together consistent (replace a whole object or list).</para>
+    /// </remarks>
+    /// <exception cref="ArgumentOutOfRangeException">When negative.</exception>
+    /// <example><code>app.AutoRefresh = TimeSpan.FromMilliseconds(200);</code></example>
+    public TimeSpan AutoRefresh
+    {
+        get { lock (_gate) return TimeSpan.FromMilliseconds(_autoRefreshMs); }
+        set
+        {
+            if (value < TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "The refresh period must be zero or greater.");
+            lock (_gate)
+            {
+                _autoRefreshMs = (long)Math.Ceiling(value.TotalMilliseconds);
+                _nextRefreshMs = Clock() + _autoRefreshMs;
+            }
+            Surface.RequestFrame();
+        }
+    }
+
+    /// <summary>
     /// Raised once when there is no input for <see cref="IdleTimeout"/> (and again after the same time passes following new input). Raised on the input (UI) thread. <c>sender</c> is this <see cref="DvApp"/>.
     /// </summary>
     /// <remarks>
@@ -726,6 +760,19 @@ public sealed class DvApp : ISurfaceComposer
         }
     }
 
+    // 자동 갱신 한 번 — 보이는 칸 화면마다 지난 빌드가 읽은 값을 다시 읽어 달라졌으면 다시 만들게 표시(지금 프레임 안)
+    private void RefreshShown()
+    {
+        _current?.Surface?.RefreshIfChanged();
+        _appliedTop?.Surface?.RefreshIfChanged();
+        _appliedBottom?.Surface?.RefreshIfChanged();
+        _appliedLeft?.Surface?.RefreshIfChanged();
+        _appliedRight?.Surface?.RefreshIfChanged();
+        foreach (var d in _appliedDialogs)
+            d.Surface?.RefreshIfChanged();
+        _appliedLock?.Surface?.RefreshIfChanged();
+    }
+
     // 보이는 칸 화면을 다시 만들게 표시만 한다(깨우지 않음 — 지금 프레임 안). 할당 없이 필드를 직접 돈다.
     private void MarkShownDirty()
     {
@@ -822,6 +869,7 @@ public sealed class DvApp : ISurfaceComposer
         DvDialog[]? closing = null, open = null;
         DvDialog? lockRequested = null;
         var raiseIdle = false;
+        bool refreshOn, refreshDue = false;
         lock (_gate)
         {
             if (_dialogsChanged)
@@ -834,6 +882,12 @@ public sealed class DvApp : ISurfaceComposer
             }
             if (_idleTimeoutMs > 0 && !_idleRaised && _lock is null && Clock() - _lastInputMs >= _idleTimeoutMs)
                 raiseIdle = _idleRaised = true;
+            refreshOn = _autoRefreshMs > 0;
+            if (refreshOn && Clock() >= _nextRefreshMs)
+            {
+                refreshDue = true;
+                _nextRefreshMs = Clock() + _autoRefreshMs;
+            }
             target = _requestedPage;
             _requestedPage = null;
             transition = _requestedTransition ?? _pageTransition;
@@ -859,6 +913,13 @@ public sealed class DvApp : ISurfaceComposer
         if (regions)
             (_appliedTop, _appliedBottom, _appliedLeft, _appliedRight) = (top, bottom, left, right);
 
+        if (refreshOn != _autoRefreshApplied)
+        {
+            _autoRefreshApplied = refreshOn; // 켜면 다음 빌드부터 읽은 바인딩을 기록(아직 기록이 없는 화면은 첫 확인 때 다시 만든다)
+            foreach (var s in _kept)
+                s.RecordBindings = refreshOn;
+        }
+
         if (target is null && _current is null)
             target = Pages.First;
         try
@@ -881,6 +942,8 @@ public sealed class DvApp : ISurfaceComposer
             {
                 if (raiseIdle)
                     RaiseIdle(); // 처리기가 Lock 을 부르면 다음 프레임에 잠금 층이 뜬다
+                if (refreshDue)
+                    RefreshShown();
                 DrainPosted(); // 마지막 — 상태 적용을 모두 끝낸 뒤 await 이어짐·async void 예외를 돈다
             }
         }
@@ -961,7 +1024,11 @@ public sealed class DvApp : ISurfaceComposer
     long? ISurfaceComposer.NextDue(long nowMs)
     {
         lock (_gate)
-            return _idleTimeoutMs <= 0 || _idleRaised || _lock is not null ? null : Math.Max(nowMs, _lastInputMs + _idleTimeoutMs);
+        {
+            long? idle = _idleTimeoutMs <= 0 || _idleRaised || _lock is not null ? null : Math.Max(nowMs, _lastInputMs + _idleTimeoutMs);
+            long? refresh = _autoRefreshMs <= 0 ? null : Math.Max(nowMs + 1, _nextRefreshMs); // 자동 갱신 시각 — 그때 깨어나 확인
+            return idle is null ? refresh : refresh is null ? idle : Math.Min(idle.Value, refresh.Value);
+        }
     }
 
     // 다이얼로그 칸 여백 — 창 각 변에서 이만큼 안쪽으로 크기를 제한한다
@@ -1160,6 +1227,7 @@ public sealed class DvApp : ISurfaceComposer
         s.Strings = _appliedStrings;
         s.HandlerError += (_, e) => RaiseHandlerError(e); // 루트(ParentSurface)로도 올라가지만 앱은 루트를 구독하지 않는다 — 한 번만
         s.Wake = RaiseRenderRequested; // 핸들 쓰기·클릭·폴링 Invalidate → 어댑터 깨우기
+        s.RecordBindings = _autoRefreshApplied;
         _kept.Add(s);
         return s;
     }

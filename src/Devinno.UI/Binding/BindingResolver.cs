@@ -17,6 +17,10 @@ namespace Devinno.UI.Binding;
 /// <b>Display format</b>: <c>{Path:format}</c> (cut at the first <c>:</c>) formats the value when it becomes text — interpolation and text attributes — with the .NET format string and the invariant culture,
 /// by the same rule as the widget <c>format</c> attribute. Reading the value (<see cref="Resolve"/>, value attributes, two-way bindings) ignores the format. In a repeated-item context, <c>Item</c>, <c>Item.X</c> and <c>Index</c> are available;
 /// inside a component template, parameter names are the first segment of the path, and a binding that is exactly a parameter (<c>{value}</c>) shows its text with the format the instance gave it (<c>value="{Level:0.0}"</c>).</para>
+/// <para><b>Static properties</b>: <c>{Static A.ABC}</c> (two-way <c>{Bind Static A.ABC}</c>, formats and interpolation as usual) reads the public static property <c>ABC</c> of the type <c>A</c>; further segments
+/// (<c>{Static A.Mgr.Path}</c>) follow the instance rules. A short type name (<c>A</c>) is looked up in the screen VM's assembly, then in the app's (entry) assembly, and must be the only such type with that static property;
+/// a type of another assembly, or an ambiguous one, is written with its namespace (<c>{Static System.DateTime.Now}</c>, <c>{Static MyApp.Data.A.ABC}</c>). A type or property that is not found, an ambiguous name and a write to a property without a public setter give a warning (once) and an empty value.
+/// A value written through a static binding is reported to the screen VM (<see cref="IDvValueCommitted"/>) with the path <c>Static A.ABC</c>.</para>
 /// <para><b>Localization</b>: <c>{L10n.key}</c> and <c>@key</c> are replaced with translated strings only during layout (while the screen's localization table is set). Called outside of that, <c>{L10n.key}</c> is <see langword="null"/> and <c>@key</c> is returned literally.</para>
 /// <para>Property read functions are cached per type and path; the cache is thread-safe.</para>
 /// </remarks>
@@ -206,22 +210,29 @@ public static class BindingResolver
         if (path.StartsWith(L10nPrefix, StringComparison.Ordinal))
             return CurrentStrings?.Get(path[L10nPrefix.Length..]);
 
-        if (ctx is null)
+        path = Split(expr).Path; // 형식(:0.0)은 값을 읽을 때 쓰지 않는다 — 글자로 바꿀 때(ToText)만
+        var isStatic = StaticBinding.IsStatic(path);
+        if (ctx is null && !isStatic)
             return null;
 
-        path = Split(expr).Path; // 형식(:0.0)은 값을 읽을 때 쓰지 않는다 — 글자로 바꿀 때(ToText)만
-
+        object? value;
         try
         {
-            return ResolvePath(ctx, path);
+            value = isStatic ? StaticBinding.Read(ctx, path) : ResolvePath(ctx, path);
         }
         catch (Exception ex)
         {
             // VM getter 예외 — 빈 값으로 보고 계속(레이아웃·그리기를 멈추지 않는다)
             HandlerErrors.ReportRead(ex, "getter", path);
-            return null;
+            value = null;
         }
+
+        BindingReads.Current?.Add(ctx, expr, value); // 자동 갱신(DvApp.AutoRefresh) — 빌드가 읽은 값을 기억
+        return value;
     }
+
+    /// <summary>Reads a dot path from an object by the instance rules (used after a static property).</summary>
+    internal static object? ReadPath(object obj, string path) => ResolvePath(obj, path);
 
     private static object? ResolvePath(object? ctx, string path)
     {
@@ -285,6 +296,8 @@ public static class BindingResolver
     /// </summary>
     internal static (object Owner, string Path, object? Value)? Write(object? ctx, string path, object? value)
     {
+        if (StaticBinding.IsStatic(path))
+            return StaticBinding.Write(ctx, path, value);
         if (ctx is null)
             return null;
 
@@ -306,14 +319,20 @@ public static class BindingResolver
         var last = cur.GetType().GetProperty(segs[^1], BindingFlags.Public | BindingFlags.Instance);
         if (last is not { CanWrite: true })
             return null;
-        // int? 등 Nullable 은 바탕 타입으로 변환(ChangeType 은 Nullable 을 직접 못 다룸)
-        var target = Nullable.GetUnderlyingType(last.PropertyType) ?? last.PropertyType;
-        // 이미 대상 타입이면 그대로(목록 등 IConvertible 아닌 값 — 그리드 선택 스냅샷)
-        var stored = value is null ? null
-            : target.IsInstanceOfType(value) ? value
-            : Convert.ChangeType(value, target, CultureInfo.InvariantCulture);
+        var stored = ConvertFor(last.PropertyType, value);
         last.SetValue(cur, stored);
         return (ctx, path, stored);
+    }
+
+    /// <summary>The value to store in a property of <paramref name="propertyType"/>: as is if it already is one, otherwise <see cref="Convert.ChangeType(object, Type, IFormatProvider)"/> (invariant culture) to the type, or to the underlying type of a <see cref="Nullable{T}"/>.</summary>
+    internal static object? ConvertFor(Type propertyType, object? value)
+    {
+        // int? 등 Nullable 은 바탕 타입으로 변환(ChangeType 은 Nullable 을 직접 못 다룸)
+        var target = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
+        // 이미 대상 타입이면 그대로(목록 등 IConvertible 아닌 값 — 그리드 선택 스냅샷)
+        return value is null ? null
+            : target.IsInstanceOfType(value) ? value
+            : Convert.ChangeType(value, target, CultureInfo.InvariantCulture);
     }
 
     /// <summary>Returns the declared type of the property the path points to. Used to build a value matching the target type before writing.</summary>
@@ -322,6 +341,8 @@ public static class BindingResolver
     /// <returns>The declared property type. <see langword="null"/> if the context is <see langword="null"/>, an intermediate value is <see langword="null"/>, or the property does not exist.</returns>
     public static Type? ResolvePropertyType(object? ctx, string path)
     {
+        if (StaticBinding.IsStatic(path))
+            return StaticBinding.PropertyType(ctx, path);
         if (ctx is ItemScope item)
             return path.StartsWith("Item.", StringComparison.Ordinal)
                 ? ResolvePropertyType(item.Item, path[5..])

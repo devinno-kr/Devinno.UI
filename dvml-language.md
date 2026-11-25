@@ -200,11 +200,12 @@ Every attribute value is read by one of these rules, on every tag. "Literal" = w
 | `style="color:{StatusColor}"` | Interpolation inside a style |
 | `style="color: token(tone-{Tone}-fg)"` | The binding is resolved first, then the token |
 | `value="{Bind AutoMode}"` | Two-way: writes user input to the VM ([two-way](#two-way)) |
+| `text="{Static Plant.Mode}"`, `value="{Bind Static Plant.Mode}"` | A public static property of a type, read and two-way ([static properties](#binding-static)) |
 | `text="@pump"` | Localized string ([localization](dvml-app.md#localization)) |
 
-- Bindings read **public instance properties** only (not fields). A missing path becomes null and shows as blank.
+- Bindings read **public instance properties** only (not fields); `{Static …}` reads public static properties. A missing path becomes null and shows as blank.
 - If the whole attribute value is a single binding (`"{X}"`), the value's type is preserved (number, bool, list). Mixed text becomes a string.
-- Bindings are read once at layout. Computed properties (`public string StatusText => …`) are recomputed on the next `Invalidate()`. After changing the VM from a timer or another thread, call `Invalidate()`: [updates and threads](llm-rules.md#updates-threads).
+- Bindings are read once at layout. Computed properties (`public string StatusText => …`) are recomputed on the next rebuild. After changing the VM from a timer or another thread, call `Invalidate()`, or turn on `App.AutoRefresh` once so the screen checks its bound values by itself: [updates and threads](llm-rules.md#updates-threads).
 - A value turned into text (interpolation, a text attribute) is written with the invariant culture: `24.5`, `1234.5`, dates as `11/24/2026 13:05:09`, on any PC language setting. Give dates a format (`{At:yyyy-MM-dd HH:mm}`).
 
 <a id="binding-format"></a>
@@ -340,6 +341,35 @@ Behavior:
 - To show a specific reason, set a VM property inside the method, bind a label to it, and call `App.Invalidate()` in the method — a rejected commit does not rebuild the screen by itself.
 - When rejected (all cases above): `DvInput` stays in edit mode and shows the error text, except a stepper −/+ press, which keeps the value and shows nothing ([stepper](dvml-inputs.md#dvinput)); picker popups stay open; a `DvSelect` dropdown closes and the value is unchanged (a grid `select` cell stays open); toggles, knobs and `check` cells keep their value; grid row selection (`selected-items="{Bind …}"`) keeps the previous selection. The same holds for every widget and `DvDataGrid` cell.
 
+<a id="binding-static"></a>
+### Static properties (`{Static …}`)
+
+`{Static Type.Property}` reads a public static property, for values the whole app shares (current user, communication state, settings) without a property on every screen class.
+
+```csharp
+public static class Plant
+{
+    public static string Mode { get; set; } = "AUTO";
+    public static double Level { get; set; }
+    public static bool Auto { get; set; }
+    public static PumpState Pump { get; set; } = new();
+}
+```
+```xml
+<DvLabel text="{Static Plant.Mode}"/>
+<DvLabel text="Level {Static Plant.Level:0.0} %"/>
+<DvLabel text="{Static Plant.Pump.Speed:0}"/>
+<DvSwitch label="Auto" value="{Bind Static Plant.Auto}"/>
+<DvLabel text="{Static System.DateTime.Now:HH:mm}"/>
+```
+
+- Everything a binding does works the same: display format, interpolation, two-way (`{Bind Static …}`), value attributes, `items`, inside `DvRepeat` items, component templates and parameters. After the static property, the path continues by the instance rules (`Plant.Pump.Speed`).
+- **Finding the type.** A short name (`Plant`) is looked up in the screen class's assembly, then in the app's (entry) assembly; exactly one type there must have that public static property. Any other type, or two types of one name, is written with its namespace: `{Static System.DateTime.Now}`, `{Static MyApp.Data.Plant.Mode}`.
+- Properties only, not fields or constants (`DateTime.MinValue` is a field). The class may be `static` or not, public or internal.
+- Not found, ambiguous, or a write to a property without a public setter: an empty value (no write) and one Trace warning. The build reports what it can check as [DVML023](dvml-diagnostics.md#dvml023).
+- **Updates** follow the same rule as VM properties: the value is re-read whenever the screen is rebuilt (input, handlers, after `await`, `App.Invalidate()`), or at every period of `App.AutoRefresh`. A static value changed by a communication thread needs one of those.
+- A value written through `{Bind Static …}` is reported to the screen VM's `OnValueCommitted` with the path `"Static Plant.Auto"` ([after the screen wrote a value](#value-committed)).
+
 <a id="value-committed"></a>
 ## After the screen wrote a value (`IDvValueCommitted`)
 
@@ -362,6 +392,7 @@ public partial class MainPage : DvPage, IDvValueCommitted
 - `path` = the binding path without braces, `Bind`, `Data.` (`"Setpoint"`, `"Motor.Speed"`); `value` = the value stored, already converted to the property type.
 - Told object = the object the path starts from: the screen VM, or the **item** for `{Bind Item.X}` inside a `DvRepeat` and for a grid cell (`path` = `"X"` / the column path). Implement the interface on the item type to hear those.
 - A two-way component parameter (`<MyTile Value="{Bind Setpoint}"/>`) is reported with the outer path (`"Setpoint"`).
+- A static binding (`{Bind Static Plant.Auto}`) is reported to the screen VM with the path `"Static Plant.Auto"` (the type has no object to tell).
 - Not called for: code writes to the VM, writes through a handle (`tg.Checked = true`), a write rejected by `onbeforecommit` or failed in the setter, `DvVideo position`/`duration`.
 - An exception from `OnValueCommitted` is reported via [HandlerError](#handler-error) with `Kind = "committed"`; the value stays written.
 

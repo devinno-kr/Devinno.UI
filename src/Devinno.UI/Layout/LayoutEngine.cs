@@ -97,6 +97,8 @@ public sealed partial class LayoutEngine
 
         var prevStrings = BindingResolver.CurrentStrings;
         BindingResolver.CurrentStrings = _strings;
+        var prevReads = BindingReads.Current;
+        BindingReads.Current = Reads;
         // VM 읽기 예외 알림 범위 — 서피스가 정해 두지 않았으면(직접 호출·DvRenderer) 이 레이아웃 동안만 쓰는 범위(서피스 없음 = Trace 만)
         var prevRead = HandlerErrors.CurrentRead;
         var readScope = prevRead ?? new HandlerErrors.ReadScope(null);
@@ -130,6 +132,7 @@ public sealed partial class LayoutEngine
         finally
         {
             BindingResolver.CurrentStrings = prevStrings;
+            BindingReads.Current = prevReads;
             readScope.Tag = prevTag;
             HandlerErrors.ExitRead(prevRead);
         }
@@ -284,6 +287,9 @@ public sealed partial class LayoutEngine
         return box;
     }
 
+
+    /// <summary>Records the bindings this build reads (set by a surface with automatic refresh, <see cref="App.DvApp.AutoRefresh"/>). <see langword="null"/> = not recorded.</summary>
+    internal BindingReads? Reads { get; set; }
 
     /// <summary>Keeps custom widget instances between builds (set by the surface). If <see langword="null"/>, each layout creates new instances.</summary>
     internal InstanceStore<Widgets.DvWidget>? WidgetStore { get; set; }

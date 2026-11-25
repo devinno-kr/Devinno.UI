@@ -62,7 +62,7 @@ public sealed partial class MonitorPage : DvPage
 ```
 
 ## 설계 방향: AI와 함께 쓰기 좋은 UI 라이브러리
-<!-- en-hash: 558e226d017487bd -->
+<!-- en-hash: abc1f79ed58f5a67 -->
 
 Devinno.UI는 AI(LLM) 코딩 도구로 화면을 만드는 것을 전제로 설계했습니다. 목표는 두 가지입니다. AI가 실수를 덜 하게 하고, 실수하면 조용히 넘어가지 않고 바로 드러나게 하는 것입니다. 같은 장치가 사람이 쓸 때도 그대로 도움이 됩니다.
 
@@ -72,7 +72,7 @@ Devinno.UI는 AI(LLM) 코딩 도구로 화면을 만드는 것을 전제로 설�
 
 **조용한 실패를 드러낸다**
 UI 코드에서 가장 흔한 실패는 "틀렸는데 아무 일도 안 일어나는 것"입니다. 이것을 세 겹으로 드러냅니다.
-- **빌드 진단(DVML001~022):** 없는 스타일 속성·테마 토큰·클래스, 허용되지 않거나 속성 종류에 맞지 않는 값, VM에 없는 핸들러 메서드, 내장 태그에 없는 속성, 내장 태그 이름을 쓴 컴포넌트, 빈 바인딩 형식, 공정도 연결 오류, 중복 `id`를 dvml의 줄과 칸 위치로 알립니다.
+- **빌드 진단(DVML001~023):** 없는 스타일 속성·테마 토큰·클래스, 허용되지 않거나 속성 종류에 맞지 않는 값, VM에 없는 핸들러 메서드, 내장 태그에 없는 속성, 내장 태그 이름을 쓴 컴포넌트, 빈 바인딩 형식, 없는 static 속성 바인딩, 공정도 연결 오류, 중복 `id`를 dvml의 줄과 칸 위치로 알립니다.
 - **컴파일 오류:** `id`를 붙이면 소스 생성기가 VM에 형식 있는 핸들 필드를 만듭니다. 코드에서 이름을 잘못 쓰면 컴파일 오류가 납니다.
 - **화면 표시:** 그래도 빠져나간 잘못된 색 토큰은 실행 화면에서 자홍색(`#FF00FF`)으로 보입니다.
 
@@ -154,7 +154,7 @@ dotnet run --project samples/Devinno.UI.Demo
 작은 시뮬레이션이 값을 움직이는 정수장 쇼케이스가 뜹니다. 운영 대시보드, 흐름 표시가 켜진 P&ID, 기능별 페이지를 모은 Widgets 페이지(그리드, 트렌드, 알람, 다이얼로그, 입력, 공정도, 소리 있는 동영상 등)로 이루어져 있습니다. `-- shot <폴더>` 를 붙이면 창 없이 모든 화면을 PNG 로 저장합니다.
 
 ## 문서
-<!-- en-hash: e5105fdb2fd260ad -->
+<!-- en-hash: ade5c0fc93186093 -->
 
 아래 문서는 패키지의 `docs/` 폴더에 들어 있습니다(빌드하면 프로젝트의 `.devinno/Devinno.UI/` 에도 복사됩니다 — 아래 참고). 영어로만 제공됩니다.
 
@@ -163,7 +163,7 @@ dotnet run --project samples/Devinno.UI.Demo
 - [`dvml-layout.md`](dvml-layout.md), [`dvml-style.md`](dvml-style.md): 레이아웃 상자·크기·스크롤, 스타일 키·클래스·테마 토큰
 - [`dvml-widgets.md`](dvml-widgets.md), [`dvml-inputs.md`](dvml-inputs.md), [`dvml-instruments.md`](dvml-instruments.md), [`dvml-grid.md`](dvml-grid.md): 내장 태그마다 속성과 예제
 - [`dvml-components.md`](dvml-components.md), [`dvml-app.md`](dvml-app.md), [`dvml-code.md`](dvml-code.md), [`dvml-dialogs.md`](dvml-dialogs.md): 사용자 컴포넌트·커스텀 위젯, 앱·페이지·바·스레드·호스트, 코드에서 컨트롤 다루기, 대화상자
-- [`dvml-diagnostics.md`](dvml-diagnostics.md): 빌드 진단 DVML001–022 와 실행 중 Trace 경고
+- [`dvml-diagnostics.md`](dvml-diagnostics.md): 빌드 진단 DVML001–023 와 실행 중 Trace 경고
 - [`dvml-process.md`](dvml-process.md), [`dvml-process-equipment.md`](dvml-process-equipment.md), [`dvml-process-layout.md`](dvml-process-layout.md), [`dvml-process-examples.md`](dvml-process-examples.md): 공정도(P&ID) — `DvProcess` 장비·연결·배치 규칙·사용자 심볼·완전 예제
 - [`dvml-image.md`](dvml-image.md): 그림(시안·재현할 디자인)에서 화면 만들기 가이드 — 부분별 구현 방식, 이미지 파일, 터치 영역, 검증
 - [`llms.txt`](llms.txt): AI 도구용 진입점 (위 문서들의 읽는 순서)

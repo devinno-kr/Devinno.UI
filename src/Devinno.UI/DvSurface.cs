@@ -352,6 +352,50 @@ public sealed partial class DvSurface
     /// </summary>
     internal void MarkDirty() => _dirty = true;
 
+    /// <summary>Whether builds record the bindings they read, for <see cref="App.DvApp.AutoRefresh"/>. Set by the app on the input thread.</summary>
+    internal bool RecordBindings { get; set; }
+
+    private Binding.BindingReads? _bindingReads;
+    private bool _hasGrid;
+
+    /// <summary>
+    /// One <see cref="App.DvApp.AutoRefresh"/> check, inside a frame on the input thread: re-reads the bindings the last build read and marks the screen to be rebuilt if any value differs
+    /// (or if the last build did not record yet). Otherwise a screen with a data grid is repainted, because grid cells are read while painting. Returns whether it will be rebuilt.
+    /// </summary>
+    internal bool RefreshIfChanged()
+    {
+        if (_bindingReads is null)
+        {
+            _dirty = true; // 기록 없이 만든 화면 — 이번에 기록하며 다시 만든다
+            return true;
+        }
+
+        var prevRead = HandlerErrors.EnterRead(_reads); // 다시 읽다 난 getter 예외도 이 화면의 HandlerError 로(같은 것은 한 번)
+        bool changed;
+        try { changed = _bindingReads.Changed(); }
+        finally { HandlerErrors.ExitRead(prevRead); }
+
+        if (changed)
+            _dirty = true;
+        else if (_hasGrid)
+            Interlocked.Increment(ref _repaintRequested); // 셀 값은 그릴 때 읽는다 — 다시 그리기만
+        return changed;
+    }
+
+    private static bool HasGrid(LayoutBox? box)
+    {
+        if (box is null)
+            return false;
+        if (box.Grid is not null)
+            return true;
+        foreach (var c in box.Children)
+        {
+            if (HasGrid(c))
+                return true;
+        }
+        return false;
+    }
+
     /// <summary>Makes only this screen re-fit on the next frame, leaving child slots alone (a DvApp queue request; other threads allowed).</summary>
     internal void RequestFrame()
     {
@@ -635,7 +679,7 @@ public sealed partial class DvSurface
             _dirty = false;
             _reads.Seen.Clear(); // 재빌드 — 같은 VM 읽기 예외도 다시 한 번 알린다
             var old = _box;
-            var engine = new LayoutEngine(_theme, _strings) { WidgetStore = _widgetStore, VideoStore = _videoStore };
+            var engine = new LayoutEngine(_theme, _strings) { WidgetStore = _widgetStore, VideoStore = _videoStore, Reads = RecordBindings ? new Binding.BindingReads() : null };
             if (_controlsByNode.Count > 0)
                 engine.ControlOf = n => _controlsByNode.GetValueOrDefault(n);
             engine.TabIndexOf = TabIndexValue;
@@ -646,6 +690,8 @@ public sealed partial class DvSurface
             engine.TreeExpandedOf = TreeExpanded;
             _box = engine.Layout(_root, _vm, w, h, _registry);
             _boundVideos = engine.BoundVideos;
+            _bindingReads = engine.Reads;
+            _hasGrid = engine.Reads is not null && HasGrid(_box);
             PruneExpanderState();
             Remap(old);
         }

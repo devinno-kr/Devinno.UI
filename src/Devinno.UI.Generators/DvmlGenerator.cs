@@ -45,6 +45,8 @@ public sealed class DvmlGenerator : IIncrementalGenerator
                 if (!defined.Contains(name))
                     spc.ReportDiagnostic(Diagnostic.Create(Diagnostics.StyleUnknownClass, at, name));
 
+        StaticCheck.Check(spc, compilation, files);
+
         var clickParamComponents = new HashSet<string>(StringComparer.Ordinal);
         foreach (var f in files)
             clickParamComponents.UnionWith(f.ClickParamComponents);

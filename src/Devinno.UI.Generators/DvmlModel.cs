@@ -38,6 +38,12 @@ internal sealed class DvmlModel
 
     private static readonly string[] HandlerAttrs = { "onclick", "onbeforecommit", "onack", "onrowclick" };
 
+    /// <summary>static 바인딩({Static A.ABC}, {Bind Static A.ABC}) — 속성 값과 요소 글자 모두. 형식·속성 검사는 컴파일 정보로(StaticCheck)</summary>
+    public List<(string Expr, string Path, Location At)> StaticUses { get; } = new();
+
+    private static readonly System.Text.RegularExpressions.Regex StaticRegex =
+        new(@"\{\s*(?:Bind\s+)?Static\s+([^{}:]+?)\s*(?::[^{}]*)?\}");
+
     // 핸들 형식 = 태그 이름(라이브러리 TagCatalog.HandleKinds 와 같은 목록 — 테스트로 대조). 그 밖의 태그는 DvControl.
     internal static readonly HashSet<string> HandleTags = new(System.StringComparer.Ordinal)
     {
@@ -78,6 +84,13 @@ internal sealed class DvmlModel
         StyleCheck.Check(root, (d, at, off, len, args) => m.Reports.Add(Diagnostic.Create(d, m.At(at, off, len), args)), uses, m.ClassDefs);
         foreach (var (name, at) in uses)
             m.ClassUses.Add((name, m.At(at)));
+        foreach (var x in root.DescendantsAndSelf())
+        {
+            foreach (var a in x.Attributes())
+                m.AddStatic(a, a.Value);
+            foreach (var t in x.Nodes().OfType<XText>())
+                m.AddStatic(t, t.Value);
+        }
         foreach (var c in root.DescendantsAndSelf("DvComponent"))
             if (c.Attribute("name")?.Value is { Length: > 0 } cname &&
                 c.Elements("DvParam").Any(p => string.Equals(p.Attribute("name")?.Value, "onclick", System.StringComparison.OrdinalIgnoreCase)))
@@ -124,6 +137,14 @@ internal sealed class DvmlModel
 
         foreach (var c in e.Elements())
             Walk(c, templateTag, inComponent, seen);
+    }
+
+    private void AddStatic(XObject at, string value)
+    {
+        if (value.IndexOf("Static", System.StringComparison.Ordinal) < 0)
+            return;
+        foreach (System.Text.RegularExpressions.Match match in StaticRegex.Matches(value))
+            StaticUses.Add((match.Value, match.Groups[1].Value.Trim(), At(at, match.Index, match.Length)));
     }
 
     private void Report(DiagnosticDescriptor d, Location loc, params object[] args)

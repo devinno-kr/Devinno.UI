@@ -38,7 +38,7 @@ window.Run();
 - **`CurrentPage`** — the page currently shown. Read-only, and it is the value **after** `Show` is applied (from the next frame, not right after the `Show` call). `null` while nothing has been shown.
 - **`Show<T>()`** / **`Show(page)`** — change the current page. `Show(page)` first adds a page that is not in the list (`Pages.Add`). Showing the current page does nothing; a page of another app throws.
 - **`DvApp.Current`** — reaches the app from code outside pages (communication classes). It works from `new ViewWindow(app, …)` (or assigning `ViewControl.App`) on, and throws prior to that. After the window closes it keeps returning the last app ([dialogs at shutdown](dvml-dialogs.md#dialog-lifecycle)).
-- **Redraw** — `app.Invalidate()` (rebuild) and `app.Surface.Repaint()` (redraw only): which one to call and from where is in [the update table](llm-rules.md#updates-threads). Pages, bars and dialogs have no `Invalidate()` of their own — inside them call `App.Invalidate()`.
+- **Redraw** — `app.Invalidate()` (rebuild) and `app.Surface.Repaint()` (redraw only): which one to call and from where is in [the update table](llm-rules.md#updates-threads). Pages, bars and dialogs have no `Invalidate()` of their own — inside them call `App.Invalidate()`. Or set `app.AutoRefresh` once and the visible screens check their bound values every period ([automatic refresh](llm-rules.md#updates-threads)).
 - **Errors** — subscribe to `app.HandlerError` once; it receives VM exceptions from all pages, areas and dialogs ([HandlerError](dvml-language.md#handler-error)).
 
 <a id="dvpage"></a>
@@ -241,7 +241,7 @@ The **input thread** is the thread on which the adapter handles layout, drawing,
 | Events raised by user interaction, `onclick` handlers | Called on the input thread | Screen values may be changed directly inside the handler |
 | `TrendBuffer.Add`·`AlarmLog` (all members, incl. `Raise`/`Ack`/`AckAll`) | Any thread | Internal locking. Enumerating `AlarmLog` gives a snapshot of that moment |
 | `Post` on the input-thread `SynchronizationContext` (`SynchronizationContext.Current` inside handlers) | Any thread | |
-| Writing view model properties | App's responsibility | The library only reads. `Invalidate` after writing reflects it at the next frame |
+| Writing view model properties | App's responsibility | The library only reads. `Invalidate` after writing reflects it at the next frame (or the next `AutoRefresh` check) |
 | `DvSurface.Layout`·`RenderTo`·`Pointer*`·`Key*`·`Text*`, `LayoutBox`·`DvEditState` | Input thread only | Called by the adapter. Apps normally never call them |
 | `Send` on the input-thread `SynchronizationContext` | Input thread only | Calling from another thread throws `NotSupportedException` |
 

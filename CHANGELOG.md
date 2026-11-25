@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- Static bindings: `{Static Plant.Mode}` reads a public static property, `{Bind Static Plant.Auto}` writes it; formats, interpolation, nested paths (`{Static Plant.Pump.Speed}`), repeats and component templates work as for VM bindings. A short type name is looked up in the screen's assembly, then the app's; other types take their namespace (`{Static System.DateTime.Now:HH:mm}`). Not found, ambiguous or read-only targets give an empty value and a Trace warning, and the build reports what it can check as warning DVML023. A write is reported to the screen VM's `IDvValueCommitted` as `"Static Plant.Auto"` (`dvml-language.md` → Static properties).
+- `DvApp.AutoRefresh`: set a period once (`TimeSpan.FromMilliseconds(200)`) and the current page, the bars and open dialogs re-read, every period, the bindings their last build read — VM and static — and rebuild only a screen whose values differ, so values changed by timers and communication threads appear without `Invalidate()`. Off by default. Values are compared with `Equals` (the same list object counts as unchanged); data grids are repainted at each check (`llm-rules.md` → Updates and threads).
+
 ### Changed
 
 - Painting skips boxes that cannot reach the visible area: rows of a long `DvRepeat` scrolled out of view, content outside a clipping box, and everything outside the region being redrawn. A 1,000-row scrolling list paints in about 2 ms instead of 16 ms. The picture is the same: the area a box may paint into includes its shadows, text that overflows a fixed size, children placed outside it and the `transform` of every state style. Custom widgets, process diagrams, shrunk content and videos are always painted. Building the boxes is unchanged — a long list is still built in full, so use `DvDataGrid` for thousands of rows.

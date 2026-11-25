@@ -59,4 +59,9 @@ internal static class Diagnostics
 
     // DVML022 — 바인딩 표시 형식이 비었다({Temp:}) — 실행 때는 형식 없는 것과 같다(조용히). 값 형식과 맞는지는 VM 값이 실행 때 정해져 실행 경고만
     public static readonly DiagnosticDescriptor EmptyBindingFormat = D("DVML022", DiagnosticSeverity.Warning);
+
+    // DVML023 — static 바인딩({Static A.ABC})의 형식·public static 속성이 없다 / 짧은 이름이 프로젝트의 여러 형식에 맞는다(StaticCheck)
+    public static readonly DiagnosticDescriptor StaticNoProperty = D("DVML023", DiagnosticSeverity.Warning, "NoProperty");
+    public static readonly DiagnosticDescriptor StaticAmbiguous = D("DVML023", DiagnosticSeverity.Warning, "Ambiguous");
+    public static readonly DiagnosticDescriptor StaticNotFound = D("DVML023", DiagnosticSeverity.Warning, "NotFound");
 }

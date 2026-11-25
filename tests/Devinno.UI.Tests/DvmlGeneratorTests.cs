@@ -991,6 +991,35 @@ public class DvmlGeneratorTests
         Assert.Contains("비어", d.First().GetMessage(new System.Globalization.CultureInfo("ko-KR")));
     }
 
+    // DVML023 — static 바인딩: 프로젝트 형식의 속성 없음·모호함·형식 없음은 경고, 있는 것·네임스페이스로 쓴 참조 형식(System.DateTime.Now)은 조용히
+    [Fact]
+    public void StaticBinding_IsCheckedAgainstTheProject()
+    {
+        var r = Run("""
+            namespace App.Data { public static class Plant { public static string Mode { get; set; } = ""; public static Pump P { get; } = new(); } public sealed class Pump { public double Speed { get; set; } } }
+            namespace App.A { public static class Twin { public static int V { get; set; } } }
+            namespace App.B { public static class Twin { public static int V { get; set; } } }
+            public partial class P { }
+            """, ("P.dvml", """
+            <DvScreen>
+              <DvLabel text="{Static Plant.Mode} {Static Plant.P.Speed:0.0} {Static System.DateTime.Now:HH:mm}"/>
+              <DvInput value="{Bind Static App.Data.Plant.Mode}"/>
+              <DvLabel text="{Static Plant.Nope}"/>
+              <DvLabel>{Static Twin.V}</DvLabel>
+              <DvLabel text="{Static Nowhere.X}"/>
+              <DvLabel text="{Static App.Data.Plant.Nope2}"/>
+            </DvScreen>
+            """));
+        var d = r.Ids("DVML023");
+        Assert.Equal(4, d.Length);
+        Assert.All(d, x => Assert.Equal(DiagnosticSeverity.Warning, x.Severity));
+        var msgs = d.Select(x => x.GetMessage(Invariant)).ToList();
+        Assert.Contains(msgs, m => m.Contains("Nope") && m.Contains("App.Data.Plant") && !m.Contains("Nope2"));
+        Assert.Contains(msgs, m => m.Contains("Twin") && m.Contains("App.A.Twin") && m.Contains("App.B.Twin"));
+        Assert.Contains(msgs, m => m.Contains("Nowhere"));
+        Assert.Contains(msgs, m => m.Contains("Nope2"));
+    }
+
     // 3단계 D4 — 내장 태그 이름의 컴포넌트는 빌드 오류(DVML021). 내장 컴포넌트(DvCard·DvPageFrame…)를 바꾸는 것은 된다
     [Fact]
     public void Component_BuiltInTagName_IsAnError()

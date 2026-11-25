@@ -211,4 +211,16 @@
   <data name="Widget_ListSingleItems" xml:space="preserve">
     <value>selected-items on a single-selection DvListBox — for multiple selection set selection-mode="multi"; for a single one, bind value</value>
   </data>
+  <data name="DVML023_Title" xml:space="preserve">
+    <value>Static binding not found</value>
+  </data>
+  <data name="DVML023_NoProperty" xml:space="preserve">
+    <value>'{0}': '{1}' has no public static property '{2}' — the value would be empty at run time; check the property name or make it public static</value>
+  </data>
+  <data name="DVML023_Ambiguous" xml:space="preserve">
+    <value>'{0}': '{1}' matches several types with that static property ({2}) — the value would be empty at run time; write the namespace ({{Static {3}}})</value>
+  </data>
+  <data name="DVML023_NotFound" xml:space="preserve">
+    <value>'{0}': no type '{1}' in this project — the value would be empty at run time; a type of another assembly needs its namespace ({{Static System.DateTime.Now}})</value>
+  </data>
 </root>

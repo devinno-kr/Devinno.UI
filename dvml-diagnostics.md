@@ -33,6 +33,7 @@ The source generator reports problems in each `*.dvml` file at compile time. The
 | [DVML020](#dvml020) | Warning | Attribute value is not valid for its kind | every dvml |
 | [DVML021](#dvml021) | Error | Component name is a built-in tag | every dvml |
 | [DVML022](#dvml022) | Warning | Empty binding format | every dvml |
+| [DVML023](#dvml023) | Warning | Static binding not found | every dvml |
 
 Scope rules:
 - "every dvml" includes dvml files without `vm`.
@@ -209,6 +210,14 @@ What to do after every markup edit: build, then fix every error and every DVML01
 - Meaning: a binding with nothing after its `:` (`{Temp:}`, `{Temp: }`). At run time it is the same as no format.
 - Checked in every attribute value and element text. Whether a format suits the value type is not checked at build time (the VM value is known only at run time); that is a Trace warning ([display format](dvml-language.md#binding-format)).
 - Fix: write a .NET format (`{Temp:0.0}`) or remove the `:`.
+
+<a id="dvml023"></a>
+### DVML023 — Static binding not found (Warning)
+
+- Meaning: a `{Static Type.Property}` binding ([static properties](dvml-language.md#binding-static)) whose type or public static property the project does not have, or whose short type name matches several types of the project. At run time the value would be empty.
+- Checked in every attribute value and element text, with the project's own types and, for a name with a namespace (`{Static System.DateTime.Now}`), the referenced assemblies. Only the first property after the type is checked; the rest of the path is read at run time.
+- At run time a short name is also looked up in the app's (entry) assembly. If the screen lives in a library project and the type in the executable, this warning can be ignored — or write the namespace.
+- Fix: correct the name, make the property `public static` (fields are not read), or write the namespace.
 
 <a id="trace-warnings"></a>
 ## Runtime Trace warnings
