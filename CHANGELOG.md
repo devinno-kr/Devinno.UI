@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.9.1 — 2026-11-25
+
+Shared values without a property on every screen, screens that follow changing values by themselves, and faster painting of long scrolling lists. Nothing changes for existing screens: `{Static …}` and `AutoRefresh` are new and off unless used, and culled painting draws the same picture.
 
 ### Added
 
