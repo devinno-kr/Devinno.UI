@@ -44,6 +44,7 @@ public sealed class DvHandlerErrorEventArgs : EventArgs
     /// <item><description><c>"onack"</c> — the <c>onack</c> handler of an alarm widget.</description></item>
     /// <item><description><c>"onbeforecommit"</c> — the check handler before a value write. The value was not written (rejected).</description></item>
     /// <item><description><c>"setter"</c> — writing a value to a view model property failed (setter exception, type conversion failure). The value did not change.</description></item>
+    /// <item><description><c>"committed"</c> — <see cref="IDvValueCommitted.OnValueCommitted"/> threw after the screen wrote a value. The value stays written; <see cref="Member"/> = the path passed to it.</description></item>
     /// <item><description><c>"getter"</c> — a view model (or item) property getter threw during layout or drawing. The value was treated as empty
     /// (text = empty string, <c>visible</c> = hidden, grid cell = blank, sort key = null rank, summary = that value excluded).</description></item>
     /// <item><description><c>"format"</c> — converting a value to text (<see cref="object.ToString"/>, <see cref="IFormattable"/>) threw. Drawn as empty text.</description></item>

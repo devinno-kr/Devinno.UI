@@ -277,19 +277,19 @@ public static class BindingResolver
     /// An exception thrown by the property setter propagates wrapped in <see cref="TargetInvocationException"/>.
     /// (For widget input, <see cref="DvSurface"/> catches these exceptions, treats them as a write failure, and reports them through <see cref="DvSurface.HandlerError"/>.)
     /// </remarks>
-    public static void SetValue(object? ctx, string path, object? value)
+    public static void SetValue(object? ctx, string path, object? value) => Write(ctx, path, value);
+
+    /// <summary>
+    /// <see cref="SetValue"/> that tells what was written: the object the path starts from (the screen VM, or the item for <c>Item.</c> paths),
+    /// the path from that object, and the value stored (after conversion). <see langword="null"/> when nothing was written (missing path, read-only property).
+    /// </summary>
+    internal static (object Owner, string Path, object? Value)? Write(object? ctx, string path, object? value)
     {
         if (ctx is null)
-            return;
+            return null;
 
         if (ctx is ItemScope item)
-        {
-            if (path.StartsWith("Item.", StringComparison.Ordinal))
-                SetValue(item.Item, path[5..], value);
-            else
-                SetValue(item.Outer, path, value);
-            return;
-        }
+            return path.StartsWith("Item.", StringComparison.Ordinal) ? Write(item.Item, path[5..], value) : Write(item.Outer, path, value);
 
         var segs = path.Split('.');
         object cur = ctx;
@@ -298,21 +298,22 @@ public static class BindingResolver
             var pi = cur.GetType().GetProperty(segs[i], BindingFlags.Public | BindingFlags.Instance);
             var next = pi?.GetValue(cur);
             if (next is null)
-                return;
+                return null;
 
             cur = next;
         }
 
         var last = cur.GetType().GetProperty(segs[^1], BindingFlags.Public | BindingFlags.Instance);
-        if (last is { CanWrite: true })
-        {
-            // int? 등 Nullable 은 바탕 타입으로 변환(ChangeType 은 Nullable 을 직접 못 다룸)
-            var target = Nullable.GetUnderlyingType(last.PropertyType) ?? last.PropertyType;
-            // 이미 대상 타입이면 그대로(목록 등 IConvertible 아닌 값 — 그리드 선택 스냅샷)
-            last.SetValue(cur, value is null ? null
-                : target.IsInstanceOfType(value) ? value
-                : Convert.ChangeType(value, target, CultureInfo.InvariantCulture));
-        }
+        if (last is not { CanWrite: true })
+            return null;
+        // int? 등 Nullable 은 바탕 타입으로 변환(ChangeType 은 Nullable 을 직접 못 다룸)
+        var target = Nullable.GetUnderlyingType(last.PropertyType) ?? last.PropertyType;
+        // 이미 대상 타입이면 그대로(목록 등 IConvertible 아닌 값 — 그리드 선택 스냅샷)
+        var stored = value is null ? null
+            : target.IsInstanceOfType(value) ? value
+            : Convert.ChangeType(value, target, CultureInfo.InvariantCulture);
+        last.SetValue(cur, stored);
+        return (ctx, path, stored);
     }
 
     /// <summary>Returns the declared type of the property the path points to. Used to build a value matching the target type before writing.</summary>

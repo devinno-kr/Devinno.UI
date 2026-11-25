@@ -413,7 +413,7 @@ The `using` lines for the C# types these pages use. Handle fields created by the
 | Types | Namespace | Package |
 |---|---|---|
 | `DvApp`, `DvPage`, `DvBar`, `DvDialog`, `DvDialog<TResult>`, `DialogCollection`, `DvDialogResult`, `DvMessageButtons`, `DvPageTransition` | `Devinno.UI.App` | Devinno.UI |
-| `DvRenderer`, `DvSurface`, `DvHandlerErrorEventArgs`, `Styles`, `Values`, `DvPointerArgs`, `DvPointerButton`, `DvModifiers` | `Devinno.UI` | Devinno.UI |
+| `DvRenderer`, `DvSurface`, `DvHandlerErrorEventArgs`, `IDvValueCommitted`, `Styles`, `Values`, `DvPointerArgs`, `DvPointerButton`, `DvModifiers` | `Devinno.UI` | Devinno.UI |
 | `DvTheme` | `Devinno.UI.Styling` | Devinno.UI |
 | `DvControl` and the value handles (`DvLabel`, `DvButton`, `DvInput`, `DvToggle`, `DvSelect` …), `DvClickEventArgs`, `DvValueChangedEventArgs` | `Devinno.UI.Controls` | Devinno.UI |
 | `AlarmLog`, `AlarmRow`, `AlarmPriority` | `Devinno.UI.Alarms` | Devinno.UI |

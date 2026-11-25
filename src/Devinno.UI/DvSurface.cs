@@ -519,7 +519,7 @@ public sealed partial class DvSurface
             if (box.VideoDurationPath is { } dp && p.Duration.TotalSeconds != p.WrittenDuration)
             {
                 p.WrittenDuration = p.Duration.TotalSeconds; // 실패해도 다시 시도하지 않는다(알림은 한 번)
-                HandlerErrors.TrySet(this, "DvVideo", ctx, dp, p.WrittenDuration);
+                HandlerErrors.TrySet(this, "DvVideo", ctx, dp, p.WrittenDuration, byUser: false);
                 _dirty = true;
             }
             if (box.VideoPositionPath is { } pp)
@@ -529,7 +529,7 @@ public sealed partial class DvSurface
                 {
                     p.BoundPosition = pos;
                     p.PositionWrittenAt = now;
-                    HandlerErrors.TrySet(this, "DvVideo", ctx, pp, pos);
+                    HandlerErrors.TrySet(this, "DvVideo", ctx, pp, pos, byUser: false);
                     _dirty = true;
                 }
             }

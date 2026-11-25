@@ -104,18 +104,36 @@ internal static class HandlerErrors
         }
     }
 
-    /// <summary>Writes a value to the VM. On a setter exception or type conversion failure, reports it and returns false (a write failure is handled the same as a rejection).</summary>
-    public static bool TrySet(DvSurface? owner, string? tag, object? ctx, string path, object? value)
+    /// <summary>
+    /// Writes a value the screen produced to the VM. On a setter exception or type conversion failure, reports it and returns false (a write failure is handled the same as a rejection).
+    /// After a write, the object the path starts from is told through <see cref="IDvValueCommitted"/> when it implements it
+    /// (<paramref name="byUser"/> false = a value the library keeps up to date by itself, such as a video position: not told).
+    /// </summary>
+    public static bool TrySet(DvSurface? owner, string? tag, object? ctx, string path, object? value, bool byUser = true)
     {
+        (object Owner, string Path, object? Value)? written;
         try
         {
-            BindingResolver.SetValue(ctx, path, value);
-            return true;
+            written = BindingResolver.Write(ctx, path, value);
         }
         catch (Exception ex)
         {
             Report(owner, ex, "setter", path, tag);
             return false;
         }
+
+        // 값은 이미 쓰였다 — 알림 처리기 예외는 알리기만 하고 되돌리지 않는다
+        if (byUser && written is { Owner: IDvValueCommitted target } w)
+        {
+            try
+            {
+                target.OnValueCommitted(w.Path, w.Value);
+            }
+            catch (Exception ex)
+            {
+                Report(owner, ex, "committed", w.Path, tag);
+            }
+        }
+        return true;
     }
 }

@@ -91,6 +91,7 @@ Giving an `id` to a widget that has a value creates a handle for that value. Use
   - Code writes to the handle — `ByUser = false`, immediately **on the writing thread**. Handler exceptions propagate directly to the writing code.
   - Code changes a bound VM property directly and the screen is rebuilt (the next layout after `Invalidate()`) — `ByUser = false`.
   - The value at first attachment to the screen is not a "change".
+- A VM that binds values without handles hears the screen's writes through `IDvValueCommitted` ([after the screen wrote a value](dvml-language.md#value-committed)).
 - Change events are `EventHandler<DvValueChangedEventArgs>` (`(sender, e) => … e.ByUser`).
 - `DvInput` changes **once when editing finishes**, not on every keystroke. Writing non-numeric text to `Text` on a numeric input throws `FormatException`.
 - `SelectedIndex` is based on the options from the last layout. Written prior to the first layout (inside `OnLoaded()`), it is applied on the first layout. Out of range throws `ArgumentOutOfRangeException` (after layout).

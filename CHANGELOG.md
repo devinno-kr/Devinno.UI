@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- `IDvValueCommitted` (`Devinno.UI`): a view model that implements `OnValueCommitted(string path, object? value)` hears every value the screen wrote, right after the write succeeded — every two-way widget, grid cells and row selection, custom widgets. Code writes, handle writes, rejected or failed writes and `DvVideo position`/`duration` are not reported, so a value polled from a device is not echoed back. `path` starts at the told object: the screen VM, or the item for `{Bind Item.X}` and grid cells. A handler exception is reported as `HandlerError` kind `"committed"` (`dvml-language.md` → After the screen wrote a value).
+
 ### Fixed
 
 - A display format given to a component parameter is no longer lost: `<DvStat value="{Level:0.0}"/>` shows `72.0` (it showed `72`). The parameter keeps the value and its format; inside the template a binding that is exactly the parameter (`text="{value}"`, `"{value} %"`, a nested component's parameter, a custom widget's `ctx.Text`) uses that format, value attributes (`DvGauge value="{value}"`) read the number, and a format of the template's own wins. Applies to built-in (`DvStat value`, `DvCard badge` …) and user components (`DvParam`).

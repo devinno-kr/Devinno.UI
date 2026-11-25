@@ -259,7 +259,7 @@ A value widget shows a value and lets the user change it. One table for all of t
 - A `DvRadio` without `value` (group remembered by the screen) is writable unless `readonly` is true. Code (handles) and the VM can change the value of a read-only widget.
 - **One owner per value.** With `value="{Bind X}"` the VM property is the owner and the handle (`tg.Checked`) reads and writes that property. With only `id` and no `value`, the handle holds the value and the widget is pressable on screen. The full ownership table: [code writes](dvml-code.md#code-writes).
 - For MVVM use binding; for code-centric screens use `id` only. Mixing both styles within one screen is fine.
-- Change events are raised only when the value actually changes; `e.ByUser` tells a screen change from a code write ([handles](dvml-code.md#handles)).
+- Change events are raised only when the value actually changes; `e.ByUser` tells a screen change from a code write ([handles](dvml-code.md#handles)). Without handles, a VM hears the screen's writes through [`IDvValueCommitted`](#value-committed).
 - `DvRadio.Checked = false` throws `InvalidOperationException` when the bound property cannot take null (enum, int) — check another button instead.
 - `DvDataGrid selected-items` and `DvListBox selected-items` are read as written: `{Bind X}` = two-way list, `{X}` = one-way.
 - Inside a component template, `value="{p}"` writes to the outer path of a two-way parameter `p` on `DvToggle`, `DvCheckBox`, `DvKnob`, `DvSlider`, `DvInput`, `DvSelect`, `DvSegment`, `DvTabs`, `DvDateTimeInput`, `DvColorInput`, latching `DvButton` and every custom widget ([component parameters](dvml-components.md#component-params)).
@@ -340,6 +340,31 @@ Behavior:
 - To show a specific reason, set a VM property inside the method, bind a label to it, and call `App.Invalidate()` in the method — a rejected commit does not rebuild the screen by itself.
 - When rejected (all cases above): `DvInput` stays in edit mode and shows the error text, except a stepper −/+ press, which keeps the value and shows nothing ([stepper](dvml-inputs.md#dvinput)); picker popups stay open; a `DvSelect` dropdown closes and the value is unchanged (a grid `select` cell stays open); toggles, knobs and `check` cells keep their value; grid row selection (`selected-items="{Bind …}"`) keeps the previous selection. The same holds for every widget and `DvDataGrid` cell.
 
+<a id="value-committed"></a>
+## After the screen wrote a value (`IDvValueCommitted`)
+
+A VM that implements `IDvValueCommitted` hears every value **the screen** wrote — after the write succeeded. Use it to send user changes to a device without echoing back values the code itself put into the VM.
+
+```csharp
+public partial class MainPage : DvPage, IDvValueCommitted
+{
+    public double Setpoint { get; set; }   // value="{Bind Setpoint}" in the markup
+
+    public void OnValueCommitted(string path, object? value)
+    {
+        if (path == nameof(Setpoint))
+            plc.Write("D100", Setpoint);   // a value polled from the PLC and set in code is not reported
+    }
+}
+```
+
+- Called on the input thread right after the setter returned, once per write, for every row of the [value widgets table](#value-widgets) except `DvVideo`, grid check/edit cells and row selection included. Called even when the new value equals the old one.
+- `path` = the binding path without braces, `Bind`, `Data.` (`"Setpoint"`, `"Motor.Speed"`); `value` = the value stored, already converted to the property type.
+- Told object = the object the path starts from: the screen VM, or the **item** for `{Bind Item.X}` inside a `DvRepeat` and for a grid cell (`path` = `"X"` / the column path). Implement the interface on the item type to hear those.
+- A two-way component parameter (`<MyTile Value="{Bind Setpoint}"/>`) is reported with the outer path (`"Setpoint"`).
+- Not called for: code writes to the VM, writes through a handle (`tg.Checked = true`), a write rejected by `onbeforecommit` or failed in the setter, `DvVideo position`/`duration`.
+- An exception from `OnValueCommitted` is reported via [HandlerError](#handler-error) with `Kind = "committed"`; the value stays written.
+
 <a id="vm-constants"></a>
 ## VM constants (`Styles`, `Values`)
 
@@ -395,6 +420,7 @@ app.HandlerError += (_, e) =>                  // same event name on DvApp, View
 | `onack` | an alarm widget `onack` handler | method name |
 | `onbeforecommit` | a confirmation method (= rejection) | method name |
 | `setter` | a VM property setter that a widget writes (= rejection) | property path |
+| `committed` | `IDvValueCommitted.OnValueCommitted` after a screen write (the value stays written) ([after a write](#value-committed)) | property path |
 | `getter` | a property getter read during layout / drawing (including a `DvControl` value read) | property path |
 | `format` | a value's `ToString()` / formatting | property path |
 | `enumerate` | list enumeration of `DvRepeat` / `DvDataGrid` / `DvSelect` / alarms / trends | property path |
