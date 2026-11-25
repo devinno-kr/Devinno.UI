@@ -854,8 +854,7 @@ public sealed partial class DvSurface
     {
         if (_box is null || _dirty)
             Layout(_box is null ? w : _w, _box is null ? h : _h);
-        var (mw, mh) = LayoutEngine.MeasureBox(_box!, availableWidth);
-        return new SKSize(mw, mh);
+        return LayoutEngine.IntrinsicSize(_box!, availableWidth);
     }
 
     private ChildSlot? SlotAt(SKPoint p)

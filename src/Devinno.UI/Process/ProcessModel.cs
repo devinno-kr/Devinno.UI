@@ -151,6 +151,7 @@ internal sealed class ProcessNode
 /// <summary>One line in a process diagram (<c>DvLine</c>).</summary>
 internal sealed class ProcessLine
 {
+    public ElementNode? Node; // 그 DvLine 요소(ProcessInspector.PipesOf)
     public required string FromRef, ToRef;
     public int FromNode = -1, ToNode = -1;
     public string? FromPort, ToPort;
@@ -468,6 +469,7 @@ internal static class ProcessBuilder
                 var (end, start) = Arrow(r);
                 d.Lines.Add(new ProcessLine
                 {
+                    Node = ch,
                     FromRef = RawName(r, "from") ?? "",
                     ToRef = RawName(r, "to") ?? "",
                     ArrowEnd = end,

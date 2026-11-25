@@ -95,10 +95,14 @@ public sealed class LayoutBox
     public bool IsScroller => Style.Overflow == Overflow.Scroll || Grid is not null;
 
     // ── 내용 배율(DvProcess fit="scale-down") — 자식(과 공정도 배관)은 내용 좌표로 배치하고, 페인트·히트테스트에서 배율·이동으로만 적용(스크롤과 같은 방식)
-    /// <summary>Content scale: the children (and a process diagram's own pipes) are drawn at this scale and moved by <see cref="ContentOffset"/> (on screen = content × scale + offset). 1 = none.</summary>
-    internal float ContentScale = 1f;
-    /// <summary>Content offset that goes with <see cref="ContentScale"/>.</summary>
-    internal SKPoint ContentOffset;
+    /// <summary>
+    /// Gets the content scale of this box: its children (and a process diagram's own pipes) keep their layout <see cref="Rect"/> and are drawn and hit at this scale,
+    /// then moved by <see cref="ContentOffset"/> — drawn point = content point × scale + offset, inside this box (before its scroll offset). 1 = none.
+    /// Set on a <c>DvProcess</c> with <c>fit="contain"</c> or <c>fit="scale-down"</c> and on a scaled process unit. <see cref="Interaction.HitTester.TryGetDrawnRect"/> applies it for you.
+    /// </summary>
+    public float ContentScale { get; internal set; } = 1f;
+    /// <summary>Gets the content offset that goes with <see cref="ContentScale"/> (logical px).</summary>
+    public SKPoint ContentOffset { get; internal set; }
     /// <summary>Whether the children are drawn through <see cref="ContentScale"/>/<see cref="ContentOffset"/>.</summary>
     internal bool HasContentTransform => ContentScale != 1f || ContentOffset != default;
 

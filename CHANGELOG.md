@@ -9,6 +9,7 @@
 - `DvInput escape="commit"`: Esc writes the typed text instead of dropping it (useful for `multiline`). Hosts send Esc to the new `DvSurface.EscapeEdit(sessionId)`, which cancels or commits by the field (`DvEditExit.Escape`). `ViewControl` and the virtual keyboard do.
 - `multiline` text longer than its `DvInput` scrolls with the mouse wheel over the box, also when not editing; the position survives rebuilds.
 - `ViewControl`: three clicks select the whole text of the edit box.
+- For screen editors (all read-only): `ProcessInspector.PortsOf(tag, kind, registry)` returns an equipment symbol's ports (`SymbolPort`: name, `PortSide`, position 0–1, role, face, either-side) for built-in equipment and registered `DvSymbol`s; `ProcessInspector.PipesOf(processBox)` returns each drawn `DvLine` with its points as drawn (real nozzles, automatic and `via` routes). `LayoutBox.ContentScale` / `ContentOffset` are public (a shrunk `DvProcess`), and `HitTester.TryGetDrawnRect(root, box, out rect, out visible)` gives where a box is drawn with scroll offsets and content scale applied. `LayoutEngine.IntrinsicSize(box, availableWidth)` is the size `DvApp` gives a bar or a dialog root.
 
 ### Changed
 

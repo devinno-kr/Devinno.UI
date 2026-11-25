@@ -879,6 +879,21 @@ public sealed partial class LayoutEngine
     /// </summary>
     internal static (float w, float h) MeasureBox(LayoutBox box, float? availableWidth = null) => Measure(box, availableWidth);
 
+    /// <summary>
+    /// The intrinsic size of a laid-out box: its style <c>width</c>/<c>height</c>, or the size of its content where they are absent — the size <see cref="App.DvApp"/>
+    /// gives a bar (<see cref="App.DvBar"/>) and a dialog root (<see cref="App.DvDialog"/>). Use it in tools that must size a screen the way the app will.
+    /// </summary>
+    /// <param name="box">A box from <see cref="Layout"/> (usually the root).</param>
+    /// <param name="availableWidth">Width to wrap text at, as the app does: the window width for a top or bottom bar, the window width − 32 for a dialog, none for a left or right bar.
+    /// <see langword="null"/> = text on one line.</param>
+    /// <returns>The size in logical px. The app then limits it to the window (a dialog to the window − 16 on each side).</returns>
+    public static SKSize IntrinsicSize(LayoutBox box, float? availableWidth = null)
+    {
+        ArgumentNullException.ThrowIfNull(box);
+        var (w, h) = Measure(box, availableWidth);
+        return new SKSize(w, h);
+    }
+
     private static (float w, float h) Measure(LayoutBox box) => Measure(box, null);
 
     // 캐시: 자연 크기(가용 폭 없음) 하나 + 마지막 가용 폭 결과 하나. 자연 폭이 가용 폭 안에 들어가면 줄바꿈이 없으므로

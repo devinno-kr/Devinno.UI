@@ -2919,7 +2919,15 @@ public partial class MainPage : DvPage, IDvValueCommitted
 <param name="root">판정을 시작할 루트 상자.</param>
 <param name="p">루트 상자와 같은 좌표계의 점.</param>
 <param name="wholeBox"><see langword="true" /> 면 모양이 정해진 위젯(노브·토글 등)도 상자 어디서나 맞는다. 기본은 입력처럼 그려진 모양 안만.</param>
-<returns>루트부터 가장 깊이 맞은 상자까지의 상자들. 각 <c>Local</c> = 그 상자 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 좌표계의 점. 루트도 맞지 않으면 빈 목록.</returns></member><member name="M:Devinno.UI.Interaction.HitTester.ScaleOf(System.Collections.Generic.IReadOnlyList{System.ValueTuple{Devinno.UI.Layout.LayoutBox,SkiaSharp.SKPoint}},Devinno.UI.Layout.LayoutBox)" en-hash="2a020d0c18971f01"><summary>히트 경로에서 <paramref name="target" /> 이 그려진 배율(위 상자들의 내용 배율 곱) — 화면 거리 = 상자 거리 × 배율.</summary></member><member name="T:Devinno.UI.Interaction.InteractionState" en-hash="9d85cadb925908c3">
+<returns>루트부터 가장 깊이 맞은 상자까지의 상자들. 각 <c>Local</c> = 그 상자 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 좌표계의 점. 루트도 맞지 않으면 빈 목록.</returns></member><member name="M:Devinno.UI.Interaction.HitTester.TryGetDrawnRect(Devinno.UI.Layout.LayoutBox,Devinno.UI.Layout.LayoutBox,SkiaSharp.SKRect@,SkiaSharp.SKRect@)" en-hash="6ec4f4f3048b2778"><summary>
+<paramref name="target" /> 가 그려진 자리를 <paramref name="root" /> 좌표(루트 상자면 서피스 좌표)로 돌려줍니다 — 그리기·누르기와 같은 대응:
+감싼 스크롤 상자의 스크롤 오프셋과 줄여 그린 공정도의 내용 배율(<see cref="P:Devinno.UI.Layout.LayoutBox.ContentScale" />)을 적용합니다.
+</summary>
+<param name="root">기준 상자, 보통 <see cref="P:Devinno.UI.DvSurface.Root" />.</param>
+<param name="target">그 트리 안의 상자.</param>
+<param name="rect"><paramref name="target" /> 의 그려진 사각형.</param>
+<param name="visible"><paramref name="rect" /> 중 감싼 스크롤 상자나 <c>overflow:hidden</c> 상자에 잘리지 않은 부분. 다 가려지면 <see cref="F:SkiaSharp.SKRect.Empty" />.</param>
+<returns><paramref name="target" /> 가 <paramref name="root" /> 트리에 없으면 <see langword="false" />.</returns></member><member name="M:Devinno.UI.Interaction.HitTester.ScaleOf(System.Collections.Generic.IReadOnlyList{System.ValueTuple{Devinno.UI.Layout.LayoutBox,SkiaSharp.SKPoint}},Devinno.UI.Layout.LayoutBox)" en-hash="2a020d0c18971f01"><summary>누름 경로에서 <paramref name="target" /> 의 그리기 배율(위 상자들의 내용 배율 곱) — 화면 거리 = 상자 거리 × 배율.</summary></member><member name="T:Devinno.UI.Interaction.InteractionState" en-hash="9d85cadb925908c3">
             <summary>현재 포인터가 올라가 있는 상자와 눌린 상자를 담는 상호작용 상태입니다. 페인터가 hover·press 스타일을 고를 때 읽습니다.</summary>
             <remarks>엔진 내부 단계입니다. 보통 앱 코드는 직접 쓰지 않고 마크업 바인딩과 <see cref="T:Devinno.UI.DvSurface" />/<see cref="T:Devinno.UI.DvRenderer" /> 를 씁니다.</remarks>
         </member><member name="P:Devinno.UI.Interaction.InteractionState.Hover" en-hash="d7fcc4438b37ca50">
@@ -3206,7 +3214,14 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             상자의 자기 크기(스타일 width/height, 없으면 내용 크기). DvApp 영역·다이얼로그 루트 크기 계산용.
             <paramref name="availableWidth" /> 를 주면 그 폭(바깥 폭)에 맞춰 글자를 줄바꿈해 잰다 — 없으면 한 줄(배치 영역과 상관없음).
             </summary>
-        </member><member name="M:Devinno.UI.Layout.LayoutEngine.TextLinesFor(Devinno.UI.Layout.LayoutBox,Devinno.UI.Styling.ComputedStyle,SkiaSharp.SKFont,System.Single)" en-hash="110cc83fe8b1b363">
+        </member><member name="M:Devinno.UI.Layout.LayoutEngine.IntrinsicSize(Devinno.UI.Layout.LayoutBox,System.Nullable{System.Single})" en-hash="8b9a05c415d17005"><summary>
+배치한 상자의 고유 크기입니다: style <c>width</c>/<c>height</c>, 없는 쪽은 내용 크기 — <see cref="T:Devinno.UI.App.DvApp" /> 이
+막대(<see cref="T:Devinno.UI.App.DvBar" />)와 대화상자 루트(<see cref="T:Devinno.UI.App.DvDialog" />)에 주는 크기입니다. 앱과 같은 크기로 화면을 잡아야 하는 도구에서 씁니다.
+</summary>
+<param name="box"><see cref="M:Devinno.UI.Layout.LayoutEngine.Layout(Devinno.UI.Markup.ElementNode,System.Object,System.Single,System.Single,Devinno.UI.Components.ComponentRegistry)" /> 결과의 상자(보통 루트).</param>
+<param name="availableWidth">앱처럼 글자를 줄바꿈할 폭: 위·아래 막대는 창 폭, 대화상자는 창 폭 − 32, 왼쪽·오른쪽 막대는 없음.
+<see langword="null" /> = 글자를 한 줄로.</param>
+<returns>논리 px 크기입니다. 앱은 그다음 창 크기로 제한합니다(대화상자는 창 − 양쪽 16).</returns></member><member name="M:Devinno.UI.Layout.LayoutEngine.TextLinesFor(Devinno.UI.Layout.LayoutBox,Devinno.UI.Styling.ComputedStyle,SkiaSharp.SKFont,System.Single)" en-hash="110cc83fe8b1b363">
             <summary>
             글자 상자를 안쪽 폭 <paramref name="contentWidth" /> 에 그릴 줄 — <c>white-space:nowrap</c> 이면 <c>\n</c> 에서만 나눈다.
             측정 때 같은 폭으로 나눈 줄이 있으면 그대로 쓴다(Painter 용).
@@ -3295,7 +3310,11 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             <summary>세로로 스크롤할 수 있는 최대 거리(px) = <see cref="P:Devinno.UI.Layout.LayoutBox.ContentHeight" /> − <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 높이, 0 이상.</summary>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.IsScroller" en-hash="50a18cb63785c272">
             <summary>스크롤 상자이면 <see langword="true" />: 스타일이 <c>overflow:scroll</c> 이거나 <c>DvDataGrid</c> 인 경우.</summary>
-        </member><member name="F:Devinno.UI.Layout.LayoutBox.ContentScale" en-hash="3a714cf62bd54cba"><summary>내용 배율: 자식(과 공정도 자신의 배관)을 이 배율로 그리고 <see cref="F:Devinno.UI.Layout.LayoutBox.ContentOffset" /> 만큼 옮긴다(화면 = 내용 × 배율 + 오프셋). 1 = 없음.</summary></member><member name="F:Devinno.UI.Layout.LayoutBox.ContentOffset" en-hash="4de7a293f74fec21"><summary><see cref="F:Devinno.UI.Layout.LayoutBox.ContentScale" /> 과 함께 쓰는 내용 오프셋.</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.HasContentTransform" en-hash="21bc88cd52d8c250"><summary>자식을 <see cref="F:Devinno.UI.Layout.LayoutBox.ContentScale" />/<see cref="F:Devinno.UI.Layout.LayoutBox.ContentOffset" /> 로 그리는지.</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.Grid" en-hash="9c51a3f87ad31649">
+        </member><member name="P:Devinno.UI.Layout.LayoutBox.ContentScale" en-hash="7b91f97d977a3607"><summary>
+이 상자의 내용 배율입니다: 자식(과 공정도 자신의 배관)은 배치 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 를 그대로 두고 이 배율로 그리고 누르며,
+<see cref="P:Devinno.UI.Layout.LayoutBox.ContentOffset" /> 만큼 옮깁니다 — 그려진 점 = 내용 점 × 배율 + 이동, 이 상자 안(스크롤 오프셋 전)입니다. 1 = 없음.
+<c>fit="contain"</c>·<c>fit="scale-down"</c> 인 <c>DvProcess</c> 와 줄인 공정 유닛에 붙습니다. <see cref="M:Devinno.UI.Interaction.HitTester.TryGetDrawnRect(Devinno.UI.Layout.LayoutBox,Devinno.UI.Layout.LayoutBox,SkiaSharp.SKRect@,SkiaSharp.SKRect@)" /> 가 대신 적용해 줍니다.
+</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.ContentOffset" en-hash="1cff4ad3d5f3a0aa"><summary><see cref="P:Devinno.UI.Layout.LayoutBox.ContentScale" /> 와 함께 쓰는 내용 이동입니다(논리 px).</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.HasContentTransform" en-hash="b813c82e42a752e6"><summary>자식을 <see cref="P:Devinno.UI.Layout.LayoutBox.ContentScale" />/<see cref="P:Devinno.UI.Layout.LayoutBox.ContentOffset" /> 로 그리는지.</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.Grid" en-hash="9c51a3f87ad31649">
             <summary>DvDataGrid 정의·상태(그 외 null). 그리드는 자식 박스 없이 스스로 그리는 스크롤 상자다.</summary>
         </member><member name="F:Devinno.UI.Layout.LayoutBox.ScrollInsetTop" en-hash="63084c51f09b3c61">
             <summary>세로 스크롤바가 시작하는 위쪽 여백(그리드 헤더 높이). 일반 스크롤 상자는 0.</summary>
@@ -3540,7 +3559,7 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             </summary>
         </member><member name="M:Devinno.UI.Layout.LayoutSugar.Space(System.String)" en-hash="3d2ed10ceeb9bb9c">
             <summary>간격 단계명(xs~2xl) → 토큰, none → 0, 그 외 숫자는 그대로.</summary>
-        </member><member name="T:Devinno.UI.Layout.PartStyle" en-hash="239429680f2782f2"><summary><c>::part()</c> 규칙이 정한 위젯 부분 하나의 덮어쓰기 — 규칙이 정한 키만 값이 있고 나머지는 <see langword="null" /> 입니다.</summary></member><member name="M:Devinno.UI.Layout.PartStyle.#ctor(System.Nullable{System.Single},System.Nullable{System.Int32},System.Nullable{SkiaSharp.SKColor})" en-hash="239429680f2782f2"><summary><c>::part()</c> 규칙이 정한 위젯 부분 하나의 덮어쓰기 — 규칙이 정한 키만 값이 있고 나머지는 <see langword="null" /> 입니다.</summary></member><member name="M:Devinno.UI.Layout.PartStyle.Parse(System.String)" en-hash="6ebdd9fe80a9b1b3"><summary>해석된 선언에서 <c>font-size</c>, <c>font-weight</c>, <c>color</c> 를 읽습니다. 다른 키와 쓸 수 없는 값은 무시합니다.</summary></member><member name="T:Devinno.UI.Layout.ScreenMap" en-hash="a9323b45f763b3a8"><summary>상자 좌표 → 화면 좌표: 점 × <see cref="P:Devinno.UI.Layout.ScreenMap.Scale" /> + <see cref="P:Devinno.UI.Layout.ScreenMap.Offset" />. 이동과 균일 배율만 있다(스크롤 오프셋과 <see cref="F:Devinno.UI.Layout.LayoutBox.ContentScale" />).</summary></member><member name="M:Devinno.UI.Layout.ScreenMap.#ctor(System.Single,SkiaSharp.SKPoint)" en-hash="a9323b45f763b3a8"><summary>상자 좌표 → 화면 좌표: 점 × <see cref="P:Devinno.UI.Layout.ScreenMap.Scale" /> + <see cref="P:Devinno.UI.Layout.ScreenMap.Offset" />. 이동과 균일 배율만 있다(스크롤 오프셋과 <see cref="F:Devinno.UI.Layout.LayoutBox.ContentScale" />).</summary></member><member name="M:Devinno.UI.Layout.ScreenMap.Into(Devinno.UI.Layout.LayoutBox)" en-hash="6fc1fcea301ec10e"><summary><paramref name="box" /> 의 자식에 쓰는 변환 — 그 스크롤 오프셋 다음 내용 변환(페인터가 적용하는 순서와 같음).</summary></member><member name="T:Devinno.UI.Localization.BuiltInStrings" en-hash="827d7806217a22ad">
+        </member><member name="T:Devinno.UI.Layout.PartStyle" en-hash="239429680f2782f2"><summary><c>::part()</c> 규칙이 정한 위젯 부분 하나의 덮어쓰기 — 규칙이 정한 키만 값이 있고 나머지는 <see langword="null" /> 입니다.</summary></member><member name="M:Devinno.UI.Layout.PartStyle.#ctor(System.Nullable{System.Single},System.Nullable{System.Int32},System.Nullable{SkiaSharp.SKColor})" en-hash="239429680f2782f2"><summary><c>::part()</c> 규칙이 정한 위젯 부분 하나의 덮어쓰기 — 규칙이 정한 키만 값이 있고 나머지는 <see langword="null" /> 입니다.</summary></member><member name="M:Devinno.UI.Layout.PartStyle.Parse(System.String)" en-hash="6ebdd9fe80a9b1b3"><summary>해석된 선언에서 <c>font-size</c>, <c>font-weight</c>, <c>color</c> 를 읽습니다. 다른 키와 쓸 수 없는 값은 무시합니다.</summary></member><member name="T:Devinno.UI.Layout.ScreenMap" en-hash="fcfb1d9841fcf007"><summary>상자 좌표 → 화면 좌표: 점 × <see cref="P:Devinno.UI.Layout.ScreenMap.Scale" /> + <see cref="P:Devinno.UI.Layout.ScreenMap.Offset" />. 이동과 균일 배율만 있다(스크롤 오프셋과 <see cref="P:Devinno.UI.Layout.LayoutBox.ContentScale" />).</summary></member><member name="M:Devinno.UI.Layout.ScreenMap.#ctor(System.Single,SkiaSharp.SKPoint)" en-hash="fcfb1d9841fcf007"><summary>상자 좌표 → 화면 좌표: 점 × <see cref="P:Devinno.UI.Layout.ScreenMap.Scale" /> + <see cref="P:Devinno.UI.Layout.ScreenMap.Offset" />. 이동과 균일 배율만 있다(스크롤 오프셋과 <see cref="P:Devinno.UI.Layout.LayoutBox.ContentScale" />).</summary></member><member name="M:Devinno.UI.Layout.ScreenMap.Into(Devinno.UI.Layout.LayoutBox)" en-hash="6fc1fcea301ec10e"><summary><paramref name="box" /> 의 자식에 쓰는 변환 — 그 스크롤 오프셋 다음 내용 변환(페인터가 적용하는 순서와 같음).</summary></member><member name="T:Devinno.UI.Localization.BuiltInStrings" en-hash="827d7806217a22ad">
             <summary>라이브러리 내장 화면 문구(<c>dv.</c> 키)의 영어·한국어 표입니다. 찾는 순서: 앱 표의 현재 언어 → 내장 표의 현재 언어 → 앱 표의 <see cref="P:Devinno.UI.Localization.DvStrings.FallbackLanguage" /> → 내장 영어. <see cref="T:Devinno.UI.Localization.DvStrings" /> 가 없으면 내장 영어를 씁니다.</summary>
         </member><member name="M:Devinno.UI.Localization.BuiltInStrings.Get(Devinno.UI.Localization.DvStrings,System.String)" en-hash="712bb2c7ebaa3b8e">
             <summary><c>dv.</c> 키의 내장 문구 — <paramref name="strings" /> 로 앱마다 바꿀 수 있습니다.</summary>
@@ -4078,7 +4097,31 @@ var min = TagSchema.Find("DvGauge", "min"); // Kind = Number, Default = "0"
             <summary>자동 배치: 축마다 장비 묶음이 퍼진 정도 — 위치 배율 한 단위마다 크기가 바뀌는 양.</summary>
         </member><member name="F:Devinno.UI.Process.ProcessGraph.SignalStub" en-hash="b3c0d9a917c10b3a">
             <summary>신호선 끝에서 곧게 나오는 길이 — 짧게(계기 줄과 장비 사이 <c>20px</c> 안에서 곧게 잇게).</summary>
-        </member><member name="T:Devinno.UI.Process.ProcessMedium" en-hash="33f74b9817febb01">
+        </member><member name="T:Devinno.UI.Process.ProcessPipe" en-hash="918948078aa37591"><summary>
+배치한 공정도에서 그린 배관 하나입니다(<see cref="M:Devinno.UI.Process.ProcessInspector.PipesOf(Devinno.UI.Layout.LayoutBox)" />).
+</summary>
+<param name="Line">배관을 그린 <c>DvLine</c> 요소입니다.</param>
+<param name="Points">그린 그대로의 배관입니다: 시작 노즐(<c>from</c>)에서 끝 노즐(<c>to</c>)까지의 직각 꺾은선이며, <c>DvProcess</c> 상자의 내용 좌표 — 설비 상자의 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 와 같은 공간 — 입니다(그려진 자리 = 점 × <see cref="P:Devinno.UI.Layout.LayoutBox.ContentScale" /> + <see cref="P:Devinno.UI.Layout.LayoutBox.ContentOffset" />). 첫 점과 끝 점은 면 포트를 포함한 실제 노즐 자리입니다.</param></member><member name="M:Devinno.UI.Process.ProcessPipe.#ctor(Devinno.UI.Markup.ElementNode,System.Collections.Generic.IReadOnlyList{SkiaSharp.SKPoint})" en-hash="918948078aa37591"><summary>
+배치한 공정도에서 그린 배관 하나입니다(<see cref="M:Devinno.UI.Process.ProcessInspector.PipesOf(Devinno.UI.Layout.LayoutBox)" />).
+</summary>
+<param name="Line">배관을 그린 <c>DvLine</c> 요소입니다.</param>
+<param name="Points">그린 그대로의 배관입니다: 시작 노즐(<c>from</c>)에서 끝 노즐(<c>to</c>)까지의 직각 꺾은선이며, <c>DvProcess</c> 상자의 내용 좌표 — 설비 상자의 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 와 같은 공간 — 입니다(그려진 자리 = 점 × <see cref="P:Devinno.UI.Layout.LayoutBox.ContentScale" /> + <see cref="P:Devinno.UI.Layout.LayoutBox.ContentOffset" />). 첫 점과 끝 점은 면 포트를 포함한 실제 노즐 자리입니다.</param></member><member name="P:Devinno.UI.Process.ProcessPipe.Line" en-hash="9d1277096eac4bb8"><summary>배관을 그린 <c>DvLine</c> 요소입니다.</summary></member><member name="P:Devinno.UI.Process.ProcessPipe.Points" en-hash="4cf8ceaa5152baac"><summary>그린 그대로의 배관입니다: 시작 노즐(<c>from</c>)에서 끝 노즐(<c>to</c>)까지의 직각 꺾은선이며, <c>DvProcess</c> 상자의 내용 좌표 — 설비 상자의 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 와 같은 공간 — 입니다(그려진 자리 = 점 × <see cref="P:Devinno.UI.Layout.LayoutBox.ContentScale" /> + <see cref="P:Devinno.UI.Layout.LayoutBox.ContentOffset" />). 첫 점과 끝 점은 면 포트를 포함한 실제 노즐 자리입니다.</summary></member><member name="T:Devinno.UI.Process.ProcessInspector" en-hash="43bcd3f11d1211dc"><summary>
+공정도 정의와 배치 결과를 읽습니다 — 포트 손잡이를 그리거나 배관 길을 고치는 화면 편집기 같은 도구용입니다.
+</summary></member><member name="M:Devinno.UI.Process.ProcessInspector.PortsOf(System.String,System.String,Devinno.UI.Components.ComponentRegistry)" en-hash="3155827b9e80870f"><summary>
+설비 심볼의 포트입니다: 내장 태그(<c>DvVessel</c>, <c>DvPump</c>, <c>DvValve</c>, <c>DvValve3</c>, <c>DvInline</c>, <c>DvExchanger</c>)와 그 <c>kind</c>,
+또는 <paramref name="registry" /> 에 등록한 <c>DvSymbol</c> — <c>DvProcess</c> 와 같은 찾기입니다. 위치는 심볼 그림 상자 기준이며
+설비의 <c>flip</c>·<c>rotate</c> 적용 전입니다(뒤집기 먼저, 그다음 시계 방향 회전).
+</summary>
+<param name="tag">설비 태그(<c>DvValve</c>, 또는 등록한 심볼 이름).</param>
+<param name="kind"><c>kind</c> 속성. <see langword="null" />·빈 값 = 그 태그의 기본 kind. 등록 심볼에서는 쓰지 않습니다.</param>
+<param name="registry">앱의 <c>DvSymbol</c> 정의가 든 등록부, 내장 설비만이면 <see langword="null" />.</param>
+<returns>정의 순서의 포트 목록. 모르는 태그·kind 면 <see langword="null" />. 공정 유닛(<c>DvUnit</c> 컴포넌트)은 심볼이 아니며 포트는 그 <c>DvPort</c> 자식입니다.</returns>
+<example><c>PortsOf("DvValve", "ball")</c> → <c>in</c> (Left, 0.667), <c>out</c> (Right, 0.667).</example></member><member name="M:Devinno.UI.Process.ProcessInspector.PipesOf(Devinno.UI.Layout.LayoutBox)" en-hash="726ecc05811d8dff"><summary>
+배치한 <c>DvProcess</c> 의 배관을 그린 그대로 돌려줍니다 — 자동 경로와 <c>via</c> 경로 모두. 그리지 못한 줄(모르는 <c>from</c>/<c>to</c>)은 빠집니다.
+공정 유닛 안의 배관은 넣지 않습니다.
+</summary>
+<param name="process">배치 결과(<see cref="P:Devinno.UI.DvSurface.Root" /> 트리)의 <c>DvProcess</c> 상자.</param>
+<returns>그린 <c>DvLine</c> 마다 하나, 마크업 순서. 다른 상자면 빈 목록.</returns></member><member name="T:Devinno.UI.Process.ProcessMedium" en-hash="33f74b9817febb01">
             <summary>
             매체 색 — <c>DvLine medium</c> 을 흐름 방향으로 퍼뜨린다(색만, 배치·흐름 판단과 무관).
             </summary>
@@ -4192,21 +4235,23 @@ var min = TagSchema.Find("DvGauge", "min"); // Kind = Number, Default = "0"
             안쪽 영역(<paramref name="inner" />)에 배치 — 모자라면 간격을 줄여 다시 배치하고(0.5 까지), 그래도 모자라면 경고.
             남으면 가운데. 장비 상자·붙은 칸 상자의 위치를 정한다.
             </summary>
-        </member><member name="F:Devinno.UI.Process.ProcessBuilder.SmallestText" en-hash="dbe03a75ea9e5694"><summary><see cref="F:Devinno.UI.Process.ProcessDiagram.TextScale" /> 1 에서 공정도가 그리는 가장 작은 글자 크기(계기 번호·값, 라인·신호선 이름).</summary></member><member name="T:Devinno.UI.Process.PortSide" en-hash="8e1a70c80e123776">
-            <summary>심볼 포트가 붙는 면.</summary>
-        </member><member name="T:Devinno.UI.Process.SymbolPort" en-hash="c814d63c62892b93">
-            <summary>
-            심볼 포트 — 면(<see cref="P:Devinno.UI.Process.SymbolPort.Side" />) + 그 면 위의 위치(<see cref="P:Devinno.UI.Process.SymbolPort.At" />, 0~1) + 역할.
-            <see cref="P:Devinno.UI.Process.SymbolPort.Face" /> 는 면 전체에 여러 줄을 받아 자리를 나눠 주는 포트(내장 용기의 top·side),
-            <see cref="P:Devinno.UI.Process.SymbolPort.EitherSide" /> 는 좌우 중 상대 장비 쪽 면을 고르는 포트(용기 side).
-            </summary>
-        </member><member name="M:Devinno.UI.Process.SymbolPort.#ctor(System.String,Devinno.UI.Process.PortSide,System.Single,System.String,System.Boolean,System.Boolean)" en-hash="c814d63c62892b93">
-            <summary>
-            심볼 포트 — 면(<see cref="P:Devinno.UI.Process.SymbolPort.Side" />) + 그 면 위의 위치(<see cref="P:Devinno.UI.Process.SymbolPort.At" />, 0~1) + 역할.
-            <see cref="P:Devinno.UI.Process.SymbolPort.Face" /> 는 면 전체에 여러 줄을 받아 자리를 나눠 주는 포트(내장 용기의 top·side),
-            <see cref="P:Devinno.UI.Process.SymbolPort.EitherSide" /> 는 좌우 중 상대 장비 쪽 면을 고르는 포트(용기 side).
-            </summary>
-        </member><member name="T:Devinno.UI.Process.SymbolLayer" en-hash="e73d9c03f33cd635">
+        </member><member name="F:Devinno.UI.Process.ProcessBuilder.SmallestText" en-hash="dbe03a75ea9e5694"><summary><see cref="F:Devinno.UI.Process.ProcessDiagram.TextScale" /> 1 에서 공정도가 그리는 가장 작은 글자 크기(계기 번호·값, 라인·신호선 이름).</summary></member><member name="T:Devinno.UI.Process.PortSide" en-hash="813eb8710efdce2f"><summary>설비 심볼에서 포트가 있는 면입니다(<c>DvPort side</c>). 설비의 <c>flip</c>·<c>rotate</c> 적용 전입니다.</summary></member><member name="F:Devinno.UI.Process.PortSide.Left" en-hash="2e5e3e57cca73a17"><summary>왼쪽 면. <see cref="P:Devinno.UI.Process.SymbolPort.At" /> 은 위(0)에서 아래(1)로.</summary></member><member name="F:Devinno.UI.Process.PortSide.Top" en-hash="7bb866f6c565d243"><summary>위쪽 면. <see cref="P:Devinno.UI.Process.SymbolPort.At" /> 은 왼쪽(0)에서 오른쪽(1)으로.</summary></member><member name="F:Devinno.UI.Process.PortSide.Right" en-hash="63cf628db94321e6"><summary>오른쪽 면. <see cref="P:Devinno.UI.Process.SymbolPort.At" /> 은 위(0)에서 아래(1)로.</summary></member><member name="F:Devinno.UI.Process.PortSide.Bottom" en-hash="6df5be914f8bbfe0"><summary>아래쪽 면. <see cref="P:Devinno.UI.Process.SymbolPort.At" /> 은 왼쪽(0)에서 오른쪽(1)으로.</summary></member><member name="T:Devinno.UI.Process.SymbolPort" en-hash="2e51ef3b74093d0e"><summary>
+설비 심볼의 포트 하나(<c>&lt;DvPort name side at role/&gt;</c>) — 배관이 붙는 자리이며 심볼 그림 상자 기준입니다(<see cref="M:Devinno.UI.Process.ProcessInspector.PortsOf(System.String,System.String,Devinno.UI.Components.ComponentRegistry)" />).
+</summary>
+<param name="Name"><c>DvLine from</c>/<c>to</c> 에 쓰는 포트 이름입니다(<c>P1.in</c>).</param>
+<param name="Side">심볼 상자의 면입니다. <c>flip</c>·<c>rotate</c> 적용 전입니다(뒤집기 먼저, 그다음 시계 방향 회전).</param>
+<param name="At">그 면을 따라간 위치, 0~1 입니다.</param>
+<param name="Role"><c>in</c>, <c>out</c>, <c>inout</c> 중 하나입니다.</param>
+<param name="Face">면 포트(내장 용기의 top·side): 배관 여럿을 받아 면을 따라 나눠 놓습니다(10 %~90 %). <paramref name="At" /> 는 가운데입니다. 배관마다 받은 노즐 자리는 배치 결과(<see cref="M:Devinno.UI.Process.ProcessInspector.PipesOf(Devinno.UI.Layout.LayoutBox)" />)에 있습니다.</param>
+<param name="EitherSide">연결한 설비 쪽을 향하는 왼쪽 또는 오른쪽 면에 놓이는 포트입니다(용기 <c>side</c>). <paramref name="Side" /> 는 왼쪽입니다.</param></member><member name="M:Devinno.UI.Process.SymbolPort.#ctor(System.String,Devinno.UI.Process.PortSide,System.Single,System.String,System.Boolean,System.Boolean)" en-hash="2e51ef3b74093d0e"><summary>
+설비 심볼의 포트 하나(<c>&lt;DvPort name side at role/&gt;</c>) — 배관이 붙는 자리이며 심볼 그림 상자 기준입니다(<see cref="M:Devinno.UI.Process.ProcessInspector.PortsOf(System.String,System.String,Devinno.UI.Components.ComponentRegistry)" />).
+</summary>
+<param name="Name"><c>DvLine from</c>/<c>to</c> 에 쓰는 포트 이름입니다(<c>P1.in</c>).</param>
+<param name="Side">심볼 상자의 면입니다. <c>flip</c>·<c>rotate</c> 적용 전입니다(뒤집기 먼저, 그다음 시계 방향 회전).</param>
+<param name="At">그 면을 따라간 위치, 0~1 입니다.</param>
+<param name="Role"><c>in</c>, <c>out</c>, <c>inout</c> 중 하나입니다.</param>
+<param name="Face">면 포트(내장 용기의 top·side): 배관 여럿을 받아 면을 따라 나눠 놓습니다(10 %~90 %). <paramref name="At" /> 는 가운데입니다. 배관마다 받은 노즐 자리는 배치 결과(<see cref="M:Devinno.UI.Process.ProcessInspector.PipesOf(Devinno.UI.Layout.LayoutBox)" />)에 있습니다.</param>
+<param name="EitherSide">연결한 설비 쪽을 향하는 왼쪽 또는 오른쪽 면에 놓이는 포트입니다(용기 <c>side</c>). <paramref name="Side" /> 는 왼쪽입니다.</param></member><member name="P:Devinno.UI.Process.SymbolPort.Name" en-hash="a8c2878525c8f13b"><summary><c>DvLine from</c>/<c>to</c> 에 쓰는 포트 이름입니다(<c>P1.in</c>).</summary></member><member name="P:Devinno.UI.Process.SymbolPort.Side" en-hash="15972aa96675108a"><summary>심볼 상자의 면입니다. <c>flip</c>·<c>rotate</c> 적용 전입니다(뒤집기 먼저, 그다음 시계 방향 회전).</summary></member><member name="P:Devinno.UI.Process.SymbolPort.At" en-hash="03f32fc2f092207c"><summary>그 면을 따라간 위치, 0~1 입니다.</summary></member><member name="P:Devinno.UI.Process.SymbolPort.Role" en-hash="ad51c424b9b05c52"><summary><c>in</c>, <c>out</c>, <c>inout</c> 중 하나입니다.</summary></member><member name="P:Devinno.UI.Process.SymbolPort.Face" en-hash="207afc8208bb98df"><summary>면 포트(내장 용기의 top·side): 배관 여럿을 받아 면을 따라 나눠 놓습니다(10 %~90 %). <paramref name="At" /> 는 가운데입니다. 배관마다 받은 노즐 자리는 배치 결과(<see cref="M:Devinno.UI.Process.ProcessInspector.PipesOf(Devinno.UI.Layout.LayoutBox)" />)에 있습니다.</summary></member><member name="P:Devinno.UI.Process.SymbolPort.EitherSide" en-hash="4adc0a4a639b5f45"><summary>연결한 설비 쪽을 향하는 왼쪽 또는 오른쪽 면에 놓이는 포트입니다(용기 <c>side</c>). <paramref name="Side" /> 는 왼쪽입니다.</summary></member><member name="T:Devinno.UI.Process.SymbolLayer" en-hash="e73d9c03f33cd635">
             <summary>심볼 그림 레이어 — 칠 종류(<see cref="P:Devinno.UI.Process.SymbolLayer.Class" />)와 path. <see cref="P:Devinno.UI.Process.SymbolLayer.When" /> 은 상태색 레이어가 따르는 파라미터.</summary>
         </member><member name="M:Devinno.UI.Process.SymbolLayer.#ctor(System.String,SkiaSharp.SKPath,System.String)" en-hash="e73d9c03f33cd635">
             <summary>심볼 그림 레이어 — 칠 종류(<see cref="P:Devinno.UI.Process.SymbolLayer.Class" />)와 path. <see cref="P:Devinno.UI.Process.SymbolLayer.When" /> 은 상태색 레이어가 따르는 파라미터.</summary>

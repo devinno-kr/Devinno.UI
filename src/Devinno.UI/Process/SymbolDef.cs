@@ -4,21 +4,30 @@ using SkiaSharp;
 
 namespace Devinno.UI.Process;
 
-/// <summary>The side a symbol port attaches to.</summary>
-internal enum PortSide
+/// <summary>The side of an equipment symbol a port sits on (<c>DvPort side</c>), before the equipment's <c>flip</c> and <c>rotate</c>.</summary>
+public enum PortSide
 {
+    /// <summary>The left side; <see cref="SymbolPort.At"/> runs from top (0) to bottom (1).</summary>
     Left,
+    /// <summary>The top side; <see cref="SymbolPort.At"/> runs from left (0) to right (1).</summary>
     Top,
+    /// <summary>The right side; <see cref="SymbolPort.At"/> runs from top (0) to bottom (1).</summary>
     Right,
+    /// <summary>The bottom side; <see cref="SymbolPort.At"/> runs from left (0) to right (1).</summary>
     Bottom,
 }
 
 /// <summary>
-/// A symbol port — side (<see cref="Side"/>) + position on that side (<see cref="At"/>, 0–1) + role.
-/// <see cref="Face"/> is a port that accepts multiple lines across the whole side and divides positions among them (top and side of built-in vessels);
-/// <see cref="EitherSide"/> is a port that picks whichever of left or right faces the connected equipment (vessel side).
+/// One port of an equipment symbol (<c>&lt;DvPort name side at role/&gt;</c>) — where a pipe attaches, relative to the symbol's drawing box (<see cref="ProcessInspector.PortsOf"/>).
 /// </summary>
-internal sealed record SymbolPort(string Name, PortSide Side, float At, string Role, bool Face = false, bool EitherSide = false);
+/// <param name="Name">The port name used in <c>DvLine from</c>/<c>to</c> (<c>P1.in</c>).</param>
+/// <param name="Side">The side of the symbol box, before <c>flip</c> and <c>rotate</c> (flip first, then rotate clockwise).</param>
+/// <param name="At">The position along that side, 0 to 1.</param>
+/// <param name="Role"><c>in</c>, <c>out</c> or <c>inout</c>.</param>
+/// <param name="Face">A face port (top and side of built-in vessels): it takes several pipes and spreads them along the side (10 % to 90 %); <paramref name="At"/> is the middle.
+/// The nozzle each pipe gets is in the layout result (<see cref="ProcessInspector.PipesOf"/>).</param>
+/// <param name="EitherSide">The port goes on the left or right side, whichever faces the connected equipment (vessel <c>side</c>); <paramref name="Side"/> is the left one.</param>
+public sealed record SymbolPort(string Name, PortSide Side, float At, string Role, bool Face = false, bool EitherSide = false);
 
 /// <summary>A symbol drawing layer — fill kind (<see cref="Class"/>) and path. <see cref="When"/> is the parameter a state-color layer follows.</summary>
 internal sealed record SymbolLayer(string Class, SKPath Path, string? When);

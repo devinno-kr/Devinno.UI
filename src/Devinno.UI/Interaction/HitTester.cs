@@ -113,6 +113,22 @@ public static class HitTester
         return false;
     }
 
+    /// <summary>
+    /// Where <paramref name="target"/> is drawn, in the coordinates of <paramref name="root"/> (the surface for its root box) — the same mapping drawing and hit testing use:
+    /// scroll offsets of the enclosing scroll boxes and the content scale of a shrunk process diagram (<see cref="LayoutBox.ContentScale"/>) are applied.
+    /// </summary>
+    /// <param name="root">The box to measure from, usually <see cref="DvSurface.Root"/>.</param>
+    /// <param name="target">A box in that tree.</param>
+    /// <param name="rect">The drawn rectangle of <paramref name="target"/>.</param>
+    /// <param name="visible">The part of <paramref name="rect"/> not clipped by an enclosing scroll box or <c>overflow:hidden</c> box; <see cref="SKRect.Empty"/> when fully hidden.</param>
+    /// <returns><see langword="false"/> if <paramref name="target"/> is not in the tree of <paramref name="root"/>.</returns>
+    public static bool TryGetDrawnRect(LayoutBox root, LayoutBox target, out SKRect rect, out SKRect visible)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        ArgumentNullException.ThrowIfNull(target);
+        return EditGeometry.TryLocate(root, target, out rect, out visible);
+    }
+
     /// <summary>The drawing scale of <paramref name="target"/> on the hit path (product of the content scales of the boxes above it) — screen distance = box distance × scale.</summary>
     internal static float ScaleOf(IReadOnlyList<(LayoutBox Box, SKPoint Local)> path, LayoutBox? target)
     {
