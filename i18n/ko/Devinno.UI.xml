@@ -946,7 +946,7 @@
             <summary>넣은 순서대로 페이지를 열거합니다(호출 시점의 사본).</summary>
         </member><member name="P:Devinno.UI.App.PageCollection.First" en-hash="a2ab9259de915028">
             <summary>첫 번째로 넣은 페이지(없으면 null) — 시작 페이지.</summary>
-        </member><member name="T:Devinno.UI.Binding.BindingResolver" en-hash="9ef67422ec42368d"><summary>
+        </member><member name="T:Devinno.UI.Binding.BindingResolver" en-hash="c291a35d9a264f52"><summary>
 마크업 속성 값의 바인딩 식(<c>{Path}</c>, <c>{Bind Path}</c>, <c>{Data.Path}</c>, <c>{L10n.key}</c>, <c>@key</c>)을 뷰모델에서 읽고 쓰는 해석기입니다.
 </summary>
 <remarks>
@@ -957,7 +957,7 @@
 보간(<see cref="M:Devinno.UI.Binding.BindingResolver.ResolveInline(System.Object,System.String)" />)에서 값의 <c>ToString</c> 이 던지면 그 자리는 빈 문자열입니다(<c>"format"</c>).
 <b>표시 형식</b>: <c>{Path:format}</c>(첫 <c>:</c> 에서 자름)은 값이 글자가 될 때 — 끼워 넣기와 글자 속성 — .NET 형식 문자열과 InvariantCulture 로 형식을 입힙니다. 위젯 <c>format</c> 속성과 같은 규칙입니다.
 값을 읽을 때(<see cref="M:Devinno.UI.Binding.BindingResolver.Resolve(System.Object,System.String)" />, 값 속성, 두 방향 바인딩)는 형식을 쓰지 않습니다. 반복 항목 문맥에서는 <c>Item</c>·<c>Item.X</c>·<c>Index</c> 를 쓸 수 있고,
-컴포넌트 템플릿 안에서는 파라미터 이름이 경로의 첫 단계가 됩니다.</para>
+컴포넌트 템플릿 안에서는 파라미터 이름이 경로의 첫 단계가 되고, 파라미터 그 자체인 바인딩(<c>{value}</c>)은 인스턴스가 준 형식(<c>value="{Level:0.0}"</c>)으로 글자가 됩니다.</para>
 <para><b>다국어</b>: <c>{L10n.key}</c> 와 <c>@key</c> 는 레이아웃 중(화면의 다국어 테이블이 설정된 동안)에만 번역 문자열로 바뀝니다. 그 밖에서 부르면 <c>{L10n.key}</c> 는 <see langword="null" />, <c>@key</c> 는 문자 그대로입니다.</para>
 <para>속성 읽기 함수는 형식·경로별로 캐시되며 캐시는 스레드 안전합니다.</para>
 </remarks></member><member name="F:Devinno.UI.Binding.BindingResolver.CurrentStrings" en-hash="2903e865965171e7">
@@ -981,6 +981,10 @@
 <returns>속성 경로.</returns></member><member name="M:Devinno.UI.Binding.BindingResolver.FormatOf(System.String)" en-hash="6557c07819eb8bfc"><summary>
 바인딩 하나의 표시 형식(<c>{Temp:0.0}</c> → <c>0.0</c>). 형식이 없거나 <paramref name="expr" /> 가 바인딩 하나가 아니면 <see langword="null" />.
 두 방향 바인딩은 형식을 받지 않는다: <c>{Bind X:0.0}</c> 는 <see langword="null" /> + 경고(값은 평소대로 <c>X</c> 에 쓴다).
+</summary></member><member name="M:Devinno.UI.Binding.BindingResolver.TextExpr(System.Object,System.String)" en-hash="ae47ccf3b566238f"><summary>
+바인딩이 글자가 될 때 쓰는 식입니다. 파라미터 그 자체인 컴포넌트 템플릿 바인딩(<c>{value}</c>, 자기 형식 없음)은
+인스턴스가 그 파라미터에 준 형식(<c>value="{Level:0.0}"</c>)을 받아 <c>{value:0.0}</c> 로 돌려주고, 그 밖에는 그대로 돌려줍니다.
+파라미터는 값 자체를 가지므로 템플릿의 값 속성(<c>&lt;DvGauge value="{value}"/&gt;</c>)은 여전히 숫자를 읽습니다.
 </summary></member><member name="M:Devinno.UI.Binding.BindingResolver.ResolveValueOrLiteral(System.Object,System.String)" en-hash="45b2a7ad769bb29b">
             <summary>
             마크업 속성 값을 해석합니다. 바인딩 하나면 그 값(형식 유지), 바인딩이 섞인 글자면 문자열 보간(<see cref="M:Devinno.UI.Binding.BindingResolver.ResolveInline(System.Object,System.String)" />),
@@ -1038,7 +1042,10 @@ ToString 예외는 알리고 <see langword="null" />. 그 밖에 <paramref name=
             템플릿 안 상자는 이 범위를 기억한다 — <c>onclick</c> 메서드가 매개변수 하나를 받으면, 그 형식에 맞는 파라미터 값을 넘긴다
             (<c>DvRepeat</c> 의 <c>M(항목)</c> 과 같은 방식 — 예: 유닛 템플릿 안 Reset 버튼 → <c>Reset(BlenderVm u)</c>).
             </summary>
-        </member><member name="T:Devinno.UI.Binding.ItemScope" en-hash="10c92f60a020eea7">
+        </member><member name="M:Devinno.UI.Binding.ComponentScope.FormatOf(System.String)" en-hash="894423c0e6dbb2b5"><summary>
+인스턴스가 파라미터에 준 표시 형식입니다(<c>value="{Level:0.0}"</c> → <c>0.0</c>). 파라미터는 값 자체를 가지고,
+파라미터 그 자체인 템플릿 바인딩(<c>{value}</c>)이 글자가 될 때 이 형식을 씁니다(<see cref="M:Devinno.UI.Binding.BindingResolver.TextExpr(System.Object,System.String)" />).
+</summary></member><member name="T:Devinno.UI.Binding.ItemScope" en-hash="10c92f60a020eea7">
             <summary>
             DvRepeat 항목 하나의 바인딩 범위. <c>{Item}</c>/<c>{Item.X}</c> = 현재 항목, <c>{Index}</c> = 0부터,
             그 밖의 경로는 바깥 문맥(<see cref="P:Devinno.UI.Binding.ItemScope.Outer" /> — 화면 VM, 컴포넌트 파라미터 범위, 또는 바깥 항목 범위)으로 넘긴다.

@@ -16,7 +16,7 @@ namespace Devinno.UI.Binding;
 /// In interpolation (<see cref="ResolveInline"/>), if a value's <c>ToString</c> throws, that spot becomes an empty string (<c>"format"</c>).
 /// <b>Display format</b>: <c>{Path:format}</c> (cut at the first <c>:</c>) formats the value when it becomes text — interpolation and text attributes — with the .NET format string and the invariant culture,
 /// by the same rule as the widget <c>format</c> attribute. Reading the value (<see cref="Resolve"/>, value attributes, two-way bindings) ignores the format. In a repeated-item context, <c>Item</c>, <c>Item.X</c> and <c>Index</c> are available;
-/// inside a component template, parameter names are the first segment of the path.</para>
+/// inside a component template, parameter names are the first segment of the path, and a binding that is exactly a parameter (<c>{value}</c>) shows its text with the format the instance gave it (<c>value="{Level:0.0}"</c>).</para>
 /// <para><b>Localization</b>: <c>{L10n.key}</c> and <c>@key</c> are replaced with translated strings only during layout (while the screen's localization table is set). Called outside of that, <c>{L10n.key}</c> is <see langword="null"/> and <c>@key</c> is returned literally.</para>
 /// <para>Property read functions are cached per type and path; the cache is thread-safe.</para>
 /// </remarks>
@@ -94,6 +94,28 @@ public static class BindingResolver
     }
 
     /// <summary>
+    /// The expression a binding becomes text with. A component template binding that is exactly a parameter (<c>{value}</c>, no format of its own)
+    /// takes the format the instance gave that parameter (<c>value="{Level:0.0}"</c>), so it is returned as <c>{value:0.0}</c>; anything else is returned as-is.
+    /// The parameter keeps the value itself, so value attributes in the template (<c>&lt;DvGauge value="{value}"/&gt;</c>) still read the number.
+    /// </summary>
+    internal static string? TextExpr(object? ctx, string? expr)
+    {
+        if (expr is null || !IsBinding(expr) || IsTwoWay(expr) || IsL10n(expr))
+            return expr;
+        var (path, format, _) = Split(expr);
+        return format is null && ParamFormat(ctx, path) is { } inherited ? "{" + path + ":" + inherited + "}" : expr;
+    }
+
+    // 경로가 컴포넌트 파라미터 그 자체일 때 인스턴스가 준 형식. 반복 항목 안이면 Item·Index 가 아닌 경로를 바깥 문맥에서 찾는다(ResolvePath 와 같은 순서)
+    private static string? ParamFormat(object? ctx, string path) => ctx switch
+    {
+        ItemScope item when path is "Item" or "Index" || path.StartsWith("Item.", StringComparison.Ordinal) => null,
+        ItemScope item => ParamFormat(item.Outer, path),
+        ComponentScope scope => scope.FormatOf(path),
+        _ => null,
+    };
+
+    /// <summary>
     /// Resolves a markup attribute value. A single binding returns its value (type preserved), text mixed with bindings returns string interpolation (<see cref="ResolveInline"/>),
     /// <c>@key</c> returns the localized string (<c>@@x</c> is the literal <c>@x</c>), and anything else is returned literally.
     /// </summary>
@@ -133,11 +155,11 @@ public static class BindingResolver
 
         // VM 이 없을 때 일반 바인딩은 원문 유지(기존 동작), 다국어 키만 치환
         return InlineBindingRegex.Replace(raw, m =>
-            ctx is null && !IsL10n(m.Value) ? m.Value : ToText(Resolve(ctx, m.Value), m.Value) ?? "");
+            ctx is null && !IsL10n(m.Value) ? m.Value : ToText(Resolve(ctx, m.Value), TextExpr(ctx, m.Value)) ?? "");
     }
 
     /// <summary>String form of the <see cref="ResolveValueOrLiteral"/> result. If the value's ToString throws, reports it and returns <see langword="null"/> (empty).</summary>
-    internal static string? ResolveText(object? ctx, string? raw) => ToText(ResolveValueOrLiteral(ctx, raw), raw);
+    internal static string? ResolveText(object? ctx, string? raw) => ToText(ResolveValueOrLiteral(ctx, raw), TextExpr(ctx, raw));
 
     /// <summary>
     /// String form of a value — numbers, dates and other <see cref="IFormattable"/> values with the invariant culture (<c>24.5</c>, never <c>24,5</c>).

@@ -312,7 +312,7 @@ public sealed partial class LayoutEngine
     }
 
     private static Dictionary<string, (object? Value, string? Raw)> ResolveAll(ElementNode node, object? vm) =>
-        node.Attributes.ToDictionary(a => a.Key, a => (BindingResolver.ResolveValueOrLiteral(vm, a.Value), (string?)a.Value), StringComparer.Ordinal);
+        node.Attributes.ToDictionary(a => a.Key, a => (BindingResolver.ResolveValueOrLiteral(vm, a.Value), BindingResolver.TextExpr(vm, a.Value)), StringComparer.Ordinal);
 
     // 정의 자식: 위젯이 읽겠다고 한 태그만, 마크업 순서대로. 속성은 위젯 자신의 속성과 같은 문맥(VM·반복 항목·컴포넌트 파라미터)으로 푼다
     private static List<Widgets.DvDefinition> Definitions(ElementNode node, object? vm, Widgets.DvDefinitionWidget widget)
@@ -352,8 +352,23 @@ public sealed partial class LayoutEngine
             return null;
         var scope = new ComponentScope();
         foreach (var p in def.Params)
-            scope[p.Name] = TryGetAttribute(instance, p.Name, out var raw) ? BindingResolver.ResolveValueOrLiteral(outerVm, raw) : p.Default;
+        {
+            if (!TryGetAttribute(instance, p.Name, out var raw))
+            {
+                scope[p.Name] = p.Default;
+                continue;
+            }
+            scope[p.Name] = BindingResolver.ResolveValueOrLiteral(outerVm, raw);
+            KeepFormat(scope, p.Name, raw, outerVm);
+        }
         return (def.Template, WithPassthrough(def, instance, outerVm), scope);
+    }
+
+    // 인스턴스가 파라미터에 준 표시 형식({Level:0.0}, 또는 바깥 템플릿 파라미터가 물려받은 형식) — 값은 그대로 두고, 템플릿의 {이름} 이 글자가 될 때 쓴다
+    private static void KeepFormat(ComponentScope scope, string name, string raw, object? outerVm)
+    {
+        if (BindingResolver.FormatOf(BindingResolver.TextExpr(outerVm, raw)) is { } format)
+            scope.SetFormat(name, format);
     }
 
     // 컴포넌트 인스턴스의 루트 상자 — 템플릿 노드는 인스턴스끼리 공유되므로 핸들 조회·덮어쓰기는 인스턴스 노드 기준으로 이 상자에만
@@ -660,9 +675,10 @@ public sealed partial class LayoutEngine
                 scope[p.Name] = isValue && slot!.HasOverride && !BindingResolver.IsTwoWay(raw)
                     ? slot.CellValue // 단방향·리터럴 위에 코드가 덮어씀
                     : BindingResolver.ResolveValueOrLiteral(outerVm, raw);
+                KeepFormat(scope, p.Name, raw, outerVm);
                 // 글자로만 보이는 파라미터(내장 컴포넌트) — 바인딩 값도 그 글자로(템플릿이 {이름.Length} 로 있음을 판단)
                 if (component.TextParams.Contains(p.Name) && scope[p.Name] is { } v and not string)
-                    scope[p.Name] = BindingResolver.ToText(v, raw);
+                    scope[p.Name] = BindingResolver.ToText(v, BindingResolver.TextExpr(outerVm, raw));
                 // 테마 단어 파라미터(내장 컴포넌트) — 토큰이 없는 단어는 기본값 + 경고 한 번(안쪽 요소마다 따로 경고·마젠타가 되지 않게)
                 if (component.ThemeWordParams.TryGetValue(p.Name, out var prefix))
                     scope[p.Name] = AttrRules.ThemeWord(scope[p.Name], prefix, _theme, p.Default, instance.Tag, p.Name, raw: raw);

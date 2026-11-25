@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- A display format given to a component parameter is no longer lost: `<DvStat value="{Level:0.0}"/>` shows `72.0` (it showed `72`). The parameter keeps the value and its format; inside the template a binding that is exactly the parameter (`text="{value}"`, `"{value} %"`, a nested component's parameter, a custom widget's `ctx.Text`) uses that format, value attributes (`DvGauge value="{value}"`) read the number, and a format of the template's own wins. Applies to built-in (`DvStat value`, `DvCard badge` …) and user components (`DvParam`).
+
 ## 0.8.1 — 2026-11-24
 
 Bindings take a display format, as in C# string interpolation: `text="{Temp:0.0} ℃"`. Numbers in text no longer depend on the PC's language setting.

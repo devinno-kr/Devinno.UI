@@ -114,6 +114,7 @@ app.Registry = registry;   // or new DvSurface(markup, vm, theme, registry) / Dv
 - `DvParam name default`: instance attribute names match parameters **case-insensitively**; `{Name}` inside the template is **case-sensitive**.
 - Parameters not given get `default` (null if none).
 - `{Name}` inside the template refers **only to parameters**, not to the screen VM. Instance attribute values are bound from the outer VM.
+- A parameter given a binding with a display format (`Value="{Level:0.0}"`) keeps the value (number) and its format: `text="{Value}"` in the template shows `72.0`, `DvGauge value="{Value}"` reads `72` ([display format](dvml-language.md#binding-format)). Built-in components follow the same rule (`DvStat value`, `DvCard badge`).
 - Pass other screen VM properties as parameters. The simplest approach is one object per instance (for example one VM object per unit), passed as a single parameter (`U`, used as `{U.Level}`).
 - Giving a parameter a two-way binding (`Value="{Bind X}"`) makes `value="{Value}"` inside the template write two-way to the outer VM for the template two-way tags: `DvToggle` `DvCheckBox` `DvKnob` `DvSlider` `DvInput` `DvSelect` `DvSegment` `DvTabs` `DvDateTimeInput` `DvColorInput`, latching `DvButton`, and every custom widget ([two-way rules](dvml-language.md#two-way)).
 - `onclick` inside a template calls a method on the **screen VM**. The method name is fixed in the template; a parameter cannot change it.
