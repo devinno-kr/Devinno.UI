@@ -2922,11 +2922,11 @@ public partial class MainPage : DvPage, IDvValueCommitted
 <param name="root">판정을 시작할 루트 상자.</param>
 <param name="p">루트 상자와 같은 좌표계의 점.</param>
 <param name="wholeBox"><see langword="true" /> 면 모양이 정해진 위젯(노브·토글 등)도 상자 어디서나 맞는다. 기본은 입력처럼 그려진 모양 안만.</param>
-<returns>루트부터 가장 깊이 맞은 상자까지의 상자들. 각 <c>Local</c> = 그 상자 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 좌표계의 점. 루트도 맞지 않으면 빈 목록.</returns></member><member name="M:Devinno.UI.Interaction.HitTester.TryGetDrawnRect(Devinno.UI.Layout.LayoutBox,Devinno.UI.Layout.LayoutBox,SkiaSharp.SKRect@,SkiaSharp.SKRect@)" en-hash="6ec4f4f3048b2778"><summary>
+<returns>루트부터 가장 깊이 맞은 상자까지의 상자들. 각 <c>Local</c> = 그 상자 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 좌표계의 점. 루트도 맞지 않으면 빈 목록.</returns></member><member name="M:Devinno.UI.Interaction.HitTester.TryGetDrawnRect(Devinno.UI.Layout.LayoutBox,Devinno.UI.Layout.LayoutBox,SkiaSharp.SKRect@,SkiaSharp.SKRect@)" en-hash="6031a80dd101ab36"><summary>
 <paramref name="target" /> 가 그려진 자리를 <paramref name="root" /> 좌표(루트 상자면 서피스 좌표)로 돌려줍니다 — 그리기·누르기와 같은 대응:
 감싼 스크롤 상자의 스크롤 오프셋과 줄여 그린 공정도의 내용 배율(<see cref="P:Devinno.UI.Layout.LayoutBox.ContentScale" />)을 적용합니다.
 </summary>
-<param name="root">기준 상자, 보통 <see cref="P:Devinno.UI.DvSurface.Root" />.</param>
+<param name="root">기준 상자, 보통 <see cref="M:Devinno.UI.Layout.LayoutEngine.Layout(Devinno.UI.Markup.ElementNode,System.Object,System.Single,System.Single,Devinno.UI.Components.ComponentRegistry)" /> 가 돌려준 루트.</param>
 <param name="target">그 트리 안의 상자.</param>
 <param name="rect"><paramref name="target" /> 의 그려진 사각형.</param>
 <param name="visible"><paramref name="rect" /> 중 감싼 스크롤 상자나 <c>overflow:hidden</c> 상자에 잘리지 않은 부분. 다 가려지면 <see cref="F:SkiaSharp.SKRect.Empty" />.</param>
@@ -4119,11 +4119,11 @@ var min = TagSchema.Find("DvGauge", "min"); // Kind = Number, Default = "0"
 <param name="kind"><c>kind</c> 속성. <see langword="null" />·빈 값 = 그 태그의 기본 kind. 등록 심볼에서는 쓰지 않습니다.</param>
 <param name="registry">앱의 <c>DvSymbol</c> 정의가 든 등록부, 내장 설비만이면 <see langword="null" />.</param>
 <returns>정의 순서의 포트 목록. 모르는 태그·kind 면 <see langword="null" />. 공정 유닛(<c>DvUnit</c> 컴포넌트)은 심볼이 아니며 포트는 그 <c>DvPort</c> 자식입니다.</returns>
-<example><c>PortsOf("DvValve", "ball")</c> → <c>in</c> (Left, 0.667), <c>out</c> (Right, 0.667).</example></member><member name="M:Devinno.UI.Process.ProcessInspector.PipesOf(Devinno.UI.Layout.LayoutBox)" en-hash="726ecc05811d8dff"><summary>
+<example><c>PortsOf("DvValve", "ball")</c> → <c>in</c> (Left, 0.667), <c>out</c> (Right, 0.667).</example></member><member name="M:Devinno.UI.Process.ProcessInspector.PipesOf(Devinno.UI.Layout.LayoutBox)" en-hash="b8c68fe512faa4f7"><summary>
 배치한 <c>DvProcess</c> 의 배관을 그린 그대로 돌려줍니다 — 자동 경로와 <c>via</c> 경로 모두. 그리지 못한 줄(모르는 <c>from</c>/<c>to</c>)은 빠집니다.
 공정 유닛 안의 배관은 넣지 않습니다.
 </summary>
-<param name="process">배치 결과(<see cref="P:Devinno.UI.DvSurface.Root" /> 트리)의 <c>DvProcess</c> 상자.</param>
+<param name="process"><see cref="M:Devinno.UI.Layout.LayoutEngine.Layout(Devinno.UI.Markup.ElementNode,System.Object,System.Single,System.Single,Devinno.UI.Components.ComponentRegistry)" /> 트리 안의 <c>DvProcess</c> 상자.</param>
 <returns>그린 <c>DvLine</c> 마다 하나, 마크업 순서. 다른 상자면 빈 목록.</returns></member><member name="T:Devinno.UI.Process.ProcessMedium" en-hash="33f74b9817febb01">
             <summary>
             매체 색 — <c>DvLine medium</c> 을 흐름 방향으로 퍼뜨린다(색만, 배치·흐름 판단과 무관).

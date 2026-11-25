@@ -117,7 +117,7 @@ public static class HitTester
     /// Where <paramref name="target"/> is drawn, in the coordinates of <paramref name="root"/> (the surface for its root box) — the same mapping drawing and hit testing use:
     /// scroll offsets of the enclosing scroll boxes and the content scale of a shrunk process diagram (<see cref="LayoutBox.ContentScale"/>) are applied.
     /// </summary>
-    /// <param name="root">The box to measure from, usually <see cref="DvSurface.Root"/>.</param>
+    /// <param name="root">The box to measure from, usually the root returned by <see cref="Layout.LayoutEngine.Layout(Markup.ElementNode, object?, float, float, Components.ComponentRegistry?)"/>.</param>
     /// <param name="target">A box in that tree.</param>
     /// <param name="rect">The drawn rectangle of <paramref name="target"/>.</param>
     /// <param name="visible">The part of <paramref name="rect"/> not clipped by an enclosing scroll box or <c>overflow:hidden</c> box; <see cref="SKRect.Empty"/> when fully hidden.</param>

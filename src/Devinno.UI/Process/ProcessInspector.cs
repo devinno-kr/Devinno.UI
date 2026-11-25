@@ -43,7 +43,7 @@ public static class ProcessInspector
     /// The pipes of a laid-out <c>DvProcess</c>, as drawn — automatic routes and <c>via</c> routes alike. Lines that could not be drawn (unknown <c>from</c>/<c>to</c>) are left out.
     /// Pipes inside process units are not included.
     /// </summary>
-    /// <param name="process">The <c>DvProcess</c> box from a layout (<see cref="DvSurface.Root"/> tree).</param>
+    /// <param name="process">The <c>DvProcess</c> box in a tree from <see cref="LayoutEngine.Layout(Markup.ElementNode, object?, float, float, ComponentRegistry?)"/>.</param>
     /// <returns>One entry per drawn <c>DvLine</c>, in markup order; empty for any other box.</returns>
     public static IReadOnlyList<ProcessPipe> PipesOf(LayoutBox process)
     {
