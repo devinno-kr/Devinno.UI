@@ -24,7 +24,15 @@ public sealed partial class DvSurface
     internal DropdownPopup? Dropdown => TopPopup as DropdownPopup;
 
     /// <summary>Whether the popup is still on the stack (used to locate field edit targets).</summary>
-    internal bool IsPopupOpen(IPopup p) => _popups.Contains(p);
+    internal bool HasPopup(IPopup p) => _popups.Contains(p);
+
+    /// <summary>
+    /// Gets whether a popup opened by the screen is showing — a <c>DvSelect</c> list, a date/time or color picker, a grid cell list or a grid filter.
+    /// While it is, keys and presses belong to the popup: a host that handles keys itself (arrows, Esc) should leave them alone.
+    /// </summary>
+    /// <remarks>Popups are shown by the top-level surface, so any surface of the window answers the same (a <see cref="App.DvApp"/> page asks its window). Read it on the UI thread.
+    /// The virtual keyboard and dialogs are not popups: see <see cref="Edit"/> and <see cref="App.DvApp.Dialogs"/>.</remarks>
+    public bool IsPopupOpen => Window._popups.Count > 0;
 
     private void OpenPopup(IPopup p)
     {

@@ -1051,7 +1051,7 @@ public sealed partial class DvSurface
         {
             _motion.BeginFrame();
             _motion.Settle = SettleMotion;
-            new Painter(_theme, _strings) { MotionState = _motion }.Paint(canvas, _box, _vm, _state, timestampMs);
+            new Painter(_theme, _strings) { MotionState = _motion, Owner = this }.Paint(canvas, _box, _vm, _state, timestampMs);
             _motion.EndFrame();
         }
 
@@ -1349,7 +1349,10 @@ public sealed partial class DvSurface
             return;
 
         var hover = HitTester.HitTarget(_box, p, out var hoverLocal);
-        WidgetHover(hover, hoverLocal);
+        if (PointerWidget(HitTester.Path(_box, p)) is { } hw)
+            WidgetHover(hw.Box, hw.Local);
+        else
+            WidgetHover(hover, hoverLocal);
         if (GridHover(hover, hoverLocal))
             _needsRender = true;
         if (ReferenceEquals(hover, _state.Hover))
@@ -1447,6 +1450,22 @@ public sealed partial class DvSurface
     }
 
     // 오른쪽·가운데 누름 — 위젯에만. 다른 누름이 진행 중이거나 키보드·팝업이 떠 있으면 무시
+    // 포인터 메서드를 재정의한 위젯은 onclick 이 없어도 그 자체가 대상 — 감싼 상자의 onclick 이 누름을 가져가지 않게.
+    // 위젯은 경로의 맨 안쪽(자식이 없다). 누름을 받지 않으면(false) 원래 대상(가장 가까운 상호작용 조상)이 받는다
+    private static (LayoutBox Box, SKPoint Local)? PointerWidget(List<(LayoutBox Box, SKPoint Local)> path)
+        => path.Count > 0 && path[^1] is { Box: { Widget.HandlesPointer: true, Disabled: false } } last ? last : null;
+
+    // 위젯 우선 대상 — 포인터를 다루는 위젯, 없으면 HitTarget
+    private LayoutBox? PointerTarget(SKPoint p, out SKPoint local)
+    {
+        if (PointerWidget(HitTester.Path(_box!, p)) is { } w)
+        {
+            local = w.Local;
+            return w.Box;
+        }
+        return HitTester.HitTarget(_box!, p, out local);
+    }
+
     private void OtherDownCore(SKPoint p, DvPointerButton button)
     {
         if (_otherDrag is not null || _otherCapture is not null || _pressOrigin is not null || _widgetDrag is not null || _knobDrag is not null || _capture is not null ||
@@ -1463,7 +1482,7 @@ public sealed partial class DvSurface
 
         if (_box is null || blocked)
             return;
-        if (HitTester.HitTarget(_box, p, out var local) is { Widget: not null, Disabled: false } wbox &&
+        if (PointerTarget(p, out var local) is { Widget: not null, Disabled: false } wbox &&
             WidgetCall(wbox, (w, ctx) => w.OnPointerDown(ctx, Args(local, button))))
         {
             _otherDrag = wbox;
@@ -1510,6 +1529,10 @@ public sealed partial class DvSurface
             return;
 
         _pressOrigin = HitTester.HitTarget(_box, p, out var local);
+        var grabbed = false;
+        if (PointerWidget(path) is { } pw && !ReferenceEquals(pw.Box, _pressOrigin) &&
+            WidgetCall(pw.Box, (w, ctx) => w.OnPointerDown(ctx, Args(pw.Local, DvPointerButton.Left))))
+            (_pressOrigin, local, grabbed) = (pw.Box, pw.Local, true); // 감싼 상자의 onclick 보다 위젯이 먼저
         _dragPress = p;
         _dragScale = HitTester.ScaleOf(path, _pressOrigin);
         _state.Press = _pressOrigin;
@@ -1517,10 +1540,10 @@ public sealed partial class DvSurface
         if (PressVisible(_pressOrigin))
             _needsRender = true;
 
-        if (_pressOrigin is { Widget: not null, Disabled: false } wbox && WidgetCall(wbox, (w, ctx) => w.OnPointerDown(ctx, Args(local, DvPointerButton.Left))))
+        if (grabbed || _pressOrigin is { Widget: not null, Disabled: false } wbox && WidgetCall(wbox, (w, ctx) => w.OnPointerDown(ctx, Args(local, DvPointerButton.Left))))
         {
             // 위젯이 몸짓을 잡음 — 스크롤·길게 누르기·클릭 없이 이동·뗌을 위젯이 받는다
-            _widgetDrag = wbox;
+            _widgetDrag = _pressOrigin;
             _widgetShift = local - p;
             CancelHold();
             _needsRender = true;

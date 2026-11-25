@@ -10,9 +10,12 @@
 - `multiline` text longer than its `DvInput` scrolls with the mouse wheel over the box, also when not editing; the position survives rebuilds.
 - `ViewControl`: three clicks select the whole text of the edit box.
 - For screen editors (all read-only): `ProcessInspector.PortsOf(tag, kind, registry)` returns an equipment symbol's ports (`SymbolPort`: name, `PortSide`, position 0–1, role, face, either-side) for built-in equipment and registered `DvSymbol`s; `ProcessInspector.PipesOf(processBox)` returns each drawn `DvLine` with its points as drawn (real nozzles, automatic and `via` routes). `LayoutBox.ContentScale` / `ContentOffset` are public (a shrunk `DvProcess`), and `HitTester.TryGetDrawnRect(root, box, out rect, out visible)` gives where a box is drawn with scroll offsets and content scale applied. `LayoutEngine.IntrinsicSize(box, availableWidth)` is the size `DvApp` gives a bar or a dialog root.
+- `DvSurface.IsPopupOpen`: whether a dropdown or picker popup is showing (any surface of the window answers), for hosts that handle arrow keys or Esc themselves.
+- `DvWidgetContext.ToWindow(point)`, `ToWindow(rect)` and `FromWindow(point)`: convert between a custom widget's coordinates and window coordinates (scroll, a shrunk process diagram and the page or bar position applied), in pointer methods and `Paint` — to match points between widgets in different bars and pages.
 
 ### Changed
 
+- A custom widget that overrides a pointer method (`OnPointerDown`, `OnPointerHover`, `OnPointerWheel`) receives presses, hover and the wheel itself, even without `onclick` and inside an element that has `onclick`. Before, the enclosing element's `onclick` took the press. A press the widget declines (`false`) still goes to the enclosing `onclick`.
 - Tab / Shift+Tab in a `DvInput` commit and start editing the next / previous editable `DvInput` of the screen (markup order; read-only and disabled ones skipped) with its text selected. Before, they only committed. With the virtual keyboard they now continue too, in grid input cells as well; a field reached with Tab, Shift+Tab or a grid's Enter starts with its text selected.
 
 ### Fixed

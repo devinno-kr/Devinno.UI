@@ -40,6 +40,18 @@ namespace Devinno.UI.Widgets;
 /// </example>
 public abstract class DvWidget
 {
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, bool> PointerTypes = new();
+
+    // 포인터 메서드(누름·hover·휠)를 재정의한 위젯 = 그 자체가 누름 대상(onclick 없어도). 형식마다 한 번 잰다
+    internal bool HandlesPointer => PointerTypes.GetOrAdd(GetType(), t =>
+        Overrides(t, nameof(OnPointerDown), typeof(DvWidgetContext), typeof(SKPoint)) ||
+        Overrides(t, nameof(OnPointerDown), typeof(DvWidgetContext), typeof(DvPointerArgs)) ||
+        Overrides(t, nameof(OnPointerHover), typeof(DvWidgetContext), typeof(DvPointerArgs)) ||
+        Overrides(t, nameof(OnPointerWheel), typeof(DvWidgetContext), typeof(DvPointerArgs), typeof(float)));
+
+    private static bool Overrides(Type t, string name, params Type[] args)
+        => t.GetMethod(name, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, args) is { } m && m.DeclaringType != typeof(DvWidget);
+
     /// <summary>
     /// Returns the size of the content area (inside <c>padding</c>). <c>width</c>/<c>height</c> in the element's style take precedence. The default is 120×80.
     /// </summary>
@@ -67,13 +79,15 @@ public abstract class DvWidget
     /// <summary>
     /// The element was pressed. Return <see langword="true"/> to take the gesture: this widget then receives <see cref="OnPointerMove(DvWidgetContext, SKPoint)"/> and <see cref="OnPointerUp(DvWidgetContext, SKPoint)"/>
     /// (or <see cref="OnPointerCancel"/>), the screen does not scroll, and no click (<c>onclick</c>) happens.
-    /// Return <see langword="false"/> (the default) to let the press work as for any element (click, <c>hold</c>, scrolling).
+    /// Return <see langword="false"/> (the default) to let the press work as for any element (click, <c>hold</c>, scrolling): the widget's own <c>onclick</c>,
+    /// otherwise the <c>onclick</c> of the nearest enclosing element that has one.
     /// </summary>
     /// <param name="ctx">The element's context; <see cref="DvWidgetContext.Bounds"/> is the content area in the same coordinates as <paramref name="point"/>.</param>
     /// <param name="point">The press point.</param>
     /// <returns>Whether this widget takes the gesture.</returns>
     /// <remarks>
-    /// Not called while the element is disabled. Typical use: keep a preview value in a field while dragging (paint it in <see cref="Paint"/>) and write it once
+    /// A widget that overrides a pointer method (this one, <see cref="OnPointerHover"/> or <see cref="OnPointerWheel"/>) is a pointer target of its own:
+    /// it is called even without <c>onclick</c> and inside an element that has one. Not called while the element is disabled. Typical use: keep a preview value in a field while dragging (paint it in <see cref="Paint"/>) and write it once
     /// with <see cref="DvWidgetContext.Commit"/> in <see cref="OnPointerUp(DvWidgetContext, SKPoint)"/> — the same way the built-in knob and slider work.
     /// An exception from any pointer method is reported through <see cref="DvSurface.HandlerError"/> (<c>Kind</c> = <c>"Pointer"</c>) and ends the gesture.
     /// </remarks>

@@ -770,6 +770,9 @@ public sealed partial class Painter
     }
 
     // 커스텀 위젯 — 상자로 잘라 내용 영역(패딩 안)을 넘긴다. 예외는 화면에 한 번 알리고(재빌드 전까지) 빨간 테두리로 표시
+    // 그리는 화면 — 위젯 Paint 의 ctx.ToWindow·FromWindow 가 쓴다(DvRenderer 처럼 화면 없이 그리면 null = 그대로)
+    internal DvSurface? Owner { get; init; }
+
     private void PaintWidget(SKCanvas canvas, LayoutBox box, Widgets.DvWidget widget, SKRect rect, ComputedStyle st, long timestampMs, InteractionState? state)
     {
         var pad = st.Padding;
@@ -778,7 +781,7 @@ public sealed partial class Painter
         canvas.ClipRect(rect);
         try
         {
-            widget.Paint(canvas, content, new Widgets.DvWidgetContext(box, _theme, timestampMs, state: state));
+            widget.Paint(canvas, content, new Widgets.DvWidgetContext(box, _theme, timestampMs, state: state, place: Owner));
         }
         catch (Exception ex)
         {

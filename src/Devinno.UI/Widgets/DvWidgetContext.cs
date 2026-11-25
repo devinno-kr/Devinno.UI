@@ -20,10 +20,14 @@ public sealed class DvWidgetContext
 
     private readonly Interaction.InteractionState? _state;
 
+    // 자리를 재는 화면(ToWindow) — 포인터 메서드는 owner, Paint 는 그리는 화면. Commit 은 owner 에서만
+    private readonly DvSurface? _place;
+
     internal DvWidgetContext(LayoutBox box, DvTheme? theme, long timestampMs, DvSurface? owner = null, object? vm = null,
-        Interaction.InteractionState? state = null)
+        Interaction.InteractionState? state = null, DvSurface? place = null)
     {
         _box = box;
+        _place = place ?? owner;
         _theme = theme ?? Roles.Ambient ?? DvTheme.Default;
         _state = state;
         TimestampMs = timestampMs;
@@ -66,6 +70,49 @@ public sealed class DvWidgetContext
         _owner.Invalidate();
         return true;
     }
+
+    /// <summary>
+    /// Converts a point from this widget's coordinates (pointer points, <see cref="Bounds"/>, the <c>bounds</c> of <see cref="DvWidget.Paint"/>) to window coordinates —
+    /// the coordinates the host passes to the top-level surface (logical px, the same for every <see cref="App.DvApp"/> page, bar and dialog).
+    /// Scroll offsets of enclosing scroll boxes, the content scale of a shrunk process diagram and the position of the page or bar in the window are applied;
+    /// the <c>transform</c> style is not (it moves the drawing only).
+    /// </summary>
+    /// <param name="point">A point in this widget's coordinates.</param>
+    /// <returns>The point in window coordinates. Unchanged in <see cref="DvWidget.Measure"/> and when the screen is drawn without a surface (<see cref="DvRenderer"/>).</returns>
+    /// <remarks>Use it to match points between widgets in different places, for example dragging from a toolbox in one bar onto a canvas widget in the page:
+    /// convert to window coordinates on one side and back with <see cref="FromWindow"/> on the other.</remarks>
+    public SKPoint ToWindow(SKPoint point)
+    {
+        if (Place() is not var (map, offset))
+            return point;
+        var p = map.Map(point);
+        return new SKPoint(p.X + offset.X, p.Y + offset.Y);
+    }
+
+    /// <summary>Converts a rectangle from this widget's coordinates to window coordinates, like <see cref="ToWindow(SKPoint)"/>.</summary>
+    /// <param name="rect">A rectangle in this widget's coordinates, for example <see cref="Bounds"/>.</param>
+    /// <returns>The rectangle in window coordinates.</returns>
+    public SKRect ToWindow(SKRect rect)
+    {
+        var a = ToWindow(new SKPoint(rect.Left, rect.Top));
+        var b = ToWindow(new SKPoint(rect.Right, rect.Bottom));
+        return new SKRect(a.X, a.Y, b.X, b.Y);
+    }
+
+    /// <summary>Converts a point from window coordinates (see <see cref="ToWindow(SKPoint)"/>) to this widget's coordinates.</summary>
+    /// <param name="point">A point in window coordinates.</param>
+    /// <returns>The point in this widget's coordinates (it may lie outside <see cref="Bounds"/>).</returns>
+    public SKPoint FromWindow(SKPoint point)
+    {
+        if (Place() is not var (map, offset))
+            return point;
+        return new SKPoint((point.X - offset.X - map.Offset.X) / map.Scale, (point.Y - offset.Y - map.Offset.Y) / map.Scale);
+    }
+
+    private (Layout.ScreenMap Map, SKPoint Offset)? Place()
+        => _place?.Root is { } root && EditGeometry.TryLocate(root, _box, out _, out _, out var map) && map.Scale > 0
+            ? (map, _place.WindowOffset)
+            : null;
 
     /// <summary>Gets the element's tag (the name the widget was registered under).</summary>
     public string Tag => _box.Node.Tag;

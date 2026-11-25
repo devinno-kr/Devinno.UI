@@ -364,7 +364,7 @@ public sealed partial class DvSurface
             ScrollIntoView(target, r);
     }
 
-    /// <summary>Scrolls the enclosing scroll boxes so that a rectangle inside <paramref name="target"/> (in <see cref="EditGeometry.TryLocate"/> coordinates, e.g. a grid cell) is fully visible.
+    /// <summary>Scrolls the enclosing scroll boxes so that a rectangle inside <paramref name="target"/> (in <see cref="EditGeometry.TryLocate(LayoutBox, LayoutBox, out SKRect, out SKRect)"/> coordinates, e.g. a grid cell) is fully visible.
     /// Scroll boxes in which it is already fully visible are not moved.</summary>
     internal void ScrollIntoView(LayoutBox target, SKRect targetRect)
     {

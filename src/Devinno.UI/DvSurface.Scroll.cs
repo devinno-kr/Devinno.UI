@@ -87,7 +87,7 @@ public sealed partial class DvSurface
             return;
 
         // 점 아래 위젯이 휠을 가져가면(Ctrl+휠 확대 등) 스크롤하지 않는다
-        if (HitTester.HitTarget(_box, p, out var local) is { Widget: not null, Disabled: false } wbox &&
+        if (PointerTarget(p, out var local) is { Widget: not null, Disabled: false } wbox &&
             WidgetCall(wbox, (w, ctx) => w.OnPointerWheel(ctx, Args(local, DvPointerButton.None), delta)))
         {
             _needsRender = true;

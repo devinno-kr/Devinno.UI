@@ -49,7 +49,7 @@ internal sealed class PopupFieldTarget : IEditTarget
     public bool TryLocate(out SKRect rect, out SKRect clip)
     {
         rect = clip = SKRect.Empty;
-        if (!_w.IsPopupOpen(Popup))
+        if (!_w.HasPopup(Popup))
             return false;
         rect = Popup switch
         {
