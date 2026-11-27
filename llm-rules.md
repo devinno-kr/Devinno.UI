@@ -428,7 +428,7 @@ The `using` lines for the C# types these pages use. Handle fields created by the
 | `MarkupDocument`, `MarkupSpan`, `TagSchema`, `AttrDef`, `AttrKind` (tools that edit markup) | `Devinno.UI.Markup` | Devinno.UI |
 | `StyleParser` (`Get/Set/RemoveDeclaration`) | `Devinno.UI.Styling` | Devinno.UI |
 | `HitTester` (`HitPath`, `TryGetDrawnRect`) | `Devinno.UI.Interaction` | Devinno.UI |
-| `LayoutBox`, `LayoutEngine` (`IntrinsicSize`) (tools that size or draw over a laid-out screen) | `Devinno.UI.Layout` | Devinno.UI |
+| `LayoutBox`, `LayoutEngine` (`IntrinsicSize`), `GridTracks`, `GridTrack`, `GridArea` (tools that size or draw over a laid-out screen) | `Devinno.UI.Layout` | Devinno.UI |
 | `ProcessInspector` (`PortsOf`, `PipesOf`), `SymbolPort`, `PortSide`, `ProcessPipe` (tools that edit process diagrams) | `Devinno.UI.Process` | Devinno.UI |
 | `FrameSource`, `VideoPlayer`, `IFrameSource` | `Devinno.UI.Video` | Devinno.UI |
 | `ViewWindow` | `Devinno.UI.OpenTK` | Devinno.UI.OpenTK |

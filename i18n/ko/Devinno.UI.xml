@@ -3262,7 +3262,40 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             (합이 100% 를 넘으면 비율로 정규화), 그 나머지를 fr 가 비율로 나눈다.
             템플릿보다 트랙이 많으면 나머지는 auto. 내용 크기 측정(<paramref name="measuring" />) 때는 %·fr 도 auto.
             </summary>
-        </member><member name="T:Devinno.UI.Layout.InstanceKey" en-hash="86c12fc995f455d4"><summary>상자가 마크업 요소의 몇 번째 빌드인지 — 요소와, 같은 빌드에서 그 요소가 앞서 몇 번 만들어졌는지. <c>DvRepeat</c> 나 컴포넌트 틀 안의 요소는 항목·인스턴스마다 한 번씩 만들어지므로 각자 번호(순서)를 갖습니다.</summary></member><member name="M:Devinno.UI.Layout.InstanceKey.#ctor(Devinno.UI.Markup.ElementNode,System.Int32)" en-hash="86c12fc995f455d4"><summary>상자가 마크업 요소의 몇 번째 빌드인지 — 요소와, 같은 빌드에서 그 요소가 앞서 몇 번 만들어졌는지. <c>DvRepeat</c> 나 컴포넌트 틀 안의 요소는 항목·인스턴스마다 한 번씩 만들어지므로 각자 번호(순서)를 갖습니다.</summary></member><member name="T:Devinno.UI.Layout.InstanceStore`1" en-hash="ccc9d7cb3e0a4cf7"><summary>한 화면의 다시 만들기 사이에 요소 인스턴스마다 객체 하나를 유지합니다(커스텀 위젯 인스턴스, 비디오 재생기). <c>disposeDropped</c> 이면 빌드 중 요청되지 않았거나 <c>reuse</c> 가 거절해 바뀐 객체를 <see cref="M:Devinno.UI.Layout.InstanceStore`1.End" /> 에서 Dispose 합니다(<see cref="T:System.IDisposable" /> 일 때).</summary></member><member name="M:Devinno.UI.Layout.InstanceStore`1.#ctor(System.Boolean)" en-hash="ccc9d7cb3e0a4cf7"><summary>한 화면의 다시 만들기 사이에 요소 인스턴스마다 객체 하나를 유지합니다(커스텀 위젯 인스턴스, 비디오 재생기). <c>disposeDropped</c> 이면 빌드 중 요청되지 않았거나 <c>reuse</c> 가 거절해 바뀐 객체를 <see cref="M:Devinno.UI.Layout.InstanceStore`1.End" /> 에서 Dispose 합니다(<see cref="T:System.IDisposable" /> 일 때).</summary></member><member name="M:Devinno.UI.Layout.InstanceStore`1.Begin" en-hash="ec9788876c1d74a8"><summary>빌드를 시작합니다.</summary></member><member name="M:Devinno.UI.Layout.InstanceStore`1.Get(Devinno.UI.Layout.InstanceKey,System.Func{`0},System.Func{`0,System.Boolean})" en-hash="0e8d30f640efc5c8"><summary><paramref name="key" /> 에 유지된 객체를 돌려줍니다. 없거나 <paramref name="reuse" /> 가 거절하면 <paramref name="create" /> 로 새로 만듭니다.</summary></member><member name="M:Devinno.UI.Layout.InstanceStore`1.End" en-hash="adc8c4762b3c2e2a"><summary>빌드를 끝냅니다 — 이어지지 않은 것을 버립니다(<c>disposeDropped</c> 이면 Dispose).</summary></member><member name="T:Devinno.UI.Layout.KnobInputMode" en-hash="e1249f05490dafbe">
+        </member><member name="T:Devinno.UI.Layout.GridTracks" en-hash="6fa47bcfed1570fb"><summary>
+grid 상자(<c>DvGrid</c>, 또는 트랙 목록이 있는 <c>display:grid</c>)의 계산된 트랙입니다. <see cref="P:Devinno.UI.Layout.LayoutBox.GridTracks" /> 에서 얻습니다.
+자식이 없는 템플릿 트랙과 템플릿을 넘어 늘어난 <c>auto</c> 트랙까지 모든 트랙이 들어 있습니다.
+</summary>
+<remarks>
+위치는 grid 상자의 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 왼쪽 위(바깥 모서리라 padding 이 포함됨)에서 잰 값이라, 도구가 상자를 옮겨도 그대로 맞습니다.
+화면 편집기는 이것으로 빈 칸을 그리고 포인터 위치를 칸으로 바꿀 수 있습니다.
+gap 은 한 트랙의 끝과 다음 트랙의 시작 사이에 있습니다.
+</remarks>
+<example>
+<code>
+var tracks = gridBox.GridTracks!;
+foreach (var col in tracks.Columns)
+    canvas.DrawLine(gridBox.Rect.Left + col.Start, gridBox.Rect.Top, gridBox.Rect.Left + col.Start, gridBox.Rect.Bottom, pen);
+</code>
+</example></member><member name="P:Devinno.UI.Layout.GridTracks.Columns" en-hash="4422e43cfed40095"><summary>열 트랙, 왼쪽부터(1열이 먼저).</summary></member><member name="P:Devinno.UI.Layout.GridTracks.Rows" en-hash="476b908dc4b5a5b6"><summary>행 트랙, 위부터(1행이 먼저).</summary></member><member name="T:Devinno.UI.Layout.GridTrack" en-hash="a6b39e9d29b2c30b"><summary>grid 트랙 하나: <paramref name="Start" /> = grid 상자의 왼쪽(열) 또는 위(행) 모서리에서의 거리(px), <paramref name="Size" /> = 그 폭 또는 높이(px).</summary>
+<param name="Start">grid 상자 바깥 왼쪽 또는 위 모서리에서의 거리, px.</param>
+<param name="Size">폭(열) 또는 높이(행), px.</param></member><member name="M:Devinno.UI.Layout.GridTrack.#ctor(System.Single,System.Single)" en-hash="a6b39e9d29b2c30b"><summary>grid 트랙 하나: <paramref name="Start" /> = grid 상자의 왼쪽(열) 또는 위(행) 모서리에서의 거리(px), <paramref name="Size" /> = 그 폭 또는 높이(px).</summary>
+<param name="Start">grid 상자 바깥 왼쪽 또는 위 모서리에서의 거리, px.</param>
+<param name="Size">폭(열) 또는 높이(행), px.</param></member><member name="P:Devinno.UI.Layout.GridTrack.Start" en-hash="eceda5ef4391e380"><summary>grid 상자 바깥 왼쪽 또는 위 모서리에서의 거리, px.</summary></member><member name="P:Devinno.UI.Layout.GridTrack.Size" en-hash="02a723ab5412edef"><summary>폭(열) 또는 높이(행), px.</summary></member><member name="T:Devinno.UI.Layout.GridArea" en-hash="34effce8635c9343"><summary>
+grid 자식이 차지한 칸입니다. <see cref="P:Devinno.UI.Layout.LayoutBox.GridArea" /> 에서 얻습니다. <c>grid-row</c>/<c>grid-col</c>/<c>row-span</c>/<c>col-span</c> 속성과 같은 숫자이고
+1부터 세며, 자동 배치된 자식도 같습니다.
+</summary>
+<param name="Row">첫 행, 1부터.</param>
+<param name="Column">첫 열, 1부터.</param>
+<param name="RowSpan">걸친 행 수, 1 이상.</param>
+<param name="ColumnSpan">걸친 열 수, 1 이상.</param></member><member name="M:Devinno.UI.Layout.GridArea.#ctor(System.Int32,System.Int32,System.Int32,System.Int32)" en-hash="34effce8635c9343"><summary>
+grid 자식이 차지한 칸입니다. <see cref="P:Devinno.UI.Layout.LayoutBox.GridArea" /> 에서 얻습니다. <c>grid-row</c>/<c>grid-col</c>/<c>row-span</c>/<c>col-span</c> 속성과 같은 숫자이고
+1부터 세며, 자동 배치된 자식도 같습니다.
+</summary>
+<param name="Row">첫 행, 1부터.</param>
+<param name="Column">첫 열, 1부터.</param>
+<param name="RowSpan">걸친 행 수, 1 이상.</param>
+<param name="ColumnSpan">걸친 열 수, 1 이상.</param></member><member name="P:Devinno.UI.Layout.GridArea.Row" en-hash="d73b0ba5887b737c"><summary>첫 행, 1부터.</summary></member><member name="P:Devinno.UI.Layout.GridArea.Column" en-hash="61a7552556b8117f"><summary>첫 열, 1부터.</summary></member><member name="P:Devinno.UI.Layout.GridArea.RowSpan" en-hash="7ab7d6abdb5e402a"><summary>걸친 행 수, 1 이상.</summary></member><member name="P:Devinno.UI.Layout.GridArea.ColumnSpan" en-hash="415d7059fe51d6ec"><summary>걸친 열 수, 1 이상.</summary></member><member name="T:Devinno.UI.Layout.InstanceKey" en-hash="86c12fc995f455d4"><summary>상자가 마크업 요소의 몇 번째 빌드인지 — 요소와, 같은 빌드에서 그 요소가 앞서 몇 번 만들어졌는지. <c>DvRepeat</c> 나 컴포넌트 틀 안의 요소는 항목·인스턴스마다 한 번씩 만들어지므로 각자 번호(순서)를 갖습니다.</summary></member><member name="M:Devinno.UI.Layout.InstanceKey.#ctor(Devinno.UI.Markup.ElementNode,System.Int32)" en-hash="86c12fc995f455d4"><summary>상자가 마크업 요소의 몇 번째 빌드인지 — 요소와, 같은 빌드에서 그 요소가 앞서 몇 번 만들어졌는지. <c>DvRepeat</c> 나 컴포넌트 틀 안의 요소는 항목·인스턴스마다 한 번씩 만들어지므로 각자 번호(순서)를 갖습니다.</summary></member><member name="T:Devinno.UI.Layout.InstanceStore`1" en-hash="ccc9d7cb3e0a4cf7"><summary>한 화면의 다시 만들기 사이에 요소 인스턴스마다 객체 하나를 유지합니다(커스텀 위젯 인스턴스, 비디오 재생기). <c>disposeDropped</c> 이면 빌드 중 요청되지 않았거나 <c>reuse</c> 가 거절해 바뀐 객체를 <see cref="M:Devinno.UI.Layout.InstanceStore`1.End" /> 에서 Dispose 합니다(<see cref="T:System.IDisposable" /> 일 때).</summary></member><member name="M:Devinno.UI.Layout.InstanceStore`1.#ctor(System.Boolean)" en-hash="ccc9d7cb3e0a4cf7"><summary>한 화면의 다시 만들기 사이에 요소 인스턴스마다 객체 하나를 유지합니다(커스텀 위젯 인스턴스, 비디오 재생기). <c>disposeDropped</c> 이면 빌드 중 요청되지 않았거나 <c>reuse</c> 가 거절해 바뀐 객체를 <see cref="M:Devinno.UI.Layout.InstanceStore`1.End" /> 에서 Dispose 합니다(<see cref="T:System.IDisposable" /> 일 때).</summary></member><member name="M:Devinno.UI.Layout.InstanceStore`1.Begin" en-hash="ec9788876c1d74a8"><summary>빌드를 시작합니다.</summary></member><member name="M:Devinno.UI.Layout.InstanceStore`1.Get(Devinno.UI.Layout.InstanceKey,System.Func{`0},System.Func{`0,System.Boolean})" en-hash="0e8d30f640efc5c8"><summary><paramref name="key" /> 에 유지된 객체를 돌려줍니다. 없거나 <paramref name="reuse" /> 가 거절하면 <paramref name="create" /> 로 새로 만듭니다.</summary></member><member name="M:Devinno.UI.Layout.InstanceStore`1.End" en-hash="adc8c4762b3c2e2a"><summary>빌드를 끝냅니다 — 이어지지 않은 것을 버립니다(<c>disposeDropped</c> 이면 Dispose).</summary></member><member name="T:Devinno.UI.Layout.KnobInputMode" en-hash="e1249f05490dafbe">
             <summary><c>DvKnob</c> 의 <c>input-mode</c>: 끌어서 돌리기, 탭해서 키패드, 둘 다.</summary>
         </member><member name="F:Devinno.UI.Layout.KnobInputMode.Drag" en-hash="f8d299add1bd2c46">
             <summary>끌어서 돌리기만(기본).</summary>
@@ -3342,7 +3375,13 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
 이 상자의 내용 배율입니다: 자식(과 공정도 자신의 배관)은 배치 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 를 그대로 두고 이 배율로 그리고 누르며,
 <see cref="P:Devinno.UI.Layout.LayoutBox.ContentOffset" /> 만큼 옮깁니다 — 그려진 점 = 내용 점 × 배율 + 이동, 이 상자 안(스크롤 오프셋 전)입니다. 1 = 없음.
 <c>fit="contain"</c>·<c>fit="scale-down"</c> 인 <c>DvProcess</c> 와 줄인 공정 유닛에 붙습니다. <see cref="M:Devinno.UI.Interaction.HitTester.TryGetDrawnRect(Devinno.UI.Layout.LayoutBox,Devinno.UI.Layout.LayoutBox,SkiaSharp.SKRect@,SkiaSharp.SKRect@)" /> 가 대신 적용해 줍니다.
-</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.ContentOffset" en-hash="1cff4ad3d5f3a0aa"><summary><see cref="P:Devinno.UI.Layout.LayoutBox.ContentScale" /> 와 함께 쓰는 내용 이동입니다(논리 px).</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.HasContentTransform" en-hash="b813c82e42a752e6"><summary>자식을 <see cref="P:Devinno.UI.Layout.LayoutBox.ContentScale" />/<see cref="P:Devinno.UI.Layout.LayoutBox.ContentOffset" /> 로 그리는지.</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.Grid" en-hash="9c51a3f87ad31649">
+</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.ContentOffset" en-hash="1cff4ad3d5f3a0aa"><summary><see cref="P:Devinno.UI.Layout.LayoutBox.ContentScale" /> 와 함께 쓰는 내용 이동입니다(논리 px).</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.GridTracks" en-hash="ec146d86f7e99b85"><summary>
+grid 상자의 계산된 열·행 트랙(빈 트랙 포함, 모든 트랙)을 가져옵니다. 이 상자의 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 왼쪽 위에서 잰 값입니다.
+배치 단계에서 채웁니다. grid 가 아닌 상자는 <see langword="null" /> 입니다.
+</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.GridArea" en-hash="9635842f53528371"><summary>
+이 상자가 grid 부모에서 차지한 칸(1부터, span 포함)을 가져옵니다. 자동 배치된 경우도 같습니다.
+배치 단계에서 채웁니다. 부모가 grid 가 아니거나 이 상자가 <c>position:absolute</c> 이면 <see langword="null" /> 입니다.
+</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.HasContentTransform" en-hash="b813c82e42a752e6"><summary>자식을 <see cref="P:Devinno.UI.Layout.LayoutBox.ContentScale" />/<see cref="P:Devinno.UI.Layout.LayoutBox.ContentOffset" /> 로 그리는지.</summary></member><member name="P:Devinno.UI.Layout.LayoutBox.Grid" en-hash="9c51a3f87ad31649">
             <summary>DvDataGrid 정의·상태(그 외 null). 그리드는 자식 박스 없이 스스로 그리는 스크롤 상자다.</summary>
         </member><member name="F:Devinno.UI.Layout.LayoutBox.ScrollInsetTop" en-hash="63084c51f09b3c61">
             <summary>세로 스크롤바가 시작하는 위쪽 여백(그리드 헤더 높이). 일반 스크롤 상자는 0.</summary>

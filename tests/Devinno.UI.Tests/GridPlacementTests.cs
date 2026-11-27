@@ -231,6 +231,48 @@ public class GridPlacementTests
         Assert.Equal((0f, 0f, 100f, 100f), R(g.Children[1]));
     }
 
+    [Fact]
+    public void Grid_box_reports_every_track_relative_to_its_rect()
+    {
+        var root = new LayoutEngine().Layout(
+            MarkupParser.Parse("<DvScreen style=\"padding:0\"><DvGrid gap=\"10\" columns=\"100 1fr\" rows=\"40 1fr 1fr\" style=\"padding:5; height:200\"><DvBox/></DvGrid></DvScreen>"),
+            null, 320, 200);
+        var t = root.Children[0].GridTracks;
+        Assert.NotNull(t);
+        // 열: 5 + 100, 5 + 110 부터 나머지(320 - 10 - 100 - 10 = 200). 행: 40, 그다음 (190 - 40 - 20) / 2 = 65 씩 — 빈 행도 있다
+        Assert.Equal(new[] { new GridTrack(5, 100), new GridTrack(115, 200) }, t!.Columns);
+        Assert.Equal(new[] { new GridTrack(5, 40), new GridTrack(55, 65), new GridTrack(130, 65) }, t.Rows);
+    }
+
+    [Fact]
+    public void Grid_child_reports_its_area_from_1()
+    {
+        var g = Grid("<DvBox/><DvBox grid-row=\"5\" grid-col=\"2\" col-span=\"2\"/><DvBox style=\"position:absolute\"/>");
+        Assert.Equal(new GridArea(1, 1, 1, 1), g.Children[0].GridArea);
+        Assert.Equal(new GridArea(5, 2, 1, 2), g.Children[1].GridArea);
+        Assert.Null(g.Children[2].GridArea);
+        Assert.Null(g.GridArea); // DvScreen 은 grid 가 아님
+    }
+
+    [Fact]
+    public void Non_grid_boxes_have_no_tracks()
+    {
+        var root = new LayoutEngine().Layout(MarkupParser.Parse("<DvScreen><DvStack><DvBox/></DvStack></DvScreen>"), null, 200, 200);
+        Assert.Null(root.GridTracks);
+        Assert.Null(root.Children[0].GridTracks);
+        Assert.Null(root.Children[0].Children[0].GridArea);
+    }
+
+    [Fact]
+    public void Tracks_stay_relative_when_a_tool_moves_the_grid()
+    {
+        var g = Grid("<DvBox/>");
+        var before = g.GridTracks!.Columns[2];
+        g.Rect = SkiaSharp.SKRect.Create(50, 50, g.Rect.Width, g.Rect.Height);
+        Assert.Equal(before, g.GridTracks!.Columns[2]);
+        Assert.Equal(new GridTrack(200, 100), before);
+    }
+
     private sealed class Capture(string marker) : TraceListener
     {
         public List<string> Lines { get; } = new();

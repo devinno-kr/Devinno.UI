@@ -122,6 +122,18 @@ public sealed class LayoutBox
     public float ContentScale { get; internal set; } = 1f;
     /// <summary>Gets the content offset that goes with <see cref="ContentScale"/> (logical px).</summary>
     public SKPoint ContentOffset { get; internal set; }
+    /// <summary>
+    /// Gets the resolved column and row tracks of a grid box (every track, empty ones included), measured from this box's <see cref="Rect"/> top-left.
+    /// Filled in the arrange stage; <see langword="null"/> for a box that is not a grid.
+    /// </summary>
+    public GridTracks? GridTracks { get; internal set; }
+
+    /// <summary>
+    /// Gets the cell this box occupies in its grid parent (from 1, spans included), also when it was placed automatically.
+    /// Filled in the arrange stage; <see langword="null"/> when the parent is not a grid or this box is <c>position:absolute</c>.
+    /// </summary>
+    public GridArea? GridArea { get; internal set; }
+
     /// <summary>Whether the children are drawn through <see cref="ContentScale"/>/<see cref="ContentOffset"/>.</summary>
     internal bool HasContentTransform => ContentScale != 1f || ContentOffset != default;
 

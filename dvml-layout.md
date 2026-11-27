@@ -124,6 +124,7 @@ A grid child takes a cell with style `grid-row`/`grid-column` (as CSS) or the co
 - A spanned cell includes the `gap` between its tracks. A spanning child that does not fit makes the `auto` tracks it spans grow by equal shares (with no `auto` track among them, a content-sized grid grows its `fr`/`%` tracks); fixed tracks never grow.
 - Not supported: negative lines (counting from the end), named lines, `span K / N`. Such a value, `0`, or a number above 1000 is ignored with a Trace warning (the child is placed automatically).
 - `position:absolute` children take no cell. Outside a grid parent these attributes and styles do nothing.
+- For screen editors: after layout, a grid box's `LayoutBox.GridTracks` lists every column and row track (`GridTrack(Start, Size)`, px from the box's `Rect` top-left, empty tracks included), and each grid child's `LayoutBox.GridArea` gives its cell (`Row`, `Column`, `RowSpan`, `ColumnSpan`, from 1, also for auto-placed children). Both are `null` outside a grid.
 
 ```xml
 <DvGrid columns="3" rows="1fr 1fr 1fr 1fr 1fr" style="height:500">

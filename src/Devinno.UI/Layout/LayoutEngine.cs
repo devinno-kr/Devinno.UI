@@ -1978,11 +1978,17 @@ public sealed partial class LayoutEngine
         for (var r = 1; r < plan.Rows; r++)
             rowY[r] = rowY[r - 1] + rowH[r - 1] + gap;
 
+        // 도구용 결과 — 트랙은 상자 바깥 왼쪽 위 기준(도구가 상자를 옮겨도 맞게), 칸은 1부터
+        box.GridTracks = new GridTracks(
+            colW.Select((cw, c) => new GridTrack(st.Padding.Left + colX[c], cw)).ToArray(),
+            rowH.Select((rh, r) => new GridTrack(st.Padding.Top + rowY[r], rh)).ToArray());
+
         var hAlign = GridJustify(st);
         for (var i = 0; i < items.Count; i++)
         {
             var item = items[i];
             var cell = plan.Cells[i];
+            item.GridArea = new GridArea(cell.Row + 1, cell.Col + 1, cell.RowSpan, cell.ColSpan);
             var vAlign = item.Style.AlignSelf ?? st.Align;
             var aw = AreaSize(colW, cell.Col, cell.ColSpan, gap);
             var ah = AreaSize(rowH, cell.Row, cell.RowSpan, gap);
