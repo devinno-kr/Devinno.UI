@@ -1265,14 +1265,15 @@ public sealed partial class LayoutEngine
         }
 
         box.Rect = SKRect.Create(x, y, w, h);
-        if (box.Children.Count == 0)
-            return;
-
+        // grid 는 자식이 없어도 트랙을 정한다(편집기가 빈 격자의 칸을 그리게 — GridTracks)
         if (IsGridBox(st))
         {
             ArrangeGrid(box, x, y, w, h);
             return;
         }
+
+        if (box.Children.Count == 0)
+            return;
 
         var col = !st.IsFlex || st.FlexDirection == FlexDirection.Column;
         var innerX = x + st.Padding.Left;

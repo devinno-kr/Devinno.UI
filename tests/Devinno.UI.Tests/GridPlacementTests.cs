@@ -255,6 +255,18 @@ public class GridPlacementTests
     }
 
     [Fact]
+    public void Empty_grid_reports_its_template_tracks()
+    {
+        // 자식이 하나도 없어도 편집기가 빈 격자를 그릴 수 있게
+        var g = Grid("");
+        var t = g.GridTracks;
+        Assert.NotNull(t);
+        Assert.Equal(new[] { new GridTrack(0, 100), new GridTrack(100, 100), new GridTrack(200, 100) }, t!.Columns);
+        Assert.Equal(5, t.Rows.Count);
+        Assert.Equal(new GridTrack(400, 100), t.Rows[4]);
+    }
+
+    [Fact]
     public void Non_grid_boxes_have_no_tracks()
     {
         var root = new LayoutEngine().Layout(MarkupParser.Parse("<DvScreen><DvStack><DvBox/></DvStack></DvScreen>"), null, 200, 200);
