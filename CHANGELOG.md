@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `ViewControl.ThemeWindow` (Devinno.UI.WinForms): the form's title bar and border, and the app's WinForms menus (`MenuStrip`, `ContextMenuStrip`, `ToolStrip`, `StatusStrip` with the default `ManagerRenderMode`), take their colors from `DvApp.Theme` and follow theme changes. Only colors change; the title bar and its buttons stay the OS's own. Custom title bar colors need Windows 11 (Windows 10 switches dark/light). Off by default (`dvml-app.md` → ViewControl).
+
 ## 0.9.1 — 2026-11-25
 
 Shared values without a property on every screen, screens that follow changing values by themselves, and faster painting of long scrolling lists. Nothing changes for existing screens: `{Static …}` and `AutoRefresh` are new and off unless used, and culled painting draws the same picture.

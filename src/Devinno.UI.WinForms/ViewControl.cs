@@ -73,6 +73,11 @@ public sealed class ViewControl : UserControl
     private int _wakeQueued; // RenderRequested 가 몰려도 BeginInvoke 는 하나만
     private bool _touchMode;
 
+    // ThemeWindow — 테마를 입힌 폼과 그때의 테마(같으면 다시 입히지 않는다)
+    private bool _themeWindow;
+    private Form? _themedForm;
+    private Styling.DvTheme? _themedWith;
+
     // 편집기 동기화 상태
     private int _sessionId;
     private int _version;
@@ -343,8 +348,93 @@ public sealed class ViewControl : UserControl
             }
             HideEditor();
             ApplyPendingOutsidePaint(); // 시작 페이지(OnLoaded·OnShown)를 그리기 전에
+            SyncWindowTheme();
             _canvas.Invalidate();
         }
+    }
+
+    /// <summary>
+    /// If <see langword="true"/>, the title bar and border of the form that contains this control, and the app's WinForms menus, take their colors from the app theme
+    /// (<see cref="DvApp.Theme"/>), so the native window parts match the screen. Default <see langword="false"/> (the OS look).
+    /// </summary>
+    /// <remarks>
+    /// <para>Only colors change: the title bar, its minimize/maximize/close buttons, snapping, the shadow and resizing stay the OS's own. When the app theme changes, the colors follow.</para>
+    /// <para><b>Title bar</b>: background = theme <c>background</c> (the same color as the screen canvas), title text = <c>text</c>, window border = <c>border</c>.
+    /// Custom colors need Windows 11; Windows 10 (1809 or later) only switches between a dark and a light title bar, chosen by how dark <c>background</c> is.
+    /// The form used is the top-level form (<see cref="Control.TopLevelControl"/>); the colors are applied again when its handle is recreated.</para>
+    /// <para><b>Menus</b>: sets <see cref="ToolStripManager.Renderer"/>, so every <see cref="MenuStrip"/>, <see cref="ContextMenuStrip"/>, <see cref="ToolStrip"/> and <see cref="StatusStrip"/>
+    /// of the app whose <c>RenderMode</c> is <c>ManagerRenderMode</c> (the default) is drawn with theme colors: the menu bar in <c>background</c> (joined to the title bar),
+    /// open menus in <c>surface</c>, the pointed item in <c>surface-raised</c>, text in <c>text</c> (disabled: <c>text-subtle</c>), borders and separators in <c>border</c>,
+    /// check marks in <c>primary</c>, and the status strip in <c>background-alt</c>. A strip with its own <c>Renderer</c> is not changed.
+    /// Because the renderer is process-wide, with several themed controls the most recently applied theme wins.</para>
+    /// <para>Turning it off returns the title bar to the OS default, and the menus to the default renderer if the renderer is still the one this control set.
+    /// Common dialogs (open/save file) and native scroll bars keep the OS look. Set it on the UI thread.</para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// var view = new ViewControl { Dock = DockStyle.Fill, App = app, ThemeWindow = true };
+    /// form.Controls.Add(view);
+    /// form.MainMenuStrip = menu;   // the menu bar and right-click menus now use the theme colors too
+    /// </code>
+    /// </example>
+    [DefaultValue(false)]
+    public bool ThemeWindow
+    {
+        get => _themeWindow;
+        set
+        {
+            if (value == _themeWindow)
+                return;
+            _themeWindow = value;
+            if (value)
+                SyncWindowTheme();
+            else
+                ReleaseWindowTheme(reset: true);
+        }
+    }
+
+    // 폼·테마가 지난번과 다를 때만 다시 입힌다 — 앱 요청(테마 변경 포함)마다 불리므로 같으면 바로 돌아간다
+    private void SyncWindowTheme()
+    {
+        if (!_themeWindow || IsDisposed)
+            return;
+        var form = TopLevelControl as Form;
+        var theme = _app?.Theme ?? Styling.DvTheme.Default;
+        if (!ReferenceEquals(form, _themedForm))
+        {
+            ReleaseWindowTheme(reset: true);
+            _themedForm = form;
+            if (form is not null)
+                form.HandleCreated += OnThemedFormHandleCreated;
+        }
+        else if (ReferenceEquals(theme, _themedWith))
+            return;
+
+        _themedWith = theme;
+        if (form is not null)
+            WindowTheme.ApplyFrame(form, theme);
+        WindowTheme.ApplyMenus(theme);
+    }
+
+    private void ReleaseWindowTheme(bool reset)
+    {
+        if (_themedForm is { } form)
+        {
+            form.HandleCreated -= OnThemedFormHandleCreated;
+            if (reset && !form.IsDisposed && !form.Disposing)
+                WindowTheme.ResetFrame(form);
+        }
+        if (reset && _themedWith is not null)
+            WindowTheme.ResetMenus();
+        _themedForm = null;
+        _themedWith = null;
+    }
+
+    // 폼 핸들이 다시 만들어지면(ShowInTaskbar 변경 등) DWM 속성이 사라진다
+    private void OnThemedFormHandleCreated(object? sender, EventArgs e)
+    {
+        if (sender is Form form && _themedWith is { } theme)
+            WindowTheme.ApplyFrame(form, theme);
     }
 
     /// <summary>When the handle is (re)created, clears the pending-wake flag and applies pending app requests (the start page, etc.) before the first paint.</summary>
@@ -354,6 +444,16 @@ public sealed class ViewControl : UserControl
         Volatile.Write(ref _wakeQueued, 0); // 이전 핸들에 걸린 BeginInvoke 가 버려졌을 수 있음
         base.OnHandleCreated(e);
         ApplyPendingOutsidePaint();
+        SyncWindowTheme(); // 폼에 올라간 뒤 — 이때 맨 위 폼이 정해진다
+    }
+
+    /// <summary>When the control moves to another parent, applies <see cref="ThemeWindow"/> to the new top-level form.</summary>
+    /// <param name="e">The event arguments.</param>
+    protected override void OnParentChanged(EventArgs e)
+    {
+        base.OnParentChanged(e);
+        if (IsHandleCreated)
+            SyncWindowTheme(); // 핸들이 아직 없으면 OnHandleCreated 가 한다
     }
 
     // 대기 중인 앱 요청(페이지 전환·영역·전역 설정)을 그리기(WM_PAINT) 밖, UI 스레드에서 적용한다 — 루트 Layout 이 적용하므로 캔버스 크기로 미리 부른다.
@@ -409,7 +509,11 @@ public sealed class ViewControl : UserControl
                 Volatile.Write(ref _wakeQueued, 0);
                 if (IsDisposed)
                     return;
-                try { ApplyPendingOutsidePaint(); } // 전환 알림을 그리기 밖에서
+                try
+                {
+                    ApplyPendingOutsidePaint(); // 전환 알림을 그리기 밖에서
+                    SyncWindowTheme(); // DvApp.Theme 를 바꾸면 이 요청이 온다
+                }
                 finally { _canvas.Invalidate(); } // 마크업 오류로 던져도 이전 페이지는 다시 그린다
             });
         }
@@ -853,6 +957,7 @@ public sealed class ViewControl : UserControl
     {
         if (disposing)
         {
+            ReleaseWindowTheme(reset: false); // 폼과 함께 닫히는 중이면 되돌릴 필요가 없다 — 이벤트 연결만 끊는다
             CloseApp();
             _animTimer.Dispose();
             _font?.Dispose();
