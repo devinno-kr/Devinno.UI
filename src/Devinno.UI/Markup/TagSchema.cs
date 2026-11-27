@@ -68,6 +68,10 @@ public static class TagSchema
         new("grow", AttrKind.Number, "0"),
         new("width", AttrKind.Length),
         new("height", AttrKind.Length),
+        new("grid-row", AttrKind.Number, Note: GridCellRule + "; start row line from 1; absent = auto-placed"),
+        new("grid-col", AttrKind.Number, Note: GridCellRule + "; start column line from 1; absent = auto-placed"),
+        new("row-span", AttrKind.Number, "1", Note: GridCellRule + "; rows covered"),
+        new("col-span", AttrKind.Number, "1", Note: GridCellRule + "; columns covered"),
         new("visible", AttrKind.Bool, "true", Note: BoolRule + "; absent = shown"),
         new("disabled", AttrKind.Bool, "false", Note: BoolRule + "; inherited downward"),
         new("onclick", AttrKind.Expr, Bindable: false),
@@ -519,6 +523,8 @@ public static class TagSchema
     // 2.6 공정도 공용 조각
     // 3단계 R1·R7 — 모든 Bool·Number 속성의 공용 해석(Layout.AttrRules)
     private const string BoolRule = "common boolean rule: true, a non-zero number = on; false, 0, empty or null = off; any other text = the default + warning";
+    private const string GridCellRule = "cell in a grid parent (DvGrid, display:grid), ignored elsewhere; a whole number 1..1000, else ignored + warning; "
+                                        + "a class or style grid-row/grid-column overrides both attributes of its axis";
     private const string NumberRule = "invariant culture; not a number = the default + warning";
     // 3단계 R2·R3·R4(D3) — 색·목록 값(Layout.AttrRules.Color·Enum), 공정도 이름·참조는 원문
     private const string ColorRule = "#hex or token(name); an unknown token = magenta + warning; unparsable = the default + warning";

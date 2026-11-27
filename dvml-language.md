@@ -93,6 +93,7 @@ Below is `MainPage.dvml`.
 | `hover-style` `press-style` `disabled-style` | Per-state inline style ([state styles](dvml-style.md#state-styles)) | Yes |
 | `grow` | Same as `flex-grow` | Yes |
 | `width` `height` | Same as style `width`/`height`, lower priority ([priority](dvml-style.md#priority)) | Yes |
+| `grid-row` `grid-col` `row-span` `col-span` | Cell in a grid parent, from 1 ([grid placement](dvml-layout.md#grid-placement)); ignored elsewhere | Yes |
 | `visible` | False ([true/false values](#value-bool): `false`, `0`, empty or a null binding) = the element is not created at all. Any other text (`abc`) shows it, with a Trace warning | Yes |
 | `disabled` | True (`true`, a non-zero number) blocks clicks and commits (the press does not leak to an outer `onclick` either), no hover/press look, `disabled-style` applied. **Inherited downward**: if an ancestor is disabled, the child is disabled even if its own value is `false` ([disabled](#disabled)) | Yes |
 | `onclick` | VM method name called on click ([click](#click)) | No (name as is) |

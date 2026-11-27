@@ -19,7 +19,7 @@ internal static class StyleCheck
     {
         "background", "background-color", "background-image", "background-image-offset", "background-size", "color", "opacity", "border-radius", "padding",
         "margin", "font-size", "font-family", "font-weight", "font-variant-numeric", "text-align", "white-space",
-        "content-align", "gap", "display", "grid-template-columns", "grid-template-rows", "aspect-ratio",
+        "content-align", "gap", "display", "grid-template-columns", "grid-template-rows", "grid-row", "grid-column", "aspect-ratio",
         "flex-direction", "justify-content", "align-items", "align-self", "overflow", "width",
         "height", "min-width", "max-width", "min-height", "max-height", "flex-grow",
         "flex-shrink", "flex", "flex-wrap", "align-content", "position", "left",

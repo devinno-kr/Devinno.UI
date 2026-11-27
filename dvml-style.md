@@ -51,6 +51,7 @@ Any other key is ignored at run time, and the build reports it as warning [DVML0
 | `gap` | One number | 0 |
 | `width` `height` `min-width` `max-width` `min-height` `max-height` | Number | Content size |
 | `grid-template-columns` `grid-template-rows` | Track list ([grid tracks](dvml-layout.md#grid-tracks)) | |
+| `grid-row` `grid-column` | `N`, `span K`, `N / span K`, `N / M`, `auto` — cell of a grid child ([grid placement](dvml-layout.md#grid-placement)) | `auto` (placed in order) |
 | `aspect-ratio` | `1`, `1.5`, `16/9` | [aspect-ratio](dvml-layout.md#aspect-ratio) |
 | `overflow` | `visible` `hidden` `scroll` | `visible` |
 | `position` | `absolute` (`relative` has no effect) | Flow layout |
@@ -207,7 +208,7 @@ Define your own classes by placing `<DvStyle>` anywhere in the screen markup.
 
 Priority, low → high:
 
-1. Layout sugar and the attributes `grow`, `width`, `height`, `gap`, `padding`, `align`, `justify`
+1. Layout sugar and the attributes `grow`, `width`, `height`, `gap`, `padding`, `align`, `justify`, `grid-row`, `grid-col`, `row-span`, `col-span`
 2. Classes (later class wins)
 3. Class states (`.x:hover` etc., when in that state)
 4. `content-align` attribute

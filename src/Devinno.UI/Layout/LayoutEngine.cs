@@ -731,7 +731,7 @@ public sealed partial class LayoutEngine
     }
 
     // 인스턴스의 style/class/레이아웃·onclick·disabled 속성을 템플릿 루트로 전달 — inline style 은 병합(덮어쓰기), 나머지는 인스턴스 쪽이 이김
-    private static readonly string[] PassthroughAttributes = { "class", "grow", "width", "height", "onclick", "disabled" };
+    private static readonly string[] PassthroughAttributes = { "class", "grow", "width", "height", "grid-row", "grid-col", "row-span", "col-span", "onclick", "disabled" };
 
     // 전달된 인스턴스 onclick 의 DvRepeat 항목 범위 — 템플릿 루트 박스를 만들 때 한 번 쓰고 비운다
     private ItemScope? _rootItemScope;
@@ -1658,13 +1658,15 @@ public sealed partial class LayoutEngine
 
     private static string[] ColumnTracks(ComputedStyle st) => st.GridColumns.Length > 0 ? st.GridColumns : SingleFrColumn;
 
-    // 열별 최대 내용 너비(자연 크기)
-    private static float[] GridColContent((float w, float h)[] sizes, int cols)
+    // 열별 내용 너비(자연 크기) — 한 칸 자식의 최대 폭, 여러 열에 걸친 자식은 모자란 만큼을 걸친 열에 나눠 더한다
+    private static float[] GridColContent(GridPlan plan, (float w, float h)[] sizes, string[] tracks, float gap)
     {
-        var colContent = new float[cols];
+        var content = new float[plan.Cols];
+        var widths = new float[sizes.Length];
         for (var i = 0; i < sizes.Length; i++)
-            colContent[i % cols] = MathF.Max(colContent[i % cols], sizes[i].w);
-        return colContent;
+            widths[i] = sizes[i].w;
+        SpanContent(content, plan.Cells, widths, tracks, gap, column: true);
+        return content;
     }
 
     /// <summary>
@@ -1731,14 +1733,167 @@ public sealed partial class LayoutEngine
     private static List<LayoutBox> GridItems(LayoutBox box) =>
         box.Children.Where(c => c.Style.Position != Position.Absolute).ToList();
 
-    // 행별 최대 내용 높이 — 칸은 열 폭으로 잰다(글자가 열 폭에 맞춰 줄바꿈)
-    private static float[] GridRowContent(List<LayoutBox> items, float[] colW, int cols)
+    // 행별 내용 높이 — 자식은 자기 칸(걸친 열 폭 + gap)으로 잰다(글자가 칸 폭에 맞춰 줄바꿈). 여러 행에 걸친 자식은 열과 같이 나눠 더한다
+    private static float[] GridRowContent(List<LayoutBox> items, GridPlan plan, float[] colW, string[] rowTracks, float gap)
     {
-        var n = items.Count;
-        var rowContent = new float[(n + cols - 1) / cols];
-        for (var i = 0; i < n; i++)
-            rowContent[i / cols] = MathF.Max(rowContent[i / cols], Measure(items[i], colW[i % cols]).h);
-        return rowContent;
+        var content = new float[plan.Rows];
+        var heights = new float[items.Count];
+        for (var i = 0; i < items.Count; i++)
+            heights[i] = Measure(items[i], AreaSize(colW, plan.Cells[i].Col, plan.Cells[i].ColSpan, gap)).h;
+        SpanContent(content, plan.Cells, heights, rowTracks, gap, column: false);
+        return content;
+    }
+
+    // 트랙 start 부터 span 개 + 그 사이 gap
+    private static float AreaSize(float[] tracks, int start, int span, float gap)
+    {
+        float s = 0;
+        for (var i = start; i < start + span; i++)
+            s += tracks[i];
+        return s + gap * (span - 1);
+    }
+
+    // 한 트랙 자식 = 그 트랙 최대값. 걸친 자식(span 작은 것부터) = 걸친 트랙 합 + gap 이 모자라면 모자란 만큼을 걸친 auto 트랙에 똑같이 더한다
+    // (auto 가 없으면 고정 px 가 아닌 트랙 — fr·% 는 측정 때만 내용 크기를 쓴다. 모두 고정이면 그대로)
+    private static void SpanContent(float[] content, GridCell[] cells, float[] sizes, string[] tracks, float gap, bool column)
+    {
+        for (var i = 0; i < cells.Length; i++)
+        {
+            var (start, span) = column ? (cells[i].Col, cells[i].ColSpan) : (cells[i].Row, cells[i].RowSpan);
+            if (span == 1)
+                content[start] = MathF.Max(content[start], sizes[i]);
+        }
+
+        foreach (var i in Enumerable.Range(0, cells.Length).Where(i => (column ? cells[i].ColSpan : cells[i].RowSpan) > 1)
+                     .OrderBy(i => column ? cells[i].ColSpan : cells[i].RowSpan))
+        {
+            var (start, span) = column ? (cells[i].Col, cells[i].ColSpan) : (cells[i].Row, cells[i].RowSpan);
+            var deficit = sizes[i] - AreaSize(content, start, span, gap);
+            if (deficit <= 0)
+                continue;
+            var grow = Enumerable.Range(start, span).Where(t => TrackToken(tracks, t).Equals("auto", StringComparison.OrdinalIgnoreCase)).ToList();
+            if (grow.Count == 0)
+                grow = Enumerable.Range(start, span).Where(t => !IsFixedTrack(TrackToken(tracks, t))).ToList();
+            foreach (var t in grow)
+                content[t] += deficit / grow.Count;
+        }
+    }
+
+    private static string TrackToken(string[] tokens, int i) => i < tokens.Length ? tokens[i].Trim() : "auto";
+
+    // px 숫자 트랙인가(fr·%·auto·해석 못 하는 값이 아님) — ResolveTracks 와 같은 판정
+    private static bool IsFixedTrack(string t) =>
+        !t.EndsWith("fr", StringComparison.OrdinalIgnoreCase) && !t.EndsWith('%') &&
+        float.TryParse(t.Replace("px", "").Replace("dp", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out _);
+
+    // 자식 하나의 칸(0부터) — 행·열 시작과 걸친 수
+    private readonly record struct GridCell(int Row, int Col, int RowSpan, int ColSpan);
+
+    // 배치 결과 — 열·행 수(템플릿 + 넘친 auto 트랙)와 자식별 칸(GridItems 순서)
+    private sealed record GridPlan(int Cols, int Rows, GridCell[] Cells);
+
+    // CSS grid 자동 배치(grid-auto-flow: row, sparse) — 1) 행·열 모두 정한 자식 2) 행만 정한 자식(그 행의 빈 칸, 같은 행에서는 앞 자식 뒤)
+    // 3) 나머지를 문서 순서로: 열만 정했으면 커서 행부터(그 열이 커서보다 앞이면 다음 행) 빈 행, 둘 다 자동이면 커서부터 빈 칸(찬 칸은 건너뜀, 뒤로 가지 않음).
+    // 열 수 = 열 템플릿(없으면 1)과 정한 열·span 이 닿는 끝 중 큰 것, 행 수 = 행 템플릿과 놓인 끝 행 중 큰 것 — 템플릿 트랙은 비어도 남는다.
+    // 겹치게 정한 자식은 겹쳐 놓인다(1단계의 정한 자리는 찬 칸을 따지지 않는다)
+    private static GridPlan PlaceGrid(List<LayoutBox> items, ComputedStyle st)
+    {
+        var cols = GridColumnCount(st);
+        foreach (var it in items)
+        {
+            var c = it.Style.GridColumn;
+            cols = Math.Max(cols, (c.Start ?? 1) - 1 + c.Span);
+        }
+
+        var cells = new GridCell[items.Count];
+        var placed = new bool[items.Count];
+        var taken = new List<bool[]>();
+
+        bool Free(int r, int c, int rs, int cs)
+        {
+            for (var y = r; y < r + rs && y < taken.Count; y++)
+                for (var x = c; x < c + cs; x++)
+                    if (taken[y][x])
+                        return false;
+            return true;
+        }
+
+        void Take(int i, int r, int c, int rs, int cs)
+        {
+            cells[i] = new GridCell(r, c, rs, cs);
+            placed[i] = true;
+            while (taken.Count < r + rs)
+                taken.Add(new bool[cols]);
+            for (var y = r; y < r + rs; y++)
+                for (var x = c; x < c + cs; x++)
+                    taken[y][x] = true;
+        }
+
+        // 1) 둘 다 정함
+        for (var i = 0; i < items.Count; i++)
+        {
+            var (row, col) = (items[i].Style.GridRow, items[i].Style.GridColumn);
+            if (row.Start is { } r && col.Start is { } c)
+                Take(i, r - 1, c - 1, row.Span, col.Span);
+        }
+
+        // 2) 행만 정함 — 행마다 앞 자식 뒤부터
+        var rowCursor = new Dictionary<int, int>();
+        for (var i = 0; i < items.Count; i++)
+        {
+            var (row, col) = (items[i].Style.GridRow, items[i].Style.GridColumn);
+            if (row.Start is not { } r1 || col.Start is not null)
+                continue;
+            var r = r1 - 1;
+            var c = rowCursor.GetValueOrDefault(r);
+            while (c + col.Span <= cols && !Free(r, c, row.Span, col.Span))
+                c++;
+            if (c + col.Span > cols)
+                c = 0; // 그 행에 자리가 없으면 첫 열에 겹쳐 놓는다
+            Take(i, r, c, row.Span, col.Span);
+            rowCursor[r] = c + col.Span;
+        }
+
+        // 3) 나머지 — 커서(행, 열)
+        int curR = 0, curC = 0;
+        for (var i = 0; i < items.Count; i++)
+        {
+            if (placed[i])
+                continue;
+            var (row, col) = (items[i].Style.GridRow, items[i].Style.GridColumn);
+            if (col.Start is { } c1)
+            {
+                var c = c1 - 1;
+                if (c < curC)
+                    curR++;
+                curC = c;
+                while (!Free(curR, c, row.Span, col.Span))
+                    curR++;
+            }
+            else
+            {
+                while (true)
+                {
+                    if (curC + col.Span > cols)
+                    {
+                        curR++;
+                        curC = 0;
+                    }
+                    else if (Free(curR, curC, row.Span, col.Span))
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        curC++;
+                    }
+                }
+            }
+
+            Take(i, curR, curC, row.Span, col.Span);
+        }
+
+        return new GridPlan(cols, Math.Max(st.GridRows.Length, taken.Count), cells);
     }
 
     // grid 내용 크기 = 트랙 합 + gap. 열: fr 트랙은 CSS 처럼 가장 큰 (내용 폭 / fr) 비율 × fr(같은 fr 이면 같은 폭), % 는 내용 폭.
@@ -1747,12 +1902,12 @@ public sealed partial class LayoutEngine
     private static (float w, float h) MeasureGrid(LayoutBox box, float? avail)
     {
         var st = box.Style;
-        var cols = GridColumnCount(st);
         var tracks = ColumnTracks(st);
-        var gaps = st.Gap * Math.Max(0, cols - 1);
         var items = GridItems(box);
+        var plan = PlaceGrid(items, st);
+        var gaps = st.Gap * Math.Max(0, plan.Cols - 1);
         var sizes = items.Select(c => Measure(c)).ToArray();
-        var colContent = GridColContent(sizes, cols);
+        var colContent = GridColContent(plan, sizes, tracks, st.Gap);
         var natural = ResolveTracks(tracks, colContent, 0, st.Gap, measuring: true);
         FrMaxContent(tracks, colContent, natural);
 
@@ -1761,7 +1916,7 @@ public sealed partial class LayoutEngine
         if (InnerLimit(box, avail) is { } limit && (FixedWidth(box) is not null || box.WidthOverridden || inner > limit + TextWrap.Tolerance))
             inner = limit;
         var colW = ResolveTracks(tracks, colContent, inner, st.Gap, measuring: false);
-        var rowContent = GridRowContent(items, colW, cols);
+        var rowContent = GridRowContent(items, plan, colW, st.GridRows, st.Gap);
         var rowH = ResolveTracks(st.GridRows, rowContent, 0, st.Gap, measuring: true);
 
         var contentH = rowH.Sum() + st.Gap * Math.Max(0, rowH.Length - 1);
@@ -1803,41 +1958,45 @@ public sealed partial class LayoutEngine
         var innerY = y + st.Padding.Top;
         var innerW = w - st.Padding.Horizontal - box.GutterX;
         var innerH = h - st.Padding.Vertical - box.GutterY;
-        var cols = GridColumnCount(st);
         var gap = st.Gap;
 
-        // 열 폭을 먼저 정하고 그 칸 폭으로 행 높이를 잰다
+        // 칸을 정하고, 열 폭을 먼저 정한 뒤 그 칸 폭으로 행 높이를 잰다
         var items = GridItems(box);
+        var plan = PlaceGrid(items, st);
+        var tracks = ColumnTracks(st);
         var sizes = items.Select(c => Measure(c)).ToArray();
-        var colContent = GridColContent(sizes, cols);
-        var colW = ResolveTracks(ColumnTracks(st), colContent, innerW, gap, measuring: false);
-        var rowContent = GridRowContent(items, colW, cols);
+        var colContent = GridColContent(plan, sizes, tracks, gap);
+        var colW = ResolveTracks(tracks, colContent, innerW, gap, measuring: false);
+        var rowContent = GridRowContent(items, plan, colW, st.GridRows, gap);
         var rowH = ResolveTracks(st.GridRows, rowContent, innerH, gap, measuring: false);
 
-        var rowY = innerY;
-        for (var r = 0; r < rowH.Length; r++)
-        {
-            var cx = innerX;
-            for (var c = 0; c < cols && r * cols + c < items.Count; c++)
-            {
-                var item = items[r * cols + c];
-                var hAlign = GridJustify(st);
-                var vAlign = item.Style.AlignSelf ?? st.Align;
-                float iw = colW[c], ih = rowH[r];
-                if (hAlign != AlignItems.Stretch || vAlign != AlignItems.Stretch)
-                {
-                    var m = Measure(item, colW[c]);
-                    if (hAlign != AlignItems.Stretch)
-                        iw = m.w;
-                    if (vAlign != AlignItems.Stretch)
-                        ih = m.h;
-                }
+        // 트랙 시작 위치
+        var colX = new float[plan.Cols];
+        for (var c = 1; c < plan.Cols; c++)
+            colX[c] = colX[c - 1] + colW[c - 1] + gap;
+        var rowY = new float[plan.Rows];
+        for (var r = 1; r < plan.Rows; r++)
+            rowY[r] = rowY[r - 1] + rowH[r - 1] + gap;
 
-                Arrange(item, cx + CrossOffset(hAlign, colW[c], iw), rowY + CrossOffset(vAlign, rowH[r], ih), iw, ih);
-                cx += colW[c] + gap;
+        var hAlign = GridJustify(st);
+        for (var i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+            var cell = plan.Cells[i];
+            var vAlign = item.Style.AlignSelf ?? st.Align;
+            var aw = AreaSize(colW, cell.Col, cell.ColSpan, gap);
+            var ah = AreaSize(rowH, cell.Row, cell.RowSpan, gap);
+            float iw = aw, ih = ah;
+            if (hAlign != AlignItems.Stretch || vAlign != AlignItems.Stretch)
+            {
+                var m = Measure(item, aw);
+                if (hAlign != AlignItems.Stretch)
+                    iw = m.w;
+                if (vAlign != AlignItems.Stretch)
+                    ih = m.h;
             }
 
-            rowY += rowH[r] + gap;
+            Arrange(item, innerX + colX[cell.Col] + CrossOffset(hAlign, aw, iw), innerY + rowY[cell.Row] + CrossOffset(vAlign, ah, ih), iw, ih);
         }
 
         ArrangeAbsoluteChildren(box);

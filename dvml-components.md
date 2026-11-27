@@ -138,7 +138,7 @@ These apply to instances of user components and of built-in components (`DvCard`
 |---|---|---|
 | `style` | template root | Merged into the root's style; the instance wins |
 | `class` | template root | Appended after the root's classes |
-| `grow` `width` `height` | template root | The instance wins |
+| `grow` `width` `height` `grid-row` `grid-col` `row-span` `col-span` | template root | The instance wins |
 | `onclick` | template root | Becomes the root box's click handler; the instance wins over a root `onclick` |
 | `disabled` | template root | Evaluated against the outer VM; the instance wins; inherited downward (e.g. the toggle inside `DvSwitch` is disabled too) |
 | `visible` | the instance | `false` = the instance is not expanded |

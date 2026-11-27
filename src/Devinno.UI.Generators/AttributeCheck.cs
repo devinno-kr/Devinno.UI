@@ -20,7 +20,8 @@ internal static class AttributeCheck
     /// <summary>모든 요소가 받는 속성 — 라이브러리 <c>TagSchema.Common</c> 의 이름과 같아야 한다(테스트가 비교).</summary>
     internal static readonly string[] Common =
     [
-        "id", "class", "style", "hover-style", "press-style", "disabled-style", "grow", "width", "height", "visible", "disabled",
+        "id", "class", "style", "hover-style", "press-style", "disabled-style", "grow", "width", "height",
+        "grid-row", "grid-col", "row-span", "col-span", "visible", "disabled",
         "onclick", "hold", "onbeforecommit",
     ];
 
@@ -178,7 +179,7 @@ internal static class AttributeCheck
     };
 
     /// <summary>숫자 속성 — 라이브러리 <c>TagSchema</c> 에서 Kind 가 Number 인 이름(테스트가 비교). 공통은 <see cref="CommonNumber"/>.</summary>
-    internal static readonly string[] CommonNumber = ["grow", "hold"];
+    internal static readonly string[] CommonNumber = ["grow", "grid-row", "grid-col", "row-span", "col-span", "hold"];
 
     /// <summary>태그별 숫자 속성(<c>AttrKind.Number</c>).</summary>
     internal static readonly Dictionary<string, string[]> Number = new(StringComparer.Ordinal)

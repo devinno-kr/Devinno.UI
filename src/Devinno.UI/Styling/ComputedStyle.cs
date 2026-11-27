@@ -322,6 +322,12 @@ public sealed class ComputedStyle
     /// </summary>
     public string[] GridRows { get; set; } = Array.Empty<string>();
 
+    /// <summary>Grid cell row of this child (style key <c>grid-row</c>): start line from 1, or <see langword="null"/> = auto-placed; span = rows covered (1 or more).</summary>
+    internal (int? Start, int Span) GridRow { get; set; } = (null, 1);
+
+    /// <summary>Grid cell column of this child (style key <c>grid-column</c>). Same as <see cref="GridRow"/>.</summary>
+    internal (int? Start, int Span) GridColumn { get; set; } = (null, 1);
+
     /// <summary>
     /// Width/height ratio. Style key <c>aspect-ratio</c> (<c>1</c>, <c>1.5</c>, <c>16/9</c>). <see langword="null"/> if 0 or less, or if it cannot be parsed.
     /// The box is fitted to the largest box of that ratio inside the assigned area (contain, centered). If only one of width or height is specified, the other is computed from the ratio.

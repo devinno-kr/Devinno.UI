@@ -102,6 +102,7 @@ public sealed partial class MainPage : DvPage   // the VM of MainPage.dvml; the 
 | `DvStack` | Vertical flex, `align-items:stretch`, `gap` 12 — children fill the width. [layout sugar](dvml-layout.md#layout-sugar) | |
 | `DvRow` | Horizontal flex, `align-items:center`, `gap` 12 — children vertically centered. | |
 | `DvGrid` | `align`/`justify` place each child in its cell; default `stretch` fills the cell, and `justify` takes `stretch` instead of `between`. [grid cells](dvml-layout.md#grid-cells) | CSS grid `justify-content` moves the tracks; here it places items like `justify-items` |
+| Grid cell of a child | Style `grid-row`/`grid-column` as CSS, or attributes `grid-row` `grid-col` `row-span` `col-span` (from 1); empty cells need no filler; a class/style on the same axis beats the attributes. [grid placement](dvml-layout.md#grid-placement) | No negative or named lines; not the process `row` attribute |
 | Root element | Always fills the window; the root's `width`/`height` are ignored. | |
 | Units | All numbers are px; `16`, `16px`, `16dp` are the same. No `%`, `em`, `rem`, `vw`, `auto` — the only exception is `%` in grid tracks and grid column widths. [lengths](dvml-language.md#value-length) | |
 | Unsupported length | `width:50%`, `width:auto`, `height:2em` become **0, not ignored** — the element disappears. Only `font-size` falls back to 14 when it cannot be parsed. | |

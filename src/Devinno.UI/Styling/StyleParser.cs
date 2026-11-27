@@ -373,6 +373,20 @@ public static class StyleParser
             case "grid-template-rows":
                 s.GridRows = Tracks(v);
                 break;
+            case "grid-row":
+            case "grid-column":
+                if (TryGridLine(v, out var line))
+                {
+                    if (key == "grid-row")
+                        s.GridRow = line;
+                    else
+                        s.GridColumn = line;
+                }
+                else
+                {
+                    Interaction.Warnings.Warn($"Devinno.UI: {key} '{v.Trim()}' ignored; expected N, span K, N / span K or N / M (lines from 1 to {MaxGridLine}, K from 1)");
+                }
+                break;
             case "aspect-ratio":
                 s.AspectRatio = Ratio(v);
                 break;
@@ -528,6 +542,60 @@ public static class StyleParser
     // 트랙 목록: "1fr 2fr 120" 처럼 따옴표로 감싸도 된다
     private static string[] Tracks(string v)
         => v.Trim().Trim('"', '\'').Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+    /// <summary>Largest grid line number or span accepted by <c>grid-row</c>/<c>grid-column</c> (a larger one is ignored with a warning).</summary>
+    internal const int MaxGridLine = 1000;
+
+    // grid-row·grid-column 값 — auto | N | span K | (N|auto) / span K | N / M (CSS 와 같이 1부터, M 이 N 보다 앞이면 바꿔 읽고 같으면 1칸).
+    // 음수(끝에서 세기)·이름 붙은 줄·span K / N 은 없음 = false
+    internal static bool TryGridLine(string v, out (int? Start, int Span) line)
+    {
+        line = (null, 1);
+        var parts = v.Split('/', StringSplitOptions.TrimEntries);
+        if (parts.Length > 2 || parts.Any(p => p.Length == 0))
+            return false;
+
+        int? start = null;
+        var span = 1;
+        if (parts[0].Equals("auto", StringComparison.OrdinalIgnoreCase))
+        {
+        }
+        else if (Span(parts[0]) is { } k0)
+        {
+            if (parts.Length > 1)
+                return false; // span K / N 은 쓰지 않는다
+            span = k0;
+        }
+        else if (Line(parts[0]) is { } n)
+        {
+            start = n;
+        }
+        else
+        {
+            return false;
+        }
+
+        if (parts.Length == 2)
+        {
+            if (Span(parts[1]) is { } k)
+                span = k;
+            else if (start is { } a && Line(parts[1]) is { } b)
+                (start, span) = b == a ? (a, 1) : (Math.Min(a, b), Math.Abs(b - a));
+            else if (!parts[1].Equals("auto", StringComparison.OrdinalIgnoreCase))
+                return false;
+        }
+
+        line = (start, span);
+        return true;
+
+        static int? Line(string t) => int.TryParse(t, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n is >= 1 and <= MaxGridLine ? n : null;
+
+        static int? Span(string t)
+        {
+            var w = t.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return w.Length == 2 && w[0].Equals("span", StringComparison.OrdinalIgnoreCase) ? Line(w[1]) : null;
+        }
+    }
 
     // "1", "1.5", "16/9" → 너비/높이. 0 이하·해석 불가면 없음
     private static float? Ratio(string v)

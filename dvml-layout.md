@@ -1,6 +1,6 @@
 # DVML layout
 
-Covers: layout sugar tags (`DvStack` `DvRow` `DvGrid` `DvSpacer`), `DvBox` with flex/grid style, sizes, grid tracks, `position:absolute`, `aspect-ratio`, scrolling (with a checklist), text wrapping, and logical px / display scaling.
+Covers: layout sugar tags (`DvStack` `DvRow` `DvGrid` `DvSpacer`), `DvBox` with flex/grid style, sizes, grid tracks, grid cell placement and spans, `position:absolute`, `aspect-ratio`, scrolling (with a checklist), text wrapping, and logical px / display scaling.
 Read first: [markup basics](dvml-language.md#markup-basics) · [common attributes such as `grow`, `width`, `height`](dvml-language.md#common-attributes)
 Not here: [every style key and its default](dvml-style.md#style-keys) · [which of sugar, class and inline style wins](dvml-style.md#priority) · [repeating rows with `DvRepeat`](dvml-components.md#dvrepeat) · [widget default sizes](dvml-widgets.md#semantic-components) · [instrument default sizes](dvml-instruments.md#instrument-common) · [process diagram size and fit](dvml-process-layout.md#size-fit)
 
@@ -74,11 +74,12 @@ Each track of `grid-template-columns`/`grid-template-rows` (or `columns`/`rows` 
 | `1fr` | Space left after `%` tracks, divided by fr ratio |
 | anything else (`minmax()`, `repeat()`, `abc`) | `auto`, silently |
 
-- If there are more rows than the row template, the extra rows are `auto`. Giving only rows without a column template makes a 1-column grid that fills the width.
-- Children take cells in document order, left→right, top→bottom. There is no cell merging.
+- Every track of the template exists even when no child is in it: `rows="1fr 1fr 1fr"` with one child is still three rows.
+- Rows (or columns) past the template, made by children placed there or by the children that do not fit, are `auto`; an empty `auto` track is 0. Giving only rows without a column template makes a 1-column grid that fills the width.
+- Children take cells in document order, left→right, top→bottom, unless they name a cell ([grid placement](#grid-placement)).
 
 <a id="grid-cells"></a>
-Placing a child inside its cell (column width × row height), as CSS grid `align-items`/`justify-items`:
+Placing a child inside its cell (column width × row height; a spanned cell covers its tracks and the gaps between them), as CSS grid `align-items`/`justify-items`:
 
 | | `stretch` (default) | `start` `center` `end` |
 |---|---|---|
@@ -101,6 +102,35 @@ Placing a child inside its cell (column width × row height), as CSS grid `align
 ```
 - When the grid itself is content-sized (no width given and not stretched), `%` tracks are measured as `auto`, and `fr` columns as in CSS: `fr × (largest content width per fr)`. With `1fr 1fr`, both columns get the same width, fitted to the widest content. `fr` in rows is the content height during measurement.
 - Track lists may be quoted: `grid-template-columns:"1fr 2fr 120"`.
+
+<a id="grid-placement"></a>
+## Grid placement and spans
+
+A grid child takes a cell with style `grid-row`/`grid-column` (as CSS) or the common attributes `grid-row` `grid-col` `row-span` `col-span` (same meaning, easier in an editor). Lines and cells count from 1.
+
+| Style value | Attributes | Meaning |
+|---|---|---|
+| `grid-row:5; grid-column:3` | `grid-row="5" grid-col="3"` | Row 5, column 3 |
+| `grid-column:2 / span 2` | `grid-col="2" col-span="2"` | Columns 2 and 3 |
+| `grid-column:2 / 4` | — | Columns 2 and 3 (end line not included; `4 / 2` is read as `2 / 4`) |
+| `grid-row:span 2` | `row-span="2"` | Two rows, placed automatically |
+| `grid-row:auto` | (attribute absent) | Placed automatically |
+
+- **Priority**: the attributes are layout sugar with the lowest priority ([priority order](dvml-style.md#priority)). A class or inline `style` that sets `grid-row` replaces both `grid-row` and `row-span` attributes of that child; `grid-column` replaces `grid-col` and `col-span`. The other axis keeps its attributes.
+- **Order of placement** (CSS `grid-auto-flow: row`): children with both row and column first, then children with only a row (the first free cells of that row), then the rest in document order from a cursor that only moves forward and skips taken cells. A child with only a column goes down to the next row where that column is free.
+- **Empty cells** need nothing in them: a single child with `grid-row="5" grid-col="3"` in a 3×5 grid leaves the other 14 cells empty, and the template keeps their size.
+- **Past the template**: a row or column number beyond the template adds `auto` tracks up to it.
+- **Overlap**: two children given the same cell are drawn on top of each other (the later one on top); placement does not move them apart.
+- A spanned cell includes the `gap` between its tracks. A spanning child that does not fit makes the `auto` tracks it spans grow by equal shares (with no `auto` track among them, a content-sized grid grows its `fr`/`%` tracks); fixed tracks never grow.
+- Not supported: negative lines (counting from the end), named lines, `span K / N`. Such a value, `0`, or a number above 1000 is ignored with a Trace warning (the child is placed automatically).
+- `position:absolute` children take no cell. Outside a grid parent these attributes and styles do nothing.
+
+```xml
+<DvGrid columns="3" rows="1fr 1fr 1fr 1fr 1fr" style="height:500">
+  <DvLabel text="Title" col-span="3"/>
+  <DvButton text="Run" grid-row="5" grid-col="3"/>
+</DvGrid>
+```
 
 <a id="absolute"></a>
 ## Absolute position

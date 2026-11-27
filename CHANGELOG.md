@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Grid cell placement: a child of a grid (`DvGrid`, `display:grid`) takes a cell with style `grid-row`/`grid-column` (as CSS: `3`, `2 / span 2`, `2 / 4`, `span 2`) or the common attributes `grid-row` `grid-col` `row-span` `col-span`. Lines count from 1. Children without a cell are placed in order and skip taken cells; placing past the template adds `auto` tracks; children given the same cell overlap. Component instances pass these attributes to their root (`dvml-layout.md` → Grid cells).
+
+### Changed
+
+- Grid tracks in the template stay even when no child is in them: `rows="1fr 1fr 1fr"` with one child still makes three rows (before, only rows with children were made).
+
 ## 0.9.2 — 2026-11-27
 
 Devinno screens in WPF windows, and window title bars and menus that match the theme. Nothing changes for existing apps: `Devinno.UI.Wpf` is a new package and `ThemeWindow` is off unless turned on.
