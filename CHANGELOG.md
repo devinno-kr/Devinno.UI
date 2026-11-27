@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.4 — 2026-11-27
+
+### Fixed
+
+- A grid with no children now has its tracks: `LayoutBox.GridTracks` was `null` for an empty grid (the layout skipped the grid step when there were no children), so a screen editor could not draw the cells of a grid it had just placed.
+
 ## 0.9.3 — 2026-11-27
 
 Grid children can name their cell and span rows or columns. One layout change for existing screens: grid template tracks stay even when empty, so a grid with more `rows` than children now keeps the empty rows.
