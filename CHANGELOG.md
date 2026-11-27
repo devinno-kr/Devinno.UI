@@ -1,10 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.9.3 — 2026-11-27
+
+Grid children can name their cell and span rows or columns. One layout change for existing screens: grid template tracks stay even when empty, so a grid with more `rows` than children now keeps the empty rows.
 
 ### Added
 
-- Grid cell placement: a child of a grid (`DvGrid`, `display:grid`) takes a cell with style `grid-row`/`grid-column` (as CSS: `3`, `2 / span 2`, `2 / 4`, `span 2`) or the common attributes `grid-row` `grid-col` `row-span` `col-span`. Lines count from 1. Children without a cell are placed in order and skip taken cells; placing past the template adds `auto` tracks; children given the same cell overlap. Component instances pass these attributes to their root (`dvml-layout.md` → Grid cells).
+- Grid cell placement: a child of a grid (`DvGrid`, `display:grid`) takes a cell with style `grid-row`/`grid-column` (as CSS: `3`, `2 / span 2`, `2 / 4`, `span 2`) or the common attributes `grid-row` `grid-col` `row-span` `col-span`. Lines count from 1. Children without a cell are placed in order and skip taken cells; placing past the template adds `auto` tracks; children given the same cell overlap. Component instances pass these attributes to their root (`dvml-layout.md` → Grid placement and spans).
+- For screen editors: `LayoutBox.GridTracks` (every column and row track of a grid box, empty ones included, as `GridTrack(Start, Size)` from the box's top-left) and `LayoutBox.GridArea` (the cell a grid child occupies, from 1, also when placed automatically).
 
 ### Changed
 
