@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.9.5 — 2026-11-27
+
+Lines, arrows, polygons and ellipses for any screen, colored by the theme and by values. One API change: `ComputedStyle.BorderDashed` becomes `ComputedStyle.BorderStyle`; markup is unchanged.
 
 ### Added
 
