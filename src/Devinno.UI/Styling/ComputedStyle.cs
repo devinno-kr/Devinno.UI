@@ -318,6 +318,7 @@ public sealed class ComputedStyle
 
     /// <summary>
     /// Row track list. Style key <c>grid-template-rows</c>. Same format as <see cref="GridColumns"/>; rows beyond the template are <c>auto</c>.
+    /// Every template row (and column) is laid out even when no child is in it.
     /// The default is an empty array.
     /// </summary>
     public string[] GridRows { get; set; } = Array.Empty<string>();

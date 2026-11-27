@@ -192,6 +192,54 @@ public class GridPlacementTests
         Assert.Equal((200f, 400f, 100f, 100f), R(g.Children[0]));
     }
 
+    [Fact]
+    public void State_styles_do_not_move_a_child()
+    {
+        // 상태 스타일은 그리기 전용 — disabled-style 의 grid-row 는 배치에 쓰지 않는다
+        var g = Grid("<DvBox/><DvBox disabled=\"true\" disabled-style=\"grid-row:4\"/>");
+        Assert.Equal((100f, 0f, 100f, 100f), R(g.Children[1]));
+    }
+
+    [Fact]
+    public void Instance_attributes_win_over_the_template_root()
+    {
+        var reg = new ComponentRegistry();
+        reg.Register("<DvComponent name=\"Tile\"><DvBox grid-row=\"1\" grid-col=\"1\" col-span=\"2\"/></DvComponent>");
+        var g = Grid("<Tile grid-row=\"4\" grid-col=\"3\" col-span=\"1\"/><Tile/>", reg: reg);
+        Assert.Equal(new GridArea(4, 3, 1, 1), g.Children[0].GridArea); // 인스턴스가 준 속성이 이긴다
+        Assert.Equal(new GridArea(1, 1, 1, 2), g.Children[1].GridArea); // 인스턴스에 없으면 틀 루트 값
+    }
+
+    [Fact]
+    public void Instance_wins_per_attribute_not_per_axis()
+    {
+        // 인스턴스가 grid-col 만 주면 틀 루트의 col-span 은 남는다(속성마다 따로 이김)
+        var reg = new ComponentRegistry();
+        reg.Register("<DvComponent name=\"Tile\"><DvBox col-span=\"2\"/></DvComponent>");
+        var g = Grid("<Tile grid-row=\"1\" grid-col=\"2\"/>", reg: reg);
+        Assert.Equal(new GridArea(1, 2, 1, 2), g.Children[0].GridArea);
+    }
+
+    public sealed class Cell
+    {
+        public int R { get; init; }
+        public int C { get; init; }
+    }
+
+    [Fact]
+    public void Repeat_as_a_grid_places_items_by_bound_cells()
+    {
+        var vm = new { Cells = new[] { new Cell { R = 2, C = 3 }, new Cell { R = 1, C = 2 } } };
+        var root = new LayoutEngine().Layout(
+            MarkupParser.Parse("<DvScreen style=\"padding:0\"><DvRepeat items=\"{Cells}\" gap=\"none\" style=\"display:grid; grid-template-columns:100 100 100; grid-template-rows:50 50\">" +
+                               "<DvBox grid-row=\"{Item.R}\" grid-col=\"{Item.C}\"/></DvRepeat></DvScreen>"),
+            vm, 300, 200);
+        var rep = root.Children[0];
+        Assert.Equal(new GridArea(2, 3, 1, 1), rep.Children[0].GridArea);
+        Assert.Equal((200f, 50f, 100f, 50f), R(rep.Children[0]));
+        Assert.Equal(new GridArea(1, 2, 1, 1), rep.Children[1].GridArea);
+    }
+
     [Theory]
     [InlineData("grid-row:-1")]
     [InlineData("grid-row:0")]
@@ -199,6 +247,8 @@ public class GridPlacementTests
     [InlineData("grid-row:span 0")]
     [InlineData("grid-row:1 / span x")]
     [InlineData("grid-row:2000")]
+    [InlineData("grid-row:auto / 3")]
+    [InlineData("grid-row:span 2 / 3")]
     public void Invalid_value_is_ignored_with_a_warning(string style)
     {
         var cap = new Capture("grid-row");
@@ -214,6 +264,49 @@ public class GridPlacementTests
         }
 
         Assert.Equal((100f, 0f, 100f, 100f), R(g.Children[1])); // 자동 배치
+        Assert.NotEmpty(cap.Lines);
+    }
+
+    [Fact]
+    public void Row_only_child_in_a_full_row_overlaps_column_1()
+    {
+        var g = Grid("<DvBox grid-row=\"2\" grid-col=\"1\" col-span=\"3\"/><DvBox grid-row=\"2\"/>");
+        Assert.Equal((0f, 100f, 100f, 100f), R(g.Children[1]));
+    }
+
+    [Fact]
+    public void Hidden_child_takes_no_cell()
+    {
+        var g = Grid("<DvBox visible=\"false\"/><DvBox/>");
+        Assert.Single(g.Children);
+        Assert.Equal((0f, 0f, 100f, 100f), R(g.Children[0]));
+    }
+
+    [Fact]
+    public void Unreadable_style_value_keeps_the_attributes()
+    {
+        var g = Grid("<DvBox grid-row=\"3\" grid-col=\"2\" style=\"grid-row:abc\"/>");
+        Assert.Equal((100f, 200f, 100f, 100f), R(g.Children[0]));
+    }
+
+    [Theory]
+    [InlineData("grid-row=\"2.5\"")]
+    [InlineData("row-span=\"0\"")]
+    public void Unreadable_attribute_is_ignored_with_a_warning(string attr)
+    {
+        var cap = new Capture("grid-row");
+        Trace.Listeners.Add(cap);
+        LayoutBox g;
+        try
+        {
+            g = Grid($"<DvBox/><DvBox {attr}/>");
+        }
+        finally
+        {
+            Trace.Listeners.Remove(cap);
+        }
+
+        Assert.Equal((100f, 0f, 100f, 100f), R(g.Children[1]));
         Assert.NotEmpty(cap.Lines);
     }
 
@@ -264,6 +357,37 @@ public class GridPlacementTests
         Assert.Equal(new[] { new GridTrack(0, 100), new GridTrack(100, 100), new GridTrack(200, 100) }, t!.Columns);
         Assert.Equal(5, t.Rows.Count);
         Assert.Equal(new GridTrack(400, 100), t.Rows[4]);
+    }
+
+    [Fact]
+    public void Drawn_grid_rect_plus_track_start_is_where_a_cell_is_drawn_when_scrolled()
+    {
+        // 문서의 포인터 → 칸 방법: TryGetDrawnRect(grid) + 트랙 Start (조상 스크롤 반영)
+        var root = new LayoutEngine().Layout(
+            MarkupParser.Parse("<DvScreen style=\"padding:0\"><DvStack gap=\"none\" style=\"overflow:scroll; height:100\">" +
+                               "<DvBox style=\"height:80\"/><DvGrid gap=\"0\" columns=\"100 100\" rows=\"40 40\"><DvBox grid-row=\"2\" grid-col=\"2\"/></DvGrid>" +
+                               "</DvStack></DvScreen>"),
+            null, 300, 300);
+        var scroller = root.Children[0];
+        var grid = scroller.Children[1];
+        scroller.ScrollY = 30;
+        Assert.True(Devinno.UI.Interaction.HitTester.TryGetDrawnRect(root, grid, out var gr, out _));
+        Assert.True(Devinno.UI.Interaction.HitTester.TryGetDrawnRect(root, grid.Children[0], out var cr, out _));
+        var t = grid.GridTracks!;
+        Assert.Equal(cr.Left, gr.Left + t.Columns[1].Start, 3);
+        Assert.Equal(cr.Top, gr.Top + t.Rows[1].Start, 3);
+        Assert.Equal(80 + 40 - 30, cr.Top, 3);
+    }
+
+    [Fact]
+    public void Empty_auto_tracks_keep_their_gaps()
+    {
+        var root = new LayoutEngine().Layout(
+            MarkupParser.Parse("<DvScreen style=\"padding:0; align-items:start\"><DvGrid gap=\"10\" columns=\"100\" rows=\"auto auto auto\"/></DvScreen>"),
+            null, 300, 300);
+        var g = root.Children[0];
+        Assert.Equal(20, g.Rect.Height, 3);
+        Assert.Equal(new[] { new GridTrack(0, 0), new GridTrack(10, 0), new GridTrack(20, 0) }, g.GridTracks!.Rows);
     }
 
     [Fact]

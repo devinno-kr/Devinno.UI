@@ -3262,14 +3262,17 @@ Override = 단방향·리터럴 위에 덮어쓴 값이 있으면 그 칸(아니
             (합이 100% 를 넘으면 비율로 정규화), 그 나머지를 fr 가 비율로 나눈다.
             템플릿보다 트랙이 많으면 나머지는 auto. 내용 크기 측정(<paramref name="measuring" />) 때는 %·fr 도 auto.
             </summary>
-        </member><member name="T:Devinno.UI.Layout.GridTracks" en-hash="6fa47bcfed1570fb"><summary>
+        </member><member name="T:Devinno.UI.Layout.GridTracks" en-hash="70676b74df234c4f"><summary>
 grid 상자(<c>DvGrid</c>, 또는 트랙 목록이 있는 <c>display:grid</c>)의 계산된 트랙입니다. <see cref="P:Devinno.UI.Layout.LayoutBox.GridTracks" /> 에서 얻습니다.
 자식이 없는 템플릿 트랙과 템플릿을 넘어 늘어난 <c>auto</c> 트랙까지 모든 트랙이 들어 있습니다.
 </summary>
 <remarks>
 위치는 grid 상자의 <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 왼쪽 위(바깥 모서리라 padding 이 포함됨)에서 잰 값이라, 도구가 상자를 옮겨도 그대로 맞습니다.
 화면 편집기는 이것으로 빈 칸을 그리고 포인터 위치를 칸으로 바꿀 수 있습니다.
-gap 은 한 트랙의 끝과 다음 트랙의 시작 사이에 있습니다.
+gap 은 한 트랙의 끝과 다음 트랙의 시작 사이에 있습니다. 빈 <c>auto</c> 트랙은 크기가 0 이지만 양쪽 gap 은 남습니다.
+<see cref="P:Devinno.UI.Layout.LayoutBox.Rect" /> 처럼 스크롤 전 배치 좌표입니다. grid 상자가 그려진 자리는
+<see cref="M:Devinno.UI.Interaction.HitTester.TryGetDrawnRect(Devinno.UI.Layout.LayoutBox,Devinno.UI.Layout.LayoutBox,SkiaSharp.SKRect@,SkiaSharp.SKRect@)" /> 로 구하고(조상 스크롤과 내용 배율 반영), grid 자체가 스크롤되면
+그 <see cref="P:Devinno.UI.Layout.LayoutBox.ScrollX" />/<see cref="P:Devinno.UI.Layout.LayoutBox.ScrollY" /> 를 더합니다.
 </remarks>
 <example>
 <code>
@@ -3303,8 +3306,7 @@ grid 자식이 차지한 칸입니다. <see cref="P:Devinno.UI.Layout.LayoutBox.
             <summary>탭하면 숫자 키패드(돌리기 없음).</summary>
         </member><member name="F:Devinno.UI.Layout.KnobInputMode.Both" en-hash="94024f50d7746abc">
             <summary>끌면 돌리고, 움직이지 않은 탭은 숫자 키패드.</summary>
-        </member><member name="T:Devinno.UI.Layout.LayoutBox" en-hash="b5e00975013e3351">
-            <summary>
+        </member><member name="T:Devinno.UI.Layout.LayoutBox" en-hash="c6c49715b887d442"><summary>
             화면 요소 하나의 레이아웃 결과입니다. 스타일·위치·크기와, 바인딩을 풀어 얻은 위젯 값(텍스트·게이지 값·램프 상태 등)을 담습니다.
             </summary>
             <remarks>
@@ -3313,12 +3315,11 @@ grid 자식이 차지한 칸입니다. <see cref="P:Devinno.UI.Layout.LayoutBox.
             <para>필드가 채워지는 단계는 다음과 같습니다.
             <b>빌드</b>(<see cref="M:Devinno.UI.Layout.LayoutEngine.Layout(Devinno.UI.Markup.ElementNode,System.Object,System.Single,System.Single,Devinno.UI.Components.ComponentRegistry)" /> 안에서 요소마다 한 번): <see cref="P:Devinno.UI.Layout.LayoutBox.Node" />·<see cref="P:Devinno.UI.Layout.LayoutBox.Style" />·상태 스타일, 그리고 태그별 위젯 값.
             위젯 값은 해당 태그일 때만 채워지고, 다른 태그에서는 기본값 그대로입니다. 바인딩 값은 빌드 시점의 스냅샷이라 뷰모델이 바뀌어도 이 박스는 바뀌지 않습니다.
-            <b>배치</b>(빌드 직후, 창 크기가 바뀔 때 다시): <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" />·<see cref="P:Devinno.UI.Layout.LayoutBox.ContentWidth" />·<see cref="P:Devinno.UI.Layout.LayoutBox.ContentHeight" />.
+            <b>배치</b>(빌드 직후, 창 크기가 바뀔 때 다시): <see cref="P:Devinno.UI.Layout.LayoutBox.Rect" />·<see cref="P:Devinno.UI.Layout.LayoutBox.ContentWidth" />·<see cref="P:Devinno.UI.Layout.LayoutBox.ContentHeight" />·<see cref="P:Devinno.UI.Layout.LayoutBox.GridTracks" />·<see cref="P:Devinno.UI.Layout.LayoutBox.GridArea" />.
             <b>상호작용</b>(화면이 떠 있는 동안 <see cref="T:Devinno.UI.DvSurface" /> 가 바꿈): 스크롤 오프셋, 편집 상태(<see cref="P:Devinno.UI.Layout.LayoutBox.Editing" /> 등).
             <b>그리기</b>(<see cref="T:Devinno.UI.Painting.Painter" />)는 이 값들을 읽기만 합니다.</para>
             <para>좌표와 길이의 단위는 모두 px 입니다. UI 스레드에서만 다루세요.</para>
-            </remarks>
-        </member><member name="P:Devinno.UI.Layout.LayoutBox.Node" en-hash="330d0f0106069a21">
+            </remarks></member><member name="P:Devinno.UI.Layout.LayoutBox.Node" en-hash="330d0f0106069a21">
             <summary>이 박스를 만든 마크업 요소. 태그 이름과 원문 속성을 여기서 읽을 수 있습니다. 빌드 때 정해집니다.</summary>
         </member><member name="P:Devinno.UI.Layout.LayoutBox.Origin" en-hash="7c623d4fa6214213"><summary>
 이 상자가 나타내는 화면 요소: <see cref="P:Devinno.UI.Layout.LayoutBox.Node" />. 단, 사용자 컴포넌트 인스턴스의 루트 상자는 컴포넌트의 공유 템플릿 요소 대신 인스턴스 요소
@@ -4748,12 +4749,11 @@ var min = TagSchema.Find("DvGauge", "min"); // Kind = Number, Default = "0"
             각 트랙은 숫자(px), <c>Nfr</c>(남은 공간 비율), <c>N%</c>(고정 트랙을 뺀 공간의 비율), <c>auto</c>(내용 크기)입니다.
             기본값은 빈 배열입니다.
             </summary>
-        </member><member name="P:Devinno.UI.Styling.ComputedStyle.GridRows" en-hash="656180f8bd11635e">
-            <summary>
+        </member><member name="P:Devinno.UI.Styling.ComputedStyle.GridRows" en-hash="fa53d3dae822946d"><summary>
             행 트랙 목록. 스타일 키 <c>grid-template-rows</c>. 형식은 <see cref="P:Devinno.UI.Styling.ComputedStyle.GridColumns" /> 와 같고, 템플릿보다 행이 많으면 나머지는 <c>auto</c> 입니다.
+            템플릿의 행(과 열)은 자식이 없어도 모두 배치됩니다.
             기본값은 빈 배열입니다.
-            </summary>
-        </member><member name="P:Devinno.UI.Styling.ComputedStyle.GridRow" en-hash="91341835e9f94a9c"><summary>이 자식의 grid 칸 행(스타일 키 <c>grid-row</c>): 시작 줄은 1부터, <see langword="null" /> = 자동 배치. span = 걸친 행 수(1 이상).</summary></member><member name="P:Devinno.UI.Styling.ComputedStyle.GridColumn" en-hash="b623f5c383e72338"><summary>이 자식의 grid 칸 열(스타일 키 <c>grid-column</c>). <see cref="P:Devinno.UI.Styling.ComputedStyle.GridRow" /> 와 같다.</summary></member><member name="P:Devinno.UI.Styling.ComputedStyle.AspectRatio" en-hash="373735a730b8125e">
+            </summary></member><member name="P:Devinno.UI.Styling.ComputedStyle.GridRow" en-hash="91341835e9f94a9c"><summary>이 자식의 grid 칸 행(스타일 키 <c>grid-row</c>): 시작 줄은 1부터, <see langword="null" /> = 자동 배치. span = 걸친 행 수(1 이상).</summary></member><member name="P:Devinno.UI.Styling.ComputedStyle.GridColumn" en-hash="b623f5c383e72338"><summary>이 자식의 grid 칸 열(스타일 키 <c>grid-column</c>). <see cref="P:Devinno.UI.Styling.ComputedStyle.GridRow" /> 와 같다.</summary></member><member name="P:Devinno.UI.Styling.ComputedStyle.AspectRatio" en-hash="373735a730b8125e">
             <summary>
             너비/높이 비. 스타일 키 <c>aspect-ratio</c>(<c>1</c>, <c>1.5</c>, <c>16/9</c>). 0 이하이거나 해석할 수 없으면 <see langword="null" />.
             배정된 영역 안에 들어가는 가장 큰 해당 비율 상자로 맞춥니다(contain, 가운데). 너비·높이 중 한쪽만 지정되면 다른 쪽을 비율로 계산합니다.

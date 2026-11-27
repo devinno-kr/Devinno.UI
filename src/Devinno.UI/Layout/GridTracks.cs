@@ -7,7 +7,10 @@ namespace Devinno.UI.Layout;
 /// <remarks>
 /// Positions are measured from the top-left of the grid box's <see cref="LayoutBox.Rect"/> (its outer edge, so they include the padding),
 /// so they stay valid when a tool moves the box. A screen editor can draw the empty cells with them and turn a pointer position into a cell.
-/// The gap lies between one track's end and the next track's start.
+/// The gap lies between one track's end and the next track's start; an empty <c>auto</c> track has size 0 but keeps the gaps around it.
+/// Like <see cref="LayoutBox.Rect"/>, these are layout coordinates before scrolling: find where the grid box is drawn with
+/// <see cref="Interaction.HitTester.TryGetDrawnRect"/> (ancestor scrolling and content scale), and add the grid's own
+/// <see cref="LayoutBox.ScrollX"/>/<see cref="LayoutBox.ScrollY"/> when it scrolls.
 /// </remarks>
 /// <example>
 /// <code>

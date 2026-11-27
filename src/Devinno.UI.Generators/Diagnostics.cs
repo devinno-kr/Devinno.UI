@@ -51,6 +51,7 @@ internal static class Diagnostics
     // DVML020 — 리터럴 값이 속성 종류(참/거짓·숫자·목록 값·색, TagSchema)에 맞지 않음(실행 때 기본값 + Trace 경고)
     public static readonly DiagnosticDescriptor InvalidBool = D("DVML020", DiagnosticSeverity.Warning, "Bool");
     public static readonly DiagnosticDescriptor InvalidNumber = D("DVML020", DiagnosticSeverity.Warning, "Number");
+    public static readonly DiagnosticDescriptor InvalidGridLine = D("DVML020", DiagnosticSeverity.Warning, "GridLine");
     public static readonly DiagnosticDescriptor InvalidEnum = D("DVML020", DiagnosticSeverity.Warning, "Enum");
     public static readonly DiagnosticDescriptor InvalidColor = D("DVML020", DiagnosticSeverity.Warning, "Color");
 

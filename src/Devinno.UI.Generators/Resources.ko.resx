@@ -130,6 +130,9 @@
   <data name="DVML020_Number" xml:space="preserve">
     <value>{0} {1}='{2}' 은(는) 숫자가 아닙니다(Invariant 형식, 예: 1.5) — 실행 때 기본값을 씁니다</value>
   </data>
+  <data name="DVML020_GridLine" xml:space="preserve">
+    <value>{0} {1}='{2}' 은(는) 1~1000 의 정수가 아닙니다 — 실행 때 무시합니다(Trace 경고). 다른 값이 없으면 자식은 자동 배치됩니다</value>
+  </data>
   <data name="DVML020_Enum" xml:space="preserve">
     <value>{0} {1}='{2}' 은(는) {3} 중 하나가 아닙니다(대소문자 무시) — 실행 때 기본값을 씁니다</value>
   </data>

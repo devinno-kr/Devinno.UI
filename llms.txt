@@ -15,6 +15,7 @@ The documents below sit in the same folder as this file (the package's `docs/`, 
 |---|---|
 | How do I set up the project (csproj: NuGet packages or building from source) and the source generator? | [dvml-code.md#project-setup](dvml-code.md#project-setup) |
 | Layout: stack/row/grid, sizes, absolute position, scrolling, text wrapping | [dvml-layout.md#layout-sugar](dvml-layout.md#layout-sugar), [#scroll](dvml-layout.md#scroll) |
+| Putting a child in a given grid cell, spanning rows/columns (`grid-row` `grid-col` `row-span` `col-span`); grid tracks and cells for screen editors | [dvml-layout.md#grid-placement](dvml-layout.md#grid-placement) |
 | Which style keys exist, value formats, classes, state styles, priority, transitions | [dvml-style.md#style-keys](dvml-style.md#style-keys) |
 | Theme tokens and the built-in themes | [dvml-style.md#theme-tokens](dvml-style.md#theme-tokens) |
 | Page frame, cards, badges, stats, labels, buttons, icons, images, video with sound, toggles, check boxes, radios, knobs, sliders, tabs, expanders, step bars | [dvml-widgets.md#semantic-components](dvml-widgets.md#semantic-components) |

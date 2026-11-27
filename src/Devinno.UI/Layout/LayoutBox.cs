@@ -14,7 +14,7 @@ namespace Devinno.UI.Layout;
 /// <para>Fields are filled in the following stages.
 /// <b>Build</b> (once per element inside <see cref="LayoutEngine.Layout"/>): <see cref="Node"/>, <see cref="Style"/>, the state styles, and the per-tag widget values.
 /// Widget values are filled only for the matching tag; for other tags they keep their defaults. Bound values are a snapshot taken at build time, so this box does not change when the view model changes.
-/// <b>Arrange</b> (right after build, and again when the window size changes): <see cref="Rect"/>, <see cref="ContentWidth"/>, <see cref="ContentHeight"/>.
+/// <b>Arrange</b> (right after build, and again when the window size changes): <see cref="Rect"/>, <see cref="ContentWidth"/>, <see cref="ContentHeight"/>, <see cref="GridTracks"/>, <see cref="GridArea"/>.
 /// <b>Interaction</b> (changed by <see cref="DvSurface"/> while the screen is shown): scroll offsets and edit state (<see cref="Editing"/>, etc.).
 /// <b>Painting</b> (<see cref="Painting.Painter"/>) only reads these values.</para>
 /// <para>All coordinates and lengths are in px. Access only on the UI thread.</para>

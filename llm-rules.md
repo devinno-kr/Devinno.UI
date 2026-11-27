@@ -392,6 +392,7 @@ Assume any tag, attribute or value not in these pages is not supported. The foll
 
 - Text: ellipsis (except grid cells), line count limits, `line-height`, `word-break`, hyphenation; automatic wrapping of text children of `DvRow` (giving a width works).
 - Fonts: bundling font files (`font-family` picks from installed fonts).
+- Grid: `grid-template-areas`/`grid-area`, `grid-auto-flow` (always row, never dense), `grid-auto-rows`/`grid-auto-columns` (added tracks are always `auto`), `row-gap`/`column-gap` (one `gap` for both), `minmax()`/`repeat()` in tracks, `grid-row-start`/`grid-row-end` longhands, named and negative lines.
 - Layout and style: `margin`, `%`/`em`/`auto` sizes (except grid tracks and grid column widths), keyframe animation (`@keyframes`, `animation`), `rotate`/`skew`, hit areas following `transform`, compound selectors (`.a.b`, tag, descendant selectors).
 - Input: keyboard focus navigation and tab order (except Enter/Tab in grid edit cells), drag and drop.
 - Dialogs: closing by pressing outside, drag-moving, open/close animations, a title bar X button, physical keyboard Esc/Enter (the only exception is the edit-completion Enter of built-in input boxes), a multi-select box (`SelectBox` picks only one).

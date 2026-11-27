@@ -25,7 +25,7 @@ Creates its child template once per item of a list and stacks the copies like `D
 ### Behavior
 
 - Children are a template, created once per item.
-- Layout is the same as `DvStack`. For horizontal rows or grids use `style` (`display:flex; flex-direction:row`).
+- Layout is the same as `DvStack`. For horizontal rows use `style="display:flex; flex-direction:row"`; for a grid, `style="display:grid; grid-template-columns:…"`, and items can take a bound cell (`grid-row="{Item.Row}" grid-col="{Item.Col}"`, [grid placement](dvml-layout.md#grid-placement)).
 - Inside the template: `{Item}` / `{Item.X}` = current item, `{Index}` = 0-based index, any other path = outer context (screen VM, component parameters, or the item scope of an outer repeat).
 - `{Bind Item.X}` writes two-way to the item.
 - `onclick="Inspect"` inside the template calls `VM.Inspect(Pump p)` if it exists, otherwise `VM.Inspect()` ([click rules](dvml-language.md#click)).
@@ -138,7 +138,7 @@ These apply to instances of user components and of built-in components (`DvCard`
 |---|---|---|
 | `style` | template root | Merged into the root's style; the instance wins |
 | `class` | template root | Appended after the root's classes |
-| `grow` `width` `height` `grid-row` `grid-col` `row-span` `col-span` | template root | The instance wins |
+| `grow` `width` `height` `grid-row` `grid-col` `row-span` `col-span` | template root | The instance wins, attribute by attribute (an instance `grid-col` keeps a `col-span` of the root) |
 | `onclick` | template root | Becomes the root box's click handler; the instance wins over a root `onclick` |
 | `disabled` | template root | Evaluated against the outer VM; the instance wins; inherited downward (e.g. the toggle inside `DvSwitch` is disabled too) |
 | `visible` | the instance | `false` = the instance is not expanded |

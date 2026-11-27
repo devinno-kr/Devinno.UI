@@ -1098,6 +1098,26 @@ public class DvmlGeneratorTests
         Assert.Contains("참/거짓", d.GetMessage(new System.Globalization.CultureInfo("ko-KR")));
     }
 
+    [Theory]
+    [InlineData("grid-row=\"2.5\"")]
+    [InlineData("grid-col=\"0\"")]
+    [InlineData("row-span=\"1001\"")]
+    [InlineData("col-span=\"-1\"")]
+    [InlineData("grid-row=\"abc\"")]
+    public void Value_GridLine_NotWholeNumber_Warns(string attr)
+    {
+        var d = Assert.Single(Values($"<DvGrid><DvBox {attr}/></DvGrid>"));
+        Assert.Contains("1 to 1000", d.GetMessage(Invariant));
+        Assert.Contains("1~1000", d.GetMessage(new System.Globalization.CultureInfo("ko-KR")));
+    }
+
+    [Fact]
+    public void Value_GridLine_WholeNumbers_And_Bindings_Pass()
+    {
+        Assert.Empty(Values("<DvGrid><DvBox grid-row=\"1\" grid-col=\" 1000 \" row-span=\"2\" col-span=\"\"/><DvBox grid-row=\"{R}\"/></DvGrid>"));
+        Assert.Equal(Devinno.UI.Styling.StyleParser.MaxGridLine, AttributeCheck.MaxGridLine);
+    }
+
     [Fact]
     public void Value_NotNumber_Warns()
     {

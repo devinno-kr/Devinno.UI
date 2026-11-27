@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- DVML020 also reports a literal `grid-row` `grid-col` `row-span` `col-span` value that is not a whole number from 1 to 1000 (`grid-row="2.5"`); at run time such a value is ignored with a Trace warning.
+
+### Documentation
+
+- Grid placement docs checked against the code: a full row for a row-only child (column 1, overlapping), hidden children taking no cell, unreadable values keeping the value under them, `auto / N` not supported, gaps kept around empty `auto` tracks, component instances passing the cell attributes one by one, `DvRepeat` as a grid with bound cells, state styles not moving a child, and turning a pointer into a cell with `HitTester.TryGetDrawnRect` and the grid's scroll offset; unsupported CSS grid features in `llm-rules.md`; the `grid-row`/`grid-column` Trace warning in `dvml-diagnostics.md`; a question → page line in `llms.txt`.
+
 ## 0.9.4 — 2026-11-27
 
 ### Fixed

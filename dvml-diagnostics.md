@@ -190,6 +190,7 @@ What to do after every markup edit: build, then fix every error and every DVML01
 - Meaning: a literal value that does not fit the attribute's kind; the default is used at run time, with a Trace warning:
   - true/false attribute not `true`, `false` or a number (`<DvLamp on="yes"/>`);
   - number attribute not an invariant-culture number (`max="abc"`, `blink-interval="1,5"`);
+  - grid cell attribute (`grid-row` `grid-col` `row-span` `col-span`) not a whole number from 1 to 1000 (`grid-row="2.5"`, `col-span="0"`); at run time it is ignored with a Trace warning ([grid placement](dvml-layout.md#grid-placement));
   - word attribute with a word not in its list (`<DvProgress direction="sideways"/>`, `variant="foo"`; case is ignored);
   - color attribute not `#RGB`/`#RRGGBB`/`#RRGGBBAA`/`transparent`/`token(name)`/`var(--name)` (`<DvLamp color="red"/>`; color names are not supported).
 - Checks the same tags as DVML019, literal values only: a value containing `{` (a binding or interpolation, including component parameters inside a template) is skipped.
@@ -244,6 +245,7 @@ Some problems are reported only at run time through `System.Diagnostics.Trace`. 
 | `{tag} alarm-zones zone '…' is not valid (…); the zone is ignored` | Unreadable `alarm-zones` zone (only that zone is dropped) | [alarm zones](dvml-instruments.md#alarm-zones) |
 | `unknown icon '…'; not drawn` | Unknown icon name | [icons](dvml-app.md#icons) |
 | `content-align '…' ignored; …` | Unparsed `content-align` | [content-align](dvml-style.md#content-align) |
+| `grid-row '…' ignored; expected …` · `grid-column '…' ignored; expected …` | Grid cell value (style, or the `grid-row` `grid-col` `row-span` `col-span` attributes) that is not a supported form or not a whole number 1–1000 | [grid placement](dvml-layout.md#grid-placement) |
 | `unsupported selector '…' ignored` | `DvStyle` selector the engine does not support | [classes](dvml-style.md#classes) |
 | `could not parse transform '…'` · `could not parse transition '…'` | Unreadable `transform`/`transition` | [transition](dvml-style.md#transition) |
 | `{tag} '{name}' was renamed to '{new}'; the old name is not read` | Attribute name the library does not read; use the name given | [common attributes](dvml-language.md#common-attributes) |

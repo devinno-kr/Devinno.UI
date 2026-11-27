@@ -385,6 +385,8 @@ internal static class AttributeCheck
             return; // 바인딩·보간 — 실행 때 값이 정해진다
         if (Has(Bool, CommonBool, tag, name) && !IsBool(value))
             report(Diagnostics.InvalidBool, a, new object[] { tag, name, value });
+        else if (Array.IndexOf(GridLine, name) >= 0 && !(Tags.TryGetValue(tag, out var own) && Array.IndexOf(own, name) >= 0) && !IsGridLine(value))
+            report(Diagnostics.InvalidGridLine, a, new object[] { tag, name, value });
         else if (Has(Number, CommonNumber, tag, name) && !CheckedElsewhere(tag, name) && !IsNumber(value))
             report(Diagnostics.InvalidNumber, a, new object[] { tag, name, value });
         else if (EnumValues(tag, name) is { } values && !CheckedElsewhere(tag, name) && !IsEnum(value, values, tag, name))
@@ -434,6 +436,18 @@ internal static class AttributeCheck
         var s = value.Trim();
         return s.Length == 0 || s.Equals("true", StringComparison.OrdinalIgnoreCase) || s.Equals("false", StringComparison.OrdinalIgnoreCase) ||
                double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) && !double.IsNaN(d);
+    }
+
+    /// <summary>grid 칸 속성 — 라이브러리 <c>StyleParser.TryGridLine</c> 처럼 1~<see cref="MaxGridLine"/> 정수만(빈 값 = 없음).</summary>
+    internal static readonly string[] GridLine = ["grid-row", "grid-col", "row-span", "col-span"];
+
+    /// <summary>라이브러리 <c>StyleParser.MaxGridLine</c> 과 같아야 한다(테스트가 비교).</summary>
+    internal const int MaxGridLine = 1000;
+
+    internal static bool IsGridLine(string value)
+    {
+        var s = value.Trim();
+        return s.Length == 0 || int.TryParse(s, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n is >= 1 and <= MaxGridLine;
     }
 
     internal static bool IsNumber(string value)
