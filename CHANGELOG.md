@@ -4,6 +4,7 @@
 
 ### Added
 
+- New package `Devinno.UI.Wpf`: `ViewControl` puts a `DvApp` in a WPF window with the same members as the WinForms control (`App`, `TouchMode`, `ThemeWindow`, `MarkUpdated`, `MarkRepaint`, `HandlerError`). It paints with the CPU into a `WriteableBitmap` at the monitor's pixel density (no GPU mode), edits through a WPF `TextBox`/`PasswordBox` over the field (OS IME), and closes the app when its window closes. `ThemeWindow` colors the title bar and adds theme-colored styles for `Menu`, `ContextMenu`, `ToolBar` and `StatusBar`. Targets `net9.0-windows10.0.19041.0` (`dvml-app.md` → ViewControl (WPF)). Demo: `samples/Devinno.UI.Demo.Wpf`.
 - `ViewControl.ThemeWindow` (Devinno.UI.WinForms): the form's title bar and border, and the app's WinForms menus (`MenuStrip`, `ContextMenuStrip`, `ToolStrip`, `StatusStrip` with the default `ManagerRenderMode`), take their colors from `DvApp.Theme` and follow theme changes. Only colors change; the title bar and its buttons stay the OS's own. Custom title bar colors need Windows 11 (Windows 10 switches dark/light). Off by default (`dvml-app.md` → ViewControl).
 
 ## 0.9.1 — 2026-11-25

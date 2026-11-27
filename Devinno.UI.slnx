@@ -2,10 +2,12 @@
   <Project Path="samples/Devinno.UI.Demo/Devinno.UI.Demo.csproj" />
   <Folder Name="/samples/">
     <Project Path="samples/Devinno.UI.AppSample/Devinno.UI.AppSample.csproj" />
+    <Project Path="samples/Devinno.UI.Demo.Wpf/Devinno.UI.Demo.Wpf.csproj" />
     <Project Path="samples/Devinno.UI.Scene3D.Demo/Devinno.UI.Scene3D.Demo.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Devinno.UI.Scene3D/Devinno.UI.Scene3D.csproj" />
+    <Project Path="src/Devinno.UI.Wpf/Devinno.UI.Wpf.csproj" />
   </Folder>
   <Project Path="samples/Devinno.UI.Demo.WinForms/Devinno.UI.Demo.WinForms.csproj" />
   <Project Path="src/Devinno.UI.OpenTK/Devinno.UI.OpenTK.csproj" />

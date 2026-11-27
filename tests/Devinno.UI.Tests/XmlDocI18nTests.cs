@@ -25,6 +25,7 @@ public class XmlDocI18nTests
     [InlineData("Devinno.UI")]
     [InlineData("Devinno.UI.OpenTK")]
     [InlineData("Devinno.UI.WinForms")]
+    [InlineData("Devinno.UI.Wpf")]
     [InlineData("Devinno.UI.Scene3D")]
     public void Korean_IntelliSense_matches_the_English_comments(string project)
     {

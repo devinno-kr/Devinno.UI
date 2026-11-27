@@ -431,5 +431,6 @@ The `using` lines for the C# types these pages use. Handle fields created by the
 | `ProcessInspector` (`PortsOf`, `PipesOf`), `SymbolPort`, `PortSide`, `ProcessPipe` (tools that edit process diagrams) | `Devinno.UI.Process` | Devinno.UI |
 | `FrameSource`, `VideoPlayer`, `IFrameSource` | `Devinno.UI.Video` | Devinno.UI |
 | `ViewWindow` | `Devinno.UI.OpenTK` | Devinno.UI.OpenTK |
-| `ViewControl` | `Devinno.UI.WinForms` | Devinno.UI.WinForms |
+| `ViewControl` (WinForms) | `Devinno.UI.WinForms` | Devinno.UI.WinForms |
+| `ViewControl` (WPF) | `Devinno.UI.Wpf` | Devinno.UI.Wpf |
 | `SKCanvas`, `SKRect`, `SKPoint`, `SKPaint`, `SKColor` (`Bounds`, pointer input, custom widget drawing) | `SkiaSharp` | SkiaSharp (comes with Devinno.UI) |

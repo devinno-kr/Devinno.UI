@@ -38,6 +38,7 @@ To show screens, an app also references one host adapter package; each has its o
 
 - **Devinno.UI.OpenTK** (`ViewWindow`): the app in its own window. For kiosk panels (`fullscreen: true`), boards without desktop OpenGL 3.3 such as Raspberry Pi (`gles: true`), and scaling a fixed design size to the window (`fit: true`).
 - **Devinno.UI.WinForms** (`ViewControl`): the app inside a WinForms form, Windows only. The app must target `net9.0-windows10.0.19041.0` or later.
+- **Devinno.UI.Wpf** (`ViewControl`): the app inside a WPF window, Windows only. The app must target `net9.0-windows10.0.19041.0` or later.
 
 ## Optional packages
 

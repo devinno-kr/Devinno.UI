@@ -21,7 +21,7 @@ jobs:
       - name: Build
         shell: pwsh
         run: |
-          foreach ($p in 'src/Devinno.UI', 'src/Devinno.UI.OpenTK', 'src/Devinno.UI.WinForms', 'src/Devinno.UI.Scene3D', 'tests/Devinno.UI.Tests') {
+          foreach ($p in 'src/Devinno.UI', 'src/Devinno.UI.OpenTK', 'src/Devinno.UI.WinForms', 'src/Devinno.UI.Wpf', 'src/Devinno.UI.Scene3D', 'tests/Devinno.UI.Tests') {
             dotnet build $p -c Release
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
@@ -32,7 +32,7 @@ jobs:
       - name: Pack
         shell: pwsh
         run: |
-          foreach ($p in 'src/Devinno.UI', 'src/Devinno.UI.OpenTK', 'src/Devinno.UI.WinForms', 'src/Devinno.UI.Scene3D') {
+          foreach ($p in 'src/Devinno.UI', 'src/Devinno.UI.OpenTK', 'src/Devinno.UI.WinForms', 'src/Devinno.UI.Wpf', 'src/Devinno.UI.Scene3D') {
             dotnet pack $p -c Release --no-build -o out
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }

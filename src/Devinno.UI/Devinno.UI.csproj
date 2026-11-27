@@ -7,7 +7,7 @@
 
     <!-- 버전·저자·라이선스·아이콘·README 등 패키지 공통 설정은 ../Directory.Build.props -->
     <PackageId>Devinno.UI</PackageId>
-    <Description>SkiaSharp-based .NET UI library for industrial HMI touch panels and regular apps. Screens are XML markup (.dvml) with CSS-style inline style, bound to a C# view model, with build diagnostics and bundled docs for AI coding tools. To show screens in a window, add a host adapter: Devinno.UI.OpenTK or Devinno.UI.WinForms.</Description>
+    <Description>SkiaSharp-based .NET UI library for industrial HMI touch panels and regular apps. Screens are XML markup (.dvml) with CSS-style inline style, bound to a C# view model, with build diagnostics and bundled docs for AI coding tools. To show screens in a window, add a host adapter: Devinno.UI.OpenTK, Devinno.UI.WinForms or Devinno.UI.Wpf.</Description>
     <PackageTags>ui;hmi;skiasharp;touch;industrial;markup;mvvm;dvml;llm;ai</PackageTags>
     <!-- docs/llms.txt 원본은 저장소 루트의 llms.txt(../Directory.Build.props 의 _DvVersionedLlms) -->
     <DevinnoLlmsFile>$(MSBuildProjectDirectory)\..\..\llms.txt</DevinnoLlmsFile>
@@ -60,6 +60,7 @@
     <InternalsVisibleTo Include="Devinno.UI.Tests" />
     <InternalsVisibleTo Include="Devinno.UI.OpenTK" />
     <InternalsVisibleTo Include="Devinno.UI.WinForms" />
+    <InternalsVisibleTo Include="Devinno.UI.Wpf" />
   </ItemGroup>
 
   <!-- 아이콘 폰트: Font Awesome 6.1.2 Free (SIL OFL 1.1, ../../THIRD-PARTY-NOTICES.md). 이름표 = tools/gen_fa_icons.py -->

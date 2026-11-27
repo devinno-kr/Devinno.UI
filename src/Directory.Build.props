@@ -5,7 +5,7 @@
     <WarningsAsErrors>$(WarningsAsErrors);CS1591;CS1573</WarningsAsErrors>
   </PropertyGroup>
 
-  <!-- NuGet 패키지 공통(Devinno.UI · Devinno.UI.OpenTK · Devinno.UI.WinForms · Devinno.UI.Scene3D 는 항상 같은 버전으로 함께 나간다).
+  <!-- NuGet 패키지 공통(Devinno.UI · Devinno.UI.OpenTK · Devinno.UI.WinForms · Devinno.UI.Wpf · Devinno.UI.Scene3D 는 항상 같은 버전으로 함께 나간다).
        각 csproj 에는 PackageId·Description·PackageTags 만 둔다. 게시 워크플로는 태그(v1.2.3)로 Version 을 덮어쓴다. -->
   <PropertyGroup>
     <Version>0.9.1</Version>

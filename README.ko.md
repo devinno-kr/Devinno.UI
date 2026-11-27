@@ -95,7 +95,7 @@ UI 코드에서 가장 흔한 실패는 "틀렸는데 아무 일도 안 일어�
 - 알람(ISA-18.2 기반), 트렌드, 데이터 그리드, 가상 키보드, 롱프레스 보호(`hold`), 화면 잠금 같은 현장 요구를 내장했습니다.
 
 ## 설치
-<!-- en-hash: 685cec8a1bee6e41 -->
+<!-- en-hash: 896351e121183796 -->
 
 앱은 코어 패키지와, 화면을 창에 올리는 호스트 어댑터 하나를 참조합니다.
 
@@ -104,11 +104,13 @@ dotnet add package Devinno.UI
 dotnet add package Devinno.UI.OpenTK      # own window (ViewWindow)
 # or
 dotnet add package Devinno.UI.WinForms    # inside a WinForms form (ViewControl)
+# or
+dotnet add package Devinno.UI.Wpf         # inside a WPF window (ViewControl)
 # optional
 dotnet add package Devinno.UI.Scene3D     # 3D view of a glTF model (SceneView), desktop OpenGL 3.3
 ```
 
-WinForms 앱은 대상 프레임워크를 `net9.0-windows10.0.19041.0` 이상으로 해야 합니다(WinForms 어댑터는 SkiaSharp 의 WinForms 뷰처럼 이 TFM 만 제공). 기본값 `net9.0-windows` 로 두면 어셈블리가 참조되지 않아 "'Devinno' 형식 또는 네임스페이스를 찾을 수 없음" 오류로 빌드가 실패합니다. WinForms 앱의 프로젝트 파일은 다음과 같습니다.
+WinForms·WPF 앱은 대상 프레임워크를 `net9.0-windows10.0.19041.0` 이상으로 해야 합니다(WinForms·WPF 어댑터는 SkiaSharp 의 Windows 뷰처럼 이 TFM 만 제공). 기본값 `net9.0-windows` 로 두면 어셈블리가 참조되지 않아 "'Devinno' 형식 또는 네임스페이스를 찾을 수 없음" 오류로 빌드가 실패합니다. WinForms 앱의 프로젝트 파일은 다음과 같습니다.
 
 ```xml
 <PropertyGroup>
@@ -179,17 +181,19 @@ Devinno.UI 를 참조한 프로젝트를 빌드하면 패키지 문서와 영어
 - `.gitignore` 에 `.devinno/` 를 넣는 것을 권장합니다(빌드할 때마다 다시 만들어짐).
 
 ## 저장소 구성
-<!-- en-hash: 44e747271830408c -->
+<!-- en-hash: 789c86e15e26b80c -->
 
 | 경로 | 설명 |
 |---|---|
 | `src/Devinno.UI` | 코어 라이브러리 (마크업 파서, 레이아웃, 렌더링, 컴포넌트) |
 | `src/Devinno.UI.OpenTK` | OpenTK 호스트 (`ViewWindow`) |
 | `src/Devinno.UI.WinForms` | WinForms 호스트 (`ViewControl`) |
+| `src/Devinno.UI.Wpf` | WPF 호스트 (`ViewControl`) |
 | `src/Devinno.UI.Scene3D` | 3D 뷰 (`SceneView`): 바인딩 값으로 부품이 움직이는 glTF 모델 |
 | `tests/Devinno.UI.Tests` | xUnit 테스트 |
 | `samples/Devinno.UI.Demo` | OpenTK 데모 앱 (인자 없음 = 쇼케이스, `-- top`, `-- nav` 로 앱 모델 확인) |
 | `samples/Devinno.UI.Demo.WinForms` | WinForms 데모 앱 |
+| `samples/Devinno.UI.Demo.Wpf` | WPF 데모 앱 |
 | `samples/Devinno.UI.Scene3D.Demo` | 3D 뷰 데모 (`-- --verify` 창 없이 검사, `-- --bench` 측정) |
 
 ## 면책

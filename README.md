@@ -99,11 +99,13 @@ dotnet add package Devinno.UI
 dotnet add package Devinno.UI.OpenTK      # own window (ViewWindow)
 # or
 dotnet add package Devinno.UI.WinForms    # inside a WinForms form (ViewControl)
+# or
+dotnet add package Devinno.UI.Wpf         # inside a WPF window (ViewControl)
 # optional
 dotnet add package Devinno.UI.Scene3D     # 3D view of a glTF model (SceneView), desktop OpenGL 3.3
 ```
 
-A WinForms app must target `net9.0-windows10.0.19041.0` or later (the WinForms adapter, like SkiaSharp's WinForms views, ships only that TFM). With the default `net9.0-windows` no assembly is referenced and the build fails with "type or namespace 'Devinno' not found". The project file of a WinForms app looks like this:
+A WinForms or WPF app must target `net9.0-windows10.0.19041.0` or later (the WinForms and WPF adapters, like SkiaSharp's Windows views, ship only that TFM). With the default `net9.0-windows` no assembly is referenced and the build fails with "type or namespace 'Devinno' not found". The project file of a WinForms app looks like this:
 
 ```xml
 <PropertyGroup>
@@ -176,10 +178,12 @@ When a project that references Devinno.UI is built, the package documents and th
 | `src/Devinno.UI` | Core library (markup parser, layout, rendering, components) |
 | `src/Devinno.UI.OpenTK` | OpenTK host (`ViewWindow`) |
 | `src/Devinno.UI.WinForms` | WinForms host (`ViewControl`) |
+| `src/Devinno.UI.Wpf` | WPF host (`ViewControl`) |
 | `src/Devinno.UI.Scene3D` | 3D view (`SceneView`): glTF models with parts moved by bound values |
 | `tests/Devinno.UI.Tests` | xUnit tests |
 | `samples/Devinno.UI.Demo` | OpenTK demo app (no arguments = showcase; `-- top`, `-- nav` show the app model) |
 | `samples/Devinno.UI.Demo.WinForms` | WinForms demo app |
+| `samples/Devinno.UI.Demo.Wpf` | WPF demo app |
 | `samples/Devinno.UI.Scene3D.Demo` | 3D view demo (`-- --verify` checks without a window, `-- --bench` measures) |
 
 ## Disclaimer

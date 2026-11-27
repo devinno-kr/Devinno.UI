@@ -6,7 +6,7 @@ Read first: the core screen rules in `.devinno/Devinno.UI/llms.txt` — markup, 
 <a id="setup"></a>
 ## Setup
 
-- Reference `Devinno.UI.Scene3D` next to the core package and a host (`Devinno.UI.OpenTK` or `Devinno.UI.WinForms`).
+- Reference `Devinno.UI.Scene3D` next to the core package and a host (`Devinno.UI.OpenTK`, `Devinno.UI.WinForms` or `Devinno.UI.Wpf`).
 - Register the tag once at startup, before the first screen is built:
 
 ```csharp

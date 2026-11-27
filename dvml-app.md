@@ -444,12 +444,14 @@ The adapter (window or control) decides the window/control size; the markup does
 |---|---|---|
 | `ViewWindow` (Devinno.UI.OpenTK) | OpenTK window. Touch-first (virtual keyboard). Sleeps when there is no input, using almost no CPU. `Gpu = true` draws with OpenGL. Constructor options `gles`, `fullscreen`, `fit` for embedded panels — see [ViewWindow](#viewwindow) | `Invalidate()`, `Repaint()` |
 | `ViewControl` (Devinno.UI.WinForms) | WinForms control. `App = app`. Edits through a hidden TextBox by default; virtual keyboard in `TouchMode`. CPU raster by default; `Gpu = true` draws with OpenGL — see [ViewControl](#viewcontrol) | `MarkUpdated()`, `MarkRepaint()` |
+| `ViewControl` (Devinno.UI.Wpf) | WPF control, same members as the WinForms one except `Gpu` (CPU raster only). Edits through a WPF TextBox/PasswordBox by default; virtual keyboard in `TouchMode` — see [ViewControl (WPF)](#viewcontrol-wpf) | `MarkUpdated()`, `MarkRepaint()` |
 | `DvSurface` | For hosts you build yourself (engine API): drawing to a canvas and pointer input | `Invalidate()`, `Repaint()` |
 | `DvRenderer` | Markup → PNG (check output without a window) | — |
 
 ```csharp
 using Devinno.UI.OpenTK;     // ViewWindow
-using Devinno.UI.WinForms;   // ViewControl
+using Devinno.UI.WinForms;   // ViewControl (WinForms)
+using Devinno.UI.Wpf;        // ViewControl (WPF) — use one of the two in a project
 
 // OpenTK
 using var window = new ViewWindow(app, 1280, 800, "My HMI") { Gpu = true };   // Gpu is optional
@@ -462,9 +464,12 @@ panel.Run();
 // WinForms
 var view = new ViewControl { Dock = DockStyle.Fill, TouchMode = false, App = app };
 form.Controls.Add(view);
+
+// WPF
+window.Content = new ViewControl { App = app };
 ```
 
-- Both adapters take a single `DvApp`: `new ViewWindow(app, width, height, title)` / `ViewControl.App`.
+- Every adapter takes a single `DvApp`: `new ViewWindow(app, width, height, title)` / `ViewControl.App`.
 - The engine APIs `new DvSurface(markup, vm …)` and `DvRenderer` are available for custom hosts and headless output (pass the generated `Markup` constant — [what is generated](dvml-code.md#generated)).
 - Localization is `app.Strings`; the theme is `app.Theme`.
 - **One adapter per app, one app per process.** An app attaches to only one window/control at a time; giving it to a second adapter throws `InvalidOperationException`. Only one app per process can be attached (attaching another app while one is attached throws `InvalidOperationException`). When the window closes the app detaches and can attach to another adapter.
@@ -489,3 +494,13 @@ form.Controls.Add(view);
 - Draws with the CPU raster by default; `Gpu = true` draws with OpenGL.
 - `ThemeWindow = true` colors the native parts around the screen from the app theme, so they do not stand out as white OS chrome: the form's title bar (`background`, title text `text`, border `border`; Windows 11, Windows 10 only switches dark/light) and every WinForms `MenuStrip`/`ContextMenuStrip`/`ToolStrip`/`StatusStrip` that uses the default `ManagerRenderMode` (menu bar `background`, open menus `surface`, pointed item `surface-raised`). Only colors change — the title bar, its buttons, snapping and resizing stay the OS's own — and they follow `DvApp.Theme` changes. Off by default; common dialogs and native scroll bars keep the OS look.
 - Display scaling: WinForms receives per-monitor scaling when the app is `PerMonitorV2` (`<ApplicationHighDpiMode>`). Resizing the Form for the scale is the form's job. For a form built in code, do it like designer code: `SuspendLayout()` → `AutoScaleDimensions = new SizeF(96, 96)`, `AutoScaleMode = AutoScaleMode.Dpi`, `ClientSize` (at 100%) → `ResumeLayout(false)`. Otherwise, at 150% the window keeps its size while the content grows and gets clipped.
+
+<a id="viewcontrol-wpf"></a>
+### ViewControl (WPF)
+
+- Put it in a window: `window.Content = new ViewControl { App = app };` (or in any panel). The members are the same as the WinForms `ViewControl`: `App`, `TouchMode`, `ThemeWindow`, `MarkUpdated()`, `MarkRepaint()`, `HandlerError`.
+- Draws with the CPU raster into a `WriteableBitmap` at the monitor's pixel density; there is no `Gpu` option. WPF sizes are already logical px, so per-monitor scaling needs nothing from the app.
+- Edits go through a WPF `TextBox` (a `PasswordBox` for `keyboard-type="password"`) placed over the box, so the OS IME works; `TouchMode = true` uses the virtual keyboard.
+- Closing the window that contains the control closes the app (open dialogs close as canceled), like `Dispose` on the WinForms control.
+- `ThemeWindow = true` colors the window's title bar like the WinForms one and adds theme-colored styles for `Menu`, `ContextMenu`, `ToolBar` and `StatusBar` to the application resources. A menu with its own style is not changed.
+- The control takes right presses for the screen, so put a `ContextMenu` on other elements (a menu bar, a side panel), not on the `ViewControl`.

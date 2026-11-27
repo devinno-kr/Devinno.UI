@@ -4,4 +4,4 @@
 
 1. [scene3d.md](scene3d.md) (same folder as this file): setup, the `SceneView` attributes, the `Rotate` / `Move` / `Color` / `Clip` definitions, writing values from code (`SceneState`), preparing the model in Blender, checking your work, limits.
 2. Devinno.UI.Scene3D.xml (`lib/net9.0/` in the package; the same folder as this file in `.devinno/Devinno.UI.Scene3D/`): C# API reference for `UseScene3D`, `SceneView` and `SceneState`.
-3. How to write screens is documented in the core package: read `.devinno/Devinno.UI/llms.txt` (in the Devinno.UI package: `docs/llms.txt`) first. The host (window or WinForms control) comes from Devinno.UI.OpenTK or Devinno.UI.WinForms.
+3. How to write screens is documented in the core package: read `.devinno/Devinno.UI/llms.txt` (in the Devinno.UI package: `docs/llms.txt`) first. The host (window, WinForms control or WPF control) comes from Devinno.UI.OpenTK, Devinno.UI.WinForms or Devinno.UI.Wpf.

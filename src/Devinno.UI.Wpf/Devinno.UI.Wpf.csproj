@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- WPF 어댑터: WriteableBitmap 에 Skia 로 직접 그리는 그림 하나 + 편집용 TextBox/PasswordBox 하나(겹침) -->
+  <PropertyGroup>
+    <!-- 패키지 공통 설정은 ../Directory.Build.props -->
+    <PackageId>Devinno.UI.Wpf</PackageId>
+    <Description>WPF adapter for Devinno.UI: ViewControl puts a DvApp in a WPF window (IME text input including Korean, optional touch mode, theme-colored title bar and menus). The app must target net9.0-windows10.0.19041.0 or later.</Description>
+    <PackageTags>ui;hmi;skiasharp;wpf;touch;industrial;dvml;llm;ai</PackageTags>
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Devinno.UI\Devinno.UI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="3.119.4" />
+  </ItemGroup>
+
+</Project>
