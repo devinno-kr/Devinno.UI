@@ -106,6 +106,17 @@ public enum TextAlign
     Right
 }
 
+/// <summary>How a border (or a shape's outline) is drawn. Style key <c>border-style</c>, or a word inside <c>border</c>.</summary>
+public enum BorderLine
+{
+    /// <summary><c>solid</c>: an unbroken line (the default).</summary>
+    Solid,
+    /// <summary><c>dashed</c>: dashes; dash and gap lengths grow with the width.</summary>
+    Dashed,
+    /// <summary><c>dotted</c>: round dots as wide as the line, one width apart.</summary>
+    Dotted,
+}
+
 /// <summary>Vertical axis of <c>content-align</c> (the horizontal axis is <see cref="TextAlign"/>).</summary>
 internal enum ContentVAlign
 {
@@ -209,22 +220,21 @@ public sealed class ComputedStyle
     public float BorderRadius { get; set; }
 
     /// <summary>
-    /// Border thickness (px). The first value of the style key <c>border</c> (e.g. <c>border: 1 #cbd5e1</c> → 1). Default 0.
-    /// There is no separate <c>border-width</c> key.
+    /// Border thickness (px). Style key <c>border-width</c>, or the first value of <c>border</c> (e.g. <c>border: 1 #cbd5e1</c> → 1); the later declaration wins. Default 0.
     /// </summary>
     public float BorderWidth { get; set; }
 
     /// <summary>
-    /// Border color. Set when the last value of the style key <c>border</c> is a color (e.g. <c>border: 1 solid #cbd5e1</c>).
-    /// Default <see langword="null"/>. If the last value is not a color (e.g. <c>border: 0</c>), the previous value remains. There is no separate <c>border-color</c> key.
+    /// Border color. Style key <c>border-color</c>, or the last value of <c>border</c> when it is a color (e.g. <c>border: 1 solid #cbd5e1</c>); the later declaration wins.
+    /// Default <see langword="null"/> = no border is drawn. A value that is not a color (e.g. <c>border: 0</c>, <c>border-color: abc</c>) leaves the previous value.
     /// </summary>
     public DvColor? BorderColor { get; set; }
 
     /// <summary>
-    /// Whether the border is drawn dashed. <see langword="true"/> when <c>dashed</c> is present, as in <c>border-style: dashed</c> or <c>border: 1 dashed #c</c>;
-    /// other <c>border-style</c> values or <c>solid</c> inside <c>border</c> reset it to <see langword="false"/>. Default <see langword="false"/>.
+    /// How the border is drawn. Style key <c>border-style</c> (<c>solid</c>, <c>dashed</c>, <c>dotted</c>; any other word = solid), or one of those words inside <c>border</c>
+    /// (<c>border: 1 dashed #c</c>); the later declaration wins. Default <see cref="BorderLine.Solid"/>.
     /// </summary>
-    public bool BorderDashed { get; set; }
+    public BorderLine BorderStyle { get; set; }
 
     /// <summary>
     /// Box shadow. Style key <c>box-shadow</c> (format: see <see cref="BoxShadow"/>). Default <see langword="null"/> = no shadow;

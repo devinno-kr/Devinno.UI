@@ -82,6 +82,9 @@ internal static class AttributeCheck
         ["DvGauge"] = ["value", "min", "max", "alarm-zones", "ticks", "minor-ticks", "show-tick-labels", "format", "unit", "show-value"],
         ["DvRing"] = ["value", "min", "max", "alarm-zones", "tone", "unit", "label", "sweep", "thickness", "format", "show-value"],
         ["DvLamp"] = ["on", "blink", "blink-interval", "color", "state"],
+        ["DvPolyline"] = ["points", "arrow", "cap", "border", "border-width", "border-color", "border-style"],
+        ["DvPolygon"] = ["points", "background", "border", "border-width", "border-color", "border-style"],
+        ["DvEllipse"] = ["points", "background", "border", "border-width", "border-color", "border-style"],
         ["DvTank"] = ["value", "min", "max", "alarm-zones", "unit", "format", "show-zone-marks", "medium", "color"],
         ["DvSparkline"] = ["values", "tone", "y-min", "y-max", "area"],
         ["DvBarChart"] = ["items", "item-value", "item-text", "tone", "y-min", "y-max", "show-value", "format"],
@@ -193,6 +196,9 @@ internal static class AttributeCheck
         ["DvGauge"] = ["value", "min", "max", "ticks", "minor-ticks"],
         ["DvRing"] = ["value", "min", "max", "sweep", "thickness"],
         ["DvLamp"] = ["blink-interval"],
+        ["DvPolyline"] = ["border-width"],
+        ["DvPolygon"] = ["border-width"],
+        ["DvEllipse"] = ["border-width"],
         ["DvTank"] = ["value", "min", "max"],
         ["DvSparkline"] = ["y-min", "y-max"],
         ["DvBarChart"] = ["y-min", "y-max"],
@@ -234,6 +240,9 @@ internal static class AttributeCheck
         ["DvSpacer"] = new(StringComparer.Ordinal) { ["align"] = ["start", "center", "end", "stretch"], ["justify"] = ["start", "center", "end", "between"] },
         ["DvRepeat"] = new(StringComparer.Ordinal) { ["align"] = ["start", "center", "end", "stretch"], ["justify"] = ["start", "center", "end", "between"] },
         ["DvLabel"] = new(StringComparer.Ordinal) { ["content-align"] = CA },
+        ["DvPolyline"] = new(StringComparer.Ordinal) { ["arrow"] = ["end", "start", "both", "none"], ["cap"] = ["butt", "round", "square"], ["border-style"] = ["solid", "dashed", "dotted"] },
+        ["DvPolygon"] = new(StringComparer.Ordinal) { ["border-style"] = ["solid", "dashed", "dotted"] },
+        ["DvEllipse"] = new(StringComparer.Ordinal) { ["border-style"] = ["solid", "dashed", "dotted"] },
         ["DvButton"] = new(StringComparer.Ordinal) { ["content-align"] = CA, ["variant"] = ["primary", "secondary", "danger", "ghost"], ["size"] = ["sm", "lg"] },
         ["DvCheckBox"] = new(StringComparer.Ordinal) { ["content-align"] = CA },
         ["DvRadio"] = new(StringComparer.Ordinal) { ["content-align"] = CA },
@@ -271,6 +280,9 @@ internal static class AttributeCheck
     internal static readonly Dictionary<string, string[]> Color = new(StringComparer.Ordinal)
     {
         ["DvLamp"] = ["color"],
+        ["DvPolyline"] = ["border-color"],
+        ["DvPolygon"] = ["border-color"],
+        ["DvEllipse"] = ["border-color"],
         ["DvTrendChannel"] = ["color"],
         ["DvTank"] = ["color"],
         ["DvDataGrid"] = ["header-color", "header-text-color", "text-color", "row-color", "row-alt-color", "hover-color", "selected-color", "line-color", "summary-color", "summary-text-color"],
@@ -385,6 +397,8 @@ internal static class AttributeCheck
             return; // 바인딩·보간 — 실행 때 값이 정해진다
         if (Has(Bool, CommonBool, tag, name) && !IsBool(value))
             report(Diagnostics.InvalidBool, a, new object[] { tag, name, value });
+        else if (name == "points" && ShapeRule(tag) is { } rule && !IsPoints(tag, value))
+            report(Diagnostics.InvalidPoints, a, new object[] { tag, name, value, rule });
         else if (Array.IndexOf(GridLine, name) >= 0 && !(Tags.TryGetValue(tag, out var own) && Array.IndexOf(own, name) >= 0) && !IsGridLine(value))
             report(Diagnostics.InvalidGridLine, a, new object[] { tag, name, value });
         else if (Has(Number, CommonNumber, tag, name) && !CheckedElsewhere(tag, name) && !IsNumber(value))
@@ -448,6 +462,35 @@ internal static class AttributeCheck
     {
         var s = value.Trim();
         return s.Length == 0 || int.TryParse(s, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n is >= 1 and <= MaxGridLine;
+    }
+
+    // 도형 points — 라이브러리 LayoutEngine.ParsePoints·BuildShape 와 같은 규칙(공백으로 나눈 x,y 쌍, Invariant 숫자, 개수)
+    internal static string? ShapeRule(string tag) => tag switch
+    {
+        "DvPolyline" => "at least 2 points",
+        "DvPolygon" => "at least 3 points",
+        "DvEllipse" => "0 or 2 points",
+        _ => null,
+    };
+
+    internal static bool IsPoints(string tag, string value)
+    {
+        var parts = value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var p in parts)
+        {
+            var xy = p.Split(',');
+            if (xy.Length != 2 ||
+                !float.TryParse(xy[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var x) || float.IsNaN(x) || float.IsInfinity(x) ||
+                !float.TryParse(xy[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var y) || float.IsNaN(y) || float.IsInfinity(y))
+                return false;
+        }
+
+        return tag switch
+        {
+            "DvPolyline" => parts.Length >= 2,
+            "DvPolygon" => parts.Length >= 3,
+            _ => parts.Length is 0 or 2,
+        };
     }
 
     internal static bool IsNumber(string value)

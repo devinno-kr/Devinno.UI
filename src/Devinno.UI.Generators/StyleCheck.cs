@@ -23,7 +23,7 @@ internal static class StyleCheck
         "flex-direction", "justify-content", "align-items", "align-self", "overflow", "width",
         "height", "min-width", "max-width", "min-height", "max-height", "flex-grow",
         "flex-shrink", "flex", "flex-wrap", "align-content", "position", "left",
-        "top", "right", "bottom", "border", "border-style", "box-shadow",
+        "top", "right", "bottom", "border", "border-style", "border-width", "border-color", "box-shadow",
         "transform", "transition",
         "padding-top", "padding-right", "padding-bottom", "padding-left",
     };

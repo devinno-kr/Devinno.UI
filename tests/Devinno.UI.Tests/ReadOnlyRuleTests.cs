@@ -166,10 +166,10 @@ public class ReadOnlyRuleTests
             <DvSegment value="{Bind Pick}"><DvOption value="A"/></DvSegment>
             """);
         var segs = Flatten(s.Root!).Where(b => b.Node.Tag == "DvSegment").ToList();
-        Assert.True(segs[0].Style.BorderDashed);
-        Assert.True(One(s, "DvListBox").Style.BorderDashed);
-        Assert.True(One(s, "DvTreeView").Style.BorderDashed);
-        Assert.False(segs[1].Style.BorderDashed);
+        Assert.True(segs[0].Style.BorderStyle == Devinno.UI.Styling.BorderLine.Dashed);
+        Assert.True(One(s, "DvListBox").Style.BorderStyle == Devinno.UI.Styling.BorderLine.Dashed);
+        Assert.True(One(s, "DvTreeView").Style.BorderStyle == Devinno.UI.Styling.BorderLine.Dashed);
+        Assert.False(segs[1].Style.BorderStyle == Devinno.UI.Styling.BorderLine.Dashed);
     }
 
     // 그리는 위젯(토글·체크·라디오·노브·슬라이더) — 모양 둘레 점선, 값 색은 그대로(반투명 아님)

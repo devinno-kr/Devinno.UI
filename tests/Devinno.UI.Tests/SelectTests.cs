@@ -118,7 +118,7 @@ public class SelectTests
 
         var ro = Select("<DvSelect value=\"{Data.Dir}\"/>");
         Assert.True(ro.ReadOnly);
-        Assert.True(ro.Style.BorderDashed);
+        Assert.True(ro.Style.BorderStyle == Devinno.UI.Styling.BorderLine.Dashed);
         Assert.False(SelectDisplay.IsOpenable(ro));
         Assert.Equal(3, ro.SelectOptions.Count); // 단방향도 enum 항목은 만든다(표시용)
 

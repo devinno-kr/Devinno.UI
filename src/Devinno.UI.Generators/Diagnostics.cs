@@ -52,6 +52,7 @@ internal static class Diagnostics
     public static readonly DiagnosticDescriptor InvalidBool = D("DVML020", DiagnosticSeverity.Warning, "Bool");
     public static readonly DiagnosticDescriptor InvalidNumber = D("DVML020", DiagnosticSeverity.Warning, "Number");
     public static readonly DiagnosticDescriptor InvalidGridLine = D("DVML020", DiagnosticSeverity.Warning, "GridLine");
+    public static readonly DiagnosticDescriptor InvalidPoints = D("DVML020", DiagnosticSeverity.Warning, "Points");
     public static readonly DiagnosticDescriptor InvalidEnum = D("DVML020", DiagnosticSeverity.Warning, "Enum");
     public static readonly DiagnosticDescriptor InvalidColor = D("DVML020", DiagnosticSeverity.Warning, "Color");
 

@@ -3624,7 +3624,7 @@ grid 상자의 계산된 열·행 트랙(빈 트랙 포함, 모든 트랙)을 �
 슈가 선언은 cascade 최하위라 class/style 로 덮을 수 있다.
 속성 값은 바인딩을 먼저 풀고 나서 변환한다 — <c>columns="{N}"</c>·<c>gap="{G}"</c> 도 리터럴과 똑같이 해석된다
 (열 개수, 간격 단계 이름, <c>between</c>). 값이 null 인 속성은 지정하지 않은 것으로 본다.
-</summary></member><member name="M:Devinno.UI.Layout.LayoutSugar.Space(System.String)" en-hash="3d2ed10ceeb9bb9c">
+</summary></member><member name="M:Devinno.UI.Layout.LayoutSugar.IsShape(System.String)" en-hash="293bacefc818e0e5"><summary>도형 태그(<c>DvPolyline</c> <c>DvPolygon</c> <c>DvEllipse</c>) — 상자 배경·테두리 대신 자기 외곽선과 칠을 그린다.</summary></member><member name="M:Devinno.UI.Layout.LayoutSugar.Space(System.String)" en-hash="3d2ed10ceeb9bb9c">
             <summary>간격 단계명(xs~2xl) → 토큰, none → 0, 그 외 숫자는 그대로.</summary>
         </member><member name="T:Devinno.UI.Layout.PartStyle" en-hash="239429680f2782f2"><summary><c>::part()</c> 규칙이 정한 위젯 부분 하나의 덮어쓰기 — 규칙이 정한 키만 값이 있고 나머지는 <see langword="null" /> 입니다.</summary></member><member name="M:Devinno.UI.Layout.PartStyle.#ctor(System.Nullable{System.Single},System.Nullable{System.Int32},System.Nullable{SkiaSharp.SKColor})" en-hash="239429680f2782f2"><summary><c>::part()</c> 규칙이 정한 위젯 부분 하나의 덮어쓰기 — 규칙이 정한 키만 값이 있고 나머지는 <see langword="null" /> 입니다.</summary></member><member name="M:Devinno.UI.Layout.PartStyle.Parse(System.String)" en-hash="6ebdd9fe80a9b1b3"><summary>해석된 선언에서 <c>font-size</c>, <c>font-weight</c>, <c>color</c> 를 읽습니다. 다른 키와 쓸 수 없는 값은 무시합니다.</summary></member><member name="T:Devinno.UI.Layout.ScreenMap" en-hash="fcfb1d9841fcf007"><summary>상자 좌표 → 화면 좌표: 점 × <see cref="P:Devinno.UI.Layout.ScreenMap.Scale" /> + <see cref="P:Devinno.UI.Layout.ScreenMap.Offset" />. 이동과 균일 배율만 있다(스크롤 오프셋과 <see cref="P:Devinno.UI.Layout.LayoutBox.ContentScale" />).</summary></member><member name="M:Devinno.UI.Layout.ScreenMap.#ctor(System.Single,SkiaSharp.SKPoint)" en-hash="fcfb1d9841fcf007"><summary>상자 좌표 → 화면 좌표: 점 × <see cref="P:Devinno.UI.Layout.ScreenMap.Scale" /> + <see cref="P:Devinno.UI.Layout.ScreenMap.Offset" />. 이동과 균일 배율만 있다(스크롤 오프셋과 <see cref="P:Devinno.UI.Layout.LayoutBox.ContentScale" />).</summary></member><member name="M:Devinno.UI.Layout.ScreenMap.Into(Devinno.UI.Layout.LayoutBox)" en-hash="6fc1fcea301ec10e"><summary><paramref name="box" /> 의 자식에 쓰는 변환 — 그 스크롤 오프셋 다음 내용 변환(페인터가 적용하는 순서와 같음).</summary></member><member name="T:Devinno.UI.Localization.BuiltInStrings" en-hash="827d7806217a22ad">
             <summary>라이브러리 내장 화면 문구(<c>dv.</c> 키)의 영어·한국어 표입니다. 찾는 순서: 앱 표의 현재 언어 → 내장 표의 현재 언어 → 앱 표의 <see cref="P:Devinno.UI.Localization.DvStrings.FallbackLanguage" /> → 내장 영어. <see cref="T:Devinno.UI.Localization.DvStrings" /> 가 없으면 내장 영어를 씁니다.</summary>
@@ -4021,7 +4021,7 @@ var min = TagSchema.Find("DvGauge", "min"); // Kind = Number, Default = "0"
             <summary>흐름 애니메이션 프레임 간격(ms) — 초당 20프레임 상한(전체 화면을 다시 그리므로 CPU 를 아낀다).</summary>
         </member><member name="F:Devinno.UI.Painting.Painter.FlowSpeed" en-hash="ddf2a51bb7402d34">
             <summary>흐름 점선이 움직이는 속도(px/초).</summary>
-        </member><member name="F:Devinno.UI.Painting.Painter.SignalWidth" en-hash="0dd64906e88f6ace"><summary>신호선·계기 연결선 굵기.</summary></member><member name="M:Devinno.UI.Painting.Painter.SignalMarks(System.Collections.Generic.IReadOnlyList{SkiaSharp.SKPoint})" en-hash="c8d22c7800a3a08d"><summary>공압 신호의 빗금 쌍 자리: 곧은 구간마다 양 끝을 비키고 약 <see cref="F:Devinno.UI.Painting.Painter.SignalMarkPitch" /> px 간격. 그보다 짧은 선도 가장 긴 구간 가운데에 하나는 놓는다.</summary></member><member name="T:Devinno.UI.Painting.WidgetMetrics" en-hash="e63b9b9d178e07a4">
+        </member><member name="F:Devinno.UI.Painting.Painter.SignalWidth" en-hash="0dd64906e88f6ace"><summary>신호선·계기 연결선 굵기.</summary></member><member name="M:Devinno.UI.Painting.Painter.SignalMarks(System.Collections.Generic.IReadOnlyList{SkiaSharp.SKPoint})" en-hash="c8d22c7800a3a08d"><summary>공압 신호의 빗금 쌍 자리: 곧은 구간마다 양 끝을 비키고 약 <see cref="F:Devinno.UI.Painting.Painter.SignalMarkPitch" /> px 간격. 그보다 짧은 선도 가장 긴 구간 가운데에 하나는 놓는다.</summary></member><member name="F:Devinno.UI.Painting.ShapeGeometry.TouchReach" en-hash="ef5c8557d1568d68"><summary>그려진 선에서 닿는 거리(px)의 최솟값.</summary></member><member name="M:Devinno.UI.Painting.ShapeGeometry.Build(Devinno.UI.Layout.LayoutBox,Devinno.UI.Styling.ComputedStyle)" en-hash="7ef21ff875e6c331"><summary>외곽선 경로(또는 선)와 꺾은선의 화살촉. 도형을 그리지 않으면 <see langword="null" />.</summary></member><member name="T:Devinno.UI.Painting.WidgetMetrics" en-hash="e63b9b9d178e07a4">
             <summary>
             원형·용기 위젯의 내부 치수(선 두께·바늘·글씨·칩). 기본 크기(계기 120, 노브 96, 탱크 80×160)에서 배율 1 —
             위젯을 키우거나 줄이면 내부 요소도 같은 비율로 따라간다. 글씨는 읽을 수 있는 최소 크기 아래로 내려가지 않는다.
@@ -4411,7 +4411,7 @@ var min = TagSchema.Find("DvGauge", "min"); // Kind = Number, Default = "0"
             <summary><c>solid</c>: 실선(기본값).</summary>
         </member><member name="F:Devinno.UI.Styles.BorderStyle.Dashed" en-hash="cd5e86abc5c0564d">
             <summary><c>dashed</c>: 점선(파선).</summary>
-        </member><member name="T:Devinno.UI.Styles.Tone" en-hash="ffa88ad25b5f24ba">
+        </member><member name="F:Devinno.UI.Styles.BorderStyle.Dotted" en-hash="0d14e529a3c4f83c"><summary><c>dotted</c>: 둥근 점.</summary></member><member name="T:Devinno.UI.Styles.Tone" en-hash="ffa88ad25b5f24ba">
             <summary>
             <c>tone</c> 속성 키워드(<c>DvBadge</c>·<c>DvStat</c>·<c>DvRing</c>·<c>DvProgress</c>): 의미별 강조 색입니다.
             색은 테마 토큰 <c>tone-{값}</c>·<c>tone-{값}-fg</c>·<c>tone-{값}-soft</c> 에서 옵니다.
@@ -4567,7 +4567,7 @@ var min = TagSchema.Find("DvGauge", "min"); // Kind = Number, Default = "0"
             <summary>가운데 정렬(<c>center</c>).</summary>
         </member><member name="F:Devinno.UI.Styling.TextAlign.Right" en-hash="f6725ffb57f36cd4">
             <summary>오른쪽 정렬(<c>right</c>).</summary>
-        </member><member name="T:Devinno.UI.Styling.ContentVAlign" en-hash="979e3ff85fef69b6">
+        </member><member name="T:Devinno.UI.Styling.BorderLine" en-hash="29a66959b1cb0243"><summary>테두리(또는 도형 외곽선)를 그리는 방식. 스타일 키 <c>border-style</c>, 또는 <c>border</c> 안의 낱말.</summary></member><member name="F:Devinno.UI.Styling.BorderLine.Solid" en-hash="9b9dc053448d9e5e"><summary><c>solid</c>: 끊김 없는 선(기본값).</summary></member><member name="F:Devinno.UI.Styling.BorderLine.Dashed" en-hash="4ec420385ff40fe7"><summary><c>dashed</c>: 파선. 선과 틈 길이가 두께에 따라 커집니다.</summary></member><member name="F:Devinno.UI.Styling.BorderLine.Dotted" en-hash="86e07a63355cb2fa"><summary><c>dotted</c>: 선 두께만 한 둥근 점을 두께 간격으로.</summary></member><member name="T:Devinno.UI.Styling.ContentVAlign" en-hash="979e3ff85fef69b6">
             <summary><c>content-align</c> 의 세로 축(가로 축은 <see cref="T:Devinno.UI.Styling.TextAlign" />).</summary>
         </member><member name="T:Devinno.UI.Styling.BoxShadow" en-hash="baa12bc400cea961">
             <summary>
@@ -4667,22 +4667,15 @@ var min = TagSchema.Find("DvGauge", "min"); // Kind = Number, Default = "0"
             <summary>값을 바꿔 그리기 위한 얕은 복사(전환 중간값).</summary>
         </member><member name="P:Devinno.UI.Styling.ComputedStyle.BorderRadius" en-hash="16b3c57275574f2d">
             <summary>모서리 반지름(px). 스타일 키 <c>border-radius</c>, 네 모서리 공통. 기본값 0, 해석 실패 시 0.</summary>
-        </member><member name="P:Devinno.UI.Styling.ComputedStyle.BorderWidth" en-hash="60834d354380161f">
-            <summary>
-            테두리 두께(px). 스타일 키 <c>border</c> 의 첫 값(예: <c>border: 1 #cbd5e1</c> → 1). 기본값 0.
-            별도의 <c>border-width</c> 키는 없습니다.
-            </summary>
-        </member><member name="P:Devinno.UI.Styling.ComputedStyle.BorderColor" en-hash="4f80e7d1a1aad4bb">
-            <summary>
-            테두리 색. 스타일 키 <c>border</c> 의 마지막 값이 색이면 설정됩니다(예: <c>border: 1 solid #cbd5e1</c>).
-            기본값 <see langword="null" />. 마지막 값이 색이 아니면(예: <c>border: 0</c>) 이전 값이 그대로 남습니다. 별도의 <c>border-color</c> 키는 없습니다.
-            </summary>
-        </member><member name="P:Devinno.UI.Styling.ComputedStyle.BorderDashed" en-hash="d6443a603f327cdf">
-            <summary>
-            테두리를 점선으로 그릴지 여부. <c>border-style: dashed</c> 또는 <c>border: 1 dashed #c</c> 처럼 <c>dashed</c> 가 있으면 <see langword="true" />,
-            <c>border-style</c> 의 다른 값이나 <c>border</c> 안의 <c>solid</c> 는 <see langword="false" /> 로 되돌립니다. 기본값 <see langword="false" />.
-            </summary>
-        </member><member name="P:Devinno.UI.Styling.ComputedStyle.Shadow" en-hash="10d17624ba996e8b">
+        </member><member name="P:Devinno.UI.Styling.ComputedStyle.BorderWidth" en-hash="212c8621ecf62685"><summary>
+테두리 두께(px). 스타일 키 <c>border-width</c>, 또는 <c>border</c> 의 첫 값(예: <c>border: 1 #cbd5e1</c> → 1). 뒤에 온 선언이 이깁니다. 기본값 0.
+</summary></member><member name="P:Devinno.UI.Styling.ComputedStyle.BorderColor" en-hash="47730aa812f8bd93"><summary>
+테두리 색. 스타일 키 <c>border-color</c>, 또는 <c>border</c> 의 마지막 값이 색일 때 그 값(예: <c>border: 1 solid #cbd5e1</c>). 뒤에 온 선언이 이깁니다.
+기본값 <see langword="null" /> = 테두리를 그리지 않음. 색이 아닌 값(예: <c>border: 0</c>, <c>border-color: abc</c>)은 이전 값을 그대로 둡니다.
+</summary></member><member name="P:Devinno.UI.Styling.ComputedStyle.BorderStyle" en-hash="bd61be584dac15a1"><summary>
+테두리를 그리는 방식. 스타일 키 <c>border-style</c>(<c>solid</c>, <c>dashed</c>, <c>dotted</c>, 그 밖의 낱말 = solid), 또는 <c>border</c> 안의 그 낱말
+(<c>border: 1 dashed #c</c>). 뒤에 온 선언이 이깁니다. 기본값 <see cref="F:Devinno.UI.Styling.BorderLine.Solid" />.
+</summary></member><member name="P:Devinno.UI.Styling.ComputedStyle.Shadow" en-hash="10d17624ba996e8b">
             <summary>
             상자 그림자. 스타일 키 <c>box-shadow</c>(형식은 <see cref="T:Devinno.UI.Styling.BoxShadow" />). 기본값 <see langword="null" /> = 그림자 없음,
             <c>box-shadow: none</c> 으로 지울 수 있습니다.
@@ -5092,7 +5085,7 @@ var min = TagSchema.Find("DvGauge", "min"); // Kind = Number, Default = "0"
             <remarks>
             테마는 지금 배치·그리기 중인 것(<see cref="F:Devinno.UI.Styling.Roles.Ambient" />, 배치 엔진과 Painter 가 그 스레드에 정함)이고,
             그 밖에서는 <see cref="P:Devinno.UI.Styling.DvTheme.Default" /> 입니다. 값은 테마마다 캐시합니다(테마는 불변).
-            </remarks></member><member name="F:Devinno.UI.Styling.Roles.Ambient" en-hash="cd5cbb8ceb9fa916"><summary>이 스레드에서 진행 중인 배치·그리기의 테마. 한 번의 배치·그리기는 UI 스레드 하나라고 가정합니다.</summary></member><member name="M:Devinno.UI.Styling.Roles.Number(System.String)" en-hash="ba14ca67c7602f8e"><summary>지금 테마의 숫자 역할 토큰(없으면 경고와 함께 0).</summary></member><member name="M:Devinno.UI.Styling.Roles.Weight(System.String)" en-hash="f208d56c6665cfa2"><summary>역할 <c>weight.{role}</c> 의 글자 굵기(<c>regular</c>, <c>medium</c>, <c>strong</c>, <c>bold</c>).</summary></member><member name="M:Devinno.UI.Styling.Roles.Font(System.String)" en-hash="aac1604a199cff5d"><summary>역할 <c>font.{role}</c> 의 글자 크기(<c>caption</c>, <c>meta</c>, <c>label</c>, <c>body</c> …).</summary></member><member name="M:Devinno.UI.Styling.Roles.Stroke(System.String)" en-hash="f455f3d6bd184341"><summary>역할 <c>stroke.{role}</c> 의 선 두께(<c>hairline</c>, <c>outline</c>, <c>emphasis</c>, <c>focus</c>).</summary></member><member name="M:Devinno.UI.Styling.Roles.Alpha(System.String)" en-hash="50fbc5ec1823459f"><summary>투명도 역할(<c>alpha.selected</c>, <c>overlay.hover</c>, <c>opacity.disabled</c> …)을 0–255 바이트로.</summary></member><member name="P:Devinno.UI.Styling.Roles.Depth" en-hash="7aef68d86bc8d307"><summary>입체 질감의 음영 깊이(<c>texture.depth</c>, 0..1 로 자름) — rich 그리기의 그라데이션·그림자·광택에 곱한다.</summary></member><member name="P:Devinno.UI.Styling.Roles.Look" en-hash="c9414a7e1224be8d"><summary>지금 테마의 스타일 스위치.</summary></member><member name="M:Devinno.UI.Styling.Roles.Enter(Devinno.UI.Styling.DvTheme)" en-hash="9b65d2249ca46f8a"><summary>한 번의 배치·그리기 동안 <see cref="F:Devinno.UI.Styling.Roles.Ambient" /> 를 정하고, 끝나면(Dispose) 이전 값으로 되돌립니다.</summary></member><member name="T:Devinno.UI.Styling.StyleParser" en-hash="2ca87512c5ed1686"><summary>
+            </remarks></member><member name="F:Devinno.UI.Styling.Roles.Ambient" en-hash="cd5cbb8ceb9fa916"><summary>이 스레드에서 진행 중인 배치·그리기의 테마. 한 번의 배치·그리기는 UI 스레드 하나라고 가정합니다.</summary></member><member name="M:Devinno.UI.Styling.Roles.Number(System.String)" en-hash="ba14ca67c7602f8e"><summary>지금 테마의 숫자 역할 토큰(없으면 경고와 함께 0).</summary></member><member name="M:Devinno.UI.Styling.Roles.Weight(System.String)" en-hash="f208d56c6665cfa2"><summary>역할 <c>weight.{role}</c> 의 글자 굵기(<c>regular</c>, <c>medium</c>, <c>strong</c>, <c>bold</c>).</summary></member><member name="M:Devinno.UI.Styling.Roles.Font(System.String)" en-hash="aac1604a199cff5d"><summary>역할 <c>font.{role}</c> 의 글자 크기(<c>caption</c>, <c>meta</c>, <c>label</c>, <c>body</c> …).</summary></member><member name="M:Devinno.UI.Styling.Roles.Stroke(System.String)" en-hash="f455f3d6bd184341"><summary>역할 <c>stroke.{role}</c> 의 선 두께(<c>hairline</c>, <c>outline</c>, <c>emphasis</c>, <c>focus</c>).</summary></member><member name="M:Devinno.UI.Styling.Roles.Alpha(System.String)" en-hash="50fbc5ec1823459f"><summary>투명도 역할(<c>alpha.selected</c>, <c>overlay.hover</c>, <c>opacity.disabled</c> …)을 0–255 바이트로.</summary></member><member name="P:Devinno.UI.Styling.Roles.Depth" en-hash="7aef68d86bc8d307"><summary>입체 질감의 음영 깊이(<c>texture.depth</c>, 0..1 로 자름) — rich 그리기의 그라데이션·그림자·광택에 곱한다.</summary></member><member name="P:Devinno.UI.Styling.Roles.Look" en-hash="c9414a7e1224be8d"><summary>지금 테마의 스타일 스위치.</summary></member><member name="M:Devinno.UI.Styling.Roles.Enter(Devinno.UI.Styling.DvTheme)" en-hash="9b65d2249ca46f8a"><summary>한 번의 배치·그리기 동안 <see cref="F:Devinno.UI.Styling.Roles.Ambient" /> 를 정하고, 끝나면(Dispose) 이전 값으로 되돌립니다.</summary></member><member name="T:Devinno.UI.Styling.StyleParser" en-hash="859a40c712361145"><summary>
 CSS 형태의 선언 목록 문자열(<c>key: value; key: value</c>)을 <see cref="T:Devinno.UI.Styling.ComputedStyle" /> 로 해석합니다.
 </summary>
 <remarks>
@@ -5109,7 +5102,7 @@ CSS 형태의 선언 목록 문자열(<c>key: value; key: value</c>)을 <see cre
 <example>
 <code>
 var st = StyleParser.Parse("background:#1e293b; padding: 8 12; border: 1 dashed #475569; font-weight:bold");
-// st.Background = #1e293b, st.Padding = (8,12,8,12), st.BorderWidth = 1, st.BorderDashed = true, st.Bold = true
+// st.Background = #1e293b, st.Padding = (8,12,8,12), st.BorderWidth = 1, st.BorderStyle = BorderLine.Dashed, st.Bold = true
 </code>
 </example></member><member name="M:Devinno.UI.Styling.StyleParser.Parse(System.String)" en-hash="909d8a465759a0ad">
             <summary>선언 목록 문자열을 해석해 새 <see cref="T:Devinno.UI.Styling.ComputedStyle" /> 을 만듭니다.</summary>

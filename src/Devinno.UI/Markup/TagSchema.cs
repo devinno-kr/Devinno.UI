@@ -312,6 +312,25 @@ public static class TagSchema
             new("color", AttrKind.Color, Note: ColorRule + " (the state or text color); wins over state"),
             new("state", AttrKind.Text, Note: "state-{state} token color; valid when the theme has the token state-{state} (built-in: run stop fault warn manual off); " + ThemeWordRule + " (no state color)"),
         ],
+        ["DvPolyline"] =
+        [
+            ShapePoints("2 or more: a line, or a polyline through them"),
+            new("arrow", AttrKind.Enum, "none", Values: ["end", "start", "both", "none"], Note: "a filled head on that end in the outline color, length max(8, 3 × width + 6); " + EnumRule),
+            new("cap", AttrKind.Enum, "butt", Values: ["butt", "round", "square"], Note: "line ends as SVG stroke-linecap; round also rounds the corners; " + EnumRule),
+            .. ShapeOutline(),
+        ],
+        ["DvPolygon"] =
+        [
+            ShapePoints("3 or more, closed back to the first"),
+            ShapeFill(),
+            .. ShapeOutline(),
+        ],
+        ["DvEllipse"] =
+        [
+            ShapePoints("none = the ellipse fills the box; 2 = opposite corners of the rectangle it fills"),
+            ShapeFill(),
+            .. ShapeOutline(),
+        ],
         ["DvTank"] =
         [
             .. DialRange("separate fields from DvGauge/DvRing/DvProgress (TankValue/TankMin/TankMax)"),
@@ -559,6 +578,24 @@ public static class TagSchema
 
     private static AttrDef ProcessRef(string name, string what) =>
         new(name, AttrKind.Text, Bindable: false, Note: $"{what}; {RawName}");
+
+    // 도형(DvPolyline·DvPolygon·DvEllipse) — 점·칠·외곽선. 칠·외곽선 속성은 같은 이름의 style 선언(가장 낮은 우선순위)
+    private static AttrDef ShapePoints(string count) =>
+        new("points", AttrKind.Text, Note: "\"x,y x,y …\" px from the box's top-left, invariant numbers; not scaled to the box; " + count
+                                             + "; unreadable or a wrong count = not drawn + warning");
+
+    private static AttrDef ShapeFill() =>
+        new("background", AttrKind.Text, Note: "the fill, as style background: a color, token(name) or linear-gradient(…); absent = no fill; " + ShapeStyleRule);
+
+    private static AttrDef[] ShapeOutline() =>
+    [
+        new("border", AttrKind.Text, "2 solid token(text)", Note: "the outline in one value, as style border: width [solid|dashed|dotted] color; " + ShapeStyleRule),
+        new("border-width", AttrKind.Number, "2", Note: "outline px; 0 = no outline; " + NumberRule + "; " + ShapeStyleRule),
+        new("border-color", AttrKind.Color, "token(text)", Note: "the outline color (and arrow heads); " + ColorRule + "; " + ShapeStyleRule),
+        new("border-style", AttrKind.Enum, "solid", Values: ["solid", "dashed", "dotted"], Note: EnumRule + "; " + ShapeStyleRule),
+    ];
+
+    private const string ShapeStyleRule = "the same as the style key of that name with the lowest priority: a class or the style attribute wins; later attributes win over border";
 
     private static AttrDef ProcessArrow() =>
         new("arrow", AttrKind.Enum, "none", Values: ["end", "start", "both", "none"], Note: EnumRule);

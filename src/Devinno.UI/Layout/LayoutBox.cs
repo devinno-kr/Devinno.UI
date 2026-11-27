@@ -244,6 +244,11 @@ public sealed class LayoutBox
     internal string? RadioOption { get; set; }
     /// <summary>The group key of a <c>DvRadio</c> without <c>value</c>: the <c>group</c> name, or the element node (if it only has a handle). Null if neither (cannot be pressed).</summary>
     internal object? RadioGroup { get; set; }
+    // 도형(DvPolyline·DvPolygon·DvEllipse) — points(상자 왼쪽 위 기준 px, 없으면 null), 그리는가(점이 틀리면 false), 화살표·끝 모양(DvPolyline)
+    internal SkiaSharp.SKPoint[]? ShapePoints { get; set; }
+    internal bool ShapeDrawn { get; set; }
+    internal string ShapeArrow { get; set; } = "none";
+    internal SkiaSharp.SKStrokeCap ShapeCap { get; set; } = SkiaSharp.SKStrokeCap.Butt;
     /// <summary>The <c>on</c> attribute value of a <c>DvLamp</c> (whether it is lit). Filled at build time.</summary>
     public bool LampOn { get; set; }
     /// <summary>Whether a <c>DvLamp</c> blinks (the <c>blink</c> attribute). Meaningful only while lit; the phase is set by the paint time.</summary>

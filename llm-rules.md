@@ -71,6 +71,7 @@ public sealed partial class MainPage : DvPage   // the VM of MainPage.dvml; the 
 |---|---|---|
 | Page, card, number tile, status chip, on/off switch | `DvPageFrame`, `DvCard`, `DvStat`, `DvBadge`, `DvStatusItem`, `DvSwitch`, `DvButton variant="…"` | style plain boxes to imitate them |
 | Layout | `DvStack`, `DvRow`, `DvGrid`, `DvSpacer`; `DvBox` + `style` only for special shapes | |
+| Line, arrow, zone outline, warning triangle, ellipse | `DvPolyline` (`arrow`), `DvPolygon`, `DvEllipse` with `points`, `background` and `border` ([shapes](dvml-widgets.md#shapes)) | a picture file or a thin rotated box (`rotate` is ignored) |
 | On/off | switch look `DvToggle`/`DvSwitch`; box next to text `DvCheckBox`; button look = latching button `<DvButton value="{Bind X}"/>` | |
 | One of 3–5 options | `DvSegment` (+`DvOption`) | imitate selection with several buttons' `onclick` and class bindings |
 | One of several with long descriptions | vertical `DvRadio` — the same `value="{Bind X}"` + each its own `option`; the group is defined by the value, not by placement | |
@@ -102,6 +103,7 @@ public sealed partial class MainPage : DvPage   // the VM of MainPage.dvml; the 
 | `DvStack` | Vertical flex, `align-items:stretch`, `gap` 12 — children fill the width. [layout sugar](dvml-layout.md#layout-sugar) | |
 | `DvRow` | Horizontal flex, `align-items:center`, `gap` 12 — children vertically centered. | |
 | `DvGrid` | `align`/`justify` place each child in its cell; default `stretch` fills the cell, and `justify` takes `stretch` instead of `between`. [grid cells](dvml-layout.md#grid-cells) | CSS grid `justify-content` moves the tracks; here it places items like `justify-items` |
+| `background`/`border` on `DvPolyline` `DvPolygon` `DvEllipse` | Fill and outline of the shape; the box around it is not painted. The outline lies on the line through the points. [shapes](dvml-widgets.md#shapes) | SVG names them `fill` and `stroke` |
 | Grid cell of a child | Style `grid-row`/`grid-column` as CSS, or attributes `grid-row` `grid-col` `row-span` `col-span` (from 1); empty cells need no filler; a class/style on the same axis beats the attributes. [grid placement](dvml-layout.md#grid-placement) | No negative or named lines; not the process `row` attribute |
 | Root element | Always fills the window; the root's `width`/`height` are ignored. | |
 | Units | All numbers are px; `16`, `16px`, `16dp` are the same. No `%`, `em`, `rem`, `vw`, `auto` — the only exception is `%` in grid tracks and grid column widths. [lengths](dvml-language.md#value-length) | |

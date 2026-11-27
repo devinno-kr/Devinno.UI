@@ -76,6 +76,8 @@ public static class Styles
         public const string Solid = "solid";
         /// <summary><c>dashed</c>: dashed line.</summary>
         public const string Dashed = "dashed";
+        /// <summary><c>dotted</c>: round dots.</summary>
+        public const string Dotted = "dotted";
     }
 
     /// <summary>

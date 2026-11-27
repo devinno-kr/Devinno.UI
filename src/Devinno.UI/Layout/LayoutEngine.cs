@@ -505,6 +505,9 @@ public sealed partial class LayoutEngine
 
         BuildInstrumentTag(box, r);
 
+        if (LayoutSugar.IsShape(node.Tag))
+            BuildShape(box, r);
+
         if (node.Tag == "DvStepBar")
             BuildStepBar(box, r);
 
@@ -1023,6 +1026,14 @@ public sealed partial class LayoutEngine
 
         if (box.Node.Tag == "DvLamp")
             return (st.Width ?? 24f, st.Height ?? 24f);
+
+        // 도형 — 점이 놓인 범위((0,0)부터 가장 먼 점까지), 점 없는 DvEllipse 는 100×100, 그리지 않는 도형은 0
+        if (LayoutSugar.IsShape(box.Node.Tag))
+        {
+            if (box.ShapePoints is { } sp)
+                return (st.Width ?? MathF.Max(0f, sp.Max(q => q.X)), st.Height ?? MathF.Max(0f, sp.Max(q => q.Y)));
+            return box.ShapeDrawn ? (st.Width ?? 100f, st.Height ?? 100f) : (st.Width ?? 0f, st.Height ?? 0f);
+        }
 
         if (box.Node.Tag == "DvGauge")
             return (st.Width ?? 120f, st.Height ?? 120f);

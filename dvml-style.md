@@ -34,8 +34,10 @@ Any other key is ignored at run time, and the build reports it as warning [DVML0
 | `content-align` | 9 positions ([content-align](#content-align)) | Varies by widget |
 | `padding` | 1–4 values (`8`; `8 12`; `4 8 12` = top, left/right, bottom; `4 8 4 8` = top right bottom left) | 0 |
 | `padding-top` `padding-right` `padding-bottom` `padding-left` | 1 value; changes only that side | As in CSS, the later declaration wins (`padding:12; padding-left:0` = only left is 0) |
-| `border` | `width color`, `width solid color`, `width dashed color` | None |
-| `border-style` | `solid` `dashed` | `solid` |
+| `border` | `width color`, `width solid color`, `width dashed color`, `width dotted color` | None |
+| `border-width` | Number | 0 |
+| `border-color` | Color | None (no border is drawn without a color) |
+| `border-style` | `solid` `dashed` `dotted` (any other word = `solid`) | `solid` |
 | `border-radius` | One number | 0 |
 | `box-shadow` | `dx dy blur color` or `none` | None |
 | `display` | `flex` `grid` (anything else = default flow) | Default flow |
@@ -86,7 +88,7 @@ Any other key is ignored at run time, and the build reports it as warning [DVML0
 
 `rgb()`, `rgba()`, `hsl()` and color names (`red`) are not supported.
 
-**Border:** `border: 1 #cbd5e1`, `border: 1 solid token(border)`, `border: 2 dashed #f59e0b`. First value = width, last value = color. `border-style: dashed` can also be set separately.
+**Border:** `border: 1 #cbd5e1`, `border: 1 solid token(border)`, `border: 2 dashed #f59e0b`. First value = width, last value = color. `border-width`, `border-color` and `border-style` set one part each; between them and `border`, the later declaration wins. On the shapes (`DvPolyline` `DvPolygon` `DvEllipse`), `background` and `border` paint the shape instead of the box ([shapes](dvml-widgets.md#shapes)).
 
 **Shadow:** `box-shadow: 0 8 24 #00000040`, exactly in `dx dy blur color` order. There is no spread and no multiple shadows. Tokens work (`box-shadow: token(shadow.md)`). `box-shadow: none` removes a shadow set by a class.
 

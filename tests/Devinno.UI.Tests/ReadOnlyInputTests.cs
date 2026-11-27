@@ -15,7 +15,7 @@ public class ReadOnlyInputTests
     [InlineData("border: 1 #ff0000; border-style: dashed", true)]
     [InlineData("border: 1 dashed #ff0000; border-style: solid", false)]
     public void Parses_border_style(string css, bool dashed)
-        => Assert.Equal(dashed, StyleParser.Parse(css).BorderDashed);
+        => Assert.Equal(dashed, StyleParser.Parse(css).BorderStyle == Devinno.UI.Styling.BorderLine.Dashed);
 
     [Fact]
     public void Dashed_border_has_gaps()
@@ -58,7 +58,7 @@ public class ReadOnlyInputTests
         var b = Input(attrs, new Vm());
         Assert.Equal(readOnly, b.ReadOnly);
         Assert.Equal(!readOnly, InputDisplay.IsEditable(b));
-        Assert.Equal(readOnly, b.Style.BorderDashed);
+        Assert.Equal(readOnly, b.Style.BorderStyle == Devinno.UI.Styling.BorderLine.Dashed);
         if (readOnly)
             Assert.True(b.Style.Background is null || b.Style.Background.Value.A == 0);
     }
@@ -67,7 +67,7 @@ public class ReadOnlyInputTests
     public void Disabled_wins_over_read_only_look()
     {
         var b = Input("value=\"{Bind Data.Name}\" readonly=\"true\" disabled=\"true\"", new Vm());
-        Assert.False(b.StyleDisabled!.BorderDashed);
+        Assert.False(b.StyleDisabled!.BorderStyle == Devinno.UI.Styling.BorderLine.Dashed);
     }
 
     [Fact]

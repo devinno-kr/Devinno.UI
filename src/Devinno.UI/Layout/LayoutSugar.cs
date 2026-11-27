@@ -17,10 +17,11 @@ internal static class LayoutSugar
         // 그 태그가 쓰는 속성만 읽는다(TagSchema 정의와 같게): grow·width·height·grid-row·grid-col·row-span·col-span = 모든 요소, gap·padding·align·justify = 슈가 태그, columns·rows = DvGrid
         var tag = r.Node.Tag;
         var isSugar = tag is "DvStack" or "DvRepeat" or "DvRow" or "DvGrid" or "DvSpacer";
+        var isShape = IsShape(tag);
         var a = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var k in Names)
         {
-            if ((tag == "DvGrid" || !GridNames.Contains(k)) && (isSugar || !SugarNames.Contains(k)) &&
+            if ((tag == "DvGrid" || !GridNames.Contains(k)) && (isSugar || !SugarNames.Contains(k)) && (isShape || !ShapeNames.Contains(k)) &&
                 (k is "align" or "justify" ? (r.Has(k) ? AttrRules.Enum(r, k) : null) : r.Text(k)) is { } v) // align·justify = 공용 목록 규칙
                 a[k] = v;
         }
@@ -48,6 +49,22 @@ internal static class LayoutSugar
             case "DvSpacer":
                 parts.Add("flex-grow:1");
                 break;
+        }
+
+        // 도형의 칠·외곽선 — 기본 외곽선 다음에 속성(border 단축 → 한 쪽 키 순서라 한 쪽 키가 이긴다). 도형 태그만 읽는다(DvPolyline 은 칠이 없다)
+        if (isShape)
+        {
+            parts.Add("border:2 solid token(text)");
+            if (tag != "DvPolyline" && a.TryGetValue("background", out var fill))
+                parts.Add("background:" + fill);
+            if (a.TryGetValue("border", out var border))
+                parts.Add("border:" + border);
+            if (a.ContainsKey("border-width") && AttrRules.NumberOrNull(r, "border-width", "ignored") is { } bw)
+                parts.Add("border-width:" + bw.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            if (a.TryGetValue("border-color", out var bc))
+                parts.Add("border-color:" + bc);
+            if (a.ContainsKey("border-style") && AttrRules.Enum(r, "border-style") is { } bs)
+                parts.Add("border-style:" + bs);
         }
 
         if (isSugar)
@@ -90,9 +107,14 @@ internal static class LayoutSugar
 
     // 슈가가 읽는 속성 — 이것만 바인딩을 풀어 둔다
     private static readonly string[] Names =
-        { "columns", "rows", "gap", "padding", "align", "justify", "grow", "width", "height", "grid-row", "grid-col", "row-span", "col-span" };
+        { "columns", "rows", "gap", "padding", "align", "justify", "grow", "width", "height", "grid-row", "grid-col", "row-span", "col-span",
+          "background", "border", "border-width", "border-color", "border-style" };
     private static readonly string[] GridNames = { "columns", "rows" };
     private static readonly string[] SugarNames = { "columns", "rows", "gap", "padding", "align", "justify" };
+    private static readonly string[] ShapeNames = { "background", "border", "border-width", "border-color", "border-style" };
+
+    /// <summary>The shape tags (<c>DvPolyline</c> <c>DvPolygon</c> <c>DvEllipse</c>): they draw their own outline and fill instead of the box background and border.</summary>
+    internal static bool IsShape(string tag) => tag is "DvPolyline" or "DvPolygon" or "DvEllipse";
 
     /// <summary>Spacing step name (xs to 2xl) → token, none → 0, any other number is used as is.</summary>
     private static string Space(string v) => v switch

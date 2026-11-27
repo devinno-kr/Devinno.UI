@@ -83,6 +83,7 @@ For each element, ask these in order and stop at the first yes:
 |---|---|
 | Can a built-in widget show it as designed, with its classes restyled if needed? | That widget |
 | Can style draw it? | `DvBox`, `DvLabel`, `DvButton` with `style` |
+| Is it a line, an arrow, a polygon or an ellipse? | `DvPolyline`, `DvPolygon`, `DvEllipse` ([shapes](dvml-widgets.md#shapes)): theme and bound colors, sharp at any size |
 | Does it need a look that style cannot draw, with a shape that does not depend on a value? | A picture file, one per appearance: `background-image` on the element itself ([separate what is seen from what is touched](#image-touch)), or a `DvImage` for a picture that belongs to no element |
 | Does its drawing depend on a value, or is it dragged, and no built-in can show it? | `DvWidget` ([write a widget only when needed](#image-widget)) |
 
@@ -92,7 +93,7 @@ For each element, ask these in order and stop at the first yes:
 
 **Restyling built-ins.** Built-in widgets carry classes such as `.btn` and `.segment-item`, and `DvStyle` can redefine them ([classes and `DvStyle`](dvml-style.md#dvstyle)). Check each property on a render.
 
-**What style cannot draw:** `box-shadow` is one shadow per element, with no spread and no inset. Gradients are `linear-gradient` only, and only on backgrounds. `border-radius` is one value for all corners. A border is one color. There are no polygons. Built-in widgets have no image attributes, but every element, a `DvButton` included, takes `background-image` (one picture per element).
+**What style cannot draw:** `box-shadow` is one shadow per element, with no spread and no inset. Gradients are `linear-gradient` only, and only on backgrounds. `border-radius` is one value for all corners. A border is one color. Lines, arrows, polygons and ellipses are the shape tags, not style ([shapes](dvml-widgets.md#shapes)); curves and arcs need a picture or `DvWidget`. Built-in widgets have no image attributes, but every element, a `DvButton` included, takes `background-image` (one picture per element).
 
 **Text and numbers stay in labels** so they can change. Only text that is part of fixed artwork, such as a logo, belongs in an image.
 

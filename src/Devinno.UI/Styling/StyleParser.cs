@@ -19,7 +19,7 @@ namespace Devinno.UI.Styling;
 /// <example>
 /// <code>
 /// var st = StyleParser.Parse("background:#1e293b; padding: 8 12; border: 1 dashed #475569; font-weight:bold");
-/// // st.Background = #1e293b, st.Padding = (8,12,8,12), st.BorderWidth = 1, st.BorderDashed = true, st.Bold = true
+/// // st.Background = #1e293b, st.Padding = (8,12,8,12), st.BorderWidth = 1, st.BorderStyle = BorderLine.Dashed, st.Bold = true
 /// </code>
 /// </example>
 public static class StyleParser
@@ -502,7 +502,14 @@ public static class StyleParser
                 ParseBorder(s, v);
                 break;
             case "border-style":
-                s.BorderDashed = v.Trim() == "dashed";
+                s.BorderStyle = LineWord(v.Trim()) ?? BorderLine.Solid;
+                break;
+            case "border-width":
+                s.BorderWidth = F(v);
+                break;
+            case "border-color":
+                if (DvColor.TryParse(v.Trim(), out var bcol))
+                    s.BorderColor = bcol;
                 break;
             case "box-shadow":
                 ParseShadow(s, v);
@@ -533,11 +540,17 @@ public static class StyleParser
         var last = p[^1];
         if (DvColor.TryParse(last, out var bc))
             s.BorderColor = bc;
-        if (p.Contains("dashed"))
-            s.BorderDashed = true;
-        else if (p.Contains("solid"))
-            s.BorderDashed = false;
+        if (p.Select(LineWord).FirstOrDefault(w => w is not null) is { } line)
+            s.BorderStyle = line;
     }
+
+    private static BorderLine? LineWord(string w) => w switch
+    {
+        "solid" => BorderLine.Solid,
+        "dashed" => BorderLine.Dashed,
+        "dotted" => BorderLine.Dotted,
+        _ => null,
+    };
 
     // 트랙 목록: "1fr 2fr 120" 처럼 따옴표로 감싸도 된다
     private static string[] Tracks(string v)

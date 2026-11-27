@@ -133,8 +133,14 @@ public sealed partial class Painter
     {
         var rect = box.Node.Tag == "DvSegment" && !box.SegmentFill ? SegmentFitRect(box, st) : box.Rect;
         var r = st.BorderRadius;
+        // 도형은 상자(둘레 사각형)에 그림자·배경·그림·테두리를 그리지 않는다 — background·border 가 도형의 칠·외곽선
+        var shape = ShapeGeometry.IsShape(box);
 
-        if (st.Shadow is { } sh)
+        if (shape)
+        {
+            ShapeGeometry.Paint(canvas, box, st, MakeShader);
+        }
+        else if (st.Shadow is { } sh)
         {
             using var sp = new SKPaint { IsAntialias = true, Color = sh.Color.ToSK() };
             // 마스크 블러 — 이미지 필터 블러(매 프레임 오프스크린 CPU 블러)보다 훨씬 싸다(둥근 사각형 전용 경로)
@@ -144,7 +150,10 @@ public sealed partial class Painter
             canvas.DrawRoundRect(srect, r, r, sp);
         }
 
-        if (st.Gradient is { } grad)
+        if (shape)
+        {
+        }
+        else if (st.Gradient is { } grad)
         {
             using var p = new SKPaint { IsAntialias = true, Shader = MakeShader(grad, rect) };
             canvas.DrawRoundRect(rect, r, r, p);
@@ -156,7 +165,7 @@ public sealed partial class Painter
         }
 
         // 배경 그림 — 단색·그라디언트 위, 테두리 아래. padding 영역까지, 상자 모양(border-radius)으로 자른다(natural 은 자르지 않음 — 판 밖 글로우·그림자)
-        if (st.BackgroundImage is { Length: > 0 } bgSrc && Widgets.ImageCache.Get(bgSrc) is { } bgImage)
+        if (!shape && st.BackgroundImage is { Length: > 0 } bgSrc && Widgets.ImageCache.Get(bgSrc) is { } bgImage)
         {
             canvas.Save();
             if (st.BackgroundSize != BackgroundFit.Natural)
@@ -181,7 +190,7 @@ public sealed partial class Painter
             canvas.Restore();
         }
 
-        if (box.Grid is null) // 그리드는 내용 위에 마지막으로 그린다(PaintGrid) — 셀 배경이 테두리 안쪽을 덮지 않게
+        if (box.Grid is null && !shape) // 그리드는 내용 위에 마지막으로 그린다(PaintGrid) — 셀 배경이 테두리 안쪽을 덮지 않게
             DrawBorder(canvas, rect, st);
 
         if (box.ResolvedText is not null && IconFont.TryResolve(box.Icon, out var btnIcon))
@@ -785,6 +794,8 @@ public sealed partial class Painter
     {
         if (box.Widget is not null || box.Process is not null || box.HasContentTransform || box.Node.Tag == "DvVideo")
             return Unbounded;
+        if (ShapeGeometry.IsShape(box)) // 점이 상자 밖이거나 두께·화살촉이 넘쳐도 잘리지 않게
+            return ShapeGeometry.Bounds(box);
 
         var rect = box.Rect;
         // 내용이 상자보다 크면(긴 낱말, 줄바꿈된 글이 줄 높이를 넘김) 정렬에 따라 어느 쪽으로든 넘칠 수 있다 — 양쪽으로 넓힌다.
@@ -856,6 +867,21 @@ public sealed partial class Painter
         return right < rect.Right ? new SKRect(rect.Left, rect.Top, right, rect.Bottom) : rect;
     }
 
+    // 선 모양 — dashed = 두께에 비례하는 선·틈, dotted = 두께만 한 둥근 점을 두께 간격으로(둥근 끝 + 길이 0 선분). solid = null
+    internal static SKPathEffect? LineDash(BorderLine line, float width, SKPaint paint)
+    {
+        switch (line)
+        {
+            case BorderLine.Dashed:
+                return SKPathEffect.CreateDash(new[] { 4f + width * 2, 3f + width }, 0);
+            case BorderLine.Dotted:
+                paint.StrokeCap = SKStrokeCap.Round;
+                return SKPathEffect.CreateDash(new[] { 0.001f, width * 2 }, 0);
+            default:
+                return null;
+        }
+    }
+
     private static void DrawBorder(SKCanvas canvas, SKRect rect, ComputedStyle st)
     {
         if (st.BorderWidth <= 0 || st.BorderColor is not { } bc)
@@ -866,10 +892,9 @@ public sealed partial class Painter
             Color = bc.ToSK(),
             Style = SKPaintStyle.Stroke,
             StrokeWidth = st.BorderWidth,
-            PathEffect = st.BorderDashed
-                ? SKPathEffect.CreateDash(new[] { 4f + st.BorderWidth * 2, 3f + st.BorderWidth }, 0)
-                : null
         };
+        using var dash = LineDash(st.BorderStyle, st.BorderWidth, p);
+        p.PathEffect = dash;
         // CSS 처럼 상자 안쪽에 — 선 중심을 두께 절반만큼 안으로(경계에 걸치면 절반이 밖으로 나가 흐려진다)
         var half = st.BorderWidth / 2f;
         var inner = SKRect.Inflate(rect, -half, -half);

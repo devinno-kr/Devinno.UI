@@ -66,7 +66,7 @@ public class PickerBuildTests
         var b = Build("""<DvColorInput value="{Bind Data.Pen}"/>""");
         Assert.Equal((200f, 40f), (b.Rect.Width, b.Rect.Height));
         var ro = Build("""<DvDateTimeInput value="{Data.At}"/>""");
-        Assert.True(ro.Style.BorderDashed); // input-readonly = 점선
+        Assert.True(ro.Style.BorderStyle == Devinno.UI.Styling.BorderLine.Dashed); // input-readonly = 점선
     }
 
     [Fact]

@@ -92,6 +92,9 @@ public static class HitTester
         // 모양이 정해진 위젯(노브·토글 등)은 그려진 모양 안만 닿는다 — 늘어난 상자의 빈 곳을 눌러도 값이 바뀌지 않게
         if (inside && box.Children.Count == 0 && !wholeBox)
             inside = Painting.WidgetMetrics.ShapeRect(box).Contains(p.X, p.Y);
+        // 도형은 그려진 선·칠한 안쪽만(상자 밖으로 그려진 곳도) — wholeBox(편집기)면 상자 전체
+        if (!wholeBox && Painting.ShapeGeometry.IsShape(box))
+            inside = Painting.ShapeGeometry.Hit(box, p);
         if (!inside && (box.IsScroller || box.Style.Overflow == Overflow.Hidden))
             return false;
 

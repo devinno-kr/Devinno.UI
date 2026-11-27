@@ -4,7 +4,13 @@
 
 ### Added
 
+- Shapes for any screen: `DvPolyline` (a line or polyline, arrow heads with `arrow`, line ends with `cap`), `DvPolygon` (closed) and `DvEllipse`, placed by `points` in px from the box's top-left. Their fill and outline are the style keys `background` and `border` (also as attributes of the same names, lowest priority), so they take theme tokens, bindings, classes, state styles and transitions. Only the drawn shape is pressed (`dvml-widgets.md` → Shapes).
+- Style keys `border-width` and `border-color`, and `border-style: dotted` (also inside `border`), for every element.
 - DVML020 also reports a literal `grid-row` `grid-col` `row-span` `col-span` value that is not a whole number from 1 to 1000 (`grid-row="2.5"`); at run time such a value is ignored with a Trace warning.
+
+### Changed
+
+- `ComputedStyle.BorderDashed` is replaced by `ComputedStyle.BorderStyle` (`BorderLine.Solid`, `Dashed`, `Dotted`).
 
 ### Documentation
 

@@ -133,6 +133,9 @@
   <data name="DVML020_GridLine" xml:space="preserve">
     <value>{0} {1}='{2}' is not a whole number from 1 to 1000 — ignored at run time (Trace warning); without another value the child is placed automatically</value>
   </data>
+  <data name="DVML020_Points" xml:space="preserve">
+    <value>{0} {1}='{2}' is not a list of x,y pairs with {3} (e.g. "0,0 100,40", invariant numbers) — the shape is not drawn at run time</value>
+  </data>
   <data name="DVML020_Enum" xml:space="preserve">
     <value>{0} {1}='{2}' is not one of {3} (case is ignored) — the default is used at run time</value>
   </data>

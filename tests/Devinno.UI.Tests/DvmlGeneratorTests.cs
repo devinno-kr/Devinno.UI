@@ -1119,6 +1119,27 @@ public class DvmlGeneratorTests
     }
 
     [Fact]
+    public void Shapes_CheckNamesAndValues()
+    {
+        // 칠은 닫힌 모양만 — DvPolyline background = 없는 속성(DVML019)
+        var r = Run("public partial class P { }", ("P.dvml", "<DvStack><DvPolyline points=\"0,0 10,10\" background=\"#ff0000\"/></DvStack>"));
+        Assert.Single(r.Ids("DVML019"));
+        Assert.Single(Values("<DvStack><DvPolyline points=\"0,0 10,10\" arrow=\"tip\"/></DvStack>"));
+        Assert.Single(Values("<DvStack><DvPolygon points=\"0,0 10,10 0,10\" border-color=\"red\"/></DvStack>"));
+        Assert.Single(Values("<DvStack><DvEllipse border-style=\"wavy\"/></DvStack>"));
+        Assert.Single(Values("<DvStack><DvEllipse border-width=\"thin\"/></DvStack>"));
+        Assert.Single(Values("<DvStack><DvPolyline points=\"0,0\"/></DvStack>"));
+        Assert.Single(Values("<DvStack><DvPolygon points=\"0,0 1,1\"/></DvStack>"));
+        Assert.Single(Values("<DvStack><DvEllipse points=\"0,0 1,1 2,2\"/></DvStack>"));
+        var bad = Assert.Single(Values("<DvStack><DvPolyline points=\"0,0 1;1\"/></DvStack>"));
+        Assert.Contains("at least 2 points", bad.GetMessage(Invariant));
+        Assert.Contains("x,y", bad.GetMessage(new System.Globalization.CultureInfo("ko-KR")));
+        Assert.Empty(Values("<DvStack><DvPolyline points=\"0,0 10,10\" arrow=\"both\" cap=\"round\" border=\"2 dotted token(primary)\"/>" +
+                            "<DvPolygon points=\"0,0 10,10 0,10\" background=\"linear-gradient(to right, #fff, #000)\" border-width=\"0\"/>" +
+                            "<DvEllipse background=\"{C}\" border-color=\"token(text)\" border-style=\"dashed\"/></DvStack>"));
+    }
+
+    [Fact]
     public void Value_NotNumber_Warns()
     {
         var d = Assert.Single(Values("<DvStack><DvGauge max=\"abc\"/></DvStack>"));

@@ -41,8 +41,8 @@ public class ValueConstantsTests
         Assert.Equal(Overflow.Visible, StyleParser.Parse("overflow:" + Styles.Overflow.Visible).Overflow);
         Assert.Equal(Overflow.Hidden, StyleParser.Parse("overflow:" + Styles.Overflow.Hidden).Overflow);
         Assert.Equal(Overflow.Scroll, StyleParser.Parse("overflow:" + Styles.Overflow.Scroll).Overflow);
-        Assert.True(StyleParser.Parse("border-style:" + Styles.BorderStyle.Dashed).BorderDashed);
-        Assert.False(StyleParser.Parse("border-style:" + Styles.BorderStyle.Solid).BorderDashed);
+        Assert.True(StyleParser.Parse("border-style:" + Styles.BorderStyle.Dashed).BorderStyle == Devinno.UI.Styling.BorderLine.Dashed);
+        Assert.False(StyleParser.Parse("border-style:" + Styles.BorderStyle.Solid).BorderStyle == Devinno.UI.Styling.BorderLine.Dashed);
     }
 
     [Fact]

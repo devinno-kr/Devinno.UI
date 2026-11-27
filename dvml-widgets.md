@@ -1,6 +1,6 @@
 # Widgets (semantic components, basic widgets)
 
-Covers: the built-in semantic components (`DvPageFrame` `DvDialogFrame` `DvCard` `DvBadge` `DvStat` `DvStatusItem` `DvSwitch`), the basic widgets (`DvLabel` `DvButton` `DvIcon` `DvImage` `DvVideo` `DvToggle` `DvCheckBox` `DvRadio` `DvKnob` `DvSlider` `DvTabs` `DvExpander` `DvStepBar`) — one section per tag.
+Covers: the built-in semantic components (`DvPageFrame` `DvDialogFrame` `DvCard` `DvBadge` `DvStat` `DvStatusItem` `DvSwitch`), the basic widgets (`DvLabel` `DvButton` `DvIcon` `DvImage` `DvVideo` `DvToggle` `DvCheckBox` `DvRadio` `DvKnob` `DvSlider` `DvTabs` `DvExpander` `DvStepBar`), and the shapes (`DvPolyline` `DvPolygon` `DvEllipse`) — one section per tag.
 Read first: [markup basics](dvml-language.md#markup-basics) · [common attributes every tag takes](dvml-language.md#common-attributes) · [how attribute values are read](dvml-language.md#value-rules) · [value widgets: two-way, read-only, handles](dvml-language.md#value-widgets)
 Not here: [input widgets: text, select, segment, date/time, color, list, tree](dvml-inputs.md#input-common) · [gauges, lamps, tanks, charts, trends, alarms](dvml-instruments.md#instrument-common) · [data grid](dvml-grid.md#dvdatagrid) · [layout boxes DvBox/DvStack/DvRow/DvGrid](dvml-layout.md#layout-sugar) · [user components and DvRepeat](dvml-components.md#dvcomponent) · [dialogs](dvml-dialogs.md#dialog-define) · [which widget to pick](llm-rules.md#choose-widget)
 
@@ -629,3 +629,76 @@ Shows the current step of a process or batch sequence. Display only; pressing do
 ```
 
 See also: [DvProgress](dvml-instruments.md#dvprogress)
+
+<a id="shapes"></a>
+## Shapes
+
+`DvPolyline`, `DvPolygon` and `DvEllipse` draw lines and shapes on any screen: pages, bars, dialogs, component templates and repeat items. Their colors take theme tokens (`token(…)`) and bindings (`{X}`), and they stay sharp at any size. Use them for flow arrows, leader lines, zone outlines, warning marks and ellipse highlights instead of picture files. Inside a process diagram, draw with `DvSymbol` instead ([DvSymbol](dvml-process-equipment.md#dvsymbol)).
+
+**Rules for all three:**
+
+- **Points**: `x,y` pairs separated by spaces, in px from the top-left of the element's box, invariant numbers (`"0,0 120,40"`). Points are never scaled: a box larger than the points leaves empty space, and a smaller box (from `width`/`height` or a stretching layout) does not shrink the drawing.
+- **Box size**: without `width`/`height`, the box spans from (0,0) to the farthest point. Points with negative coordinates are drawn left of or above the box.
+- **What `Rect` covers**: the box (`LayoutBox.Rect`) covers only that point range. Half the outline width, `square`/`round` caps, sharp corners (up to twice the outline width) and arrow heads can lie outside it. They are drawn, not clipped, unless an ancestor clips with `overflow:hidden` or scrolling.
+- **Fill and outline are style**: on these tags the style keys `background` and `border` (`border-width`, `border-color`, `border-style`) paint the shape, not the box. The attributes of the same names set the same keys with the lowest priority, like `width`/`height` ([priority](dvml-style.md#priority)). A class or `style` that sets the same key wins. Among the attributes, `border` comes first and the single keys override it.
+- **Defaults**: outline `2 solid token(text)`, no fill. `border-width="0"` draws no outline (fill only).
+- **The box itself is not painted**: `box-shadow`, `background-image` and `border-radius` do nothing on shapes.
+- **Where the outline lies**: on `DvPolyline` and `DvPolygon` it is centered on the line through the points, as in SVG. On `DvEllipse` it stays inside the box, as a CSS border does.
+- **`border-style`**: `solid`; `dashed` = dashes 4 + 2 × width long with gaps 3 + width; `dotted` = round dots as wide as the outline, one width apart.
+- **Pressing** (`onclick`, `hold`): only the drawn shape is pressed. That is within max(outline width / 2, 6) px of the outline, the arrow heads, and the inside of a filled shape. An unfilled shape is pressed only on its outline, and parts drawn outside the box are pressed too. Screen editors select the whole box with `HitTester.HitPath(root, point, wholeBox: true)`.
+- **Bad points**: unreadable `points` or a wrong number of points draws nothing, sizes the box 0 × 0 (unless `width`/`height` are given) and writes a Trace warning. A literal value is also reported at build time ([DVML020](dvml-diagnostics.md#dvml020)).
+- State styles and transitions work as on any box, for example `hover-style="border-color:token(primary)"`.
+
+```xml
+<DvBox style="height:150">
+  <DvPolyline points="0,10 120,10" arrow="end" border="3 solid token(primary)" style="position:absolute; left:0; top:0"/>
+  <DvPolygon points="40,0 80,70 0,70" background="token(state-warn)" border-color="token(text)" style="position:absolute; left:150; top:0"/>
+  <DvPolygon points="0,0 160,10 170,100 20,110" background="#2563eb33" border="2 dashed token(primary)" style="position:absolute; left:250; top:20"/>
+  <DvEllipse border="3 dotted token(state-fault)" style="position:absolute; left:0; top:60; width:110; height:60"/>
+</DvBox>
+```
+
+<a id="dvpolyline"></a>
+### DvPolyline
+
+A straight line (2 points) or a polyline through more points, with optional arrow heads. It has no fill.
+
+| attribute | values | default | bound | notes |
+|---|---|---|---|---|
+| `points` | `"x,y x,y …"`, 2 or more | — | yes | Absent or empty = nothing drawn. Fewer than 2 or unreadable = not drawn + warning |
+| `arrow` | `none` `start` `end` `both` | `none` | yes | A head filled with the outline color, length max(8, 3 × width + 6), base as wide as the length. The line stops at the head's base. No head without an outline |
+| `cap` | `butt` `round` `square` | `butt` | yes | Line ends, as SVG `stroke-linecap`. `round` also rounds the corners. `dotted` always draws round dots |
+| `border` | `width [solid\|dashed\|dotted] color` | `2 solid token(text)` | yes | The whole line in one value |
+| `border-width` | px | `2` | yes | `0` = nothing drawn |
+| `border-color` | color, `token(name)` | `token(text)` | yes | Also the arrow heads |
+| `border-style` | `solid` `dashed` `dotted` | `solid` | yes | |
+
+`background` is not an attribute of `DvPolyline`, and a style `background` is ignored. To fill a closed outline, use `DvPolygon`.
+
+<a id="dvpolygon"></a>
+### DvPolygon
+
+A closed shape: the last point joins the first.
+
+| attribute | values | default | bound | notes |
+|---|---|---|---|---|
+| `points` | `"x,y x,y …"`, 3 or more | — | yes | Absent or empty = nothing drawn. Fewer than 3 or unreadable = not drawn + warning |
+| `background` | color, `token(name)`, `linear-gradient(…)` | none | yes | The fill, as the style key `background`. A gradient spans the rectangle around the shape. A color with alpha (`#2563eb33`) gives a see-through fill |
+| `border` | `width [solid\|dashed\|dotted] color` | `2 solid token(text)` | yes | The outline in one value |
+| `border-width` | px | `2` | yes | `0` = fill only |
+| `border-color` | color, `token(name)` | `token(text)` | yes | |
+| `border-style` | `solid` `dashed` `dotted` | `solid` | yes | |
+
+<a id="dvellipse"></a>
+### DvEllipse
+
+An ellipse (a circle when its box is square).
+
+| attribute | values | default | bound | notes |
+|---|---|---|---|---|
+| `points` | none, or `"x1,y1 x2,y2"` | none | yes | None = the ellipse fills the box (100 × 100 without `width`/`height`). Two points = opposite corners of the rectangle it fills. Any other count = not drawn + warning |
+| `background` | color, `token(name)`, `linear-gradient(…)` | none | yes | The fill |
+| `border` | `width [solid\|dashed\|dotted] color` | `2 solid token(text)` | yes | The outline, kept inside the box |
+| `border-width` | px | `2` | yes | `0` = fill only |
+| `border-color` | color, `token(name)` | `token(text)` | yes | |
+| `border-style` | `solid` `dashed` `dotted` | `solid` | yes | |
