@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.9.2 — 2026-11-27
+
+Devinno screens in WPF windows, and window title bars and menus that match the theme. Nothing changes for existing apps: `Devinno.UI.Wpf` is a new package and `ThemeWindow` is off unless turned on.
 
 ### Added
 
