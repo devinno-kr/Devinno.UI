@@ -236,6 +236,30 @@ public class ShapeTests
     }
 
     [Fact]
+    public void Part_drawn_past_the_box_is_pressed()
+    {
+        // 상자는 50×40 이지만 선은 200 까지 — 상자 밖 150 에서도 눌린다
+        Assert.Equal(1, Click("<DvPolyline points=\"0,20 200,20\" border-width=\"2\" style=\"width:50; height:40\" onclick=\"Hit\"/>", 150, 20));
+    }
+
+    [Fact]
+    public void Negative_points_draw_left_of_the_box()
+    {
+        using var bmp = Render("<DvPolyline points=\"-40,20 60,20\" border-color=\"#ff0000\" border-width=\"4\" style=\"position:absolute; left:100; top:0\"/>");
+        Assert.True(IsRed(bmp.GetPixel(70, 20)));
+        var b = Layout("<DvPolyline points=\"-40,20 60,20\"/>").Children[0];
+        Assert.Equal(60, b.Rect.Width, 3);
+    }
+
+    [Fact]
+    public void Box_shadow_image_and_radius_do_nothing_on_shapes()
+    {
+        using var bmp = Render("<DvPolyline points=\"0,20 200,20\" border-width=\"0\" style=\"height:40; box-shadow:4 4 0 #ff0000; border-radius:8\"/>");
+        Assert.True(IsWhite(bmp.GetPixel(100, 42)));
+        Assert.True(IsWhite(bmp.GetPixel(100, 20)));
+    }
+
+    [Fact]
     public void Whole_box_hit_for_editors()
     {
         var root = Layout("<DvPolyline points=\"0,0 200,100\"/>");

@@ -62,7 +62,7 @@ Any other key is ignored at run time, and the build reports it as warning [DVML0
 | `transform` | `translate(x[, y])` `translateX(x)` `translateY(y)` `scale(s[, sy])` `scaleX(s)` `scaleY(s)` separated by spaces, or `none` | None. Relative to the box center; whatever the written order, it is "translate, then scale". Children move along. **Drawing only**: layout and touch area stay unchanged |
 | `transition` | `property duration [curve] [delay], …` ([transitions](#transition)) | None (changes instantly when the state changes) |
 
-- `transform` with any other function (`rotate`, `skew`, …) is ignored entirely, valid parts included (`scale(0.9) rotate(5deg)` does nothing), with a Trace warning.
+- `transform` with any other function (`rotate`, `skew`, …) is ignored entirely, valid parts included (`scale(0.9) rotate(5deg)` does nothing), with a Trace warning. For a slanted line or a turned shape, draw it with `DvPolyline` or `DvPolygon` ([shapes](dvml-widgets.md#shapes)).
 - `margin` is parsed but not applied. Use `gap`/`padding` for spacing.
 - Borders are the same on all four sides (no per-side keys like `border-top`). Rounded corners are the same on all four corners.
 - `background-position` and `background-repeat` are not supported.
